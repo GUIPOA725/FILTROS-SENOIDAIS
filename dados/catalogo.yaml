@@ -1,0 +1,324 @@
+# =====================================================================
+# CATÁLOGO DA PLATAFORMA DE FILTROS SENOIDAIS - edite livremente
+# Preços em R$ (sem impostos). Valores marcados "confirmar" são
+# estimativas iniciais: substitua pelos preços/datasheets reais.
+# =====================================================================
+
+empresa:
+  nome: "Electric Service"
+  responsavel: "Eng. Guilherme Schallenberger"
+  email: "guilherme@electricservice.com.br"
+  telefone: "+51 3095.8210"
+  cidade: "Porto Alegre / RS"
+  uf_origem: "RS"
+
+projeto_padrao:
+  thd_v_max_pct: 5.0          # THD tensão de saída (prática Schaffner/ABB/WEG para filtro senoidal)
+  uk_min_pct: 4.0
+  uk_max_pct: 10.0            # queda máxima admissível no indutor na f máx de operação
+  thd_baixa_ordem_max_pct: 3.0   # distorção por harmônicas 5,7,11,13.. amplificadas pela ressonância
+  tolerancias_lc: [[1, 1], [0.95, 0.95], [1.05, 1.10], [0.95, 1.10], [1.05, 0.95]]   # cantos L, C para robustez
+  penalidade_cap_nao_preferido: 0.30   # preferir o capacitor do estoque (capacitor_preferido)
+  amortecimento_q_opcoes: [0, 10, 6, 4, 3, 2]   # 0 = sem resistor; Rd = Z0/Q em série com capacitores
+  uk_busca_max_pct: 15.0         # busca até 15 % (Danfoss/Siemens usam 12–15 %); queda real limitada por uk_max_pct na f máx
+  m_max_sobremodulacao: 1.21     # índice máx. com sobremodulação moderada (SVPWM linear = 1,155)
+  tensao_motor_min_pu: 0.90      # tensão mínima disponível no motor (V/f) na faixa de operação
+  fr_min_mult_fout: 10.0      # fr >= 10 x f saída máx (evita amplificar harmônicas de baixa ordem)
+  fr_max_frac_fs: 0.5         # fr <= fs/2 (estabilidade/controle do inversor)
+  ic_fund_max_pct: 20.0       # corrente capacitiva fundamental máx (% In) - carrega o inversor
+  vcap_max_pu: 1.10           # IEC 60831 / IEC 61071: 1,10 Un contínuo
+  icap_max_fator_iec60831: 1.30   # só p/ capacitor IEC 60831 sem dado de datasheet (ver normas_capacitor)
+  ripple_pp_max_pct: 45.0     # ripple pico-a-pico da corrente do indutor (% de In pico)
+  isat_margem: 1.25           # Isat >= 1,25 x I pico simulado
+  margem_corrente: 1.00       # fator sobre a corrente nominal do pedido
+  amb_max_c: 40
+  delta_t_painel_k: 15        # elevação interna admissível do painel
+
+capacitores:
+  # Linha que você usa hoje: monofásico MKP 20 uF 480 V (estoque)
+  - id: TDK_PEC_20u_480
+    fabricante: "TDK EPCOS"
+    linha: "FilterCap MKP AC B3236x (\"PEC\")"   # linha em uso/estoque
+    pn: "B32361A4206J080"      # conferido na placa das fotos (IFG/New Technologies 2022) e OC IFG 2024
+    norma: IEC61071            # placa: "IEC 1071-1/2" → capacitor para eletrônica de potência (filtro AC), NÃO é PFC IEC 60831
+    uf: 20.0                   # ±5 %
+    v_ac: 480                  # URMS (placa: URAC/URMS 480 V~)
+    vn_pico_v: 680             # UN de pico recorrente (datasheet B3236: VN = 680 V pico; placa URDC/UN 850 V-)
+    ui_kv: 3.0                 # isolação terminais–caixa (placa Ui = 3 kV)
+    imax_a: 20.0               # datasheet B3236 (M6): Imax = 20 A RMS contínuo, ponto quente ≤ 85 °C
+    ipk_a: 800                 # Î (pico repetitivo) → dv/dt máx = Î/C = 40 V/µs
+    is_a: 2400                 # surto não repetitivo (50 ms, 1000×)
+    esr_mohm: 5.4              # Rs = 4,3 mΩ a 20 °C × 1,25 a 85 °C (datasheet)
+    tan_delta: 0.0002          # tan δ0 dielétrico PP (datasheet: tan δ total ≤ 1·10⁻³ @100 Hz)
+    rth_k_w: 10.0              # estimado p/ lata Ø63,5×70 (datasheet não informa) – medir com termopar se crítico
+    t_hotspot_max_c: 85        # datasheet
+    t_amb_max_c: 70            # placa: −40…+70 °C
+    vida_h: 100000             # 100 mil h a URMS e ponto quente 85 °C (ΔC/C ≤ 3 %)
+    t_vida_ref_c: 85
+    sobretensao_iec61071: {"1.10": "30 % do tempo em carga", "1.15": "30 min/dia", "1.20": "5 min (2×/dia)", "1.30": "1 min (2×/dia)", "1.50": "30 ms (1000×)"}
+    preco: 129.40              # OC IFG 24112023 (48 pç) – atualizar
+    estoque: 0                 # informe a quantidade em estoque
+    dim_mm: [63.5, 63.5, 100]  # Ø63,5 × 70 mm + terminais M6 (~30 mm); pino M12 de fixação no fundo
+    peso_kg: 0.30
+  - id: WEG_UCW_20u_480
+    fabricante: "WEG"
+    linha: "UCW monofásico MKP"
+    pn: "confirmar"
+    uf: 20.0
+    v_ac: 480
+    imax_a: null
+    esr_mohm: 3.0
+    tan_delta: 0.0002
+    rth_k_w: 12.0
+    norma: IEC60831
+    imax_fator: 1.3            # mínimo da IEC 60831-1 – substituir pelo datasheet
+    preco: 88.00
+    estoque: 0
+    dim_mm: [75, 75, 165]
+    peso_kg: 0.75
+  - id: TDK_PEC_30u_480
+    fabricante: "TDK EPCOS"
+    linha: "PEC monofásico MKP"
+    pn: "confirmar"
+    uf: 30.0
+    v_ac: 480
+    imax_a: null
+    esr_mohm: 2.5
+    tan_delta: 0.0002
+    rth_k_w: 10.0
+    norma: IEC60831
+    imax_fator: 1.3            # mínimo da IEC 60831-1 – substituir pelo datasheet
+    preco: 125.00
+    estoque: 0
+    dim_mm: [85, 85, 200]
+    peso_kg: 1.0
+  - id: TDK_PEC_10u_480
+    fabricante: "TDK EPCOS"
+    linha: "PEC monofásico MKP"
+    pn: "confirmar"
+    uf: 10.0
+    v_ac: 480
+    imax_a: null
+    esr_mohm: 4.0
+    tan_delta: 0.0002
+    rth_k_w: 14.0
+    norma: IEC60831
+    imax_fator: 1.3            # mínimo da IEC 60831-1 – substituir pelo datasheet
+    preco: 70.00
+    estoque: 0
+    dim_mm: [60, 60, 145]
+    peso_kg: 0.5
+
+capacitor_preferido: TDK_PEC_20u_480
+
+# Critérios de suportabilidade por norma (aplicados conforme o campo "norma" de cada capacitor).
+# Todos os valores são "contínuos, harmônicas incluídas". A verificação é feita no ponto nominal E nas condições extremas.
+atp:                       # dupla checagem automática no ATP-EMTP (roda em segundo plano se instalado no PC)
+  habilitado: true
+  tpbig: 'C:\ATP\atpmingw\tpbig.exe'
+  pasta_trabalho: 'C:\ATP\work\fsen'
+
+normas_capacitor:
+  IEC60831:      # IEC 60831-1/2 – capacitores de potência autorregenerativos (PFC: PhiCap, PEC, WEG UCW)
+    v_rms_pu: 1.10           # Tabela de sobretensões: 1,10·UN 8 h/24 h
+    v_pico_pu: 1.20          # critério adotado para o pico com harmônicas (√2·1,2·UN) – confirmar datasheet
+    i_rms_fator_padrao: 1.3  # cl. 21: ≥ 1,3·IN; usar "imax_fator" do datasheet quando informado (ex.: PhiCap 1,5)
+    q_pu: null
+    dvdt_v_us: 20            # PFC não é capacitor de snubber – confirmar datasheet
+  IEEE18:        # IEEE Std 18 – limites contínuos (contingência, não base de projeto)
+    v_rms_pu: 1.10
+    v_pico_pu: 1.20
+    i_rms_fator_padrao: 1.35
+    q_pu: 1.35
+    dvdt_v_us: 20
+  IEC61071:      # IEC 61071 – capacitores para eletrônica de potência (filtros AC). Base de projeto = datasheet:
+    v_rms_pu: 1.00           # URMS contínuo (sobretensões: 1,10·UN 30 % do tempo em carga; 1,15 30 min/dia; 1,2 5 min; 1,3 1 min)
+    v_pico_pu: 1.414         # Û recorrente ≤ UN (pico) do datasheet; se ausente, √2·URMS
+    v_pico_extremo_pu: 1.10  # condição extrema de curta duração (IEC 61071 – 1,10·UN até 30 % do tempo em carga)
+    i_rms_fator_padrao: 3.0  # só se o datasheet não der Imax (A)
+    q_pu: null
+    dvdt_v_us: null          # = Î/C do datasheet
+    t_hotspot_max_c: 85
+verificar_tambem_ieee18: true   # capacitores IEC 60831 (PFC): mostra também a IEEE 18 (informativo). Não se aplica a IEC 61071.
+
+capacitor_termico:
+  t_hotspot_max_c: 70          # ponto quente máximo admissível (filme PP) – confirmar datasheet
+  vpk_max_pu: 1.20             # pico de tensão ≤ 1,2·√2·Un (harmônicas incluídas)
+  dvdt_max_v_us: 20            # dv/dt admissível no capacitor de potência (PEC) – confirmar
+  vida_ref_h: 100000           # vida de referência no ponto quente de referência
+  t_ref_c: 70
+  k_dobra_c: 7                 # vida dobra a cada 7 K a menos (regra prática filme PP)
+
+# Cabo inversor/filtro → motor (blindado simétrico tipo VFD, 0,6/1 kV, cobre). Valores por condutor – confirmar com o fabricante.
+# secao_mm2: [R_ac 90°C ohm/km, L mH/km, C fase-blindagem nF/km, C fase-fase nF/km]
+cabos_parametros:
+  16: [1.47, 0.30, 180, 90]
+  25: [0.927, 0.29, 200, 100]
+  35: [0.668, 0.28, 220, 110]
+  50: [0.494, 0.27, 250, 125]
+  70: [0.342, 0.26, 280, 140]
+  95: [0.247, 0.255, 310, 155]
+  120: [0.196, 0.25, 340, 170]
+  150: [0.159, 0.25, 370, 185]
+  185: [0.128, 0.245, 400, 200]
+  240: [0.0977, 0.24, 450, 225]
+cabo_comprimento_padrao_m: 30
+
+# Estudo térmico do painel (IEC 61439-1 cl.10.10 / IEC TR 60890)
+termico:
+  fator_filtro_vent: 0.6        # vazão efetiva / vazão livre (filtros + contrapressão)
+  k_parede_w_m2k: 5.5           # troca pelas paredes (chapa pintada)
+  h_indutor_w_m2k: 14.0
+  fator_area_indutor: 2.5       # área efetiva com dutos de ventilação / área do envelope
+  fator_hotspot_indutor: 1.15
+  classe_indutor_c: 180         # classe H (padrão Electric Service com a Cootrans desde 2022)
+  elevacao_indutor_k: 125
+  t_resistor_max_c: 300
+  elev_ar_saida_max_k: 15
+  elev_superficie_max_k: 30
+  elev_terminal_max_k: 70
+  t_cabo_max_c: 90
+  max_vent: 6    # usado quando o pedido não informa
+
+motor_modelo:
+  r_pu: 0.012                  # Rs+Rr (pu) a 60 Hz
+  l_disp_pu: 0.15              # dispersão total (pu)
+  cwf_nf_por_raiz_kw: 0.35     # C enrolamento–carcaça ≈ 0,35 nF·√kW
+  bvr: 0.04                    # tensão no mancal / tensão de modo comum
+  v_mancal_max_v: 10           # acima disso: risco de corrente de mancal (EDM)
+
+modo_comum:
+  L0_fator: 0.10               # indutância de sequência zero do indutor trifásico 3 colunas (fração de L1)
+  C_emc_uF: 0.5                # capacitores Y do filtro EMC do inversor
+  L_terra_mH_km: 0.4
+  R_pe_ohm_km: 0.3
+  i_terra_rms_max_pct: 2.0     # corrente de terra RMS ≤ 2 % In (aviso)
+
+# Modelo de custo do indutor trifásico (até receber cotações reais).
+# custo = base + k_energia * (soma 3 fases de 1/2 L Ipk^2, em J)
+# O histórico (dados/historico.db) recalibra estes coeficientes.
+indutor_custo:
+  fornecedor: "Cootrans"
+  base: 2000.0
+  k_energia: 120.0            # R$/J  - confirmar com cotações (calibra pelo histórico)
+  kg_por_j: 1.8               # kg por J armazenado (ref. FN5040-260: ~49 J, ~90 kg de reator)
+  densidade_kg_m3: 3500       # densidade aparente do reator montado (para estimar dimensões)
+  perda_k: 170.0              # perdas = perda_k * E^perda_exp (W; E = 1/2 L (√2 In)^2 por fase) – calibrado FN5040
+  perda_exp: 0.85
+
+caixas:   # armários/caixas metálicas padrão (L x A x P mm) - preço confirmar
+  - {id: CX-600x800x400,  l: 600,  a: 800,  p: 400, tipo: "sobrepor",  ip: 54, preco: 1900}
+  - {id: CX-800x1000x400, l: 800,  a: 1000, p: 400, tipo: "sobrepor",  ip: 54, preco: 2700}
+  - {id: CX-800x1200x600, l: 800,  a: 1200, p: 600, tipo: "piso",      ip: 54, preco: 4300}
+  - {id: CX-800x1600x600, l: 800,  a: 1600, p: 600, tipo: "piso",      ip: 54, preco: 5200}
+  - {id: CX-800x2000x600, l: 800,  a: 2000, p: 600, tipo: "piso",      ip: 54, preco: 6100}
+  - {id: CX-1000x2000x600,l: 1000, a: 2000, p: 600, tipo: "piso",      ip: 54, preco: 7200}
+  - {id: CX-1200x2000x800,l: 1200, a: 2000, p: 800, tipo: "piso",      ip: 54, preco: 9800}
+
+# Ampacidade cabo flexível cobre 0,6/1 kV HEPR 90 °C, ao ar livre (ref. NBR 5410 tab.39 método F)
+cabos_ampacidade:
+  6: 54
+  10: 75
+  16: 100
+  25: 127
+  35: 158
+  50: 192
+  70: 246
+  95: 298
+  120: 346
+  150: 399
+  185: 456
+  240: 538
+  300: 621
+cabo_fator_painel: 0.80      # temperatura interna 50 °C
+cabo_fator_hf: 1.05          # efeito pelicular da ondulação
+preco_cabo_por_mm2_m: 0.95   # R$ por mm² por metro - confirmar
+
+miscelanea:
+  ventilador_m3h: 300         # vazão por ventilador (com filtro de saída)
+  preco_ventilador: 380
+  preco_termostato: 95
+  preco_resistor_descarga: 18
+  preco_terminal_pot: 140     # borne/barramento por polo
+  preco_fusivel_nh: 60
+  preco_base_nh: 120
+  preco_placa_adv: 35
+  preco_resistor_amort_base: 450   # por fase (resistor de fio em tubo cerâmico + suporte)
+  preco_diversos: 450         # trilhos, canaletas, abraçadeiras, anilhas
+
+montagem:
+  horas_base: 10
+  horas_por_capacitor: 0.25
+  valor_hora: 110.0
+
+comercial:
+  margem_pct: 30.0
+  comissao_pct: 0.0
+  frete_pct: 2.0
+  impostos:                   # Lucro presumido (confirmar com contador)
+    icms_interestadual_pct: 7.0   # RS -> ES (S/SE para ES = 7 %)
+    pis_pct: 0.65
+    cofins_pct: 3.0
+    irpj_csll_pct: 2.28
+    ipi_pct: 0.0                  # NCM 8504.50.00 - confirmar alíquota TIPI
+  ncm_sugerido: "8504.50.00"
+  validade_dias: 15
+  prazo_entrega: "45 a 60 dias após confirmação do pedido"
+  garantia: "12 meses da entrega"
+  pagamento: "28/56 dd (sujeito a análise de crédito)"
+
+fornecedores:
+  indutor:
+    - {nome: "Cootrans", contato: "Geraldo Nascimento", tratamento: "Geraldo", email: "geraldogan@cootrans.com.br", fone: "(11) 4053-5353",
+       ref: "Fornecedor dos indutores de filtro senoidal (ORC 0323/22, 0284/23 – desenho D 192130; RT-38A 2023)"}
+  capacitor:
+    - {nome: "IFG Eletromecânica (distribuidor TDK EPCOS)", contato: "André Gonçalves", tratamento: "André", email: "ifg@ifg.com.br",
+       fone: "(51) 3431-3855", ref: "OC 24112023 – 48 pç B32361A4206J080 a R$ 129,40"}
+  caixa:
+    - {nome: "a definir (normalmente comprada pela montadora)", contato: "", tratamento: "", email: "a definir"}
+  cabos_misc:
+    - {nome: "a definir (normalmente comprado pela montadora)", contato: "", tratamento: "", email: "a definir"}
+  montagem:
+    - {nome: "Montadora terceirizada (a definir)", contato: "", tratamento: "", email: "a definir"}
+  etiquetas:
+    - {nome: "Stampgraf", contato: "Thiago Cossio", tratamento: "Thiago", email: "comercial3@stampgraf.com.br", fone: "(51) 3347-6080"}
+
+inversores:
+  "ABB ACS580":
+    fs_opcoes_khz: [1.5, 2, 4, 8, 12]
+    fs_padrao_khz: 4
+    derating_fs: {2: 1.0, 4: 1.0, 8: 0.65}   # confirmar tabela do manual de hardware (frame R8)
+    notas: >-
+      Fixar frequência de chaveamento: 97.01 = 97.02 = fs de projeto (manual ACS580).
+      95.15 bit1 é apenas para filtro ABB; para filtro de terceiros usar fs fixa e,
+      preferencialmente, controle escalar. Verificar derating de 97.02 no manual de hardware.
+  "ABB ACS880":
+    fs_opcoes_khz: [1.5, 2, 2.7, 3, 4, 8]
+    fs_padrao_khz: 3
+    notas: "95.15 bit3 (filtro senoidal customizado) + 99.18 (L em mH) e 99.19 (C por fase Y; em delta x3)."
+  "WEG CFW11":
+    fs_opcoes_khz: [1.25, 2.5, 5, 10]
+    fs_padrao_khz: 5
+    notas: "P0297 frequência de chaveamento; controle V/f (P0202) recomendado com filtro senoidal."
+  "GENERICO":
+    fs_opcoes_khz: [2, 4]
+    fs_padrao_khz: 4
+    notas: "Confirmar frequência de chaveamento mínima com o fabricante do inversor."
+
+# Otimização global multiobjetivo: pesos da nota final (somam 1). Ajuste à sua estratégia.
+otimizacao:
+  pesos:
+    custo: 0.35          # custo total do filtro montado (componentes + caixa + montagem)
+    tamanho: 0.15        # volume da caixa metálica
+    perdas: 0.15         # aquecimento (W)
+    confiabilidade: 0.20 # estresse de capacitores, resistor de amortecimento, margem de ressonância
+    thd: 0.10            # distorção de tensão no motor
+    queda: 0.05          # queda de tensão / tensão disponível
+  fs_khz_faixa: [2, 8]            # avalia todas as frequências de chaveamento do inversor nesta faixa (kHz)
+  passo_uk_pct: 1.0
+  # Restringir a otimização a estes capacitores (ex.: os do estoque). Vazio = todos do catálogo.
+  capacitores_permitidos: []
+  # Ligações do banco consideradas: [Estrela, Delta]. Delta usa 3× menos capacitores (cada um com tensão de linha).
+  ligacoes_permitidas: [Estrela, Delta]
+  # Cascata de topologias: LC sem resistor é o padrão; as demais só entram se nenhuma LC passar
+  cascata_topologias: [LC, LC_RC, LC_R, LCL, LCL_RC]

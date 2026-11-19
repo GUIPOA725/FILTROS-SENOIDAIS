@@ -1,0 +1,57 @@
+# Provedores de IA para leitura automática das solicitações.
+# O padrão é Claude. Os demais usam a API compatível com OpenAI (chat/completions).
+# Os nomes de modelo mudam com frequência: ajuste "modelo" conforme o painel de cada provedor.
+# As chaves NUNCA ficam neste arquivo: defina a variável de ambiente indicada em "env_chave" (INICIAR.bat).
+
+provedor_padrao: claude
+usar_regras_se_falhar: true      # sem rede/chave, usa o extrator por regras
+
+provedores:
+  claude:
+    nome: "Claude (Anthropic) – padrão"
+    tipo: anthropic
+    modelo: claude-sonnet-5-5
+    env_chave: ANTHROPIC_API_KEY
+    le_pdf_imagem: true
+  chatgpt:
+    nome: "ChatGPT (OpenAI)"
+    tipo: openai
+    base_url: https://api.openai.com/v1
+    modelo: gpt-4.1-mini          # confirmar no painel da OpenAI
+    env_chave: OPENAI_API_KEY
+  deepseek:
+    nome: "DeepSeek"
+    tipo: openai
+    base_url: https://api.deepseek.com
+    modelo: deepseek-chat
+    env_chave: DEEPSEEK_API_KEY
+  gemini:
+    nome: "Gemini (Google)"
+    tipo: openai
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+    modelo: gemini-2.5-flash      # confirmar no Google AI Studio
+    env_chave: GEMINI_API_KEY
+  mistral:
+    nome: "Mistral"
+    tipo: openai
+    base_url: https://api.mistral.ai/v1
+    modelo: mistral-large-latest
+    env_chave: MISTRAL_API_KEY
+  grok:
+    nome: "Grok (xAI)"
+    tipo: openai
+    base_url: https://api.x.ai/v1
+    modelo: grok-3-mini           # confirmar no console xAI
+    env_chave: XAI_API_KEY
+  openrouter:
+    nome: "OpenRouter (vários modelos)"
+    tipo: openai
+    base_url: https://openrouter.ai/api/v1
+    modelo: anthropic/claude-sonnet-4
+    env_chave: OPENROUTER_API_KEY
+  ollama:
+    nome: "Local / offline (Ollama no seu PC)"
+    tipo: openai
+    base_url: http://localhost:11434/v1
+    modelo: qwen2.5:14b           # qualquer modelo baixado com "ollama pull"
+    env_chave: ""                 # não precisa de chave; funciona sem internet

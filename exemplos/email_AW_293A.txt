@@ -1,0 +1,24 @@
+De: 'Adson Moreira-GONZAGA' via Contato <contato@electricservice.com.br>
+Data: ter., 17 de nov. de 2026 09:06
+Assunto: Solicitação de cotação - Filtro senoidal
+
+Bom dia, prezados!
+Possuo um cliente interessado em adquirir o item abaixo:
+03 peças - Filtro trifásico senoidal para inversor 60Hz 293A 440V.
+ITEM PARA REVENDA.
+Gentileza enviar uma cotação.
+Dados cadastrais em anexo.
+
+--- ANEXO: Solicitação_de_Cotação.pdf ---
+SOLICITAÇÃO DE COTAÇÃO
+Razão Social | A & W Suprimentos Industriais LTDA – REVENDA
+CNPJ | 61.300.038/0001-74
+Município de Faturamento | Serra/ES
+Regime tributário | Contribuinte de ICMS / Lucro Presumido
+Item 01 Quantidade 3 Descrição: Filtro trifásico senoidal para inversor 60Hz 293A 440V.
+Especificações: Tipo senoidal; Máx. tensão de pico: 750V; Rise time > 2 µs; Máx. dv/dt = 375V/µs;
+Classe de Isolamento: 1,1kV; Classe temperatura: F(155°C); Classe elevação de temperatura: F(100°C).
+Aplicação: instalado na saída de inversor ACS580-01-293A-4 (293A) para bombeador Helibombas Ham 175/345-1,
+Potência do bombeador 175CV, Rotação: 1750rpm, 4 polos, fator de potência 0,88, fator de serviço 1,15,
+corrente nominal motor 211A, tensão rede 440V, distância cabo 20m, faixa de operação 41-48Hz.
+Solicitamos que o fornecedor informe: prazo de entrega, validade da proposta, condições de pagamento e garantia.
