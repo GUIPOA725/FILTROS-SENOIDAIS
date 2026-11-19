@@ -27,6 +27,25 @@ def pasta_cliente(nome: str) -> str:
     return n[:60] or "Cliente sem nome"
 
 
+def _norm(t):
+    import unicodedata
+    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]", "", t)
+
+
+def _achar_pasta_cliente(pasta_base, cliente):
+    """Reaproveita a pasta do cliente que já existe (ignora acentos, maiúsculas e pontuação)."""
+    alvo = pasta_cliente(cliente)
+    try:
+        n = _norm(alvo)
+        for d in os.listdir(pasta_base):
+            if os.path.isdir(os.path.join(pasta_base, d)) and (_norm(d) == n or (len(n) > 5 and (_norm(d).startswith(n) or n.startswith(_norm(d))) and len(_norm(d)) > 5)):
+                return d
+    except FileNotFoundError:
+        pass
+    return alvo
+
+
 def _slug(s):
     s = re.sub(r"[^\w\s-]", "", s or "", flags=re.U).strip()
     return re.sub(r"\s+", "_", s)[:40] or "cliente"
@@ -53,7 +72,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     cod = proj_codigo(proj)
     sufixo = f"_AJUSTE-MANUAL-{t0:%H%M}" if projeto is not None else ""
     # uma pasta por cliente; dentro, um projeto por solicitação: PROJETOS\<Cliente>\<data>_<código>
-    pasta = os.path.join(pasta_base, pasta_cliente(ped.cliente), f"{t0:%Y-%m-%d}_{cod}{sufixo}")
+    pasta = os.path.join(pasta_base, _achar_pasta_cliente(pasta_base, ped.cliente), f"{t0:%Y-%m-%d}_{cod}{sufixo}")
     if os.path.exists(pasta) and not sufixo:          # mesma solicitação reprocessada no mesmo dia: não sobrescreve
         pasta += f"_{t0:%H%M}"
     sub = {k: os.path.join(pasta, k) for k in ("01_Engenharia", "02_Cliente", "03_Fornecedores", "04_Montadora", "05_Desenhos", "graficos")}
