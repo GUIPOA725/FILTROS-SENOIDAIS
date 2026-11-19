@@ -75,27 +75,84 @@ def _blocos_anexos(anexos: List[str]):
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG_IA = os.path.join(RAIZ, "dados", "ia.yaml")
+# Preferências e chaves do USUÁRIO ficam fora do Drive e fora da cópia do programa (que é reescrita a cada abertura):
+# %USERPROFILE%\.fsen\ia_usuario.yaml (modelo, esforço, provedor) e %USERPROFILE%\.fsen\chaves.json (chaves de API)
+PASTA_USUARIO = os.path.join(os.path.expanduser("~"), ".fsen")
+CFG_USUARIO = os.path.join(PASTA_USUARIO, "ia_usuario.yaml")
+CHAVES_USUARIO = os.path.join(PASTA_USUARIO, "chaves.json")
+
+MODELOS_CLAUDE = {
+    "claude-opus-5-5": "Claude Opus 5.5 (mais capaz)",
+    "claude-sonnet-5-5": "Claude Sonnet 5.5 (rápido e barato)",
+    "claude-haiku-5-5": "Claude Haiku 5.5 (mais rápido)",
+    "claude-fable-5-2": "Claude Fable 5.2 (topo)",
+}
+ESFORCOS = {"low": "baixo", "medium": "médio", "high": "alto", "xhigh": "muito alto", "max": "máximo"}
+
+
+def carregar_chaves():
+    """Carrega as chaves salvas pelo usuário (se a variável de ambiente não estiver definida)."""
+    try:
+        for k, v in json.load(open(CHAVES_USUARIO, encoding="utf-8")).items():
+            if v and not os.environ.get(k):
+                os.environ[k] = v
+    except Exception:
+        pass
+
+
+def salvar_chave(env, valor):
+    os.makedirs(PASTA_USUARIO, exist_ok=True)
+    try:
+        d = json.load(open(CHAVES_USUARIO, encoding="utf-8"))
+    except Exception:
+        d = {}
+    d[env] = valor.strip()
+    json.dump(d, open(CHAVES_USUARIO, "w", encoding="utf-8"))
+    os.environ[env] = valor.strip()
 
 
 def config_ia():
     import yaml
     with open(CFG_IA, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        cfg = yaml.safe_load(f)
+    try:
+        u = yaml.safe_load(open(CFG_USUARIO, encoding="utf-8")) or {}
+        cfg["provedor_padrao"] = u.get("provedor_padrao", cfg.get("provedor_padrao"))
+        for k, pv in (u.get("provedores") or {}).items():
+            if k in cfg["provedores"]:
+                cfg["provedores"][k].update({kk: vv for kk, vv in pv.items() if kk in ("modelo", "esforco")})
+    except Exception:
+        pass
+    return cfg
 
 
 def salvar_config_ia(cfg):
+    """Grava só as preferências do usuário (provedor, modelo, esforço) na pasta do usuário."""
     import yaml
-    with open(CFG_IA, "w", encoding="utf-8") as f:
-        yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
+    os.makedirs(PASTA_USUARIO, exist_ok=True)
+    u = {"provedor_padrao": cfg.get("provedor_padrao"),
+         "provedores": {k: {kk: v[kk] for kk in ("modelo", "esforco") if kk in v} for k, v in cfg["provedores"].items()}}
+    with open(CFG_USUARIO, "w", encoding="utf-8") as f:
+        yaml.safe_dump(u, f, allow_unicode=True, sort_keys=False)
 
 
 def status_provedores():
+    carregar_chaves()
     cfg = config_ia()
     out = {}
     for k, p in cfg["provedores"].items():
         env = p.get("env_chave") or ""
         out[k] = dict(nome=p["nome"], modelo=p["modelo"], pronto=(not env) or bool(os.environ.get(env)), env=env)
     return out
+
+
+def testar_ia(provedor=None):
+    """Chamada mínima para confirmar chave/modelo. Retorna (ok, mensagem)."""
+    try:
+        p = ler_com_ia("Filtro senoidal 10 A 380 V, 1 peça, cliente TESTE.", [], provedor=provedor)
+        return True, f"OK – leu {p.corrente_a:g} A / {p.tensao_v:g} V ({p.observacoes})"
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
 
 
 def _texto_anexos(anexos):
@@ -125,12 +182,19 @@ def ler_com_ia(texto_email: str, anexos: Optional[List[str]] = None, historico_t
     pc = cfg["provedores"][provedor]
     if pc["tipo"] == "anthropic":
         import anthropic
+        carregar_chaves()
         cli = anthropic.Anthropic(api_key=os.environ.get(pc.get("env_chave") or "ANTHROPIC_API_KEY"))
-        conteudo = _blocos_anexos(anexos) + [{"type": "text", "text": f"E-MAIL:\n{texto_email}\n\n{historico_txt}"}]
-        resp = cli.messages.create(model=pc["modelo"], max_tokens=2000, system=INSTRUCAO, tools=[_ferramenta()],
-                                   tool_choice={"type": "tool", "name": "registrar_pedido"},
-                                   messages=[{"role": "user", "content": conteudo}])
-        dados = next(b.input for b in resp.content if b.type == "tool_use")
+        conteudo = _blocos_anexos(anexos) + [{"type": "text", "text": f"E-MAIL:\n{texto_email}\n\n{historico_txt}\n\n"
+                                                                     "Chame a ferramenta registrar_pedido com os dados extraídos."}]
+        extra = {"output_config": {"effort": pc["esforco"]}} if pc.get("esforco") else {}
+        # modelos 5.x pensam (thinking adaptativo): tool_choice "auto" + instrução (forçar a ferramenta não combina com thinking)
+        resp = cli.messages.create(model=pc["modelo"], max_tokens=16000, system=INSTRUCAO, tools=[_ferramenta()],
+                                   tool_choice={"type": "auto"}, messages=[{"role": "user", "content": conteudo}],
+                                   extra_body=extra or None)
+        dados = next((b.input for b in resp.content if b.type == "tool_use"), None)
+        if dados is None:
+            txt = "".join(getattr(b, "text", "") for b in resp.content)
+            dados = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
     else:
         # API compatível com OpenAI: ChatGPT, DeepSeek, Gemini, Mistral, Grok, OpenRouter, Ollama local
         from openai import OpenAI
@@ -146,7 +210,8 @@ def ler_com_ia(texto_email: str, anexos: Optional[List[str]] = None, historico_t
         conteudo = conteudo[conteudo.find("{"): conteudo.rfind("}") + 1]
         dados = json.loads(conteudo)
     ped = _completar(Pedido.from_dict(dados))
-    ped.observacoes = (ped.observacoes + f" [lido por IA: {pc['nome']} / {pc['modelo']}]").strip()
+    ped.observacoes = (ped.observacoes + f" [lido por IA: {pc['nome']} / {pc['modelo']}"
+                       + (f" / esforço {pc['esforco']}" if pc.get("esforco") else "") + "]").strip()
     return ped
 
 
@@ -251,7 +316,10 @@ def ler_pedido(texto: str, anexos: Optional[List[str]] = None, usar_ia: Optional
     if usar_ia:
         try:
             return ler_com_ia(texto, anexos, provedor=provedor)
-        except Exception as e:  # sem rede/chave: segue por regras
+        except Exception as e:  # sem rede/chave: segue por regras – e AVISA na tela (lacunas)
             print(f"[leitor_ia] IA {provedor} indisponível ({e}); usando regras.")
+            p = ler_por_regras((texto or "") + "\n" + _texto_anexos(anexos))
+            p.lacunas = [f"⚠️ A IA ({provedor}) falhou e a leitura foi feita por REGRAS – confira tudo: {type(e).__name__}: {str(e)[:200]}"] + p.lacunas
+            return p
     # v1.8.3: sem IA, lê também .docx (parágrafos + TABELAS – a solicitação da A&W vem numa tabela)
     return ler_por_regras((texto or "") + "\n" + _texto_anexos(anexos))

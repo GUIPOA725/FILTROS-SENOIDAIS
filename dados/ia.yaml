@@ -10,7 +10,8 @@ provedores:
   claude:
     nome: "Claude (Anthropic) – padrão"
     tipo: anthropic
-    modelo: claude-sonnet-5-5
+    modelo: claude-opus-5-5
+    esforco: medium            # low | medium | high | xhigh | max (output_config.effort)
     env_chave: ANTHROPIC_API_KEY
     le_pdf_imagem: true
   chatgpt:

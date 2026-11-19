@@ -29,7 +29,7 @@ from fsen.dimensionamento import CAT_PADRAO, carregar_catalogo
 from fsen import historico as H
 from fsen.dimensionamento import config_de_projeto
 from telas_ajuste import tela_ajuste_completa, tela_criterios, painel_abrir_projeto
-from fsen.leitor_ia import status_provedores, config_ia, salvar_config_ia
+from fsen.leitor_ia import status_provedores, config_ia, salvar_config_ia, salvar_chave, testar_ia, MODELOS_CLAUDE, ESFORCOS
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 from fsen.versao import NOME, info as _vinfo
@@ -45,13 +45,40 @@ _st_ia = status_provedores()
 _cfg_ia = config_ia()
 _prov = st.sidebar.selectbox("IA para ler os pedidos", list(_st_ia), index=list(_st_ia).index(_cfg_ia.get("provedor_padrao", "claude")),
                              format_func=lambda k: ("✅ " if _st_ia[k]["pronto"] else "⚠️ ") + _st_ia[k]["nome"])
-_mod = st.sidebar.text_input("Modelo", _cfg_ia["provedores"][_prov]["modelo"])
-if _prov != _cfg_ia.get("provedor_padrao") or _mod != _cfg_ia["provedores"][_prov]["modelo"]:
+_pc = _cfg_ia["provedores"][_prov]
+if _pc.get("tipo") == "anthropic":
+    _mods = list(MODELOS_CLAUDE)
+    if _pc["modelo"] not in _mods:
+        _mods.append(_pc["modelo"])
+    _mod = st.sidebar.selectbox("Modelo Claude", _mods, index=_mods.index(_pc["modelo"]),
+                                format_func=lambda m: MODELOS_CLAUDE.get(m, m))
+    _esf = st.sidebar.selectbox("Esforço", list(ESFORCOS), index=list(ESFORCOS).index(_pc.get("esforco") or "medium"),
+                                format_func=lambda e: f"{ESFORCOS[e]} ({e})")
+else:
+    _mod = st.sidebar.text_input("Modelo", _pc["modelo"])
+    _esf = _pc.get("esforco")
+if (_prov != _cfg_ia.get("provedor_padrao") or _mod != _pc["modelo"] or _esf != _pc.get("esforco")):
     _cfg_ia["provedor_padrao"] = _prov
-    _cfg_ia["provedores"][_prov]["modelo"] = _mod
+    _pc["modelo"] = _mod
+    if _esf:
+        _pc["esforco"] = _esf
     salvar_config_ia(_cfg_ia)
-if not _st_ia[_prov]["pronto"]:
-    st.sidebar.caption(f"Defina {_st_ia[_prov]['env']} no INICIAR.bat; sem chave a leitura usa regras.")
+if _st_ia[_prov]["pronto"]:
+    st.sidebar.success(f"IA ativa: {_mod}" + (f" · esforço {ESFORCOS.get(_esf, _esf)}" if _esf else ""))
+else:
+    st.sidebar.warning("IA DESLIGADA – sem chave de API. A leitura dos pedidos está usando regras (pior).")
+with st.sidebar.expander("🔑 Chave da API" + (" (configurada)" if _st_ia[_prov]["pronto"] else " – configurar")):
+    st.caption(f"Cole a chave do {_st_ia[_prov]['nome'].split(' –')[0]} (console da Anthropic → API Keys). Fica salva só neste "
+               "computador, em %USERPROFILE%\\.fsen – não vai para o Drive nem para o GitHub.")
+    _ch = st.text_input(_st_ia[_prov]["env"] or "Chave", type="password", key="chave_api")
+    c1, c2 = st.columns(2)
+    if c1.button("Salvar", key="salvar_chave") and _ch.strip() and _st_ia[_prov]["env"]:
+        salvar_chave(_st_ia[_prov]["env"], _ch)
+        st.rerun()
+    if c2.button("Testar IA", key="testar_ia"):
+        with st.spinner("Testando..."):
+            _ok, _msg = testar_ia(_prov)
+        (st.success if _ok else st.error)(_msg)
 
 
 def form_pedido(p: Pedido) -> Pedido:

@@ -1,5 +1,15 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.4 – 19/11/2026 – IA na leitura dos pedidos
+- Menu lateral: lista para escolher o modelo Claude (Opus 5.5 – padrão, Sonnet 5.5, Haiku 5.5, Fable 5.2) e o esforço
+  (baixo / médio – padrão / alto / muito alto / máximo → output_config.effort da API).
+- 🔑 Chave da API: campo para colar a chave + botões Salvar e Testar IA. A chave fica só no computador
+  (%USERPROFILE%\.fsen\chaves.json), nunca no Drive/GitHub. Preferências de modelo/esforço em %USERPROFILE%\.fsen\ia_usuario.yaml
+  (não são apagadas quando o ABRIR_FSEN.bat atualiza o programa).
+- Status visível: verde "IA ativa: modelo · esforço" ou amarelo "IA DESLIGADA – usando regras".
+- Se a IA falhar (chave, rede, crédito), a leitura cai para regras e o motivo aparece nas premissas – não falha mais em silêncio.
+- Chamada compatível com os modelos 5.x (thinking adaptativo): tool_choice auto, max_tokens 16000.
+
 ## v1.8.3 – 19/11/2026 – Leitura do pedido sem IA (docx com tabela)
 - Corrigido (aviso do usuário: "não é 100 A o filtro"): sem chave de IA, a leitura por regras IGNORAVA os anexos .docx
   (só lia PDF/TXT). A solicitação da A&W vem em tabela no Word → corrente ficava 0 e o formulário preenchia 100 A escondido;
