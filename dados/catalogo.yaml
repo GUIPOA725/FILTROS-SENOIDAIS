@@ -23,7 +23,7 @@ projeto_padrao:
   uk_busca_max_pct: 15.0         # busca até 15 % (Danfoss/Siemens usam 12–15 %); queda real limitada por uk_max_pct na f máx
   m_max_sobremodulacao: 1.21     # índice máx. com sobremodulação moderada (SVPWM linear = 1,155)
   tensao_motor_min_pu: 0.90      # tensão mínima disponível no motor (V/f) na faixa de operação
-  fr_min_mult_fout: 10.0      # fr >= 10 x f saída máx (evita amplificar harmônicas de baixa ordem)
+  fr_min_mult_fout: 13.0      # fr >= 13 x f saída máx – calibrado nos filtros fabricados (IHR/SENAI/Gelluns/AB: 13,3–15x, OK em campo)
   fr_max_frac_fs: 0.5         # fr <= fs/2 (estabilidade/controle do inversor)
   ic_fund_max_pct: 20.0       # corrente capacitiva fundamental máx (% In) - carrega o inversor
   vcap_max_pu: 1.10           # IEC 60831 / IEC 61071: 1,10 Un contínuo
@@ -321,4 +321,4 @@ otimizacao:
   # Ligações do banco consideradas: [Estrela, Delta]. Delta usa 3× menos capacitores (cada um com tensão de linha).
   ligacoes_permitidas: [Estrela, Delta]
   # Cascata de topologias: LC sem resistor é o padrão; as demais só entram se nenhuma LC passar
-  cascata_topologias: [LC, LC_RC, LC_R, LCL, LCL_RC]
+  cascata_topologias: [LC]     # padrão Electric: SEMPRE LC sem resistor (mais barato, sem resistor aquecendo). Outras topologias só se escolhidas na tela de comparação

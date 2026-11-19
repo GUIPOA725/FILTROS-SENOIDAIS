@@ -1,1 +1,1 @@
-{"versao": "1.7.3", "data": "2026-11-19", "resumo": "Correção da corrente em sobremodulação; ATP com passo exato; alerta de ressonância natural h29-h49"}
+{"versao": "1.8.0", "data": "2026-11-19", "resumo": "Validação com filtros fabricados: padrão só LC sem resistor; ressonância teórica vira alerta; fr ≥ 13×f máx"}

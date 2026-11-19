@@ -241,7 +241,7 @@ def _otimizar_topologia(ped, cat, topo, log, refinar=True, capacitores=None, lig
 def ordem_topologias(ped: Pedido, cat) -> List[str]:
     """Cascata: começa pela topologia padrão (LC sem resistor) e só avança se nenhuma configuração passar.
     Se o pedido exigir LCL, começa pelo LCL."""
-    ordem = list(cat.get("otimizacao", {}).get("cascata_topologias", ["LC", "LC_RC", "LC_R", "LCL", "LCL_RC"]))
+    ordem = list(cat.get("otimizacao", {}).get("cascata_topologias", ["LC"]))
     if (ped.topologia or "").upper() == "LCL":
         ordem = [t for t in ordem if t.startswith("LCL")] + [t for t in ordem if not t.startswith("LCL")]
     return ordem

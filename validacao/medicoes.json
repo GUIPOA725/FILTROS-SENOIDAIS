@@ -1,0 +1,65 @@
+[
+ [
+  "SENAI S.Leopoldo – Fluke 24/04/2024",
+  "958 µH / 40 µF Y (6× PEC 20 µF)",
+  "60 Hz, fs medido 6,01 kHz",
+  "Tensão saída inversor (PWM, L-L)",
+  "400,3 V rms",
+  "—",
+  "Tela Fluke 155836"
+ ],
+ [
+  "SENAI S.Leopoldo – Fluke 24/04/2024",
+  "958 µH / 40 µF Y",
+  "60 Hz, fs 6 kHz",
+  "Tensão saída filtro (L-L)",
+  "363,6 V rms",
+  "≈ 96 % do V/f no limite de modulação (≈ 365 V)",
+  "Concorda: inversor no limite de tensão a 60 Hz (Vcc≈1,35·380)"
+ ],
+ [
+  "SENAI S.Leopoldo – Fluke 24/04/2024",
+  "958 µH / 40 µF Y",
+  "60 Hz, fs 6 kHz",
+  "THD tensão saída filtro (digitalização da tela 5 ms/div)",
+  "≈ 3,6 % (h5 1,8 %, h11 2,2 %, h13 1,9 %)",
+  "≈ 2,7 % (PWM 0,9 % + baixa ordem 2,5 %)",
+  "Resolução da tela ±0,5–1 %. Modelo acerta a ordem de grandeza nos valores nominais."
+ ],
+ [
+  "IHR autotrafo – Fluke 26/05/2023",
+  "1586 µH / 20 µF Y",
+  "60 Hz",
+  "Tensão saída inversor / filtro",
+  "399,9 V / 361,2 V rms",
+  "≈ 96 % do V/f",
+  "Concorda"
+ ],
+ [
+  "IHR autotrafo – Fluke 26/05/2023",
+  "1586 µH / 20 µF Y",
+  "60 Hz",
+  "Corrente no capacitor",
+  "9,7 A rms (canal B, 20 A/div)",
+  "2,6 A (fs 4 kHz)",
+  "NÃO conclusivo: fs e carga não registrados; leitura com ruído de AF. Precisa repetir com fs anotado."
+ ],
+ [
+  "IHR/Randon 2022 – campo (WhatsApp 17/11/22)",
+  "1586 µH / 20 µF Y, MM440",
+  "operação normal",
+  "Funcionamento",
+  "\"Ligamos, tudo certinho\"",
+  "aprovado na v1.8 (alertas apenas)",
+  "Na v1.7.3 a plataforma reprovava este filtro – corrigido"
+ ],
+ [
+  "Dranetz HDPQ (.ddbx) IHR 2022, SENAI 110/111/112, Gelluns 53, IHR 25/05/23",
+  "—",
+  "—",
+  "Formas de onda e harmônicas",
+  "formato binário proprietário",
+  "—",
+  "Exportar do DranView em CSV (harmônicas V e I até h50 + formas de onda) para calibração fina"
+ ]
+]

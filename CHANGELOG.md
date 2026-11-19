@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.0 – 19/11/2026 – Validação com os filtros fabricados
+- Rodados 9 projetos reais (IHR/Randon, SENAI, Gelluns, Install, AB-Powertrain, GRATT, Franklin, ASA) + Schaffner FN5040 e medições Fluke (SENAI, IHR).
+- Corrigido: o "pior caso teórico" de ressonância de baixa ordem (velocidade exata + tolerâncias) era crítico e reprovava todo LC sem resistor – agora é ALERTA.
+  Críticos novos: consequência no capacitor nesse pior caso (I e Û) e THD total nominal na f máx (PWM + baixa ordem ≤ 6 %).
+- Padrão Electric: SÓ LC sem resistor (cascata_topologias = [LC]); RC/LCL apenas por escolha na tela de comparação.
+- fr mínima = 13 × f saída máx (calibrada nos filtros que funcionam em campo: 13,3–15×).
+- Pasta validacao/: casos_reais.py (roda tudo de novo) e relatorio.py (planilha comparativa).
+
 ## v1.7.3 – 19/11/2026
 - **Correção – sobremodulação** (aviso do usuário: a corrente do filtro saía menor que a da carga).
   - No ponto 60 Hz/In, com tensão de barramento insuficiente, a simulação mantinha a f.c.e.m. fixa e a corrente do motor caía (293 → 247 A).

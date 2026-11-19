@@ -324,9 +324,21 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
         if r_[0] > thd_lo:
             thd_lo, f_lo, h_lo, g_lo = r_
     lim_lo = cp.get("thd_baixa_ordem_max_pct", 4.0)
-    v.append(Verificacao("Amplificação de harmônicas de baixa ordem (tempo morto) na faixa de operação, com tolerâncias de L e C",
-                         f"{thd_lo:.2f} % (pior em {f_lo:.1f} Hz, h{h_lo}, ganho {g_lo:.2f})", f"≤ {lim_lo:.1f} %",
-                         thd_lo <= lim_lo, "Robustez à ressonância: h = 6k±1 com amplitudes típicas de tempo morto"))
+    # v1.8: validação com filtros fabricados (IHR, SENAI, Gelluns) e de catálogo (Schaffner FN5040): o pior caso teórico
+    # (velocidade exata em que uma harmônica cai na ressonância + tolerâncias) aparece em TODO LC sem amortecimento e não
+    # corresponde a falhas em campo → vira ALERTA. O que é crítico é a CONSEQUÊNCIA física (capacitor) e o THD nominal.
+    v.append(Verificacao("Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C)",
+                         f"{thd_lo:.2f} % (pior em {f_lo:.1f} Hz, h{h_lo}, ganho {g_lo:.2f})", f"≤ {lim_lo:.1f} % (alerta)",
+                         thd_lo <= lim_lo, "Robustez à ressonância: h = 6k±1 com amplitudes típicas de tempo morto. Validação v1.8: "
+                         "filtros LC fabricados (SENAI medido: THD 3,6 % a 60 Hz) e Schaffner FN5040 também têm este ponto; "
+                         "consequência no capacitor verificada abaixo", critico=False))
+    thd_nom = risco_ressonancia_baixa_ordem(p, fmax, fmax, passo=1.0)[0]
+    thd_pwm_fmax = max((r["thd_v_saida_pct"] for r in res if abs(r["f1"] - fmax) < 0.6), default=thd)
+    thd_tot = math.hypot(thd_pwm_fmax, thd_nom)
+    v.append(Verificacao(f"THD total no motor @ {fmax:g} Hz (PWM + baixa ordem, valores nominais)", f"{thd_tot:.2f} %",
+                         f"≤ {cp['thd_v_max_pct'] + 1:.1f} %", thd_tot <= cp["thd_v_max_pct"] + 1,
+                         "Comparado à medição SENAI (958 µH / 40 µF Y, fs 6 kHz, 60 Hz): THD medido ≈ 3,6 %"))
+    _lo = dict(thd=thd_lo, f=f_lo, h=h_lo)
     from .simulacao import HARM_ALTAS
     thd_hi, f_hi, h_hi, g_hi = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo=0.5, harmonicas=HARM_ALTAS)
     v.append(Verificacao("Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto",
@@ -386,6 +398,19 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
     v.append(Verificacao(f"Corrente RMS por capacitor (fund.+HF) – {lc['norma_txt']}", f"{i_unit:.2f} A ({100 * i_unit / imax:.0f} % Imax)",
                          f"≤ {imax:.2f} A", i_unit <= imax, f"Imax: {lc['imax_fonte']}"))
     v.extend(verificar_capacitor_termico(cat, cap, lig, n, res))
+    # consequência do pior caso de ressonância de baixa ordem no capacitor (crítico)
+    if _lo["thd"] > 0 and _lo["h"]:
+        f0 = ped.freq_rede_hz or 60.0
+        v_fase = ped.tensao_v / math.sqrt(3) * min(1.0, _lo["f"] / f0)
+        vh_unit = _lo["thd"] / 100 * v_fase * (math.sqrt(3) if lig == "Delta" else 1.0)
+        ih_unit = vh_unit * 2 * math.pi * _lo["h"] * _lo["f"] * cap["uf"] * 1e-6
+        i_tot = math.hypot(i_unit, ih_unit)
+        vpk_tot = estresse_capacitor(cat, cap, lig, n, res)["vpk"] + math.sqrt(2) * vh_unit
+        ok_r = i_tot <= imax and vpk_tot <= lc["vpk"]
+        v.append(Verificacao("Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada)",
+                             f"{i_tot:.2f} A ({100 * i_tot / imax:.0f} % Imax) | Û {vpk_tot:.0f} V",
+                             f"≤ {imax:.2f} A | ≤ {lc['vpk']:.0f} V", ok_r,
+                             f"h{_lo['h']} a {_lo['f']:.1f} Hz com {_lo['thd']:.1f} % sobre o capacitor; {lc['norma_txt']}/datasheet"))
     if cat.get("verificar_tambem_ieee18", True) and lc["norma"] == "IEC60831":
         e_ = estresse_capacitor(cat, cap, lig, n, res)
         v.append(verificar_ieee18(cap, lig, n, res, v_ramo_rms, i_unit, e_["vpk"]))
