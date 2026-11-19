@@ -118,8 +118,8 @@ atp:                       # dupla checagem automática no ATP-EMTP (roda em seg
   tpbig: 'C:\ATP\atpmingw\tpbig.exe'
   pasta_trabalho: 'C:\ATP\work\fsen'
   plotxy: 'C:\ATP\PlotXY\PlotXY.exe'     # visualizador do .pl4 (ajuste se estiver em outro lugar)
-  atpdraw: 'C:\ATP\ATPDraw\ATPDraw.exe'  # editor gráfico (abre o .acp gerado)
-  abrir_ao_terminar: true                  # ao terminar a simulação, abre o .pl4 no PlotXY (+ .mat do Python) e o .acp no ATPDraw
+  atpdraw: 'C:\ATP\ATPDraw77\Atpdraw.exe'  # editor gráfico: abre o desenho da MESMA rede (<caso>_desenho.xml)
+  abrir_ao_terminar: true                  # ao terminar a simulação, abre o .pl4 no PlotXY (+ .mat do Python) e o desenho da rede no ATPDraw
 
 normas_capacitor:
   IEC60831:      # IEC 60831-1/2 – capacitores de potência autorregenerativos (PFC: PhiCap, PEC, WEG UCW)

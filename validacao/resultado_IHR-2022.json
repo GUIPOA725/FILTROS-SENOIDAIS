@@ -1,0 +1,71 @@
+{
+ "IHR-2022": {
+  "caso": {
+   "id": "IHR-2022",
+   "cliente": "New Technologies IHR (Randon) 2022 – MM440",
+   "status": "fabricado, em operação (OK do cliente 17/11/22), medido",
+   "tensao_v": 380,
+   "motor_kw": 11.6,
+   "corrente_a": 22,
+   "insp_i_ind": 28,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 1586,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 1,
+    "uk": 6.0,
+    "fr": 890,
+    "venda": 4324,
+    "custo": 1937
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 1586,
+   "uk": 6.0,
+   "fr": 894,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.58,
+   "v_cap": 202,
+   "thd_max": 1.96,
+   "ripple_pp_pct": 56.4,
+   "perdas_L_w": 147,
+   "massa_L_kg": 5.0,
+   "custo_comp": 2697,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) na faixa de operação, com tolerâncias de L e C: 13.65 % (pior em 58.0 Hz, h17, ganho 45.01) (lim ≤ 3.0 %)"
+   ],
+   "alertas": [
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.14 % (pior em 36.5 Hz, h29, ganho 47.0)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC_RC",
+   "L1_uH": 1455,
+   "uk": 5.5,
+   "fr": 933,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.59,
+   "v_cap": 203,
+   "thd_max": 1.93,
+   "ripple_pp_pct": 61.4,
+   "perdas_L_w": 148,
+   "massa_L_kg": 4.0,
+   "custo_comp": 3632,
+   "amort": "rc_paralelo",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Tensão estimada no mancal: 10.3 V pico",
+    "Perdas no amortecimento: 58 W"
+   ]
+  }
+ }
+}

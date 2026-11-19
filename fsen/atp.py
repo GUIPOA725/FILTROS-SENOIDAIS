@@ -432,7 +432,19 @@ def preparar_casos(proj, cat, pasta: str) -> List[Dict[str, Any]]:
         nome = f"fsen_caso{i + 1}"
         with open(os.path.join(pasta, nome + ".atp"), "w", encoding="latin-1", newline="\r\n") as f:
             f.write(d["texto"].encode("latin-1", "replace").decode("latin-1"))
-        casos.append(dict(nome=nome, ponto=pt["nome"], op=pt["op"], deck=d, p=p, ligacao=b.ligacao, n_por_ramo=b.n_por_ramo))
+        caso = dict(nome=nome, ponto=pt["nome"], op=pt["op"], deck=d, p=p, ligacao=b.ligacao, n_por_ramo=b.n_por_ramo)
+        try:                                       # desenho da MESMA rede no ATPDraw (abre junto com o .pl4)
+            from .atpdraw import gerar_atpdraw_xml
+            try:
+                mp = metricas_python(p, pt["op"], b.ligacao, b.n_por_ramo)
+                rp = {k: (f"{v:.4g}" if isinstance(v, float) else v) for k, v in mp.items()}
+            except Exception:
+                rp = {}
+            caso["atpdraw"] = gerar_atpdraw_xml(p, d, b.ligacao, os.path.join(pasta, nome + "_desenho.xml"),
+                                                titulo=pt["nome"], resumo_python=rp)
+        except Exception as e:
+            caso["atpdraw_erro"] = str(e)
+        casos.append(caso)
     with open(os.path.join(pasta, "rodar_atp.bat"), "w", newline="\r\n") as f:
         f.write("@echo off\r\ncd /d \"%~dp0\"\r\nif not exist startup copy /y C:\\ATP\\atpmingw\\startup startup >nul\r\n")
         for c in casos:
@@ -540,7 +552,7 @@ def salvar_relatorio(resultados, arquivo_xlsx: str):
 # ----------------------------------------------------------------------------------------------- abrir no ATPDraw / PlotXY
 PLOTXY_PADRAO = [r"C:\ATP\PlotXY\PlotXY.exe", r"C:\ATP\tools\PlotXY.exe", r"C:\ATP\PlotXY.exe", r"C:\Program Files\PlotXY\PlotXY.exe",
                  r"C:\Program Files (x86)\PlotXY\PlotXY.exe"]
-ATPDRAW_PADRAO = [r"C:\ATP\ATPDraw\ATPDraw.exe", r"C:\ATP\ATPDraw7\ATPDraw.exe", r"C:\ATPDraw\ATPDraw.exe",
+ATPDRAW_PADRAO = [r"C:\ATP\ATPDraw77\Atpdraw.exe", r"C:\ATP\ATPDraw72\Atpdraw.exe", r"C:\ATP\ATPDraw\ATPDraw.exe", r"C:\ATP\ATPDraw7\ATPDraw.exe", r"C:\ATPDraw\ATPDraw.exe",
                   r"C:\Program Files\ATPDraw\ATPDraw.exe", r"C:\Program Files (x86)\ATPDraw\ATPDraw.exe"]
 
 
@@ -576,6 +588,8 @@ def abrir_no_windows(pasta_atp: str, caso: str = "fsen_caso1", cat=None) -> Dict
     pl4 = os.path.join(pasta_atp, caso + ".pl4")
     mat = os.path.join(pasta_atp, caso + "_python.mat")
     acp = os.path.join(pasta_atp, caso + ".acp")
+    if not os.path.exists(acp):                    # desenho gerado pela plataforma (XML do ATPDraw 7)
+        acp = os.path.join(pasta_atp, caso + "_desenho.xml")
     px = _achar("plotxy", PLOTXY_PADRAO, cat)
     if os.path.exists(pl4):
         try:
@@ -599,5 +613,5 @@ def abrir_no_windows(pasta_atp: str, caso: str = "fsen_caso1", cat=None) -> Dict
         except Exception as e:
             res["msg"].append(f"ATPDraw não abriu: {e}")
     else:
-        res["msg"].append("Desenho ATPDraw (.acp) ainda não gerado para este projeto.")
+        res["msg"].append("Desenho ATPDraw ainda não gerado para este projeto (rode o projeto de novo na v1.9.2+).")
     return res

@@ -1,5 +1,17 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.2 – 19/11/2026 – Desenho da rede no ATPDraw
+- Em TODO projeto e em TODOS os pontos de operação a plataforma gera 01_Engenharia/ATP/fsen_casoN_desenho.xml: a MESMA
+  rede do deck .atp desenhada no ATPDraw 7 (abre direto no programa): TACS do SVPWM (objetos FORTRAN 98 com as mesmas
+  expressões), 3 fontes TACS tipo 60, sondas de tensão/corrente no inversor, banco e motor, L1 // Rp, banco Δ ou Y (com
+  saída de corrente), cabo em células π (Cfase-terra e Cfase-fase), motor Rm+Lm em estrela + f.c.e.m. por fontes de corrente
+  (Norton) + Cwf/3 à carcaça. Os valores do Python ficam no próprio desenho (comentário no topo do .atp que o ATPDraw gera).
+- Conferido no ATPDraw 7.7 deste PC: o desenho rodado no próprio ATPDraw (F2) deu os MESMOS resultados do deck da
+  plataforma (A&W Δ: DHTv banco 4,31 %, motor 4,28 %, I inversor 240,7 A, I motor 242,6 A, I ramo cap. 16,5 A – iguais),
+  e bate com o Python (DHTv 4,20 % / 4,17 %; I 240,6 A / 242,5 A). Também conferido com banco em Y.
+- Ao terminar a simulação abre juntos: PlotXY com o .pl4 do ATP + .mat do Python, e o ATPDraw com o desenho da rede.
+- Caminho do ATPDraw corrigido para C:\ATP\ATPDraw77\Atpdraw.exe (catálogo e busca automática).
+
 ## v1.9.1 – 19/11/2026 – Abrir no PlotXY / ATPDraw
 - Ao terminar a dupla checagem (Windows), abre sozinho o .pl4 do ATP no PlotXY JUNTO com as ondas do Python
   (fsen_casoN_python.mat, MATLAB v4, mesmas grandezas com sufixo _PY: V_INV_AB, V_CP_AB, V_MT_AB, I_L1_A, I_MT_A, I_CAP_RAMO),

@@ -178,7 +178,8 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
         tp = A.achar_tpbig(cat)
         trab = os.path.join(cfg.get("pasta_trabalho", A.PASTA_TRABALHO_PADRAO), cod) if tp else pasta_atp
         casos = A.preparar_casos(proj, cat, trab)
-        st.update(casos=[dict(nome=c["nome"], ponto=c["ponto"]) for c in casos], tpbig=tp)
+        st.update(casos=[dict(nome=c["nome"], ponto=c["ponto"]) for c in casos], tpbig=tp,
+                  atpdraw=[os.path.basename(c["atpdraw"]) for c in casos if c.get("atpdraw")])
         if not tp:
             if trab != pasta_atp:
                 shutil.copytree(trab, pasta_atp, dirs_exist_ok=True)
@@ -198,7 +199,7 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
         A.salvar_relatorio(res, os.path.join(pasta_atp, f"{cod}_Comparacao_Python_x_ATP.xlsx"))
         pngs = [A.grafico_comparacao(c, trab, os.path.join(pasta_atp, f"comparacao_{c['nome']}.png")) for c in casos]
         for f in os.listdir(trab):
-            if f.endswith((".atp", ".lis", ".bat", ".pl4")):
+            if f.endswith((".atp", ".lis", ".bat", ".pl4", ".xml")):
                 shutil.copy(os.path.join(trab, f), pasta_atp)
         conv = all(l["convergiu"] for x in res for l in x["tabela"])
         div = [f"{x['ponto'].replace('Operação ', '')}: {l['grandeza']} (Py {l['python']:g} × ATP {l['atp']:g} {l['unidade']}, {l['dif_pct']:+.0f} %)"
