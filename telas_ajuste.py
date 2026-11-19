@@ -322,20 +322,23 @@ _GRAF = {"rms": "grandezas_rms.png", "formas_onda": "formas_onda.png", "espectro
          "baixa_ordem": "ressonancia_baixa_ordem.png", "impedancia": "impedancia_entrada.png", "fluxo": "fluxo_correntes.png"}
 
 
-def listar_projetos(pasta_saida):
-    """Projetos já gerados: PROJETOS\\<Cliente>\\<data>_<código> (pastas com pedido.json)."""
+def listar_projetos(pasta_saida, profundidade=3):
+    """Projetos já gerados (pastas com pedido.json) dentro de PROJETOS, até 3 níveis (inclui subpastas antigas do cliente).
+    Retorna (cliente, rótulo, caminho, data) com o mais recente primeiro."""
     out = []
     if not pasta_saida or not os.path.isdir(pasta_saida):
         return out
-    for cli in sorted(os.listdir(pasta_saida)):
-        pc = os.path.join(pasta_saida, cli)
-        if not os.path.isdir(pc):
-            continue
-        cands = [pc] + [os.path.join(pc, d) for d in os.listdir(pc) if os.path.isdir(os.path.join(pc, d))]
-        for d in cands:
-            if os.path.exists(os.path.join(d, "pedido.json")):
-                out.append((cli, os.path.basename(d) if d != pc else "(raiz)", d))
-    out.sort(key=lambda x: (x[0].lower(), x[1]), reverse=False)
+    base = os.path.normpath(pasta_saida)
+    for raiz, dirs, fs in os.walk(base):
+        nivel = raiz[len(base):].count(os.sep)
+        dirs[:] = [d for d in dirs if not d.startswith((".", "__")) and d not in ("01_Engenharia", "02_Cliente", "03_Fornecedores",
+                                                                                 "04_Montadora", "05_Desenhos", "graficos", "ATP")]
+        if nivel >= profundidade:
+            dirs[:] = []
+        if "pedido.json" in fs and raiz != base:
+            rel = os.path.relpath(raiz, base).split(os.sep)
+            out.append((rel[0], " / ".join(rel[1:]) or "(raiz do cliente)", raiz, os.path.getmtime(os.path.join(raiz, "pedido.json"))))
+    out.sort(key=lambda x: x[3], reverse=True)
     return out
 
 
@@ -385,32 +388,27 @@ def carregar_projeto_pasta(pasta):
 
 
 def painel_abrir_projeto(pasta_saida, chave="abrir"):
-    """Seletor de projetos já feitos (cliente → projeto) + campo para colar o caminho da pasta."""
+    """Escolha por caixas de seleção: Cliente → Projeto (mais recente primeiro). Outra pasta: botão Procurar / navegar."""
+    import datetime as _dt
+    from seletor import seletor_pasta
     with st.expander("📂 Abrir um projeto já feito", expanded="pedido" not in st.session_state):
-        lst = listar_projetos(pasta_saida)
+        fonte = st.radio("Onde procurar", ["Pasta de projetos (PROJETOS)", "Outra pasta…"], horizontal=True, key=f"{chave}_fonte")
+        raiz = pasta_saida if fonte.startswith("Pasta de") else seletor_pasta("Pasta para procurar projetos", f"{chave}_outra",
+                                                                               pasta_saida, lembrar_escolha=False)
+        lst = listar_projetos(raiz)
+        pasta = None
         if lst:
-            clientes = sorted({c for c, _, _ in lst}, key=str.lower)
+            clientes = list(dict.fromkeys(c for c, _, _, _ in lst))          # ordem: cliente com projeto mais recente primeiro
             c1, c2 = st.columns(2)
             cli = c1.selectbox("Cliente", clientes, key=f"{chave}_cli")
-            projs = [(n, d) for c, n, d in lst if c == cli]
-            nome = c2.selectbox("Projeto", [n for n, _ in projs][::-1], key=f"{chave}_proj")
-            pasta = dict(projs)[nome]
+            projs = [(n, d, t) for c, n, d, t in lst if c == cli]
+            idx = c2.selectbox("Projeto (mais recente primeiro)", range(len(projs)), key=f"{chave}_proj",
+                               format_func=lambda i: f"{projs[i][0]}   ·   {_dt.datetime.fromtimestamp(projs[i][2]):%d/%m %H:%M}")
+            pasta = projs[idx][1]
+            st.caption(pasta)
         else:
-            st.caption(f"Nenhum projeto encontrado em {pasta_saida}.")
-            pasta = None
-        colado = st.text_input("…ou cole o caminho da pasta (cliente ou projeto)", key=f"{chave}_cam",
-                               placeholder=r"G:\Drives compartilhados\...\PROJETOS\A & W Suprimentos Industriais")
-        if colado.strip():
-            p = colado.strip().strip('"')
-            if os.path.isdir(p) and not os.path.exists(os.path.join(p, "pedido.json")):
-                subs = sorted([os.path.join(p, d) for d in os.listdir(p) if os.path.exists(os.path.join(p, d, "pedido.json"))])
-                if subs:
-                    p = st.selectbox("Projetos nesta pasta", subs, index=len(subs) - 1, format_func=os.path.basename, key=f"{chave}_sub")
-            pasta = p
+            st.caption(f"Nenhum projeto (pasta com pedido.json) encontrado em {raiz}.")
         if st.button("Abrir projeto", key=f"{chave}_btn", type="primary", disabled=not pasta):
-            if not os.path.exists(os.path.join(pasta, "pedido.json")):
-                st.error("Essa pasta não tem pedido.json (projetos antigos, de antes da plataforma, não podem ser abertos aqui).")
-            else:
-                carregar_projeto_pasta(pasta)
-                st.success(f"Aberto: {pasta}")
-                st.rerun()
+            carregar_projeto_pasta(pasta)
+            st.success(f"Aberto: {pasta}")
+            st.rerun()

@@ -1,1 +1,1 @@
-{"versao": "1.8.7", "data": "2026-11-19", "resumo": "Leitura do pedido transparente (IA ou regras, arquivos lidos, campos não encontrados); IA via assinatura sem --json-schema; cliente obrigatório"}
+{"versao": "1.8.8", "data": "2026-11-19", "resumo": "Pastas por botão Procurar (janela do Windows) e navegação por listas; Abrir projeto lista o que está de fato na pasta"}

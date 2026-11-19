@@ -40,7 +40,11 @@ st.sidebar.caption(f"{NOME} – versão {_vinfo().get('versao')} de {_vinfo().ge
 st.sidebar.caption("Dimensionamento, simulação e documentação de filtros senoidais LC/LCL")
 pagina = st.sidebar.radio("Menu", ["Nova solicitação", "Ajuste manual e ressimulação", "Critérios de projeto", "Histórico e clientes",
                                    "Catálogo e preços", "Melhorias / atualizações"])
-pasta_saida = st.sidebar.text_input("Pasta de saída (Google Drive)", os.environ.get("FSEN_PASTA_SAIDA", os.path.join(RAIZ, "saidas")))
+from seletor import seletor_pasta
+with st.sidebar.expander("📂 Pasta de saída (PROJETOS)", expanded=False):
+    pasta_saida = seletor_pasta("Pasta onde ficam os projetos", "pasta_saida",
+                                os.environ.get("FSEN_PASTA_SAIDA", os.path.join(RAIZ, "saidas")))
+st.sidebar.caption(f"Saída: …{pasta_saida[-45:]}")
 _st_ia = status_provedores()
 _cfg_ia = config_ia()
 _prov = st.sidebar.selectbox("IA para ler os pedidos", list(_st_ia), index=list(_st_ia).index(_cfg_ia.get("provedor_padrao", "claude")),
@@ -285,10 +289,13 @@ elif pagina == "Histórico e clientes":
     st.subheader(f"Pastas antigas importadas ({len(leg)})")
     st.dataframe(leg, width="stretch")
     st.subheader("Importar pastas antigas (Google Drive para desktop)")
-    pastas = st.text_area("Uma pasta por linha", "G:/Meu Drive/5 - FILTROS-BANCOS-.../6 - FILTRO SENOIDAL LC\n"
-                                                 "G:/Meu Drive/5 - FILTROS-BANCOS-.../7 - FILTRO SENOIDAL LCL")
-    if st.button("Importar"):
-        r = H.importar_pastas([x.strip() for x in pastas.splitlines() if x.strip() and os.path.isdir(x.strip())])
+    _pi = seletor_pasta("Pasta a importar", "pasta_importar", os.path.dirname(pasta_saida), lembrar_escolha=False)
+    _lst = st.session_state.setdefault("pastas_importar", [])
+    if st.button("➕ Adicionar esta pasta à lista") and _pi and _pi not in _lst:
+        _lst.append(_pi)
+    _lst[:] = st.multiselect("Pastas a importar", _lst, default=_lst)
+    if st.button("Importar", disabled=not _lst):
+        r = H.importar_pastas([x for x in _lst if os.path.isdir(x)])
         st.success(f"{r['arquivos']} arquivos, {len(r['clientes'])} clientes")
     if st.button("Exportar planilha de clientes"):
         c = H.exportar_clientes_xlsx(os.path.join(pasta_saida, "Clientes_Fornecidos.xlsx"))

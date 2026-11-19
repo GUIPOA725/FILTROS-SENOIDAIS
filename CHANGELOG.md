@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.8 – 19/11/2026 – Pastas sem digitar caminho
+- Toda escolha de pasta agora é por botão "📁 Procurar..." (abre a janela do Windows) ou por "Navegar" (caixas de seleção:
+  subpastas, pasta acima, unidades C:, G:…). Vale para a pasta de saída (menu lateral, lembrada no computador),
+  "Abrir projeto já feito" (outra pasta) e "Importar pastas antigas" (lista montada por seleção).
+- "Abrir um projeto já feito": lista o que existe de fato na pasta, inclusive subpastas antigas do cliente (até 3 níveis),
+  clientes e projetos do mais recente para o mais antigo, com data/hora; caminho completo do projeto selecionado.
+
 ## v1.8.7 – 19/11/2026 – Leitura do pedido sem surpresas
 - Problema visto no projeto das 17:16 (pasta "Cliente sem nome"): o pedido gravado tinha só corrente, quantidade e limites
   (sem cliente, motor, cabo, faixa 41–48 Hz, inversor) → simulação genérica e e-mail ao cliente perguntando tudo de novo.
