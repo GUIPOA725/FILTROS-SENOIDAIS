@@ -327,6 +327,61 @@ def ler_por_regras(texto: str) -> Pedido:
     m = re.search(r"aplica[cç][aã]o\s*:?\s*(.+?)(?:,\s*pot[eê]ncia|$)", t, re.I)
     if m:
         p.aplicacao = m.group(1).strip()[:160]
+    # ---- dados de instalação / inversor / cabo (antes eram sempre perguntados de novo no questionário)
+    ach = set()
+    v = _num(r"(?:\bfs\b|frequ[eê]ncia de chaveamento|freq\.? de chaveamento|chaveamento)\D{0,12}(\d{1,2}(?:[.,]\d+)?)\s*kHz", t)
+    if v:
+        p.fs_khz = v; ach.add("fs_khz")
+    m = re.search(r"\b(vetorial|sensorless|escalar|V/f|V/Hz|DTC)\b", t, re.I)
+    if m:
+        p.inversor_controle = {"v/hz": "escalar V/f", "v/f": "escalar V/f"}.get(m.group(1).lower(), m.group(1).lower()); ach.add("inversor_controle")
+    v = _num(r"(?:ambiente|temperatura ambiente|t\.?\s*amb)\D{0,15}(\d{2})\s*°?\s*C\b", t)
+    if v:
+        p.amb_max_c = v; ach.add("amb_max_c")
+    v = _num(r"altitude\D{0,10}(\d{2,4}(?:[.,]\d+)?)\s*m\b", t)
+    if v is not None:
+        p.altitude_m = v; ach.add("altitude_m")
+    m = re.search(r"\bIP\s?(\d{2})\b", t)
+    if m:
+        p.ip = "IP" + m.group(1); ach.add("ip")
+    m = re.search(r"\b(abrigad[ao]|ao tempo|intemp[eé]rie|externa)\b", t, re.I)
+    if m:
+        p.instalacao = "abrigada" if m.group(1).lower().startswith("abrig") else "ao tempo"; ach.add("instalacao")
+    m = re.search(r"(\d)\s*[x×]\s*\(?\s*(?:\d\s*[x×]\s*)?(\d{1,3}(?:[.,]\d+)?)\s*mm[²2]", t)
+    v = _num(r"(\d{1,3}(?:[.,]\d+)?)\s*mm[²2]", t)
+    if v:
+        p.cabo_secao_mm2 = v; ach.add("cabo_secao_mm2")
+    m = re.search(r"(\d)\s*cabos? em paralelo|(\d)\s*(?:x|×)\s*por fase", t, re.I)
+    if m:
+        p.cabo_paralelos = int(m.group(1) or m.group(2)); ach.add("cabo_paralelos")
+    if re.search(r"cabo[^.]{0,30}blindad|blindad[^.]{0,20}cabo", t, re.I):
+        p.cabo_blindado = True; ach.add("cabo_blindado")
+    elif re.search(r"(?:n[aã]o|sem)\s+blindad", t, re.I):
+        p.cabo_blindado = False; ach.add("cabo_blindado")
+    m = re.search(r"\b(TN-S|TN-C-S|TN-C|TT|IT)\b(?=[^a-z])", t)
+    if m and re.search(r"aterramento|esquema|rede", t, re.I):
+        p.aterramento = m.group(1); ach.add("aterramento")
+    m = re.search(r"filtro EMC[^.]{0,25}?\b(sim|n[aã]o|ligado|desligado|interno)\b", t, re.I)
+    if m:
+        p.inversor_filtro_emc = m.group(1); ach.add("inversor_filtro_emc")
+    if re.search(r"motor[^.]{0,30}(?:para|pr[oó]prio para|adequado a)\s+inversor|inverter duty|NEMA MG\s?1 Pa?r?t?\.?\s?31", t, re.I):
+        p.motor_para_inversor = "sim"; ach.add("motor_para_inversor")
+    if re.search(r"mancal isolado|rolamento isolado|escova de aterramento", t, re.I):
+        p.mancal_isolado = "sim"; ach.add("mancal_isolado")
+    v = re.search(r"(?:auxiliar|ventila[cç][aã]o|ventiladores)\D{0,15}(\d{3})\s*V", t, re.I)
+    if v:
+        p.alim_aux_v = v.group(1) + " V"; ach.add("alim_aux_v")
+    m = re.search(r"(\d{3,4})\s*[x×]\s*(\d{3,4})\s*[x×]\s*(\d{3,4})\s*mm", t)
+    if m:
+        p.dim_max_mm = "×".join(m.groups()); ach.add("dim_max_mm")
+    if re.search(r"bomba|bombeador|ventilador|exaustor", t, re.I):
+        p.carga_tipo = "torque quadrático (bomba/ventilador)"; ach.add("carga_tipo")
+    # campos achados no texto contam como INFORMADOS mesmo quando o valor coincide com o padrão (ex.: 60 Hz, IP54)
+    if fx:
+        ach.update({"f_saida_min_hz", "f_saida_max_hz"})
+    padrao = Pedido()
+    p.informados = sorted(ach | {k for k in Pedido.__dataclass_fields__ if k not in ("lacunas", "informados")
+                                 and getattr(p, k) not in (None, "", 0, []) and getattr(p, k) != getattr(padrao, k)})
     return _completar(p)
 
 

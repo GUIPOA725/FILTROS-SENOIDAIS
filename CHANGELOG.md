@@ -1,5 +1,14 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.6 – 19/11/2026 – Questionário específico de cada pedido
+- Corrigido (aviso do usuário: "faz sempre o mesmo questionário"): a leitura sem IA não reconhecia fs, tipo de controle,
+  temperatura ambiente, altitude, IP, seção/blindagem do cabo, aterramento, filtro EMC, motor para inversor, mancal isolado,
+  tensão auxiliar, espaço e tipo de carga → esses itens eram perguntados de novo mesmo quando vinham no pedido.
+  Também valores iguais ao padrão (ex.: 60 Hz, IP54) contavam como "não informados".
+- E-mail e questionário agora mostram "Dados que JÁ recebemos e usamos" e só perguntam o que falta NESTE pedido.
+  Itens que não mudam nada na simulação deste projeto viram uma linha "Opcional" (montagem/caixa), não perguntas numeradas.
+- Teste: pedido sem dados → 21 perguntas; A&W → 8 perguntas + opcionais; pedido completo → 2 perguntas.
+
 ## v1.8.5 – 19/11/2026 – IA pela assinatura + gráficos
 - IA padrão agora usa a SUA ASSINATURA Claude (Claude Code instalado e logado no computador) – sem chave de API.
   Modelo (Opus 5.5 padrão) e esforço (médio padrão) por lista; botão "Testar IA". "Claude via API" continua como opção.

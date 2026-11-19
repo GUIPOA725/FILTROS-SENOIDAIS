@@ -213,6 +213,27 @@ def _premissas(ped, proj, cat):
 
 
 # ---------------------------------------------------------------------------------------------------------------- e-mail
+_ROTULOS = [("inversor", "Inversor", ""), ("inversor_corrente_a", "Corrente do inversor", " A"), ("fs_khz", "Freq. de chaveamento", " kHz"),
+            ("inversor_controle", "Controle do inversor", ""), ("motor_cv", "Motor", " CV"), ("motor_kw", "Motor", " kW"),
+            ("motor_corrente_a", "Corrente do motor", " A"), ("motor_fp", "Fator de potência", ""), ("fator_servico", "Fator de serviço", ""),
+            ("f_saida_min_hz", "Freq. mínima de operação", " Hz"), ("f_saida_max_hz", "Freq. máxima de operação", " Hz"),
+            ("cabo_m", "Comprimento do cabo", " m"), ("cabo_secao_mm2", "Seção do cabo", " mm²"), ("amb_max_c", "Temperatura ambiente", " °C"),
+            ("altitude_m", "Altitude", " m"), ("ip", "Grau de proteção", ""), ("vpk_max_v", "Tensão de pico máx.", " V"),
+            ("dvdt_max_v_us", "dv/dt máx.", " V/µs"), ("aplicacao", "Aplicação", "")]
+
+
+def recebidos(ped) -> List[str]:
+    """O que o cliente JÁ informou neste pedido (o questionário pergunta só o resto)."""
+    d = ped if isinstance(ped, dict) else ped.to_dict()
+    inf = set(d.get("informados") or [])
+    out = []
+    for k, rot, un in _ROTULOS:
+        v = d.get(k)
+        if (k in inf or not inf) and v not in (None, "", 0, []):
+            out.append(f"{rot}: {v:g}{un}" if isinstance(v, (int, float)) and not isinstance(v, bool) else f"{rot}: {v}{un}")
+    return out
+
+
 def email_cliente(analise: Dict[str, Any], proj, cat) -> str:
     ped = proj.pedido if isinstance(proj.pedido, dict) else proj.pedido.to_dict()
     emp = cat["empresa"]
@@ -231,10 +252,20 @@ def email_cliente(analise: Dict[str, Any], proj, cat) -> str:
          "queda de tensão excessiva na sua instalação, precisamos confirmar alguns dados que não vieram no pedido.", "",
          "Onde a informação faltou, adotamos a premissa indicada entre colchetes. Se ela estiver correta, basta responder \"ok\" "
          "no item.", ""]
+    _rec = recebidos(ped)
+    if _rec:
+        L += ["Dados que JÁ recebemos e usamos (não precisa repetir – só corrija se algo estiver errado):"] + [f"   • {x}" for x in _rec] + [""]
+    if not analise["itens"]:
+        L += ["Com as informações recebidas não falta nenhum dado técnico para o dimensionamento.", ""]
     titulos = {"CRÍTICO": "1) IMPRESCINDÍVEIS – podem alterar o filtro",
                "IMPORTANTE": "2) IMPORTANTES – afetam margens, aquecimento e instalação",
                "CONFIRMAR": "3) PARA CONFIRMAR"}
     n = 0
+    # itens "para confirmar" que NÃO mudam nada na simulação deste projeto não viram pergunta numerada (só uma linha opcional)
+    def _efeito(it):
+        return any((not c["aprovado"]) or c.get("var_pct", 0) >= 5 for c in it.get("cenarios", []))
+    opcionais = [it for it in grupos["CONFIRMAR"] if not _efeito(it)]
+    grupos["CONFIRMAR"] = [it for it in grupos["CONFIRMAR"] if _efeito(it)]
     for g in ("CRÍTICO", "IMPORTANTE", "CONFIRMAR"):
         if not grupos[g]:
             continue
@@ -248,6 +279,8 @@ def email_cliente(analise: Dict[str, Any], proj, cat) -> str:
             if rep:
                 L.append(f"      Na nossa simulação, com {rep[0]['cenario']}, o filtro não atende – por isso a confirmação é essencial.")
         L.append("")
+    if opcionais:
+        L += ["Opcional (não altera o dimensionamento, só a montagem/caixa): " + "; ".join(it["pergunta"].rstrip("?") for it in opcionais) + ".", ""]
     L += ["Se for mais prático, uma foto da placa do motor e do inversor, o print dos parâmetros do inversor e o desenho/lista de cabos "
           "já resolvem a maior parte dos itens.", "",
           "Segue também, em anexo, o questionário técnico para preenchimento.", "",
@@ -266,7 +299,11 @@ def questionario_docx(analise: Dict[str, Any], proj, cat, arquivo: str):
     d.add_heading("Questionário técnico – filtro senoidal", 1)
     d.add_paragraph(f"Cliente: {ped.get('cliente')}   |   Referência: {ped.get('referencia') or '-'}   |   "
                     f"Filtro {ped['corrente_a']:g} A / {ped['tensao_v']:g} V")
-    d.add_paragraph("Preencha a coluna 'Resposta'. Onde houver premissa e ela estiver correta, escreva 'ok'.")
+    _rec = recebidos(ped)
+    if _rec:
+        d.add_paragraph("Dados já recebidos neste pedido (só corrija se algo estiver errado): " + "; ".join(_rec) + ".")
+    d.add_paragraph(f"Perguntas específicas deste pedido ({len(analise['itens'])}). Preencha a coluna 'Resposta'. "
+                    "Onde houver premissa e ela estiver correta, escreva 'ok'.")
     pr = analise["premissas"]
     t = d.add_table(rows=1, cols=5)
     t.style = "Light Grid Accent 1"
