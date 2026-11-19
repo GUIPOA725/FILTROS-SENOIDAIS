@@ -210,6 +210,14 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
                   vistas=_vistas(proj, casos, res, trab, pasta_atp, log))
         proj.dupla_checagem_atp = dict(st, resultados=res)
         log(f"   ATP × Python: {'CONVERGIU' if conv else 'DIVERGÊNCIA – revisar'}")
+        try:
+            st["mat_python"] = [os.path.basename(x) for x in A.exportar_python_mat(casos, pasta_atp)]
+        except Exception as e:
+            log(f"   (.mat do Python para o PlotXY não gerado: {e})")
+        if cfg.get("abrir_ao_terminar", True) and os.name == "nt":
+            ab = A.abrir_no_windows(pasta_atp, casos[0]["nome"], cat)
+            st["aberto"] = ab
+            log(f"   Abrindo no PlotXY: {ab['plotxy'] or '-'} | ATPDraw: {ab['atpdraw'] or '-'}")
     except Exception as e:  # a dupla checagem nunca bloqueia a emissão
         st.update(status="falhou", msg=f"Dupla checagem não concluída: {type(e).__name__}: {e}")
         log(f"   ATP: dupla checagem não concluída ({e})")

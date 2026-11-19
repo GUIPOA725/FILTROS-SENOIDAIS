@@ -535,3 +535,69 @@ def salvar_relatorio(resultados, arquivo_xlsx: str):
     df = pd.DataFrame(linhas)
     df.to_excel(arquivo_xlsx, index=False)
     return df
+
+
+# ----------------------------------------------------------------------------------------------- abrir no ATPDraw / PlotXY
+PLOTXY_PADRAO = [r"C:\ATP\PlotXY\PlotXY.exe", r"C:\ATP\tools\PlotXY.exe", r"C:\ATP\PlotXY.exe", r"C:\Program Files\PlotXY\PlotXY.exe",
+                 r"C:\Program Files (x86)\PlotXY\PlotXY.exe"]
+ATPDRAW_PADRAO = [r"C:\ATP\ATPDraw\ATPDraw.exe", r"C:\ATP\ATPDraw7\ATPDraw.exe", r"C:\ATPDraw\ATPDraw.exe",
+                  r"C:\Program Files\ATPDraw\ATPDraw.exe", r"C:\Program Files (x86)\ATPDraw\ATPDraw.exe"]
+
+
+def _achar(cfg_chave, padroes, cat=None):
+    cfg = (cat or {}).get("atp", {})
+    for c in [cfg.get(cfg_chave)] + padroes:
+        if c and os.path.exists(c):
+            return c
+    return None
+
+
+def exportar_python_mat(casos, pasta: str, n_ciclos: int = 2) -> List[str]:
+    """Grava as formas de onda do PYTHON em MATLAB v4 (.mat), formato que o PlotXY abre junto com o .pl4 do ATP,
+    com os MESMOS nomes de grandeza (sufixo _PY) – para sobrepor Python × ATP no próprio PlotXY."""
+    from scipy.io import savemat
+    out = []
+    for c in casos:
+        pc = dataclasses.replace(c["p"], pelicular=False)
+        r = simular(pc, c["op"], pts_por_portadora=120, ciclos_analise=n_ciclos)
+        k_i = 1 / math.sqrt(3) if c["ligacao"] == "Delta" else 1.0
+        d = {"t": r.t, "V_INV_AB_PY": r.u_ab, "V_CP_AB_PY": r.vc_ab, "V_MT_AB_PY": getattr(r, "vm_ab", r.vc_ab),
+             "I_L1_A_PY": r.i1, "I_MT_A_PY": r.i2, "I_CAP_RAMO_PY": r.icap_y * k_i}
+        arq = os.path.join(pasta, f"{c['nome']}_python.mat")
+        savemat(arq, {k: np.asarray(v, float).reshape(-1, 1) for k, v in d.items()}, format="4")
+        out.append(arq)
+    return out
+
+
+def abrir_no_windows(pasta_atp: str, caso: str = "fsen_caso1", cat=None) -> Dict[str, Any]:
+    """Abre o resultado do ATP no PlotXY (.pl4 + .mat do Python) e o desenho no ATPDraw (.acp), se existirem neste PC."""
+    import subprocess
+    res = dict(plotxy=None, atpdraw=None, msg=[])
+    pl4 = os.path.join(pasta_atp, caso + ".pl4")
+    mat = os.path.join(pasta_atp, caso + "_python.mat")
+    acp = os.path.join(pasta_atp, caso + ".acp")
+    px = _achar("plotxy", PLOTXY_PADRAO, cat)
+    if os.path.exists(pl4):
+        try:
+            if px:
+                subprocess.Popen([px, pl4] + ([mat] if os.path.exists(mat) else []), cwd=pasta_atp)
+            else:
+                os.startfile(pl4)                      # programa associado ao .pl4
+            res["plotxy"] = px or "associação do Windows"
+        except Exception as e:
+            res["msg"].append(f"PlotXY não abriu: {e}")
+    else:
+        res["msg"].append("Sem .pl4 (o ATP não rodou neste projeto).")
+    ad = _achar("atpdraw", ATPDRAW_PADRAO, cat)
+    if os.path.exists(acp):
+        try:
+            if ad:
+                subprocess.Popen([ad, acp], cwd=pasta_atp)
+            else:
+                os.startfile(acp)
+            res["atpdraw"] = ad or "associação do Windows"
+        except Exception as e:
+            res["msg"].append(f"ATPDraw não abriu: {e}")
+    else:
+        res["msg"].append("Desenho ATPDraw (.acp) ainda não gerado para este projeto.")
+    return res

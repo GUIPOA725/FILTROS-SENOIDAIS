@@ -447,6 +447,11 @@ def painel_atp(pasta):
             st.caption("ATP não rodou neste projeto: os quadros mostram só o Python (coluna ATP vazia).")
         i = st.selectbox("Ponto de operação", range(len(vistas)), format_func=lambda k: vistas[k]["ponto"], key=f"atp_pt_{pasta}")
         v = vistas[i]
+        if os.name == "nt" and st.button("🖥️ Abrir este ponto no PlotXY (ATP + Python) e no ATPDraw", key=f"abrir_px_{pasta}"):
+            from fsen.atp import abrir_no_windows
+            from fsen.dimensionamento import carregar_catalogo as _cc
+            ab = abrir_no_windows(_pa, os.path.splitext(v["rede"])[0].replace("rede_", ""), _cc())
+            st.info(f"PlotXY: {ab['plotxy'] or '—'} · ATPDraw: {ab['atpdraw'] or '—'}" + (" · " + " ".join(ab["msg"]) if ab["msg"] else ""))
         t1, t2, t3 = st.tabs(["Rede elétrica com os valores", "Formas de onda Python | ATP", "Espectro Python × ATP"])
         t1.image(os.path.join(_pa, v["rede"]))
         t2.image(os.path.join(_pa, v["ondas"]))

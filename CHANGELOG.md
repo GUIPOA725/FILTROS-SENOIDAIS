@@ -1,5 +1,14 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.1 – 19/11/2026 – Abrir no PlotXY / ATPDraw
+- Ao terminar a dupla checagem (Windows), abre sozinho o .pl4 do ATP no PlotXY JUNTO com as ondas do Python
+  (fsen_casoN_python.mat, MATLAB v4, mesmas grandezas com sufixo _PY: V_INV_AB, V_CP_AB, V_MT_AB, I_L1_A, I_MT_A, I_CAP_RAMO),
+  para sobrepor Python × ATP no próprio PlotXY; e abre o desenho .acp no ATPDraw quando existir.
+- Botão "🖥️ Abrir este ponto no PlotXY (ATP + Python) e no ATPDraw" na tela de resultados.
+- Catálogo: atp.plotxy, atp.atpdraw (caminhos) e atp.abrir_ao_terminar.
+- PENDENTE: gerar o desenho ATPDraw (.acp) da rede – precisa do .acp de referência (PWMMOTOR_Jul_2023_filtro_LCL.acp) para
+  copiar o formato exato da versão do ATPDraw instalada.
+
 ## v1.9.0 – 19/11/2026 – Simulação Python × ATP lado a lado
 - Para cada ponto de operação, três vistas (tela, pasta 01_Engenharia/ATP e memorial 5.5):
   1. Rede elétrica simulada (inversor → L1 → banco Δ/Y → cabo π → motor) com os valores de CADA ramo calculados pelos dois
