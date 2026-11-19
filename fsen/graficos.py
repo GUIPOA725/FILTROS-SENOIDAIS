@@ -27,17 +27,39 @@ def _salvar(fig, pasta, nome):
     return caminho
 
 
+def _caixa(ax, x, y, txt, cor, dy=4):
+    ax.annotate(txt, (x, y), xytext=(4, dy), textcoords="offset points", fontsize=7, color=cor,
+                bbox=dict(boxstyle="round,pad=0.25", fc="white", ec=cor, lw=0.8, alpha=0.95), zorder=6)
+
+
+def _maxmin(ax, t, y, cor, un, rotulo, nivel=0):
+    """Caixas com máximo e mínimo instantâneo + RMS da curva (nivel escalona as caixas para não sobrepor)."""
+    i, j = int(np.argmax(y)), int(np.argmin(y))
+    rms = float(np.sqrt(np.mean(np.asarray(y) ** 2)))
+    ax.plot([t[i], t[j]], [y[i], y[j]], "o", ms=3.5, color=cor, zorder=5)
+    _caixa(ax, t[i], y[i], f"{rotulo} máx {y[i]:.0f} {un} | RMS {rms:.1f} {un}", cor, dy=4 + 15 * nivel)
+    _caixa(ax, t[j], y[j], f"{rotulo} mín {y[j]:.0f} {un}", cor, dy=-14 - 15 * nivel)
+
+
 def formas_onda(sim, titulo, pasta, nome="formas_onda.png"):
     t = sim.t * 1000
-    fig, ax = plt.subplots(2, 1, figsize=(8.2, 6.4), sharex=True, gridspec_kw={"hspace": 0.35})
-    ax[0].plot(t, sim.u_ab, color=GRADE if False else "#b9b8b2", lw=0.5, label="Saída do inversor (PWM) U-V")
-    ax[0].plot(t, sim.vc_ab, color=C1, lw=1.8, label="Saída do filtro / motor U-V")
+    fig, ax = plt.subplots(2, 1, figsize=(9.2, 7.0), sharex=True, gridspec_kw={"hspace": 0.38})
+    ax[0].plot(t, sim.u_ab, color="#b9b8b2", lw=0.5, label="Saída do inversor (PWM) U-V")
+    ax[0].plot(t, sim.vc_ab, color=C1, lw=1.8, label="Saída do filtro U-V")
+    vm = getattr(sim, "vm_ab", None)
+    if vm is not None and len(vm) == len(t):
+        ax[0].plot(t, vm, color=C3, lw=1.0, ls="--", label="Terminais do motor U-V")
+    _maxmin(ax[0], t, sim.vc_ab, C1, "V", "Filtro")
+    _maxmin(ax[0], t, sim.u_ab, TINTA2, "V", "Inversor", nivel=1)
     ax[0].set_ylabel("Tensão de linha (V)")
     ax[0].set_title(f"Tensões – {titulo}")
-    ax[0].legend(loc="upper center", bbox_to_anchor=(0.5, -0.04), ncol=2, fontsize=8)
+    ax[0].legend(loc="upper center", bbox_to_anchor=(0.5, -0.04), ncol=3, fontsize=8)
     ax[1].plot(t, sim.i1, color=C2, lw=1.0, label="Inversor / indutor (i1)")
     ax[1].plot(t, sim.i2, color=C1, lw=1.8, label="Motor (i2)")
     ax[1].plot(t, sim.icap_y, color=C3, lw=1.0, label="Ramo capacitivo (Y eq.)")
+    _maxmin(ax[1], t, sim.i1, C2, "A", "i1")
+    _maxmin(ax[1], t, sim.i2, C1, "A", "i2", nivel=1)
+    _maxmin(ax[1], t, sim.icap_y, C3, "A", "iC")
     ax[1].set_ylabel("Corrente fase U (A)")
     ax[1].set_xlabel("Tempo (ms)")
     ax[1].set_title("Correntes")
@@ -45,24 +67,121 @@ def formas_onda(sim, titulo, pasta, nome="formas_onda.png"):
     return _salvar(fig, pasta, nome)
 
 
-def espectro(sim, f1, fs, pasta, nome="espectro.png"):
+def tabela_thd(pontos):
+    """Linhas: ponto de operação; colunas: DHTv % no inversor, na saída do filtro e nos terminais do motor."""
+    return [dict(ponto=p["nome"], f_hz=p["f1"], inversor=round(p["thd_v_inversor_pct"], 1),
+                 saida_filtro=round(p["thd_v_saida_pct"], 2), motor=round(p.get("thd_v_motor_pct", p["thd_v_saida_pct"]), 2))
+            for p in pontos]
+
+
+def espectro(sim, f1, fs, pasta, nome="espectro.png", pontos=None):
+    """Espectro em % da fundamental, escala LINEAR: em cima o inversor; embaixo saída do filtro e motor (escala própria).
+    À direita, tabela de DHTv % (inversor, saída do filtro, motor) por ponto de operação."""
     e = sim.espectro
     f = e["f"]
     idx1 = np.argmin(np.abs(f - f1))
     fund_u = e["u"][idx1]
-    fig, ax = plt.subplots(figsize=(8.2, 3.6))
-    msk = (f > 0) & (f <= 3.2 * fs)
-    ax.vlines(f[msk], 1e-3, 100 * e["u"][msk] / fund_u, color="#b9b8b2", lw=0.8, label="Inversor (PWM)")
-    ax.vlines(f[msk], 1e-3, 100 * e["vc"][msk] / fund_u, color=C1, lw=1.2, label="Saída do filtro")
-    ax.set_yscale("log")
-    ax.set_ylim(1e-2, 150)
-    ax.set_xlabel("Frequência (Hz)")
-    ax.set_ylabel("% da fundamental (log)")
-    ax.set_title("Espectro harmônico da tensão de linha")
-    for k in (1, 2, 3):
-        ax.axvline(k * fs, color=C4, lw=0.8, ls="--")
-        ax.text(k * fs, 110, f"{k}·fs", color=TINTA2, ha="center", fontsize=8)
-    ax.legend(loc="upper right")
+    msk = (f > 1.5 * f1) & (f <= 3.2 * fs)
+    fx = f[msk]
+    pu = 100 * e["u"][msk] / fund_u
+    pv = 100 * e["vc"][msk] / fund_u
+    pm = 100 * e["vm"][msk] / fund_u if "vm" in e else None
+    fig = plt.figure(figsize=(11.5, 6.4))
+    a1 = fig.add_axes([0.06, 0.56, 0.6, 0.36])
+    a2 = fig.add_axes([0.06, 0.09, 0.6, 0.36], sharex=a1)
+    a1.vlines(fx, 0, pu, color="#8f8e88", lw=0.9, label="Inversor (PWM)")
+    a2.vlines(fx, 0, pv, color=C1, lw=1.6, label="Saída do filtro")
+    if pm is not None:
+        a2.vlines(fx + 0.004 * fs, 0, pm, color=C3, lw=1.1, label="Motor")
+    for a, y, tit in ((a1, pu, f"Inversor – harmônicas em % da fundamental ({f1:g} Hz; fundamental = 100 %)"),
+                      (a2, np.maximum(pv, pm if pm is not None else pv), "Saída do filtro e motor – % da fundamental (escala própria)")):
+        ym = max(float(y.max()) if len(y) else 0.1, 0.05) * 1.25
+        a.set_ylim(0, ym)
+        a.set_ylabel("% da fundamental")
+        a.set_title(tit, fontsize=9)
+        for k in (1, 2, 3):
+            a.axvline(k * fs, color=C4, lw=0.8, ls="--")
+            a.text(k * fs, ym * 0.97, f"{k}·fs", color=TINTA2, ha="center", va="top", fontsize=8)
+        a.legend(loc="upper right", fontsize=8, bbox_to_anchor=(1.0, 0.88))
+    a2.set_xlabel("Frequência (Hz)")
+    if len(pu):
+        k = int(np.argmax(pu)); _caixa(a1, fx[k], pu[k], f"máx {pu[k]:.1f} % @ {fx[k]:.0f} Hz", TINTA2)
+        k = int(np.argmax(pv)); _caixa(a2, fx[k], pv[k], f"máx saída filtro {pv[k]:.2f} % @ {fx[k]:.0f} Hz", C1)
+        if pm is not None:
+            k = int(np.argmax(pm)); _caixa(a2, fx[k], pm[k], f"máx motor {pm[k]:.2f} % @ {fx[k]:.0f} Hz", C3, dy=-16)
+    axt = fig.add_axes([0.69, 0.09, 0.30, 0.83])
+    axt.axis("off")
+    linhas = tabela_thd(pontos) if pontos else []
+    cel = [[l["ponto"].replace("Operação ", "").replace(" (", "\n("), f"{l['inversor']:.1f}", f"{l['saida_filtro']:.2f}", f"{l['motor']:.2f}"]
+           for l in linhas]
+    if cel:
+        tb = axt.table(cellText=cel, colLabels=["Ponto", "Inversor\nDHTv %", "Saída\nfiltro\nDHTv %", "Motor\nDHTv %"],
+                       loc="upper center", cellLoc="center", colWidths=[0.37, 0.21, 0.21, 0.21])
+        tb.auto_set_font_size(False)
+        tb.set_fontsize(8)
+        tb.scale(1, 3.0)
+        for (r, c), cell in tb.get_celld().items():
+            cell.set_edgecolor(GRADE)
+            if r == 0:
+                cell.set_text_props(weight="bold")
+                cell.set_facecolor("#f1f0ec")
+                cell.set_height(cell.get_height() * 1.35)
+        axt.set_title("Distorção harmônica total de tensão (DHTv)", fontsize=9)
+        axt.text(0.5, 0.02, "DHTv até 4·fs. Inversor = tensão PWM de linha;\nsaída do filtro = bornes do filtro;\n"
+                 "motor = terminais do motor (após o cabo).", ha="center", va="bottom", fontsize=7, color=TINTA2, transform=axt.transAxes)
+    return _salvar(fig, pasta, nome)
+
+
+def grandezas_rms(proj, pasta, nome="grandezas_rms.png"):
+    """Correntes e tensões RMS em todos os ramos, por ponto de operação, com caixas de máximo e mínimo."""
+    pts = proj.pontos
+    b = proj.banco
+    delta = b.ligacao == "Delta"
+    n = max(1, b.n_por_ramo)
+    w = lambda p: 2 * np.pi * p["f1"]
+    L = proj.l1.l_uh * 1e-6
+    nomes = [p["nome"].replace("Operação ", "").replace(" (", "\n(") for p in pts]
+    cor = {"Inversor / indutor L1": C2, "Motor": C1, "Capacitor (por unidade)": C3, "Ramo capacitivo (Y eq.)": "#7fd1b3",
+           "Ondulação no indutor": C4}
+    I = {"Inversor / indutor L1": [p["i1_rms"] for p in pts],
+         "Motor": [p["i2_rms"] for p in pts],
+         "Ramo capacitivo (Y eq.)": [p.get("icap_main_y_rms", p["icap_y_rms"]) for p in pts],
+         "Capacitor (por unidade)": [p.get("icap_main_y_rms", p["icap_y_rms"]) / (np.sqrt(3) if delta else 1) / n for p in pts],
+         "Ondulação no indutor": [p["ripple_rms"] for p in pts]}
+    V = {"Inversor (PWM, até 4·fs)": [p["v_inv_ll_fund"] * np.sqrt(1 + (p["thd_v_inversor_pct"] / 100) ** 2) for p in pts],
+         "Inversor (fundamental)": [p["v_inv_ll_fund"] for p in pts],
+         "Saída do filtro": [p["v_saida_ll_fund"] * np.sqrt(1 + (p["thd_v_saida_pct"] / 100) ** 2) for p in pts],
+         "Motor (terminais)": [p.get("v_motor_ll_fund", p["v_saida_ll_fund"]) * np.sqrt(1 + (p.get("thd_v_motor_pct", 0) / 100) ** 2)
+                               for p in pts],
+         "Capacitor (por unidade)": [p["v_saida_ll_fund"] * np.sqrt(1 + (p["thd_v_saida_pct"] / 100) ** 2) / (1 if delta else np.sqrt(3))
+                                     for p in pts],
+         "Queda no indutor L1 (linha)": [np.sqrt(3) * w(p) * L * p.get("i1_fund", p["i1_rms"]) for p in pts]}
+    corv = {"Inversor (PWM, até 4·fs)": "#b9b8b2", "Inversor (fundamental)": TINTA2, "Saída do filtro": C1, "Motor (terminais)": C3,
+            "Capacitor (por unidade)": "#7fd1b3", "Queda no indutor L1 (linha)": C2}
+    fig, ax = plt.subplots(2, 1, figsize=(10.5, 8.6), gridspec_kw={"hspace": 0.55})
+    for a, dados, cores, un, tit in ((ax[0], I, cor, "A", "Correntes RMS por ramo"), (ax[1], V, corv, "V", "Tensões RMS por ramo (linha, salvo indicado)")):
+        x = np.arange(len(pts))
+        k = len(dados)
+        larg = 0.8 / k
+        for j, (lab, vals) in enumerate(dados.items()):
+            xs = x + (j - (k - 1) / 2) * larg
+            bars = a.bar(xs, vals, larg * 0.92, color=cores[lab], label=f"{lab}  [máx {max(vals):.1f} | mín {min(vals):.1f} {un}]")
+            a.bar_label(bars, fmt="%.1f", fontsize=6.5, color=TINTA2, padding=1, rotation=90)
+            jm, jn = int(np.argmax(vals)), int(np.argmin(vals))
+            a.plot([xs[jm]], [vals[jm]], marker="v", color=cores[lab], ms=5, zorder=5)
+        a.set_xticks(x, nomes, fontsize=8)
+        a.set_ylabel(f"RMS ({un})")
+        a.set_title(tit)
+        a.set_ylim(0, max(max(v) for v in dados.values()) * 1.28)
+        a.legend(fontsize=7, ncol=2, loc="upper center", bbox_to_anchor=(0.5, -0.16))
+    if proj.banco.i_unit_max:
+        ax[0].axhline(proj.banco.i_unit_max, color=C3, ls=":", lw=0.9)
+        ax[0].text(len(pts) - 0.5, proj.banco.i_unit_max, f"Imax capacitor {proj.banco.i_unit_max:g} A", fontsize=7, color=C3,
+                   ha="right", va="bottom")
+    ax[0].axhline(proj.pedido["corrente_a"], color=TINTA2, ls=":", lw=0.9)
+    ax[0].text(-0.45, proj.pedido["corrente_a"], f"In filtro {proj.pedido['corrente_a']:g} A", fontsize=7, color=TINTA2, va="bottom")
+    ax[1].axhline(proj.banco.v_unit, color=C3, ls=":", lw=0.9)
+    ax[1].text(len(pts) - 0.5, proj.banco.v_unit, f"V nominal capacitor {proj.banco.v_unit:g} V", fontsize=7, color=C3, ha="right", va="bottom")
     return _salvar(fig, pasta, nome)
 
 
@@ -160,11 +279,12 @@ def gerar_todos(proj, pasta):
     sims = getattr(proj, "_sims", None)
     if sims:
         out["formas_onda"] = formas_onda(sims[0], proj.pontos[0]["nome"], pasta)
-        out["espectro"] = espectro(sims[0], proj.pontos[0]["f1"], proj.fs_hz, pasta)
+        out["espectro"] = espectro(sims[0], proj.pontos[0]["f1"], proj.fs_hz, pasta, pontos=proj.pontos)
     out["bode"] = bode(p, proj.fr_hz, proj.fs_hz, fmin, fmax, pasta)
     out["impedancia"] = impedancia(p, proj.fr_hz, proj.fs_hz, pasta)
     out["baixa_ordem"] = baixa_ordem(p, fmin, fmax, pasta)
     out["fluxo"] = fluxo_correntes(proj.pontos, ped["corrente_a"], pasta)
+    out["rms"] = grandezas_rms(proj, pasta)
     return out
 
 

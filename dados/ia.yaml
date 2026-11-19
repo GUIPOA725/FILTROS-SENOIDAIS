@@ -3,12 +3,17 @@
 # Os nomes de modelo mudam com frequência: ajuste "modelo" conforme o painel de cada provedor.
 # As chaves NUNCA ficam neste arquivo: defina a variável de ambiente indicada em "env_chave" (INICIAR.bat).
 
-provedor_padrao: claude
+provedor_padrao: claude_assinatura
 usar_regras_se_falhar: true      # sem rede/chave, usa o extrator por regras
 
 provedores:
+  claude_assinatura:
+    nome: "Claude – sua assinatura (Claude Code) – padrão"
+    tipo: claude_code            # usa o Claude Code instalado e logado na sua conta Claude; NÃO usa chave de API
+    modelo: claude-opus-5-5
+    esforco: medium
   claude:
-    nome: "Claude (Anthropic) – padrão"
+    nome: "Claude via API (chave paga à parte)"
     tipo: anthropic
     modelo: claude-opus-5-5
     esforco: medium            # low | medium | high | xhigh | max (output_config.effort)

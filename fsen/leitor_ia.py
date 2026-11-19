@@ -142,7 +142,8 @@ def status_provedores():
     out = {}
     for k, p in cfg["provedores"].items():
         env = p.get("env_chave") or ""
-        out[k] = dict(nome=p["nome"], modelo=p["modelo"], pronto=(not env) or bool(os.environ.get(env)), env=env)
+        pronto = bool(_claude_cli()) if p.get("tipo") == "claude_code" else ((not env) or bool(os.environ.get(env)))
+        out[k] = dict(nome=p["nome"], modelo=p["modelo"], pronto=pronto, env=env, tipo=p.get("tipo"))
     return out
 
 
@@ -176,11 +177,57 @@ def _texto_anexos(anexos):
     return txt
 
 
+def _claude_cli():
+    import shutil
+    c = shutil.which("claude") or shutil.which("claude.cmd")
+    if not c and os.name == "nt":
+        for cand in (os.path.join(os.environ.get("APPDATA", ""), "npm", "claude.cmd"),
+                     os.path.join(os.path.expanduser("~"), ".local", "bin", "claude.exe")):
+            if os.path.exists(cand):
+                return cand
+    return c
+
+
+def _ler_via_claude_code(pc, texto_email, anexos, historico_txt):
+    """Usa o Claude Code instalado no computador, logado na ASSINATURA do Claude (Pro/Max/Team) – sem chave de API.
+    Equivale a: claude -p --model <m> --effort <e> --output-format json --json-schema <esquema>."""
+    import subprocess, tempfile
+    exe = _claude_cli()
+    if not exe:
+        raise RuntimeError("Claude Code não encontrado. Instale (claude.com/claude-code) e faça login com sua conta Claude.")
+    esquema = _ferramenta()["input_schema"]
+    pastas = sorted({os.path.dirname(os.path.abspath(a)) for a in anexos or []})
+    lista = "\n".join(f"- {os.path.abspath(a)}" for a in anexos or [])
+    prompt = (f"{INSTRUCAO}\nResponda SOMENTE com o JSON do pedido (esquema fornecido).\n\n"
+              f"Arquivos anexos (leia PDF/imagens com a ferramenta Read; o texto do Word/PDF já vai abaixo):\n{lista or '(nenhum)'}\n\n"
+              f"TEXTO DOS ANEXOS:\n{_texto_anexos(anexos)}\n\nE-MAIL:\n{texto_email}\n\n{historico_txt}")
+    cmd = [exe, "-p", "--output-format", "json", "--json-schema", json.dumps(esquema), "--model", pc["modelo"],
+           "--allowedTools", "Read"]
+    if pc.get("esforco"):
+        cmd += ["--effort", pc["esforco"]]
+    for d in pastas:
+        cmd += ["--add-dir", d]
+    r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=600,
+                       cwd=tempfile.gettempdir(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    if r.returncode != 0 and not r.stdout.strip():
+        raise RuntimeError(f"Claude Code retornou erro: {(r.stderr or r.stdout)[:300]}")
+    out = json.loads(r.stdout)
+    if out.get("is_error"):
+        raise RuntimeError(f"Claude Code: {str(out.get('result'))[:300]}")
+    dados = out.get("structured_output")
+    if not dados:
+        txt = str(out.get("result", ""))
+        dados = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
+    return dados
+
+
 def ler_com_ia(texto_email: str, anexos: Optional[List[str]] = None, historico_txt: str = "", provedor: str = None) -> Pedido:
     cfg = config_ia()
     provedor = provedor or cfg.get("provedor_padrao", "claude")
     pc = cfg["provedores"][provedor]
-    if pc["tipo"] == "anthropic":
+    if pc["tipo"] == "claude_code":
+        dados = _ler_via_claude_code(pc, texto_email, anexos, historico_txt)
+    elif pc["tipo"] == "anthropic":
         import anthropic
         carregar_chaves()
         cli = anthropic.Anthropic(api_key=os.environ.get(pc.get("env_chave") or "ANTHROPIC_API_KEY"))

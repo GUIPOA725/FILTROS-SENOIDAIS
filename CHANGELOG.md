@@ -1,5 +1,17 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.5 – 19/11/2026 – IA pela assinatura + gráficos
+- IA padrão agora usa a SUA ASSINATURA Claude (Claude Code instalado e logado no computador) – sem chave de API.
+  Modelo (Opus 5.5 padrão) e esforço (médio padrão) por lista; botão "Testar IA". "Claude via API" continua como opção.
+  Teste com a solicitação 0796/2026 + ficha + cartão: leu 3 pç, 293 A, 440 V, motor 211 A, cabo 20 m, 41–48 Hz e
+  também o contato do cartão (Marcos Maia, comercial01@...).
+- Espectro: escala LINEAR em % da fundamental (inversor em cima; saída do filtro e motor embaixo com escala própria),
+  caixas com o máximo de cada um e tabela de DHTv % – Inversor | Saída do filtro | Motor – por ponto de operação.
+- Novo gráfico "Correntes e tensões RMS por ramo": inversor/L1, ramo capacitivo, capacitor por unidade, motor e ondulação;
+  tensões do inversor (PWM e fundamental), saída do filtro, motor, capacitor e queda no L1 – com máx/mín de cada ramo,
+  In do filtro, Imax e V nominal do capacitor. Entra na tela, no memorial (Fig. 6b) e na pasta graficos.
+- Formas de onda: caixas de máximo, mínimo e RMS em todas as curvas (inversor, filtro, i1, i2, iC) e a tensão no motor.
+
 ## v1.8.4 – 19/11/2026 – IA na leitura dos pedidos
 - Menu lateral: lista para escolher o modelo Claude (Opus 5.5 – padrão, Sonnet 5.5, Haiku 5.5, Fable 5.2) e o esforço
   (baixo / médio – padrão / alto / muito alto / máximo → output_config.effort da API).

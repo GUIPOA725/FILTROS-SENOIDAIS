@@ -242,11 +242,14 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
                      lin("dv/dt motor (V/µs)", "dvdt_saida_v_us", 2), lin("dv/dt saída inversor (V/µs)", "dvdt_inversor_v_us", 0)],
             [5.2] + [11.8 / len(proj.pontos)] * len(proj.pontos), tam=8)
     _img(d, graf.get("formas_onda"), 16.5, "Figura 1 – Formas de onda de tensão e corrente (ponto de f máxima).")
-    _img(d, graf.get("espectro"), 16.5, "Figura 2 – Espectro harmônico da tensão de linha: inversor × saída do filtro.")
+    _img(d, graf.get("espectro"), 16.5, "Figura 2 – Espectro harmônico da tensão de linha em % da fundamental: inversor × saída do filtro × motor, "
+                                          "com a tabela de DHTv %.")
     _img(d, graf.get("bode"), 16.5, "Figura 3 – Resposta em frequência (ganho e fase) com e sem carga e efeito do amortecimento.")
     _img(d, graf.get("impedancia"), 16.0, "Figura 4 – Impedância vista pelo inversor.")
     _img(d, graf.get("baixa_ordem"), 16.0, "Figura 5 – Robustez à ressonância na faixa de operação.")
     _img(d, graf.get("fluxo"), 16.0, "Figura 6 – Fluxo de correntes por ramo e ponto de operação.")
+    _img(d, graf.get("rms"), 16.5, "Figura 6b – Correntes e tensões RMS em todos os ramos (inversor/L1, capacitores, motor), "
+                                   "por ponto de operação, com máximos e mínimos.")
 
     d.add_heading("5.1 Modelo do sistema simulado", 2)
     si = getattr(proj, "sistema", {}) or {}

@@ -46,7 +46,7 @@ _cfg_ia = config_ia()
 _prov = st.sidebar.selectbox("IA para ler os pedidos", list(_st_ia), index=list(_st_ia).index(_cfg_ia.get("provedor_padrao", "claude")),
                              format_func=lambda k: ("✅ " if _st_ia[k]["pronto"] else "⚠️ ") + _st_ia[k]["nome"])
 _pc = _cfg_ia["provedores"][_prov]
-if _pc.get("tipo") == "anthropic":
+if _pc.get("tipo") in ("anthropic", "claude_code"):
     _mods = list(MODELOS_CLAUDE)
     if _pc["modelo"] not in _mods:
         _mods.append(_pc["modelo"])
@@ -63,22 +63,33 @@ if (_prov != _cfg_ia.get("provedor_padrao") or _mod != _pc["modelo"] or _esf != 
     if _esf:
         _pc["esforco"] = _esf
     salvar_config_ia(_cfg_ia)
+_cc = _pc.get("tipo") == "claude_code"
 if _st_ia[_prov]["pronto"]:
-    st.sidebar.success(f"IA ativa: {_mod}" + (f" · esforço {ESFORCOS.get(_esf, _esf)}" if _esf else ""))
+    st.sidebar.success(("IA ativa pela sua assinatura Claude: " if _cc else "IA ativa: ") + _mod
+                       + (f" · esforço {ESFORCOS.get(_esf, _esf)}" if _esf else ""))
+elif _cc:
+    st.sidebar.warning("IA DESLIGADA – Claude Code não encontrado neste computador. Instale o Claude Code e faça login com a sua "
+                       "conta Claude (a mesma assinatura paga). Enquanto isso a leitura usa regras.")
 else:
     st.sidebar.warning("IA DESLIGADA – sem chave de API. A leitura dos pedidos está usando regras (pior).")
-with st.sidebar.expander("🔑 Chave da API" + (" (configurada)" if _st_ia[_prov]["pronto"] else " – configurar")):
-    st.caption(f"Cole a chave do {_st_ia[_prov]['nome'].split(' –')[0]} (console da Anthropic → API Keys). Fica salva só neste "
-               "computador, em %USERPROFILE%\\.fsen – não vai para o Drive nem para o GitHub.")
-    _ch = st.text_input(_st_ia[_prov]["env"] or "Chave", type="password", key="chave_api")
-    c1, c2 = st.columns(2)
-    if c1.button("Salvar", key="salvar_chave") and _ch.strip() and _st_ia[_prov]["env"]:
-        salvar_chave(_st_ia[_prov]["env"], _ch)
-        st.rerun()
-    if c2.button("Testar IA", key="testar_ia"):
-        with st.spinner("Testando..."):
+if _cc:
+    if st.sidebar.button("Testar IA", key="testar_ia_cc"):
+        with st.spinner("Testando a IA pela assinatura..."):
             _ok, _msg = testar_ia(_prov)
-        (st.success if _ok else st.error)(_msg)
+        (st.sidebar.success if _ok else st.sidebar.error)(_msg)
+if not _cc:
+    with st.sidebar.expander("🔑 Chave da API" + (" (configurada)" if _st_ia[_prov]["pronto"] else " – configurar")):
+        st.caption(f"Cole a chave do {_st_ia[_prov]['nome'].split(' –')[0]}. Fica salva só neste computador, em "
+                   "%USERPROFILE%\\.fsen – não vai para o Drive nem para o GitHub.")
+        _ch = st.text_input(_st_ia[_prov]["env"] or "Chave", type="password", key="chave_api")
+        c1, c2 = st.columns(2)
+        if c1.button("Salvar", key="salvar_chave") and _ch.strip() and _st_ia[_prov]["env"]:
+            salvar_chave(_st_ia[_prov]["env"], _ch)
+            st.rerun()
+        if c2.button("Testar IA", key="testar_ia"):
+            with st.spinner("Testando..."):
+                _ok, _msg = testar_ia(_prov)
+            (st.success if _ok else st.error)(_msg)
 
 
 def form_pedido(p: Pedido) -> Pedido:
@@ -200,7 +211,7 @@ if pagina == "Nova solicitação":
                     st.download_button("📝 Questionário técnico (.docx) para anexar", open(r["arquivos"]["questionario"], "rb"),
                                        file_name=os.path.basename(r["arquivos"]["questionario"]))
         g = r["graficos"]
-        t1, t2, t3, t4 = st.tabs(["Formas de onda / espectro", "Resposta em frequência", "Correntes", "Desenhos"])
+        t1, t2, t3, t4 = st.tabs(["Formas de onda / espectro", "Resposta em frequência", "Correntes e tensões RMS", "Desenhos"])
         def _img(*ks):
             for k in ks:
                 if g.get(k) and os.path.exists(g[k]):
@@ -210,7 +221,7 @@ if pagina == "Nova solicitação":
         with t2:
             _img("bode", "baixa_ordem", "impedancia")
         with t3:
-            _img("fluxo")
+            _img("rms", "fluxo")
         with t4:
             pd_ = os.path.join(r["pasta"], "05_Desenhos")
             for f in (sorted(os.listdir(pd_)) if os.path.isdir(pd_) else []):

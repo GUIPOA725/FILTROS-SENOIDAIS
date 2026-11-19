@@ -192,11 +192,13 @@ def tela_ajuste(pasta_saida):
                              Limite=v.limite, Referência=v.referencia) for v in proj.verificacoes])
     st.dataframe(ver, width="stretch", hide_index=True)
     g = res["graf"]
-    t1, t2, t3, t4 = st.tabs(["Formas de onda", "Espectro", "Resposta em frequência", "Correntes / ressonância"])
+    t1, t2, t3, t4 = st.tabs(["Formas de onda", "Espectro + DHTv", "Resposta em frequência", "Correntes e tensões RMS / ressonância"])
     t1.image(g["formas_onda"])
     t2.image(g["espectro"])
     t3.image(g["bode"])
     t3.image(g["impedancia"])
+    if g.get("rms"):
+        t4.image(g["rms"])
     t4.image(g["fluxo"])
     t4.image(g["baixa_ordem"])
     st.subheader("Estudo térmico do painel")
@@ -316,7 +318,7 @@ def tela_criterios():
 
 
 # ------------------------------------------------------------------ abrir projeto já feito
-_GRAF = {"formas_onda": "formas_onda.png", "espectro": "espectro.png", "bode": "resposta_frequencia.png",
+_GRAF = {"rms": "grandezas_rms.png", "formas_onda": "formas_onda.png", "espectro": "espectro.png", "bode": "resposta_frequencia.png",
          "baixa_ordem": "ressonancia_baixa_ordem.png", "impedancia": "impedancia_entrada.png", "fluxo": "fluxo_correntes.png"}
 
 
