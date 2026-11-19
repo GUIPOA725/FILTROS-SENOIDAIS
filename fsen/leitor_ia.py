@@ -164,7 +164,9 @@ def _num(rx, txt, grupo=1, conv=float):
 def ler_por_regras(texto: str) -> Pedido:
     t = " ".join(texto.split())
     p = Pedido()
-    p.quantidade = int(_num(r"(\d+)\s*(?:p[eç]ças|pç|und|unid)", t, conv=int) or _num(r"Quantidade\D{0,20}(\d+)", t, conv=int) or 1)
+    p.quantidade = int(_num(r"\b0?\d{1,2}\s*\|\s*(\d{1,4})\s*\|\s*Filtro", t, conv=int)
+                       or _num(r"(\d+)\s*(?:p[eç]ças|pç|und|unid)\b", t, conv=int)
+                       or _num(r"Quantidade\D{0,20}(\d+)", t, conv=int) or 1)
     p.tensao_v = _num(r"(\d{3})\s*V(?![a-z/])", t) or 440.0
     p.freq_rede_hz = _num(r"(50|60)\s*Hz", t) or 60.0
     p.corrente_a = _num(r"(\d{1,4}(?:[.,]\d+)?)\s*A\s+\d{3}\s*V", t) or _num(r"senoidal[^.]{0,60}?(\d{1,4})\s*A\b", t) or 0.0
@@ -251,14 +253,5 @@ def ler_pedido(texto: str, anexos: Optional[List[str]] = None, usar_ia: Optional
             return ler_com_ia(texto, anexos, provedor=provedor)
         except Exception as e:  # sem rede/chave: segue por regras
             print(f"[leitor_ia] IA {provedor} indisponível ({e}); usando regras.")
-    txt = texto
-    for a in anexos or []:
-        if a.lower().endswith(".pdf"):
-            try:
-                import pypdf
-                txt += "\n" + "\n".join(pg.extract_text() or "" for pg in pypdf.PdfReader(a).pages)
-            except Exception:
-                pass
-        elif a.lower().endswith((".txt", ".eml")):
-            txt += "\n" + open(a, encoding="utf-8", errors="ignore").read()
-    return ler_por_regras(txt)
+    # v1.8.3: sem IA, lê também .docx (parágrafos + TABELAS – a solicitação da A&W vem numa tabela)
+    return ler_por_regras((texto or "") + "\n" + _texto_anexos(anexos))

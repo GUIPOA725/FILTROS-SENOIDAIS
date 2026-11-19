@@ -67,7 +67,7 @@ def form_pedido(p: Pedido) -> Pedido:
     p.revenda = c4.checkbox("Revenda", p.revenda)
     c1, c2, c3, c4 = st.columns(4)
     p.tensao_v = c1.number_input("Tensão (V)", 100.0, 1000.0, float(p.tensao_v))
-    p.corrente_a = c2.number_input("Corrente do filtro (A)", 1.0, 5000.0, float(p.corrente_a or 100))
+    p.corrente_a = c2.number_input("Corrente do filtro (A)", 0.0, 5000.0, float(p.corrente_a or 0))
     p.freq_rede_hz = c3.number_input("Freq. rede (Hz)", 50.0, 60.0, float(p.freq_rede_hz))
     fs = c4.number_input("fs chaveamento (kHz, 0 = padrão do inversor)", 0.0, 16.0, float(p.fs_khz or 0))
     p.fs_khz = fs or None
@@ -142,7 +142,14 @@ if pagina == "Nova solicitação":
         _ligs = st.multiselect("Ligação do banco de capacitores", ["Estrela", "Delta"],
                                default=_cat_ui.get("otimizacao", {}).get("ligacoes_permitidas") or ["Estrela", "Delta"],
                                help="Delta usa 3× menos capacitores, mas cada um recebe tensão de linha e √3× mais corrente.")
-        if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary"):
+        _falta = [n for n, v in (("corrente do filtro", p.corrente_a), ("tensão", p.tensao_v)) if not v]
+        if _falta:
+            st.error("Falta " + " e ".join(_falta) + " – a leitura do pedido não encontrou. Preencha acima antes de dimensionar "
+                     "(a plataforma não usa mais valor padrão escondido).")
+        st.caption(f"Entra na simulação: filtro {p.corrente_a:g} A / {p.tensao_v:g} V · inversor {p.inversor} {p.inversor_corrente_a:g} A · "
+                   f"motor {p.motor_cv:g} CV, {p.motor_corrente_a:g} A, FP {p.motor_fp:g}, FS {p.fator_servico:g} · "
+                   f"cabo {p.cabo_m:g} m · {p.f_saida_min_hz:g}–{p.f_saida_max_hz:g} Hz · {p.quantidade} pç")
+        if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
                 r = processar(p, pasta_saida, log=lambda m: msgs.write(m), topologias=topos or None,

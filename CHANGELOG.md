@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.3 – 19/11/2026 – Leitura do pedido sem IA (docx com tabela)
+- Corrigido (aviso do usuário: "não é 100 A o filtro"): sem chave de IA, a leitura por regras IGNORAVA os anexos .docx
+  (só lia PDF/TXT). A solicitação da A&W vem em tabela no Word → corrente ficava 0 e o formulário preenchia 100 A escondido;
+  motor (211 A, 175 CV, FP 0,88, FS 1,15) e cabo (20 m) também se perdiam.
+- Agora lê parágrafos + tabelas do .docx; quantidade pela linha da tabela (Item | Qtd | Descrição).
+  Teste com a solicitação 0796/2026: 3 pç, 293 A, 440 V, ACS580 293 A, motor 211 A, cabo 20 m, 41–48 Hz, 750 V, 375 V/µs, 2 µs.
+- Formulário: sem valor padrão escondido – se faltar corrente/tensão, avisa e bloqueia; mostra a linha "Entra na simulação: ...".
+
 ## v1.8.2 – 19/11/2026 – Rastreabilidade da versão
 - Nome e versão da plataforma na tela (menu lateral e aba do navegador) e em TODOS os arquivos gerados:
   RESUMO, rodapé dos .docx (memorial, proposta, folha de dados, ETs, RFQ, caderno), aba "Plataforma" e propriedades dos .xlsx,
