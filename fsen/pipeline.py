@@ -18,6 +18,15 @@ from . import historico as H
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def pasta_cliente(nome: str) -> str:
+    """Nome legível da pasta do cliente: sem sufixos societários e caracteres inválidos no Windows."""
+    n = re.sub(r"\(.*?\)", " ", nome or "")
+    n = re.sub(r"\b(LTDA|LTDA\.|S/?A|S\.A\.|EIRELI|ME|EPP|REVENDA)\b\.?", " ", n, flags=re.I)
+    n = re.sub(r'[<>:"/\\|?*]', " ", n)
+    n = re.sub(r"\s+", " ", n).strip(" .-_")
+    return n[:60] or "Cliente sem nome"
+
+
 def _slug(s):
     s = re.sub(r"[^\w\s-]", "", s or "", flags=re.U).strip()
     return re.sub(r"\s+", "_", s)[:40] or "cliente"
@@ -43,7 +52,10 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         proj = dimensionar(ped, cat, log=log, topologias=topologias, capacitores=capacitores, ligacoes=ligacoes)
     cod = proj_codigo(proj)
     sufixo = f"_AJUSTE-MANUAL-{t0:%H%M}" if projeto is not None else ""
-    pasta = os.path.join(pasta_base, f"{t0:%Y-%m-%d}_{_slug(ped.cliente)}_{cod}{sufixo}")
+    # uma pasta por cliente; dentro, um projeto por solicitação: PROJETOS\<Cliente>\<data>_<código>
+    pasta = os.path.join(pasta_base, pasta_cliente(ped.cliente), f"{t0:%Y-%m-%d}_{cod}{sufixo}")
+    if os.path.exists(pasta) and not sufixo:          # mesma solicitação reprocessada no mesmo dia: não sobrescreve
+        pasta += f"_{t0:%H%M}"
     sub = {k: os.path.join(pasta, k) for k in ("01_Engenharia", "02_Cliente", "03_Fornecedores", "04_Montadora", "05_Desenhos", "graficos")}
     for p in sub.values():
         os.makedirs(p, exist_ok=True)

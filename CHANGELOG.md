@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.7.2 – 19/11/2026
+- Projetos organizados em **uma pasta por cliente**: `PROJETOS\<Cliente>\<data>_<código>`.
+  - O nome do cliente sai sem LTDA, S/A, (REVENDA) etc.
+  - Quando a mesma solicitação é reprocessada no mesmo dia, ganha o sufixo _hhmm e a anterior não é sobrescrita.
+- `ABRIR_FSEN.bat`: abre a plataforma com dois cliques.
+  - Copia o programa do drive para o computador, encontra o Python (Anaconda primeiro) e instala as bibliotecas na primeira vez.
+  - Abre o navegador automaticamente.
+
 ## v1.7.1 – 19/11/2026
 - E-mails e ETs de fornecedores reescritos com contatos reais e conteúdo técnico completo:
   - **Cootrans** – Geraldo Nascimento, geraldogan@cootrans.com.br. O e-mail segue o padrão das cotações de 2022/23:
