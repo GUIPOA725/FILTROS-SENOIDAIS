@@ -184,6 +184,7 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
                 shutil.copytree(trab, pasta_atp, dirs_exist_ok=True)
             st.update(status="nao_instalado", msg="ATP (tpbig.exe) não encontrado neste computador – só os decks .atp foram gerados.")
             log("   ATP não encontrado neste computador – decks .atp gerados para rodar depois")
+            st["vistas"] = _vistas(proj, casos, None, None, pasta_atp, log)
             return _salvar_status_atp(pasta_atp, st)
         log("   ATP: rodando a dupla checagem em segundo plano...")
         for c in casos:
@@ -197,19 +198,33 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
         A.salvar_relatorio(res, os.path.join(pasta_atp, f"{cod}_Comparacao_Python_x_ATP.xlsx"))
         pngs = [A.grafico_comparacao(c, trab, os.path.join(pasta_atp, f"comparacao_{c['nome']}.png")) for c in casos]
         for f in os.listdir(trab):
-            if f.endswith((".atp", ".lis", ".bat")):
+            if f.endswith((".atp", ".lis", ".bat", ".pl4")):
                 shutil.copy(os.path.join(trab, f), pasta_atp)
         conv = all(l["convergiu"] for x in res for l in x["tabela"])
-        st.update(status="rodou", convergiu=conv, segundos=round(_time.time() - t0, 1),
+        div = [f"{x['ponto'].replace('Operação ', '')}: {l['grandeza']} (Py {l['python']:g} × ATP {l['atp']:g} {l['unidade']}, {l['dif_pct']:+.0f} %)"
+               for x in res for l in x["tabela"] if not l["convergiu"]]
+        st.update(status="rodou", convergiu=conv, segundos=round(_time.time() - t0, 1), divergencias=div,
                   msg=("ATP rodou e CONVERGIU com o Python em todos os pontos" if conv else
-                       "ATP rodou e há DIVERGÊNCIA com o Python – revisar os itens marcados"),
-                  resultados=[dict(ponto=x["ponto"], tabela=x["tabela"]) for x in res], graficos=pngs)
+                       "ATP rodou e há DIVERGÊNCIA com o Python em " + "; ".join(div[:3])),
+                  resultados=[dict(ponto=x["ponto"], tabela=x["tabela"]) for x in res], graficos=pngs,
+                  vistas=_vistas(proj, casos, res, trab, pasta_atp, log))
         proj.dupla_checagem_atp = dict(st, resultados=res)
         log(f"   ATP × Python: {'CONVERGIU' if conv else 'DIVERGÊNCIA – revisar'}")
     except Exception as e:  # a dupla checagem nunca bloqueia a emissão
         st.update(status="falhou", msg=f"Dupla checagem não concluída: {type(e).__name__}: {e}")
         log(f"   ATP: dupla checagem não concluída ({e})")
     return _salvar_status_atp(pasta_atp, st)
+
+
+def _vistas(proj, casos, res, pasta_pl4, pasta_atp, log):
+    """Rede elétrica com os valores dos dois programas, ondas lado a lado e espectro Python × ATP (um conjunto por ponto)."""
+    try:
+        from .vista_simulacao import gerar_vistas
+        v = gerar_vistas(proj, casos, res, pasta_pl4, pasta_atp)
+        return [{k: (os.path.basename(x) if k != "ponto" else x) for k, x in d.items()} for d in v]
+    except Exception as e:
+        log(f"   (vistas Python × ATP não geradas: {e})")
+        return []
 
 
 def _salvar_status_atp(pasta_atp, st):

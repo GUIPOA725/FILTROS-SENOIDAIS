@@ -439,7 +439,15 @@ def painel_atp(pasta):
             st.dataframe(pd.DataFrame([{"Grandeza": l["grandeza"], "Unid.": l["unidade"], "Python": l["python"], "ATP": l["atp"],
                                         "Dif. %": l["dif_pct"], "Tol. ±%": l["tolerancia_pct"], "OK": "✅" if l["convergiu"] else "❌"}
                                        for l in x["tabela"]]), hide_index=True, width="stretch")
-        for g in stt.get("graficos") or []:
-            loc = os.path.join(pasta, "01_Engenharia", "ATP", os.path.basename(g))
-            if os.path.exists(loc):
-                st.image(loc)
+    _pa = os.path.join(pasta, "01_Engenharia", "ATP")
+    vistas = [v for v in (stt.get("vistas") or []) if os.path.exists(os.path.join(_pa, v.get("rede", "")))]
+    if vistas:
+        st.subheader("Simulação: rede elétrica e resultados Python × ATP")
+        if not ok:
+            st.caption("ATP não rodou neste projeto: os quadros mostram só o Python (coluna ATP vazia).")
+        i = st.selectbox("Ponto de operação", range(len(vistas)), format_func=lambda k: vistas[k]["ponto"], key=f"atp_pt_{pasta}")
+        v = vistas[i]
+        t1, t2, t3 = st.tabs(["Rede elétrica com os valores", "Formas de onda Python | ATP", "Espectro Python × ATP"])
+        t1.image(os.path.join(_pa, v["rede"]))
+        t2.image(os.path.join(_pa, v["ondas"]))
+        t3.image(os.path.join(_pa, v["espectro"]))

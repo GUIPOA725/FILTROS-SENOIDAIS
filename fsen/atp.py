@@ -211,7 +211,7 @@ def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = 
         a(_fonte(14, f"MI{k}", abs(iN), f1_t, fase, corrente=True))   # injetada após a medição → mede a corrente terminal
     a("BLANK SOURCE")
     # ---------------- saídas (tensões de nó)
-    nos = [f"CP{k}" for k in fases] + [f"MT{k}" for k in fases]
+    nos = [f"CP{k}" for k in fases] + [f"MT{k}" for k in fases] + [f"VL{k}" for k in fases]   # VL = saída do inversor (PWM)
     a("  " + "".join(_no(x) for x in nos))
     a("BLANK OUTPUT")
     a("BLANK PLOT")

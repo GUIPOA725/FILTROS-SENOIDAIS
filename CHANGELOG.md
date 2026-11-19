@@ -1,5 +1,16 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.0 – 19/11/2026 – Simulação Python × ATP lado a lado
+- Para cada ponto de operação, três vistas (tela, pasta 01_Engenharia/ATP e memorial 5.5):
+  1. Rede elétrica simulada (inversor → L1 → banco Δ/Y → cabo π → motor) com os valores de CADA ramo calculados pelos dois
+     programas: Python | ATP | diferença % (correntes, tensões, DHTv, picos, ondulação, corrente por capacitor).
+  2. Formas de onda em 3 colunas – Python | ATP | sobreposição – para tensão do inversor, tensão no banco, tensão no motor,
+     corrente do inversor/L1, corrente do motor e corrente do ramo do banco, com máx/mín/RMS em cada gráfico.
+  3. Espectro em % da fundamental (linear) da tensão no banco e no motor, Python × ATP, com o DHTv de cada um.
+- Quando há divergência, o quadro do ATP diz QUAIS grandezas divergiram (ponto, Python × ATP, %).
+- O deck .atp passa a gravar também a tensão de saída do inversor (nós VLA/VLB/VLC) e os .pl4 ficam na pasta do projeto.
+- Sem ATP no computador, as vistas mostram só o Python (coluna ATP vazia) e dizem que o ATP não rodou.
+
 ## v1.8.9 – 19/11/2026 – ATP sempre visível
 - Barra lateral: "ATP: encontrado (caminho do tpbig)" em verde ou "ATP NÃO encontrado" em amarelo.
 - Resultado do projeto: quadro destacado "Dupla checagem no ATP" – ✅ rodou e convergiu / ❌ divergência / ⚠️ não rodou (motivo),

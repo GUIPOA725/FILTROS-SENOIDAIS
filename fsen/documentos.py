@@ -300,8 +300,12 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
             _tabela(d, ["Grandeza", "Un", "Python", "ATP", "Dif. %", "Tol. %", "OK"],
                     [(l["grandeza"], l["unidade"], f"{l['python']:.2f}", f"{l['atp']:.2f}", f"{l['dif_pct']:+.2f}", f"±{l['tolerancia_pct']:g}",
                       "sim" if l["convergiu"] else "NÃO") for l in r["tabela"]], tam=8)
-        for png in da.get("graficos", []):
-            _img(d, png, 16.5, "Formas de onda sobrepostas – ATP (contínua) × Python (tracejada)")
+        pasta_atp = os.path.dirname(da["graficos"][0]) if da.get("graficos") else None
+        for v in da.get("vistas") or []:
+            if pasta_atp:
+                _img(d, os.path.join(pasta_atp, v["rede"]), 16.5, f"Rede elétrica simulada com os valores Python × ATP – {v['ponto']}")
+                _img(d, os.path.join(pasta_atp, v["ondas"]), 16.5, f"Formas de onda: Python | ATP | sobreposição – {v['ponto']}")
+                _img(d, os.path.join(pasta_atp, v["espectro"]), 16.5, f"Espectro Python × ATP (% da fundamental) – {v['ponto']}")
     else:
         d.add_paragraph(f"ATP NÃO executado nesta emissão – {(da or {}).get('msg', 'sem registro')}. "
                         "Os decks .atp ficam em 01_Engenharia/ATP para rodar e comparar.")
