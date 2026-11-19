@@ -1,5 +1,17 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.7.3 – 19/11/2026
+- **Correção – sobremodulação** (aviso do usuário: a corrente do filtro saía menor que a da carga).
+  - No ponto 60 Hz/In, com tensão de barramento insuficiente, a simulação mantinha a f.c.e.m. fixa e a corrente do motor caía (293 → 247 A).
+  - Agora a CORRENTE de carga é mantida e só a tensão cai (função `op_efetivo`), no Python e no deck ATP.
+  - A&W: inversor 289 A, motor 293 A e capacitores 11,5 A ∠+90°; a soma é vetorial.
+- **ATP**: passo de tempo = submúltiplo exato da portadora (meio passo de defasagem no TACS).
+  Isso elimina o jitter numérico das bordas, que gerava harmônica espúria a 48 Hz.
+- **Nova verificação (alerta)**: ressonância natural do LC com o motor em paralelo × harmônicas altas do tempo morto (h29–h49).
+  - Encontrada pela dupla checagem ATP: na A&W, a 41 Hz a h35 (1435 Hz) cai sobre a ressonância natural (~1430 Hz).
+  - LC puro tem ganho ~55 nesse ponto; LC + RC tem ganho 2,4.
+- Pastas de cliente: reaproveita a pasta existente mesmo com o nome escrito de forma diferente (acentos, LTDA etc.).
+
 ## v1.7.2 – 19/11/2026
 - Projetos organizados em **uma pasta por cliente**: `PROJETOS\<Cliente>\<data>_<código>`.
   - O nome do cliente sai sem LTDA, S/A, (REVENDA) etc.

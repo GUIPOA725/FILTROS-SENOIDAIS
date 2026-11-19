@@ -77,17 +77,25 @@ def _fonte(tipo, no, amp, freq=0.0, fase_graus=0.0, corrente=False, t_ini=-1.0, 
 def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = "FSEN", ciclos: int = 18,
                dt: Optional[float] = None, iplot: int = 8) -> Dict[str, Any]:
     """Gera o texto do deck .atp. Retorna dict(texto, fs_ef, mf, tmax, dt, iplot, saidas)."""
+    from .simulacao import op_efetivo
+    m_nec = abs(_fasores(p, op)[0]) / (op.vdc / 2)
+    op, _k = op_efetivo(p, op)                    # mesma correção de sobremodulação do Python
     vinv, i1f, vcf, imf, ef, vmf = _fasores(p, op)
     m = abs(vinv) / (op.vdc / 2)
     m_ef = min(m, 2 / math.sqrt(3))
     ang = float(np.angle(vinv))
     mf = max(3, int(round((op.fs / op.f1 - 3) / 6)) * 6 + 3)
-    fs_ef = mf * op.f1
+    # passo de tempo = submúltiplo EXATO do período da portadora (evita jitter numérico das bordas, que gera
+    # harmônicas espúrias e excita a ressonância natural pouco amortecida do LC). f1 e fs são ajustados ao dt
+    # representável no cartão (diferença < 0,05 %).
+    n_dt = 512
+    dt_f = float(_f(1 / (mf * op.f1 * n_dt), 8))
+    fs_ef = 1 / (n_dt * dt_f)
+    f1_t = fs_ef / mf
     Ts = 1 / fs_ef
-    if dt is None:
-        dt = Ts / 512
-    tmax = ciclos / op.f1
-    w1 = 2 * math.pi * op.f1
+    dt = dt_f
+    tmax = ciclos / f1_t
+    w1 = 2 * math.pi * f1_t
     rp = p.Q_hf * 2 * math.pi * p.fs_ref * p.L1
     L = []
     a = L.append
@@ -104,7 +112,8 @@ def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = 
     fases = {"A": 0.0, "B": -2 * math.pi / 3, "C": 2 * math.pi / 3}
     num = lambda x, d=8: (f"{x:.{d}f}" if x >= 0 else f"({x:.{d}f})")
     a(_tacs98("FS", f"{fs_ef:.6f}"))
-    a(_tacs98("TK", "TRUNC(TIMEX*FS)"))
+    a(_tacs98("TH", "TIMEX+" + f"{dt / 2:.4E}"))      # meio passo: evita empate numérico na borda da amostra
+    a(_tacs98("TK", "TRUNC(TH*FS)"))
     a(_tacs98("TC", "(TK+0.5)/FS"))
     for k, d in fases.items():
         ph = ang + d
@@ -114,7 +123,7 @@ def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = 
     a(_tacs98("MNAB", "(RA+RB-ABS(RA-RB))/2"))
     a(_tacs98("MN", "(MNAB+RC-ABS(MNAB-RC))/2"))
     a(_tacs98("ZS", "(MX+MN)/2"))
-    a(_tacs98("FR", "TIMEX*FS-TK"))
+    a(_tacs98("FR", "TH*FS-TK"))
     a(_tacs98("TRI", "ABS(2*FR-1)*2-1"))
     vd2 = f"{op.vdc / 2:.4f}"
     for k in fases:
@@ -197,7 +206,7 @@ def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = 
         # Python usa referência seno: x(t) = |X| sen(ωt + ∠X); ATP tipo 14 = cosseno → fase −90°
         fase = math.degrees(np.angle(iN) + d) - 90.0
         norton[k] = (abs(iN), fase)
-        a(_fonte(14, f"MI{k}", abs(iN), op.f1, fase, corrente=True))   # injetada após a medição → mede a corrente terminal
+        a(_fonte(14, f"MI{k}", abs(iN), f1_t, fase, corrente=True))   # injetada após a medição → mede a corrente terminal
     a("BLANK SOURCE")
     # ---------------- saídas (tensões de nó)
     nos = [f"CP{k}" for k in fases] + [f"MT{k}" for k in fases]
@@ -207,7 +216,7 @@ def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = 
     a("BEGIN NEW DATA CASE")
     a("BLANK")
     texto = "\n".join(L) + "\n"
-    return dict(texto=texto, fs_ef=fs_ef, mf=mf, tmax=tmax, dt=dt, iplot=iplot, m=m, ligacao=ligacao, f1=op.f1,
+    return dict(texto=texto, fs_ef=fs_ef, mf=mf, tmax=tmax, dt=dt, iplot=iplot, m=m, ligacao=ligacao, f1=f1_t,
                 norton=norton, norton_no="MI")
 
 
@@ -442,7 +451,7 @@ def comparar_casos(casos, pasta: str) -> List[Dict[str, Any]]:
             txt = open(lis, encoding="latin-1", errors="ignore").read()
             no = "MT" if "|14MTA" in txt else ("MI" if "|14MIA" in txt else no)
         nd = c["deck"]["norton"] if no == "MT" else None
-        at = metricas_atp(ler_pl4(pl4), c["op"].f1, c["ligacao"], c["n_por_ramo"], kmax, norton_descontar=nd)
+        at = metricas_atp(ler_pl4(pl4), c["deck"].get("f1", c["op"].f1), c["ligacao"], c["n_por_ramo"], kmax, norton_descontar=nd)
         out.append(dict(ponto=c["ponto"], tabela=comparar(py, at), python=py, atp=at))
     return out
 

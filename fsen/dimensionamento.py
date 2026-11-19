@@ -327,6 +327,12 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
     v.append(Verificacao("Amplificação de harmônicas de baixa ordem (tempo morto) na faixa de operação, com tolerâncias de L e C",
                          f"{thd_lo:.2f} % (pior em {f_lo:.1f} Hz, h{h_lo}, ganho {g_lo:.2f})", f"≤ {lim_lo:.1f} %",
                          thd_lo <= lim_lo, "Robustez à ressonância: h = 6k±1 com amplitudes típicas de tempo morto"))
+    from .simulacao import HARM_ALTAS
+    thd_hi, f_hi, h_hi, g_hi = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo=0.5, harmonicas=HARM_ALTAS)
+    v.append(Verificacao("Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto",
+                         f"{thd_hi:.2f} % (pior em {f_hi:.1f} Hz, h{h_hi}, ganho {g_hi:.1f})", "≤ 3,0 % (alerta)", thd_hi <= 3.0,
+                         "Achado na dupla checagem ATP: LC sem amortecimento tem ganho alto na ressonância natural; "
+                         "se o alerta persistir, medir em campo ou usar amortecimento RC", critico=False))
     vpk = max(r.get("vpk_motor", r["vpk_saida"]) for r in res)
     lim_vpk = ped.vpk_max_v or 1000.0
     v.append(Verificacao("Tensão de pico no motor (L-L)", f"{vpk:.0f} V", f"≤ {lim_vpk:.0f} V", vpk <= lim_vpk,

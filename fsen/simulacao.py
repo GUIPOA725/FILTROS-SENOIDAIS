@@ -130,6 +130,24 @@ def _fasores(p: ParamCircuito, op: PontoOperacao):
     return vinv, i1, vc, im, e, vm
 
 
+def op_efetivo(p: ParamCircuito, op: PontoOperacao):
+    """Sobremodulação: o inversor não entrega a tensão pedida. A CORRENTE de carga é mantida (o motor escorrega mais
+    para manter o torque) e a tensão nos terminais cai até o inversor atingir m = 2/√3. Retorna (op_ajustado, k_tensao)."""
+    import dataclasses
+    m_lim = 2 / np.sqrt(3)
+    vinv1 = _fasores(p, op)[0]
+    if abs(vinv1) / (op.vdc / 2) <= m_lim:
+        return op, 1.0
+    a = vinv1 - _fasores(p, dataclasses.replace(op, v_ll=1e-9))[0]     # parcela proporcional à tensão do motor
+    b = vinv1 - a                                                      # parcela devida à corrente (quedas em série)
+    alvo = m_lim * op.vdc / 2
+    # |a·k + b| = alvo  →  |a|²k² + 2Re(a·b*)k + |b|² − alvo² = 0
+    A, B, C = abs(a) ** 2, 2 * (a * np.conj(b)).real, abs(b) ** 2 - alvo ** 2
+    k = (-B + np.sqrt(max(B * B - 4 * A * C, 0))) / (2 * A)
+    k = float(min(1.0, max(0.3, k)))
+    return dataclasses.replace(op, v_ll=op.v_ll * k), k
+
+
 def _rp(p: ParamCircuito):
     """Resistência paralela equivalente das perdas HF do núcleo (Q definido em fs)."""
     return p.Q_hf * 2 * np.pi * p.fs_ref * p.L1
@@ -167,9 +185,10 @@ def simular(p: ParamCircuito, op: PontoOperacao, ciclos: int = 2, pts_por_portad
             ciclos_analise: int = 2) -> ResultadoSim:
     """Regime permanente exato: espectro analítico do PWM (bordas exatas) aplicado harmônica a harmônica ao circuito.
     `pts_por_portadora` só define a resolução das curvas no tempo (não afeta as métricas espectrais)."""
-    vinv, i1f, vcf, i2f, ef, vmf = _fasores(p, op)
-    m = abs(vinv) / (op.vdc / 2)
+    m = abs(_fasores(p, op)[0]) / (op.vdc / 2)                     # índice de modulação NECESSÁRIO
     sobremod = m > 2 / np.sqrt(3)
+    op, k_tensao = op_efetivo(p, op)                               # mantém a corrente; tensão cai se faltar barramento
+    vinv, i1f, vcf, i2f, ef, vmf = _fasores(p, op)
     m_ef = min(m, 2 / np.sqrt(3))
     ang = np.angle(vinv)
     mf = max(3, int(round((op.fs / op.f1 - 3) / 6)) * 6 + 3)     # múltiplo ímpar de 3
@@ -229,6 +248,7 @@ def simular(p: ParamCircuito, op: PontoOperacao, ciclos: int = 2, pts_por_portad
     r.metricas["icap_d_y_rms"] = rmsA(ID[:, 0])
     r.metricas["p_amort_w"] = 3 * (rmsA(IM[:, 0]) ** 2 * p.Rd + rmsA(ID[:, 0]) ** 2 * p.Rdp)
     r.metricas["fs_efetiva"] = fs_ef
+    r.metricas["k_tensao_sobremod"] = k_tensao
     # --- tensão nos terminais do motor (após cabo) ---
     vmab = VM[:, 0] - VM[:, 1]
     a_m = np.sqrt(2) * np.abs(vmab)
@@ -354,10 +374,13 @@ def resposta_frequencia(p: ParamCircuito, fmax=20000, n=2000, com_carga=True, Zc
 
 # Amplitudes típicas de harmônicas de baixa ordem na tensão do inversor causadas por tempo morto,
 # queda nos semicondutores e ondulação do barramento (% da fundamental). Conservador.
+# harmônicas 6k±1 do tempo morto / pulso mínimo (% da fundamental, decaimento ~1/h) – até h49 para cobrir a
+# ressonância natural do LC com o motor em paralelo (achado na dupla checagem ATP: h35 a 41 Hz na A&W)
 HARM_TEMPO_MORTO = {5: 1.5, 7: 1.0, 11: 0.6, 13: 0.5, 17: 0.3, 19: 0.25, 23: 0.2, 25: 0.15}
+HARM_ALTAS = {29: 0.13, 31: 0.12, 35: 0.10, 37: 0.10, 41: 0.08, 43: 0.08, 47: 0.07, 49: 0.07}
 
 
-def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, passo: float = 0.25):
+def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, passo: float = 0.25, harmonicas=None):
     """Varre a faixa de operação e calcula a distorção de saída causada pelas harmônicas de
     baixa ordem do inversor amplificadas pelo filtro. Retorna (thd_pior_%, f_pior, h_pior, ganho_pior)."""
     rp = _rp(p)
@@ -365,9 +388,10 @@ def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, pa
     for f1 in np.arange(fmin, fmax + 1e-9, passo):
         tot = 0.0
         hmax, gmax = 0, 0.0
-        hs = np.array(list(HARM_TEMPO_MORTO))
+        tab = harmonicas or HARM_TEMPO_MORTO
+        hs = np.array(list(tab))
         _, Hm, _ = _h_motor(p, 2j * np.pi * hs * f1, f1)
-        for h, a, g in zip(hs, HARM_TEMPO_MORTO.values(), np.abs(Hm)):
+        for h, a, g in zip(hs, tab.values(), np.abs(Hm)):
             tot += (a * g) ** 2
             if g > gmax:
                 hmax, gmax = h, g
