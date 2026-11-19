@@ -412,3 +412,34 @@ def painel_abrir_projeto(pasta_saida, chave="abrir"):
             carregar_projeto_pasta(pasta)
             st.success(f"Aberto: {pasta}")
             st.rerun()
+
+
+def painel_atp(pasta):
+    """Mostra com destaque se o ATP rodou neste projeto e o resultado Python × ATP (lê 01_Engenharia/ATP/status_atp.json)."""
+    import json
+    cam = os.path.join(pasta, "01_Engenharia", "ATP", "status_atp.json")
+    if not os.path.exists(cam):
+        st.warning("ATP: sem registro neste projeto (gerado antes da v1.8.9) – não dá para afirmar se o ATP rodou.")
+        return
+    stt = json.load(open(cam, encoding="utf-8"))
+    ok = stt.get("status") == "rodou"
+    tit = f"Dupla checagem no ATP – {stt.get('msg')} ({stt.get('hora', '')})"
+    if ok and stt.get("convergiu"):
+        st.success("✅ " + tit)
+    elif ok:
+        st.error("❌ " + tit)
+    else:
+        st.warning("⚠️ " + tit)
+    with st.expander("Ver Python × ATP (tabela e formas de onda)", expanded=ok and not stt.get("convergiu")):
+        if stt.get("tpbig"):
+            st.caption(f"Programa usado: {stt['tpbig']}  ·  tempo {stt.get('segundos', '-')} s  ·  casos: "
+                       + ", ".join(c["ponto"] for c in stt.get("casos", [])))
+        for x in stt.get("resultados") or []:
+            st.markdown(f"**{x['ponto']}**")
+            st.dataframe(pd.DataFrame([{"Grandeza": l["grandeza"], "Unid.": l["unidade"], "Python": l["python"], "ATP": l["atp"],
+                                        "Dif. %": l["dif_pct"], "Tol. ±%": l["tolerancia_pct"], "OK": "✅" if l["convergiu"] else "❌"}
+                                       for l in x["tabela"]]), hide_index=True, width="stretch")
+        for g in stt.get("graficos") or []:
+            loc = os.path.join(pasta, "01_Engenharia", "ATP", os.path.basename(g))
+            if os.path.exists(loc):
+                st.image(loc)

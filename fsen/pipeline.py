@@ -162,28 +162,36 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
 
 
 def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
-    """Gera os decks .atp; se o ATP estiver instalado neste PC, roda em segundo plano e compara com o Python."""
+    """Gera os decks .atp; se o ATP estiver instalado neste PC, roda em segundo plano e compara com o Python.
+    SEMPRE registra o que aconteceu (rodou/convergiu, não instalado, falhou) em proj.dupla_checagem_atp e ATP/status_atp.json."""
+    import time as _time
     from . import atp as A
     cfg = cat.get("atp", {})
-    if not cfg.get("habilitado", True):
-        return
     pasta_atp = os.path.join(pasta_eng, "ATP")
+    st = dict(status="desabilitado", msg="Dupla checagem ATP desabilitada no catálogo (atp: habilitado: false).",
+              hora=_dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+    proj.dupla_checagem_atp = st
+    if not cfg.get("habilitado", True):
+        return _salvar_status_atp(pasta_atp, st)
+    t0 = _time.time()
     try:
         tp = A.achar_tpbig(cat)
-        # o tpbig não lida bem com espaços no caminho: roda em pasta de trabalho local e copia os resultados
         trab = os.path.join(cfg.get("pasta_trabalho", A.PASTA_TRABALHO_PADRAO), cod) if tp else pasta_atp
         casos = A.preparar_casos(proj, cat, trab)
+        st.update(casos=[dict(nome=c["nome"], ponto=c["ponto"]) for c in casos], tpbig=tp)
         if not tp:
             if trab != pasta_atp:
                 shutil.copytree(trab, pasta_atp, dirs_exist_ok=True)
+            st.update(status="nao_instalado", msg="ATP (tpbig.exe) não encontrado neste computador – só os decks .atp foram gerados.")
             log("   ATP não encontrado neste computador – decks .atp gerados para rodar depois")
-            return
+            return _salvar_status_atp(pasta_atp, st)
         log("   ATP: rodando a dupla checagem em segundo plano...")
         for c in casos:
             r = A.rodar_atp(os.path.join(trab, c["nome"] + ".atp"), tp)
             if not r["ok"]:
-                log(f"   ATP falhou em {c['ponto']}: {r['msg'][-300:]}")
-                return
+                st.update(status="falhou", msg=f"ATP falhou em {c['ponto']}: {r['msg'][-300:]}")
+                log("   " + st["msg"])
+                return _salvar_status_atp(pasta_atp, st)
         res = A.comparar_casos(casos, trab)
         os.makedirs(pasta_atp, exist_ok=True)
         A.salvar_relatorio(res, os.path.join(pasta_atp, f"{cod}_Comparacao_Python_x_ATP.xlsx"))
@@ -192,10 +200,44 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
             if f.endswith((".atp", ".lis", ".bat")):
                 shutil.copy(os.path.join(trab, f), pasta_atp)
         conv = all(l["convergiu"] for x in res for l in x["tabela"])
-        proj.dupla_checagem_atp = dict(convergiu=conv, resultados=res, graficos=pngs)
+        st.update(status="rodou", convergiu=conv, segundos=round(_time.time() - t0, 1),
+                  msg=("ATP rodou e CONVERGIU com o Python em todos os pontos" if conv else
+                       "ATP rodou e há DIVERGÊNCIA com o Python – revisar os itens marcados"),
+                  resultados=[dict(ponto=x["ponto"], tabela=x["tabela"]) for x in res], graficos=pngs)
+        proj.dupla_checagem_atp = dict(st, resultados=res)
         log(f"   ATP × Python: {'CONVERGIU' if conv else 'DIVERGÊNCIA – revisar'}")
     except Exception as e:  # a dupla checagem nunca bloqueia a emissão
+        st.update(status="falhou", msg=f"Dupla checagem não concluída: {type(e).__name__}: {e}")
         log(f"   ATP: dupla checagem não concluída ({e})")
+    return _salvar_status_atp(pasta_atp, st)
+
+
+def _salvar_status_atp(pasta_atp, st):
+    try:
+        os.makedirs(pasta_atp, exist_ok=True)
+        with open(os.path.join(pasta_atp, "status_atp.json"), "w", encoding="utf-8") as f:
+            json.dump({k: v for k, v in st.items() if k != "resultados" or isinstance(v, list)}, f, ensure_ascii=False, indent=1,
+                      default=str)
+    except Exception:
+        pass
+
+
+def texto_atp(st):
+    """Bloco do RESUMO com o resultado do ATP (sempre aparece, mesmo quando o ATP não rodou)."""
+    if not st:
+        return ["## Dupla checagem no ATP", "- ⚠️ sem registro (projeto gerado por versão antiga)", ""]
+    ic = {"rodou": "✅" if st.get("convergiu") else "❌", "nao_instalado": "⚠️", "falhou": "❌", "desabilitado": "⚠️"}.get(st["status"], "⚠️")
+    L = ["## Dupla checagem no ATP", f"- {ic} {st['msg']} ({st.get('hora', '')}"
+         + (f", {st['segundos']} s" if st.get("segundos") else "") + ")"]
+    if st.get("tpbig"):
+        L.append(f"- Programa: `{st['tpbig']}`")
+    for x in st.get("resultados") or []:
+        L.append(f"- **{x['ponto']}** – Python × ATP:")
+        for l in x["tabela"]:
+            L.append(f"  - {'✅' if l['convergiu'] else '❌'} {l['grandeza']}: Python {l['python']:g} | ATP {l['atp']:g} {l['unidade']} "
+                     f"(dif. {l['dif_pct']:+.1f} %, tolerância ±{l['tolerancia_pct']:g} %)")
+    L.append("")
+    return L
 
 
 def _email_cliente(proj, orc, cat):
@@ -231,7 +273,7 @@ def resumo_texto(proj, arr, orc, similares, pasta):
            f"- fr = **{proj.fr_hz:.0f} Hz**" + (f"; amortecimento {am.r_ramo_ohm:.3f} Ω / {am.p_nominal_w:g} W por ramo" if am else "; sem resistor de amortecimento"),
            f"- Caixa {arr.caixa_id}, perdas {arr.perda_total_w:.0f} W, {arr.n_ventiladores} ventiladores, massa ≈ {arr.massa_total_kg:.0f} kg", "",
            "## Verificações"] + [f"- {'✅' if v.ok else ('❌' if v.critico else '⚠️')} {v.item}: {v.valor} (limite {v.limite})" for v in proj.verificacoes] + [
-           "", "## Comercial", f"- Custo por filtro: {rs(orc.custo_unit_total)}  (material {rs(orc.custo_material)} + montagem {rs(orc.custo_montagem)})",
+           ""] + texto_atp(getattr(proj, "dupla_checagem_atp", None)) + ["## Comercial", f"- Custo por filtro: {rs(orc.custo_unit_total)}  (material {rs(orc.custo_material)} + montagem {rs(orc.custo_montagem)})",
            f"- Preço unitário: **{rs(orc.preco_unit)}** | total {rs(orc.preco_total)} (impostos {orc.impostos_pct:g} %, margem {orc.margem_pct:g} %)", ""]
     if proj.avisos:
         lin += ["## Avisos"] + [f"- {a}" for a in proj.avisos] + [""]

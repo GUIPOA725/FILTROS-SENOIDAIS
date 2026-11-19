@@ -28,7 +28,7 @@ from fsen.pipeline import processar
 from fsen.dimensionamento import CAT_PADRAO, carregar_catalogo
 from fsen import historico as H
 from fsen.dimensionamento import config_de_projeto
-from telas_ajuste import tela_ajuste_completa, tela_criterios, painel_abrir_projeto
+from telas_ajuste import tela_ajuste_completa, tela_criterios, painel_abrir_projeto, painel_atp
 from fsen.leitor_ia import status_provedores, config_ia, salvar_config_ia, salvar_chave, testar_ia, MODELOS_CLAUDE, ESFORCOS
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +45,14 @@ with st.sidebar.expander("📂 Pasta de saída (PROJETOS)", expanded=False):
     pasta_saida = seletor_pasta("Pasta onde ficam os projetos", "pasta_saida",
                                 os.environ.get("FSEN_PASTA_SAIDA", os.path.join(RAIZ, "saidas")))
 st.sidebar.caption(f"Saída: …{pasta_saida[-45:]}")
+try:
+    from fsen.atp import achar_tpbig as _tp
+    _tpb = _tp(carregar_catalogo())
+    (st.sidebar.success if _tpb else st.sidebar.warning)(
+        f"ATP: encontrado – dupla checagem automática ({_tpb})" if _tpb else
+        "ATP NÃO encontrado neste computador – a dupla checagem não roda (só gera os decks .atp)")
+except Exception:
+    pass
 _st_ia = status_provedores()
 _cfg_ia = config_ia()
 _prov = st.sidebar.selectbox("IA para ler os pedidos", list(_st_ia), index=list(_st_ia).index(_cfg_ia.get("provedor_padrao", "claude")),
@@ -234,6 +242,7 @@ if pagina == "Nova solicitação":
         r = st.session_state["resultado"]
         st.success(f"Projeto gerado em {r['pasta']}")
         st.info("Quer mudar algo (uk, fr, capacitores, fechamento, amortecimento, fs)? Abra **Ajuste manual e ressimulação** no menu.")
+        painel_atp(r["pasta"])
         st.markdown(r["resumo"])
         _ed = r["arquivos"].get("email_dados")
         if _ed and os.path.exists(_ed):

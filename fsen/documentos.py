@@ -303,7 +303,7 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
         for png in da.get("graficos", []):
             _img(d, png, 16.5, "Formas de onda sobrepostas – ATP (contínua) × Python (tracejada)")
     else:
-        d.add_paragraph("ATP não executado nesta emissão (ATP não instalado no computador que processou o pedido). "
+        d.add_paragraph(f"ATP NÃO executado nesta emissão – {(da or {}).get('msg', 'sem registro')}. "
                         "Os decks .atp ficam em 01_Engenharia/ATP para rodar e comparar.")
 
     d.add_heading("6. Especificação dos componentes reais", 1)

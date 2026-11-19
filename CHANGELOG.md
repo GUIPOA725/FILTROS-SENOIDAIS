@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.9 – 19/11/2026 – ATP sempre visível
+- Barra lateral: "ATP: encontrado (caminho do tpbig)" em verde ou "ATP NÃO encontrado" em amarelo.
+- Resultado do projeto: quadro destacado "Dupla checagem no ATP" – ✅ rodou e convergiu / ❌ divergência / ⚠️ não rodou (motivo),
+  com hora, programa usado, tempo, tabela Python × ATP por ponto (diferença e tolerância) e as formas de onda sobrepostas.
+- RESUMO.md ganha a seção "Dupla checagem no ATP" (sempre, inclusive quando não rodou e por quê).
+- 01_Engenharia/ATP/status_atp.json registra o que aconteceu; o memorial (5.5) diz o motivo quando o ATP não roda.
+
 ## v1.8.8 – 19/11/2026 – Pastas sem digitar caminho
 - Toda escolha de pasta agora é por botão "📁 Procurar..." (abre a janela do Windows) ou por "Navegar" (caixas de seleção:
   subpastas, pasta acima, unidades C:, G:…). Vale para a pasta de saída (menu lateral, lembrada no computador),
