@@ -103,6 +103,8 @@ def gerar_deck(p: ParamCircuito, op: PontoOperacao, ligacao: str, titulo: str = 
     import unicodedata
     asc = lambda t: unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()
     a(asc(f"C {titulo} - gerado pela Plataforma FSEN (dupla checagem Python x ATP)")[:80])
+    from .versao import assinatura as _assin
+    a(asc("C " + _assin(curta=True))[:80])
     a(asc(f"C f1 = {op.f1:g} Hz, fs = {fs_ef:.1f} Hz (mf = {mf}), m = {m:.4f}, Vcc = {op.vdc:.1f} V, ligacao {ligacao}")[:80])
     a("C  dT  >< Tmax >< Xopt >< Copt ><Epsiln>")
     a(_f(dt, 8) + _f(tmax, 8) + _f(0, 8) + _f(0, 8))

@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.2 – 19/11/2026 – Rastreabilidade da versão
+- Nome e versão da plataforma na tela (menu lateral e aba do navegador) e em TODOS os arquivos gerados:
+  RESUMO, rodapé dos .docx (memorial, proposta, folha de dados, ETs, RFQ, caderno), aba "Plataforma" e propriedades dos .xlsx,
+  carimbo dos desenhos (PDF/PNG), linha "Ref. interna" no fim dos e-mails .txt, campo "gerado_por" dos .json e cabeçalho dos decks ATP.
+- Corrigido: ao atualizar com a plataforma aberta aparecia "ImportError: cannot import name ..." (módulos antigos na memória);
+  agora a plataforma recarrega os módulos sozinha quando a versão muda.
+
 ## v1.8.1 – 19/11/2026 – Abrir projeto já feito
 - Novo painel "📂 Abrir um projeto já feito" em **Nova solicitação** e em **Ajuste manual e ressimulação**: escolha Cliente → Projeto
   (lista o que está em PROJETOS) ou cole o caminho da pasta do cliente/projeto. Carrega pedido, configuração (L, C, fs, ligação),

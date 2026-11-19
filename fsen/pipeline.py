@@ -148,6 +148,8 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     resumo = resumo_texto(proj, arr, orc, similares, pasta)
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as f:
         f.write(resumo)
+    from .versao import carimbar_pasta
+    carimbar_pasta(pasta, log)
     log("7/7 Registrando no histórico...")
     if registrar:
         H.registrar_projeto(proj, arr, orc, pasta)
@@ -221,7 +223,8 @@ def resumo_texto(proj, arr, orc, similares, pasta):
     b = proj.banco
     am = proj.amortecimento
     rs = lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    lin = [f"# {proj_codigo(proj)} – {ped['cliente']}", "",
+    from .versao import assinatura
+    lin = [f"# {proj_codigo(proj)} – {ped['cliente']}", "", f"*{assinatura()}*", "",
            f"**Status:** {'✅ APROVADO' if proj.aprovado else '❌ REPROVADO'}  |  {ped['quantidade']} pç  |  fs fixa {proj.fs_hz / 1000:g} kHz", "",
            "## Solução", f"- L1 = **{proj.l1.l_uh:.0f} µH/fase** (uk {proj.l1.uk_pct:.1f} %), {proj.l1.i_nom_a:.0f} A, Isat ≥ {proj.l1.i_sat_a:.0f} A",
            f"- Capacitores: **{b.n_total} × {b.uf_unit:g} µF {b.v_unit:g} V** ({b.fabricante}) em **{b.ligacao}**, {b.n_por_ramo}/ramo → {b.c_y_uf:g} µF Y",

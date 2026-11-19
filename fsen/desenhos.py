@@ -35,6 +35,8 @@ def _carimbo(fig, titulo, folha, total, proj, cat, rev="00"):
             fontsize=6.5, va="bottom")
     ax.text(x0 + 113, y0 + 12, f"Folha {folha}/{total}", fontsize=8, va="bottom")
     ax.text(x0 + 113, y0 + 3, f"Rev. {rev}  Escala s/ esc.  mm", fontsize=7, va="bottom")
+    from .versao import assinatura
+    ax.text(14, 18, assinatura(), fontsize=6.5, color="#555")
     ax.text(14, 14, "Desenho gerado automaticamente pela plataforma FSEN – dimensões de componentes estimadas; "
             "confirmar com desenhos dos fornecedores antes da fabricação.", fontsize=6.5, color="#555")
 

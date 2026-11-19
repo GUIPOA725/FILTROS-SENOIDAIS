@@ -5,9 +5,22 @@ import sqlite3
 import datetime as dt
 import tempfile
 
+import sys
 import pandas as pd
 import streamlit as st
 import yaml
+
+# Atualização com a plataforma aberta: o Streamlit recarrega o app.py mas mantém os módulos antigos na memória
+# (erro "cannot import name ..."). Se a versão mudou, descarrega fsen.* e telas_ajuste para importar a versão nova.
+try:
+    _v_disco = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "versao_plataforma.json"), encoding="utf-8"))["versao"]
+except Exception:
+    _v_disco = "?"
+if os.environ.get("FSEN_VER_CARREGADA") != _v_disco:
+    for _m in list(sys.modules):
+        if _m in ("telas_ajuste", "fsen") or _m.startswith("fsen."):
+            del sys.modules[_m]
+    os.environ["FSEN_VER_CARREGADA"] = _v_disco
 
 from fsen.modelos import Pedido
 from fsen.leitor_ia import ler_pedido
@@ -19,9 +32,11 @@ from telas_ajuste import tela_ajuste_completa, tela_criterios, painel_abrir_proj
 from fsen.leitor_ia import status_provedores, config_ia, salvar_config_ia
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
-st.set_page_config(page_title="FSEN – Filtros Senoidais", page_icon="⚡", layout="wide")
+from fsen.versao import NOME, info as _vinfo
+st.set_page_config(page_title=f"FSEN v{_vinfo().get('versao')} – Filtros Senoidais", page_icon="⚡", layout="wide")
 
-st.sidebar.title("⚡ FSEN")
+st.sidebar.title(f"⚡ FSEN v{_vinfo().get('versao')}")
+st.sidebar.caption(f"{NOME} – versão {_vinfo().get('versao')} de {_vinfo().get('data', '')}")
 st.sidebar.caption("Dimensionamento, simulação e documentação de filtros senoidais LC/LCL")
 pagina = st.sidebar.radio("Menu", ["Nova solicitação", "Ajuste manual e ressimulação", "Critérios de projeto", "Histórico e clientes",
                                    "Catálogo e preços", "Melhorias / atualizações"])
