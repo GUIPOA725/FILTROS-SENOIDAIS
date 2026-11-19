@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.3 – 19/11/2026 – Revisão dos filtros reais com ATP + calibração
+- ATP: passo de tempo 2048 por período da portadora (antes 512). Com 512 a quantização das bordas do PWM gerava harmônicas
+  falsas perto da ressonância (FN5040-24 a 30 Hz: 10,9 % no ATP × 2,4 % no Python; com 2048: 2,41 %). ~4× mais lento.
+- Comparação Python × ATP: THD converge também com diferença absoluta ≤ 0,5 ponto; ondulação com tolerância 8 %.
+- Calibração de campo: harmônicas de baixa ordem do inversor (tempo morto) × 1,4 (SENAI 958 µH/40 µF, Fluke: 3,6 % medido).
+- Não abre mais ATPDraw/PlotXY ao terminar (pedido): roda o ATP em segundo plano e mostra na tela/diagramas; botão manual mantido.
+- validacao/: decks_reais.py, comparar_atp_reais.py, aba "Python × ATP" e "Plataforma" na planilha de validação.
+
 ## v1.9.2 – 19/11/2026 – Desenho da rede no ATPDraw
 - Em TODO projeto e em TODOS os pontos de operação a plataforma gera 01_Engenharia/ATP/fsen_casoN_desenho.xml: a MESMA
   rede do deck .atp desenhada no ATPDraw 7 (abre direto no programa): TACS do SVPWM (objetos FORTRAN 98 com as mesmas

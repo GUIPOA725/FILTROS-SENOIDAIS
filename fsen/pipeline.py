@@ -215,7 +215,7 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
             st["mat_python"] = [os.path.basename(x) for x in A.exportar_python_mat(casos, pasta_atp)]
         except Exception as e:
             log(f"   (.mat do Python para o PlotXY não gerado: {e})")
-        if cfg.get("abrir_ao_terminar", True) and os.name == "nt":
+        if cfg.get("abrir_ao_terminar", False) and os.name == "nt":
             ab = A.abrir_no_windows(pasta_atp, casos[0]["nome"], cat)
             st["aberto"] = ab
             log(f"   Abrindo no PlotXY: {ab['plotxy'] or '-'} | ATPDraw: {ab['atpdraw'] or '-'}")

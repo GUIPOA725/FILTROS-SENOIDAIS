@@ -378,8 +378,14 @@ def resposta_frequencia(p: ParamCircuito, fmax=20000, n=2000, com_carga=True, Zc
 # queda nos semicondutores e ondulação do barramento (% da fundamental). Conservador.
 # harmônicas 6k±1 do tempo morto / pulso mínimo (% da fundamental, decaimento ~1/h) – até h49 para cobrir a
 # ressonância natural do LC com o motor em paralelo (achado na dupla checagem ATP: h35 a 41 Hz na A&W)
-HARM_TEMPO_MORTO = {5: 1.5, 7: 1.0, 11: 0.6, 13: 0.5, 17: 0.3, 19: 0.25, 23: 0.2, 25: 0.15}
-HARM_ALTAS = {29: 0.13, 31: 0.12, 35: 0.10, 37: 0.10, 41: 0.08, 43: 0.08, 47: 0.07, 49: 0.07}
+# CALIBRAÇÃO DE CAMPO (19/11/2026) – SENAI S.Leopoldo, filtro 958 µH / 40 µF Y, 60 Hz, fs 6 kHz, Fluke: THD na saída
+# do filtro ≈ 3,6 % (h5 1,8 %, h11 2,2 %, h13 1,9 %). Com o PWM ideal (Python = ATP = 0,85 %) a parcela de baixa
+# ordem medida é √(3,6² − 0,85²) = 3,5 %, contra 2,5 % previstos com a tabela base → fator 1,4 sobre a tabela base.
+FATOR_CAMPO_BAIXA_ORDEM = 1.4
+_BASE_TM = {5: 1.5, 7: 1.0, 11: 0.6, 13: 0.5, 17: 0.3, 19: 0.25, 23: 0.2, 25: 0.15}
+_BASE_ALTAS = {29: 0.13, 31: 0.12, 35: 0.10, 37: 0.10, 41: 0.08, 43: 0.08, 47: 0.07, 49: 0.07}
+HARM_TEMPO_MORTO = {h: round(a * FATOR_CAMPO_BAIXA_ORDEM, 3) for h, a in _BASE_TM.items()}
+HARM_ALTAS = {h: round(a * FATOR_CAMPO_BAIXA_ORDEM, 3) for h, a in _BASE_ALTAS.items()}
 
 
 def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, passo: float = 0.25, harmonicas=None):

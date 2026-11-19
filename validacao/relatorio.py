@@ -3,6 +3,8 @@ import json, os, sys
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fsen.versao import assinatura
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 dados = json.load(open(os.path.join(AQUI, "resultado_todos.json")))
@@ -52,6 +54,20 @@ for row in m.iter_rows(min_row=2):
     for c in row:
         c.alignment = Alignment(wrap_text=True, vertical="top")
 
+if os.path.exists(os.path.join(AQUI, "atp_reais.json")):
+    a = wb.create_sheet("Python × ATP")
+    a.append(["Caso", "Ponto", "Grandeza", "Unidade", "Python", "ATP", "Dif. %", "Tol. %", "Converge"])
+    for c in a[1]:
+        c.font = Font(bold=True)
+    for cid, pts in json.load(open(os.path.join(AQUI, "atp_reais.json"))).items():
+        for p in pts:
+            for l in p["tabela"]:
+                a.append([cid, p["ponto"], l["grandeza"], l["unidade"], l["python"], l["atp"], l["dif_pct"], l["tolerancia_pct"],
+                          "SIM" if l["convergiu"] else "NÃO"])
+    for i, w in enumerate([14, 24, 34, 8, 10, 10, 8, 8, 9], 1):
+        a.column_dimensions[get_column_letter(i)].width = w
+    a.freeze_panes = "A2"
+
 n = wb.create_sheet("Conclusões")
 for t in json.load(open(os.path.join(AQUI, "conclusoes.json"))):
     n.append([t])
@@ -60,5 +76,7 @@ for row in n.iter_rows():
     for c in row:
         c.alignment = Alignment(wrap_text=True, vertical="top")
 n["A1"].font = Font(bold=True, size=13)
+p = wb.create_sheet("Plataforma")
+p.append([assinatura()])
 wb.save(saida)
 print(saida)

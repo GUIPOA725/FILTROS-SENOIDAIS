@@ -1,0 +1,773 @@
+{
+ "IHR-2022": {
+  "caso": {
+   "id": "IHR-2022",
+   "cliente": "New Technologies IHR (Randon) 2022 – MM440",
+   "status": "fabricado, em operação (OK do cliente 17/11/22), medido",
+   "tensao_v": 380,
+   "motor_kw": 11.6,
+   "corrente_a": 22,
+   "insp_i_ind": 28,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 1586,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 1,
+    "uk": 6.0,
+    "fr": 890,
+    "venda": 4324,
+    "custo": 1937
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 1586,
+   "uk": 6.0,
+   "fr": 894,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.58,
+   "v_cap": 202,
+   "thd_max": 1.96,
+   "ripple_pp_pct": 56.4,
+   "perdas_L_w": 147,
+   "massa_L_kg": 5.0,
+   "custo_comp": 2697,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 13.65 % (pior em 58.0 Hz, h17, ganho 45.01)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.14 % (pior em 36.5 Hz, h29, ganho 47.0)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 1587,
+   "uk": 6.0,
+   "fr": 893,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.58,
+   "v_cap": 202,
+   "thd_max": 1.96,
+   "ripple_pp_pct": 56.4,
+   "perdas_L_w": 147,
+   "massa_L_kg": 5.0,
+   "custo_comp": 2697,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 13.87 % (pior em 58.0 Hz, h17, ganho 45.76)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.08 % (pior em 36.5 Hz, h29, ganho 46.5)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "IHR-30A": {
+  "caso": {
+   "id": "IHR-30A",
+   "cliente": "SENAI S.Leopoldo / IHR 30 A / Gelluns 20 CV",
+   "status": "fabricado (3 clientes), medido e termografado",
+   "tensao_v": 380,
+   "motor_kw": 16,
+   "corrente_a": 30,
+   "insp_i_ind": 38,
+   "inversor": "GENERICO",
+   "fs_khz": 6.0,
+   "real": {
+    "L1_uH": 958,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 2,
+    "uk": 5.0,
+    "fr": 820,
+    "venda": 6280,
+    "custo": 2964
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 958,
+   "uk": 4.94,
+   "fr": 813,
+   "cap": "6× 20 µF Estrela (2/ramo)",
+   "C_y_uF": 40.0,
+   "i_cap_unit": 1.92,
+   "v_cap": 203,
+   "thd_max": 0.85,
+   "ripple_pp_pct": 47.3,
+   "perdas_L_w": 183,
+   "massa_L_kg": 5.0,
+   "custo_comp": 3102,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 18.17 % (pior em 55.5 Hz, h17, ganho 60.17)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.28 % (pior em 32.5 Hz, h29, ganho 40.4)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 1067,
+   "uk": 5.5,
+   "fr": 1090,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.61,
+   "v_cap": 202,
+   "thd_max": 1.4,
+   "ripple_pp_pct": 42.7,
+   "perdas_L_w": 182,
+   "massa_L_kg": 6.0,
+   "custo_comp": 2764,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 11.95 % (pior em 58.0 Hz, h23, ganho 58.99)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.14 % (pior em 44.0 Hz, h29, ganho 54.7)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "INSTALL-10A": {
+  "caso": {
+   "id": "INSTALL-10A",
+   "cliente": "Install Instalação 10 A 415 V",
+   "status": "cotado (Cootrans ORC 0045/23)",
+   "tensao_v": 415,
+   "motor_kw": 5.8,
+   "corrente_a": 10,
+   "insp_i_ind": 10,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 3783,
+    "cap_id": "TDK_PEC_10u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 1,
+    "uk": 6.0,
+    "fr": 830,
+    "venda": 4324,
+    "custo": 1937
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 3783,
+   "uk": 5.95,
+   "fr": 818,
+   "cap": "3× 10 µF Estrela (1/ramo)",
+   "C_y_uF": 10.0,
+   "i_cap_unit": 1.29,
+   "v_cap": 220,
+   "thd_max": 2.72,
+   "ripple_pp_pct": 60.0,
+   "perdas_L_w": 86,
+   "massa_L_kg": 2.0,
+   "custo_comp": 2364,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.85 A (121 % Imax) | Û 378 V (lim ≤ 2.35 A | ≤ 815 V)"
+   ],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.81 % (pior em 59.5 Hz, h17, ganho 55.61)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.14 % (pior em 33.5 Hz, h29, ganho 39.3)",
+    "Tensão estimada no mancal: 11.2 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 4131,
+   "uk": 6.5,
+   "fr": 783,
+   "cap": "3× 10 µF Estrela (1/ramo)",
+   "C_y_uF": 10.0,
+   "i_cap_unit": 1.2,
+   "v_cap": 220,
+   "thd_max": 1.66,
+   "ripple_pp_pct": 53.0,
+   "perdas_L_w": 82,
+   "massa_L_kg": 2.0,
+   "custo_comp": 2372,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.63 A (112 % Imax) | Û 368 V (lim ≤ 2.35 A | ≤ 815 V)"
+   ],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.57 % (pior em 57.5 Hz, h17, ganho 54.83)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.67 % (pior em 32.5 Hz, h29, ganho 35.7)",
+    "Tensão estimada no mancal: 11.2 V pico"
+   ]
+  }
+ },
+ "INSTALL-20A": {
+  "caso": {
+   "id": "INSTALL-20A",
+   "cliente": "Install Instalação 20 A 415 V",
+   "status": "cotado (Cootrans ORC 0045/23)",
+   "tensao_v": 415,
+   "motor_kw": 11.6,
+   "corrente_a": 20,
+   "insp_i_ind": 20,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 1891,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 1,
+    "uk": 6.0,
+    "fr": 900,
+    "venda": 4324,
+    "custo": 1937
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 1891,
+   "uk": 5.95,
+   "fr": 818,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.58,
+   "v_cap": 220,
+   "thd_max": 2.65,
+   "ripple_pp_pct": 60.0,
+   "perdas_L_w": 154,
+   "massa_L_kg": 5.0,
+   "custo_comp": 2696,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.49 % (pior em 59.5 Hz, h17, ganho 54.57)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.13 % (pior em 33.5 Hz, h29, ganho 39.2)",
+    "Tensão estimada no mancal: 11.2 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 1748,
+   "uk": 5.5,
+   "fr": 851,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.65,
+   "v_cap": 221,
+   "thd_max": 1.84,
+   "ripple_pp_pct": 61.5,
+   "perdas_L_w": 147,
+   "massa_L_kg": 4.0,
+   "custo_comp": 2670,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.89 % (pior em 58.5 Hz, h17, ganho 55.88)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.63 % (pior em 32.0 Hz, h31, ganho 46.4)",
+    "Tensão estimada no mancal: 11.2 V pico"
+   ]
+  }
+ },
+ "AB-48A": {
+  "caso": {
+   "id": "AB-48A",
+   "cliente": "AB-Powertrain 48 A 380 V",
+   "status": "cotado/fabricado (20 µF delta, uk 5,5 %)",
+   "tensao_v": 380,
+   "motor_kw": 25.3,
+   "corrente_a": 48,
+   "insp_i_ind": 48,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 666,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Delta",
+    "n_por_ramo": 1,
+    "uk": 5.5,
+    "fr": null,
+    "venda": 7195,
+    "custo": 3787
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 666,
+   "uk": 5.49,
+   "fr": 796,
+   "cap": "3× 20 µF Delta (1/ramo)",
+   "C_y_uF": 60.0,
+   "i_cap_unit": 3.88,
+   "v_cap": 351,
+   "thd_max": 1.64,
+   "ripple_pp_pct": 62.3,
+   "perdas_L_w": 291,
+   "massa_L_kg": 9.0,
+   "custo_comp": 3001,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.22 % (pior em 53.0 Hz, h17, ganho 46.90)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.67 % (pior em 32.0 Hz, h29, ganho 43.3)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 727,
+   "uk": 6.0,
+   "fr": 933,
+   "cap": "6× 20 µF Estrela (2/ramo)",
+   "C_y_uF": 40.0,
+   "i_cap_unit": 2.75,
+   "v_cap": 202,
+   "thd_max": 2.15,
+   "ripple_pp_pct": 56.2,
+   "perdas_L_w": 286,
+   "massa_L_kg": 10.0,
+   "custo_comp": 3456,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 12.53 % (pior em 58.0 Hz, h19, ganho 49.46)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.95 % (pior em 38.0 Hz, h29, ganho 45.5)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "GRATT-59A": {
+  "caso": {
+   "id": "GRATT-59A",
+   "cliente": "GRATT 40 CV 59 A 380 V",
+   "status": "cotado",
+   "tensao_v": 380,
+   "motor_kw": 29.4,
+   "corrente_a": 59,
+   "insp_i_ind": 59,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 597,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 3,
+    "uk": 6.0,
+    "fr": 900,
+    "venda": 9061,
+    "custo": 4769
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 597,
+   "uk": 6.05,
+   "fr": 841,
+   "cap": "9× 20 µF Estrela (3/ramo)",
+   "C_y_uF": 60.0,
+   "i_cap_unit": 2.39,
+   "v_cap": 202,
+   "thd_max": 1.81,
+   "ripple_pp_pct": 55.6,
+   "perdas_L_w": 339,
+   "massa_L_kg": 12.0,
+   "custo_comp": 3993,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.31 % (pior em 58.5 Hz, h17, ganho 47.23)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.78 % (pior em 32.0 Hz, h31, ganho 39.3)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 592,
+   "uk": 6.0,
+   "fr": 845,
+   "cap": "3× 20 µF Delta (1/ramo)",
+   "C_y_uF": 60.0,
+   "i_cap_unit": 4.16,
+   "v_cap": 350,
+   "thd_max": 1.81,
+   "ripple_pp_pct": 56.1,
+   "perdas_L_w": 339,
+   "massa_L_kg": 12.0,
+   "custo_comp": 3210,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.53 % (pior em 57.0 Hz, h17, ganho 47.98)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.39 % (pior em 34.5 Hz, h29, ganho 41.2)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "GRATT-105A": {
+  "caso": {
+   "id": "GRATT-105A",
+   "cliente": "GRATT 75 CV 105 A 380 V",
+   "status": "cotado",
+   "tensao_v": 380,
+   "motor_kw": 55,
+   "corrente_a": 105,
+   "insp_i_ind": 105,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 333,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 5,
+    "uk": 6.0,
+    "fr": 900,
+    "venda": 13986,
+    "custo": 7361
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 333,
+   "uk": 6.01,
+   "fr": 872,
+   "cap": "15× 20 µF Estrela (5/ramo)",
+   "C_y_uF": 100.0,
+   "i_cap_unit": 2.5,
+   "v_cap": 202,
+   "thd_max": 1.88,
+   "ripple_pp_pct": 56.4,
+   "perdas_L_w": 556,
+   "massa_L_kg": 22.0,
+   "custo_comp": 5415,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 9.01 % (lim ≤ 6.0 %)"
+   ],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.63 % (pior em 59.0 Hz, h17, ganho 48.30)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.80 % (pior em 35.5 Hz, h29, ganho 44.4)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 332,
+   "uk": 6.0,
+   "fr": 797,
+   "cap": "6× 20 µF Delta (2/ramo)",
+   "C_y_uF": 120.0,
+   "i_cap_unit": 3.89,
+   "v_cap": 350,
+   "thd_max": 1.78,
+   "ripple_pp_pct": 57.5,
+   "perdas_L_w": 566,
+   "massa_L_kg": 22.0,
+   "custo_comp": 4232,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.41 % (pior em 58.0 Hz, h17, ganho 47.56)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.54 % (pior em 32.5 Hz, h29, ganho 42.4)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "FRANKLIN-120A": {
+  "caso": {
+   "id": "FRANKLIN-120A",
+   "cliente": "Franklin Electric 120 A 380 V",
+   "status": "dimensionado (planilha)",
+   "tensao_v": 380,
+   "motor_kw": 63,
+   "corrente_a": 120,
+   "insp_i_ind": 120,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 291,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Delta",
+    "n_por_ramo": 2,
+    "uk": 6.0,
+    "fr": 850,
+    "venda": null,
+    "custo": null
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 291,
+   "uk": 6.0,
+   "fr": 852,
+   "cap": "6× 20 µF Delta (2/ramo)",
+   "C_y_uF": 120.0,
+   "i_cap_unit": 4.2,
+   "v_cap": 350,
+   "thd_max": 1.81,
+   "ripple_pp_pct": 56.0,
+   "perdas_L_w": 619,
+   "massa_L_kg": 25.0,
+   "custo_comp": 4448,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 7.21 % (lim ≤ 6.0 %)"
+   ],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.79 % (pior em 57.5 Hz, h17, ganho 48.84)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.11 % (pior em 32.5 Hz, h31, ganho 42.0)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 291,
+   "uk": 6.0,
+   "fr": 1205,
+   "cap": "3× 20 µF Delta (1/ramo)",
+   "C_y_uF": 60.0,
+   "i_cap_unit": 7.43,
+   "v_cap": 349,
+   "thd_max": 3.75,
+   "ripple_pp_pct": 58.7,
+   "perdas_L_w": 645,
+   "massa_L_kg": 26.0,
+   "custo_comp": 4132,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 10.06 % (pior em 60.0 Hz, h23, ganho 49.46)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.16 % (pior em 49.0 Hz, h29, ganho 47.1)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "ASA-255A": {
+  "caso": {
+   "id": "ASA-255A",
+   "cliente": "ASA – ATV61HC13N4 255 A 380 V",
+   "status": "cotado (Cootrans ORC 0136/23: 137 µH 306 A)",
+   "tensao_v": 380,
+   "motor_kw": 134,
+   "corrente_a": 255,
+   "insp_i_ind": 306,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 137,
+    "cap_id": "TDK_PEC_20u_480",
+    "ligacao": "Delta",
+    "n_por_ramo": 4,
+    "uk": 6.0,
+    "fr": 900,
+    "venda": 13180,
+    "custo": 6590
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 137,
+   "uk": 6.0,
+   "fr": 878,
+   "cap": "12× 20 µF Delta (4/ramo)",
+   "C_y_uF": 240.0,
+   "i_cap_unit": 4.37,
+   "v_cap": 349,
+   "thd_max": 1.87,
+   "ripple_pp_pct": 56.4,
+   "perdas_L_w": 1181,
+   "massa_L_kg": 54.0,
+   "custo_comp": 7131,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 7.09 % (lim ≤ 6.0 %)"
+   ],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 15.00 % (pior em 57.0 Hz, h17, ganho 49.60)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.16 % (pior em 33.5 Hz, h31, ganho 42.5)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 126,
+   "uk": 5.5,
+   "fr": 917,
+   "cap": "12× 20 µF Delta (4/ramo)",
+   "C_y_uF": 240.0,
+   "i_cap_unit": 4.64,
+   "v_cap": 350,
+   "thd_max": 2.03,
+   "ripple_pp_pct": 61.5,
+   "perdas_L_w": 1189,
+   "massa_L_kg": 50.0,
+   "custo_comp": 6888,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 15.21 % (pior em 59.0 Hz, h17, ganho 50.26)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.80 % (pior em 34.5 Hz, h31, ganho 47.8)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "FN5040-24": {
+  "caso": {
+   "id": "FN5040-24",
+   "cliente": "Schaffner FN5040-24 (catálogo)",
+   "status": "produto de catálogo, LC sem amortecimento",
+   "tensao_v": 380,
+   "motor_kw": 11,
+   "corrente_a": 24,
+   "insp_i_ind": 24,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 2400,
+    "cap_id": "TDK_PEC_10u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 1,
+    "uk": null,
+    "fr": 1027,
+    "venda": null,
+    "custo": null
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 2400,
+   "uk": 9.9,
+   "fr": 1027,
+   "cap": "3× 10 µF Estrela (1/ramo)",
+   "C_y_uF": 10.0,
+   "i_cap_unit": 1.65,
+   "v_cap": 196,
+   "thd_max": 3.6,
+   "ripple_pp_pct": 36.2,
+   "perdas_L_w": 179,
+   "massa_L_kg": 8.0,
+   "custo_comp": 2753,
+   "amort": "nenhum",
+   "aprovado": false,
+   "falhas": [
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.35 A (100 % Imax) | Û 315 V (lim ≤ 2.35 A | ≤ 815 V)"
+   ],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 8.80 % (pior em 60.0 Hz, h23, ganho 43.31)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.16 % (pior em 45.5 Hz, h29, ganho 39.5)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 1455,
+   "uk": 6.0,
+   "fr": 933,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 2.75,
+   "v_cap": 202,
+   "thd_max": 2.15,
+   "ripple_pp_pct": 56.2,
+   "perdas_L_w": 159,
+   "massa_L_kg": 5.0,
+   "custo_comp": 2728,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 13.41 % (pior em 58.0 Hz, h19, ganho 53.01)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.34 % (pior em 38.0 Hz, h29, ganho 48.5)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ },
+ "FN5040-75": {
+  "caso": {
+   "id": "FN5040-75",
+   "cliente": "Schaffner FN5040-75 (catálogo)",
+   "status": "produto de catálogo, LC sem amortecimento",
+   "tensao_v": 380,
+   "motor_kw": 37,
+   "corrente_a": 75,
+   "insp_i_ind": 75,
+   "inversor": "GENERICO",
+   "fs_khz": 4.0,
+   "real": {
+    "L1_uH": 750,
+    "cap_id": "TDK_PEC_30u_480",
+    "ligacao": "Estrela",
+    "n_por_ramo": 1,
+    "uk": null,
+    "fr": 1061,
+    "venda": null,
+    "custo": null
+   }
+  },
+  "real": {
+   "topologia": "LC",
+   "L1_uH": 750,
+   "uk": 9.67,
+   "fr": 1061,
+   "cap": "3× 30 µF Estrela (1/ramo)",
+   "C_y_uF": 30.0,
+   "i_cap_unit": 5.13,
+   "v_cap": 196,
+   "thd_max": 3.05,
+   "ripple_pp_pct": 36.1,
+   "perdas_L_w": 462,
+   "massa_L_kg": 25.0,
+   "custo_comp": 4028,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 7.55 % (pior em 59.0 Hz, h23, ganho 36.92)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.26 % (pior em 47.0 Hz, h29, ganho 32.5)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  },
+  "auto": {
+   "topologia": "LC",
+   "L1_uH": 504,
+   "uk": 6.5,
+   "fr": 915,
+   "cap": "3× 20 µF Delta (1/ramo)",
+   "C_y_uF": 60.0,
+   "i_cap_unit": 4.63,
+   "v_cap": 348,
+   "thd_max": 2.08,
+   "ripple_pp_pct": 51.9,
+   "perdas_L_w": 417,
+   "massa_L_kg": 17.0,
+   "custo_comp": 3525,
+   "amort": "nenhum",
+   "aprovado": true,
+   "falhas": [],
+   "alertas": [
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 11.17 % (pior em 60.0 Hz, h19, ganho 43.96)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.46 % (pior em 37.5 Hz, h29, ganho 33.9)",
+    "Tensão estimada no mancal: 10.3 V pico"
+   ]
+  }
+ }
+}

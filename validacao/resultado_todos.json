@@ -39,31 +39,31 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 13.65 % (pior em 58.0 Hz, h17, ganho 45.01)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.14 % (pior em 36.5 Hz, h29, ganho 47.0)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 19.10 % (pior em 58.0 Hz, h17, ganho 45.01)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.59 % (pior em 36.5 Hz, h29, ganho 47.0)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
   "auto": {
    "topologia": "LC",
-   "L1_uH": 1587,
-   "uk": 6.0,
-   "fr": 893,
+   "L1_uH": 1455,
+   "uk": 5.5,
+   "fr": 933,
    "cap": "3× 20 µF Estrela (1/ramo)",
    "C_y_uF": 20.0,
-   "i_cap_unit": 2.58,
+   "i_cap_unit": 2.75,
    "v_cap": 202,
-   "thd_max": 1.96,
-   "ripple_pp_pct": 56.4,
-   "perdas_L_w": 147,
-   "massa_L_kg": 5.0,
-   "custo_comp": 2697,
+   "thd_max": 2.14,
+   "ripple_pp_pct": 61.4,
+   "perdas_L_w": 148,
+   "massa_L_kg": 4.0,
+   "custo_comp": 2677,
    "amort": "nenhum",
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 13.87 % (pior em 58.0 Hz, h17, ganho 45.76)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.08 % (pior em 36.5 Hz, h29, ganho 46.5)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 22.94 % (pior em 60.0 Hz, h17, ganho 54.21)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.86 % (pior em 37.5 Hz, h29, ganho 48.4)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -108,8 +108,8 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 18.17 % (pior em 55.5 Hz, h17, ganho 60.17)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.28 % (pior em 32.5 Hz, h29, ganho 40.4)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 25.43 % (pior em 55.5 Hz, h17, ganho 60.17)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.40 % (pior em 32.5 Hz, h29, ganho 40.4)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
@@ -131,8 +131,8 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 11.95 % (pior em 58.0 Hz, h23, ganho 58.99)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.14 % (pior em 44.0 Hz, h29, ganho 54.7)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.73 % (pior em 58.0 Hz, h23, ganho 58.99)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 10.00 % (pior em 44.0 Hz, h29, ganho 54.7)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -176,11 +176,11 @@
    "amort": "nenhum",
    "aprovado": false,
    "falhas": [
-    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.85 A (121 % Imax) | Û 378 V (lim ≤ 2.35 A | ≤ 815 V)"
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 3.78 A (161 % Imax) | Û 400 V (lim ≤ 2.35 A | ≤ 815 V)"
    ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.81 % (pior em 59.5 Hz, h17, ganho 55.61)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.14 % (pior em 33.5 Hz, h29, ganho 39.3)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 23.53 % (pior em 59.5 Hz, h17, ganho 55.61)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.19 % (pior em 33.5 Hz, h29, ganho 39.3)",
     "Tensão estimada no mancal: 11.2 V pico"
    ]
   },
@@ -201,11 +201,11 @@
    "amort": "nenhum",
    "aprovado": false,
    "falhas": [
-    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.63 A (112 % Imax) | Û 368 V (lim ≤ 2.35 A | ≤ 815 V)"
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 3.48 A (148 % Imax) | Û 390 V (lim ≤ 2.35 A | ≤ 815 V)"
    ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.57 % (pior em 57.5 Hz, h17, ganho 54.83)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.67 % (pior em 32.5 Hz, h29, ganho 35.7)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 23.19 % (pior em 57.5 Hz, h17, ganho 54.83)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.54 % (pior em 32.5 Hz, h29, ganho 35.7)",
     "Tensão estimada no mancal: 11.2 V pico"
    ]
   }
@@ -250,31 +250,31 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.49 % (pior em 59.5 Hz, h17, ganho 54.57)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.13 % (pior em 33.5 Hz, h29, ganho 39.2)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 23.09 % (pior em 59.5 Hz, h17, ganho 54.57)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.19 % (pior em 33.5 Hz, h29, ganho 39.2)",
     "Tensão estimada no mancal: 11.2 V pico"
    ]
   },
   "auto": {
    "topologia": "LC",
-   "L1_uH": 1748,
-   "uk": 5.5,
-   "fr": 851,
+   "L1_uH": 2066,
+   "uk": 6.5,
+   "fr": 783,
    "cap": "3× 20 µF Estrela (1/ramo)",
    "C_y_uF": 20.0,
-   "i_cap_unit": 2.65,
-   "v_cap": 221,
-   "thd_max": 1.84,
-   "ripple_pp_pct": 61.5,
-   "perdas_L_w": 147,
-   "massa_L_kg": 4.0,
-   "custo_comp": 2670,
+   "i_cap_unit": 2.4,
+   "v_cap": 220,
+   "thd_max": 1.66,
+   "ripple_pp_pct": 53.0,
+   "perdas_L_w": 148,
+   "massa_L_kg": 5.0,
+   "custo_comp": 2712,
    "amort": "nenhum",
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 16.89 % (pior em 58.5 Hz, h17, ganho 55.88)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.63 % (pior em 32.0 Hz, h31, ganho 46.4)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 22.34 % (pior em 57.5 Hz, h17, ganho 52.78)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.49 % (pior em 32.5 Hz, h29, ganho 35.4)",
     "Tensão estimada no mancal: 11.2 V pico"
    ]
   }
@@ -319,31 +319,31 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.22 % (pior em 53.0 Hz, h17, ganho 46.90)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.67 % (pior em 32.0 Hz, h29, ganho 43.3)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 19.91 % (pior em 53.0 Hz, h17, ganho 46.90)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.94 % (pior em 32.0 Hz, h29, ganho 43.3)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
   "auto": {
    "topologia": "LC",
-   "L1_uH": 727,
-   "uk": 6.0,
-   "fr": 933,
-   "cap": "6× 20 µF Estrela (2/ramo)",
-   "C_y_uF": 40.0,
-   "i_cap_unit": 2.75,
-   "v_cap": 202,
-   "thd_max": 2.15,
-   "ripple_pp_pct": 56.2,
-   "perdas_L_w": 286,
-   "massa_L_kg": 10.0,
-   "custo_comp": 3456,
+   "L1_uH": 909,
+   "uk": 7.5,
+   "fr": 1180,
+   "cap": "3× 20 µF Estrela (1/ramo)",
+   "C_y_uF": 20.0,
+   "i_cap_unit": 4.15,
+   "v_cap": 199,
+   "thd_max": 3.67,
+   "ripple_pp_pct": 46.7,
+   "perdas_L_w": 296,
+   "massa_L_kg": 13.0,
+   "custo_comp": 3233,
    "amort": "nenhum",
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 12.53 % (pior em 58.0 Hz, h19, ganho 49.46)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.95 % (pior em 38.0 Hz, h29, ganho 45.5)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 12.37 % (pior em 59.0 Hz, h23, ganho 43.37)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.28 % (pior em 46.5 Hz, h31, ganho 42.9)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -385,34 +385,36 @@
    "massa_L_kg": 12.0,
    "custo_comp": 3993,
    "amort": "nenhum",
-   "aprovado": true,
-   "falhas": [],
+   "aprovado": false,
+   "falhas": [
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 6.54 % (lim ≤ 6.0 %)"
+   ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.31 % (pior em 58.5 Hz, h17, ganho 47.23)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.78 % (pior em 32.0 Hz, h31, ganho 39.3)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 20.03 % (pior em 58.5 Hz, h17, ganho 47.23)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.69 % (pior em 32.0 Hz, h31, ganho 39.3)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
   "auto": {
    "topologia": "LC",
-   "L1_uH": 592,
-   "uk": 6.0,
-   "fr": 845,
+   "L1_uH": 690,
+   "uk": 7.0,
+   "fr": 782,
    "cap": "3× 20 µF Delta (1/ramo)",
    "C_y_uF": 60.0,
-   "i_cap_unit": 4.16,
-   "v_cap": 350,
-   "thd_max": 1.81,
-   "ripple_pp_pct": 56.1,
-   "perdas_L_w": 339,
-   "massa_L_kg": 12.0,
-   "custo_comp": 3210,
+   "i_cap_unit": 3.82,
+   "v_cap": 347,
+   "thd_max": 1.87,
+   "ripple_pp_pct": 49.5,
+   "perdas_L_w": 349,
+   "massa_L_kg": 14.0,
+   "custo_comp": 3330,
    "amort": "nenhum",
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.53 % (pior em 57.0 Hz, h17, ganho 47.98)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.39 % (pior em 34.5 Hz, h29, ganho 41.2)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 18.76 % (pior em 58.0 Hz, h17, ganho 44.22)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.58 % (pior em 32.5 Hz, h29, ganho 35.8)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -456,34 +458,34 @@
    "amort": "nenhum",
    "aprovado": false,
    "falhas": [
-    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 9.01 % (lim ≤ 6.0 %)"
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 12.48 % (lim ≤ 6.0 %)"
    ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.63 % (pior em 59.0 Hz, h17, ganho 48.30)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.80 % (pior em 35.5 Hz, h29, ganho 44.4)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 20.48 % (pior em 59.0 Hz, h17, ganho 48.30)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.12 % (pior em 35.5 Hz, h29, ganho 44.4)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
   "auto": {
    "topologia": "LC",
-   "L1_uH": 332,
-   "uk": 6.0,
-   "fr": 797,
-   "cap": "6× 20 µF Delta (2/ramo)",
-   "C_y_uF": 120.0,
-   "i_cap_unit": 3.89,
-   "v_cap": 350,
-   "thd_max": 1.78,
-   "ripple_pp_pct": 57.5,
-   "perdas_L_w": 566,
-   "massa_L_kg": 22.0,
-   "custo_comp": 4232,
+   "L1_uH": 388,
+   "uk": 7.0,
+   "fr": 1043,
+   "cap": "3× 20 µF Delta (1/ramo)",
+   "C_y_uF": 60.0,
+   "i_cap_unit": 5.71,
+   "v_cap": 346,
+   "thd_max": 2.78,
+   "ripple_pp_pct": 49.9,
+   "perdas_L_w": 572,
+   "massa_L_kg": 26.0,
+   "custo_comp": 4115,
    "amort": "nenhum",
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.41 % (pior em 58.0 Hz, h17, ganho 47.56)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.54 % (pior em 32.5 Hz, h29, ganho 42.4)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 12.50 % (pior em 51.5 Hz, h23, ganho 43.81)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.12 % (pior em 43.5 Hz, h29, ganho 44.4)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -527,11 +529,11 @@
    "amort": "nenhum",
    "aprovado": false,
    "falhas": [
-    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 7.21 % (lim ≤ 6.0 %)"
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 9.94 % (lim ≤ 6.0 %)"
    ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.79 % (pior em 57.5 Hz, h17, ganho 48.84)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.11 % (pior em 32.5 Hz, h31, ganho 42.0)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 20.70 % (pior em 57.5 Hz, h17, ganho 48.84)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.15 % (pior em 32.5 Hz, h31, ganho 42.0)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
@@ -553,8 +555,8 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 10.06 % (pior em 60.0 Hz, h23, ganho 49.46)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.16 % (pior em 49.0 Hz, h29, ganho 47.1)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 14.09 % (pior em 60.0 Hz, h23, ganho 49.46)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.62 % (pior em 49.0 Hz, h29, ganho 47.1)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -598,11 +600,11 @@
    "amort": "nenhum",
    "aprovado": false,
    "falhas": [
-    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 7.09 % (lim ≤ 6.0 %)"
+    "THD total no motor @ 60 Hz (PWM + baixa ordem, valores nominais): 9.75 % (lim ≤ 6.0 %)"
    ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 15.00 % (pior em 57.0 Hz, h17, ganho 49.60)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.16 % (pior em 33.5 Hz, h31, ganho 42.5)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 21.01 % (pior em 57.0 Hz, h17, ganho 49.60)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.23 % (pior em 33.5 Hz, h31, ganho 42.5)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
@@ -624,8 +626,8 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 15.21 % (pior em 59.0 Hz, h17, ganho 50.26)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.80 % (pior em 34.5 Hz, h31, ganho 47.8)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 21.29 % (pior em 59.0 Hz, h17, ganho 50.26)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.12 % (pior em 34.5 Hz, h31, ganho 47.8)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -669,11 +671,11 @@
    "amort": "nenhum",
    "aprovado": false,
    "falhas": [
-    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.35 A (100 % Imax) | Û 315 V (lim ≤ 2.35 A | ≤ 815 V)"
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 2.87 A (122 % Imax) | Û 326 V (lim ≤ 2.35 A | ≤ 815 V)"
    ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 8.80 % (pior em 60.0 Hz, h23, ganho 43.31)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.16 % (pior em 45.5 Hz, h29, ganho 39.5)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 12.32 % (pior em 60.0 Hz, h23, ganho 43.31)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 7.22 % (pior em 45.5 Hz, h29, ganho 39.5)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
@@ -695,8 +697,8 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 13.41 % (pior em 58.0 Hz, h19, ganho 53.01)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.34 % (pior em 38.0 Hz, h29, ganho 48.5)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 18.77 % (pior em 58.0 Hz, h19, ganho 53.01)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 8.87 % (pior em 38.0 Hz, h29, ganho 48.5)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }
@@ -738,11 +740,13 @@
    "massa_L_kg": 25.0,
    "custo_comp": 4028,
    "amort": "nenhum",
-   "aprovado": true,
-   "falhas": [],
+   "aprovado": false,
+   "falhas": [
+    "Capacitor no pior caso de ressonância de baixa ordem (I e Û com a harmônica amplificada): 7.77 A (110 % Imax) | Û 316 V (lim ≤ 7.06 A | ≤ 815 V)"
+   ],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 7.55 % (pior em 59.0 Hz, h23, ganho 36.92)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.26 % (pior em 47.0 Hz, h29, ganho 32.5)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 10.56 % (pior em 59.0 Hz, h23, ganho 36.92)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 5.96 % (pior em 47.0 Hz, h29, ganho 32.5)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   },
@@ -764,8 +768,8 @@
    "aprovado": true,
    "falhas": [],
    "alertas": [
-    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 11.17 % (pior em 60.0 Hz, h19, ganho 43.96)",
-    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 4.46 % (pior em 37.5 Hz, h29, ganho 33.9)",
+    "Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C): 15.64 % (pior em 60.0 Hz, h19, ganho 43.96)",
+    "Ressonância natural (LC ∥ motor) × harmônicas altas h29–h49 do tempo morto: 6.24 % (pior em 37.5 Hz, h29, ganho 33.9)",
     "Tensão estimada no mancal: 10.3 V pico"
    ]
   }

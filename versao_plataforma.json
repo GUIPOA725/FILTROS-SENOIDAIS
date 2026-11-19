@@ -1,1 +1,1 @@
-{"versao": "1.9.2", "data": "2026-11-19", "resumo": "Desenho da mesma rede no ATPDraw gerado em todo projeto e aberto junto com o .pl4 (PlotXY) ao terminar a simulação"}
+{"versao": "1.9.3", "data": "2026-11-19", "resumo": "Revisão com ATP nos 11 filtros reais: passo do ATP corrigido (2048/portadora), calibração de campo da baixa ordem (x1,4, SENAI), não abre mais ATPDraw/PlotXY sozinho"}
