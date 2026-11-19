@@ -53,8 +53,9 @@ def _resumo(proj, arr, orc, conf):
 def tela_ajuste(pasta_saida):
     st.title("Ajuste manual e ressimulação")
     cat = carregar_catalogo()
+    painel_abrir_projeto(pasta_saida, "abrir_aj")
     if "pedido" not in st.session_state:
-        st.info("Abra um pedido em **Nova solicitação** (ou carregue o exemplo) para ajustar aqui.")
+        st.info("Abra um projeto já feito acima, ou um pedido novo em **Nova solicitação**.")
         return
     ped = Pedido.from_dict(st.session_state["pedido"])
     st.caption(f"{ped.cliente} – {ped.quantidade} × {ped.corrente_a:g} A / {ped.tensao_v:g} V – {ped.inversor} – "
@@ -312,3 +313,102 @@ def tela_criterios():
         yaml.safe_load(txt)
         open(CAT_PADRAO, "w", encoding="utf-8").write(txt)
         st.success("Critérios salvos. A próxima otimização já usa os novos valores.")
+
+
+# ------------------------------------------------------------------ abrir projeto já feito
+_GRAF = {"formas_onda": "formas_onda.png", "espectro": "espectro.png", "bode": "resposta_frequencia.png",
+         "baixa_ordem": "ressonancia_baixa_ordem.png", "impedancia": "impedancia_entrada.png", "fluxo": "fluxo_correntes.png"}
+
+
+def listar_projetos(pasta_saida):
+    """Projetos já gerados: PROJETOS\\<Cliente>\\<data>_<código> (pastas com pedido.json)."""
+    out = []
+    if not pasta_saida or not os.path.isdir(pasta_saida):
+        return out
+    for cli in sorted(os.listdir(pasta_saida)):
+        pc = os.path.join(pasta_saida, cli)
+        if not os.path.isdir(pc):
+            continue
+        cands = [pc] + [os.path.join(pc, d) for d in os.listdir(pc) if os.path.isdir(os.path.join(pc, d))]
+        for d in cands:
+            if os.path.exists(os.path.join(d, "pedido.json")):
+                out.append((cli, os.path.basename(d) if d != pc else "(raiz)", d))
+    out.sort(key=lambda x: (x[0].lower(), x[1]), reverse=False)
+    return out
+
+
+def carregar_projeto_pasta(pasta):
+    """Lê pedido.json + 01_Engenharia/projeto.json e deixa tudo pronto na sessão (Nova solicitação e Ajuste manual)."""
+    import json
+    ped = json.load(open(os.path.join(pasta, "pedido.json"), encoding="utf-8"))
+    st.session_state["pedido"] = Pedido.from_dict(ped).to_dict()
+    cfg = None
+    cam = os.path.join(pasta, "01_Engenharia", "projeto.json")
+    if os.path.exists(cam):
+        pj = json.load(open(cam, encoding="utf-8"))
+        b, am = pj.get("banco") or {}, pj.get("amortecimento") or {}
+        tipo = am.get("tipo") if am else None
+        cfg = dict(fs_khz=float(pj.get("fs_hz", 4000)) / 1000, L1_uH=float(pj["l1"]["l_uh"]),
+                   L2_uH=float((pj.get("l2") or {}).get("l_uh") or 0.0), cap_id=b.get("cap_id"), ligacao=b.get("ligacao", "Estrela"),
+                   n_por_ramo=int(b.get("n_por_ramo", 1)),
+                   amort_tipo=("nenhum" if not tipo else ("rc" if tipo == "rc_paralelo" else "serie")),
+                   rd_ramo_ohm=float(am.get("r_ramo_ohm", 0.0)) if tipo == "serie" else 0.0,
+                   nd_por_ramo=int(am.get("n_cd_por_ramo", 0)) if tipo == "rc_paralelo" else 0,
+                   rdp_ramo_ohm=float(am.get("r_ramo_ohm", 0.0)) if tipo == "rc_paralelo" else 0.0)
+    for k in ("manual_res", "auto_res", "cmp_topo_df"):
+        st.session_state.pop(k, None)
+    if cfg:
+        st.session_state["cfg_auto"] = cfg
+        st.session_state["cfg_manual"] = dict(cfg)
+    arquivos = {}
+    for raiz, _, fs in os.walk(pasta):
+        for f in fs:
+            c = os.path.join(raiz, f)
+            if f.startswith("Email_Solicitacao_Dados"):
+                arquivos["email_dados"] = c
+            elif f.startswith("Email_"):
+                arquivos["email_" + f[6:-4]] = c
+            elif "Questionario" in f:
+                arquivos["questionario"] = c
+            elif f.lower().endswith((".docx", ".xlsx", ".pdf")):
+                arquivos[f] = c
+    gdir = os.path.join(pasta, "graficos")
+    graf = {k: os.path.join(gdir, v) for k, v in _GRAF.items() if os.path.exists(os.path.join(gdir, v))}
+    zips = [os.path.join(os.path.dirname(pasta), z) for z in os.listdir(os.path.dirname(pasta))
+            if z == os.path.basename(pasta) + ".zip"]
+    res = os.path.join(pasta, "RESUMO.md")
+    st.session_state["resultado"] = {"pasta": pasta, "zip": zips[0] if zips else None, "arquivos": arquivos, "graficos": graf,
+                                     "resumo": open(res, encoding="utf-8").read() if os.path.exists(res) else ""}
+    return cfg is not None
+
+
+def painel_abrir_projeto(pasta_saida, chave="abrir"):
+    """Seletor de projetos já feitos (cliente → projeto) + campo para colar o caminho da pasta."""
+    with st.expander("📂 Abrir um projeto já feito", expanded="pedido" not in st.session_state):
+        lst = listar_projetos(pasta_saida)
+        if lst:
+            clientes = sorted({c for c, _, _ in lst}, key=str.lower)
+            c1, c2 = st.columns(2)
+            cli = c1.selectbox("Cliente", clientes, key=f"{chave}_cli")
+            projs = [(n, d) for c, n, d in lst if c == cli]
+            nome = c2.selectbox("Projeto", [n for n, _ in projs][::-1], key=f"{chave}_proj")
+            pasta = dict(projs)[nome]
+        else:
+            st.caption(f"Nenhum projeto encontrado em {pasta_saida}.")
+            pasta = None
+        colado = st.text_input("…ou cole o caminho da pasta (cliente ou projeto)", key=f"{chave}_cam",
+                               placeholder=r"G:\Drives compartilhados\...\PROJETOS\A & W Suprimentos Industriais")
+        if colado.strip():
+            p = colado.strip().strip('"')
+            if os.path.isdir(p) and not os.path.exists(os.path.join(p, "pedido.json")):
+                subs = sorted([os.path.join(p, d) for d in os.listdir(p) if os.path.exists(os.path.join(p, d, "pedido.json"))])
+                if subs:
+                    p = st.selectbox("Projetos nesta pasta", subs, index=len(subs) - 1, format_func=os.path.basename, key=f"{chave}_sub")
+            pasta = p
+        if st.button("Abrir projeto", key=f"{chave}_btn", type="primary", disabled=not pasta):
+            if not os.path.exists(os.path.join(pasta, "pedido.json")):
+                st.error("Essa pasta não tem pedido.json (projetos antigos, de antes da plataforma, não podem ser abertos aqui).")
+            else:
+                carregar_projeto_pasta(pasta)
+                st.success(f"Aberto: {pasta}")
+                st.rerun()

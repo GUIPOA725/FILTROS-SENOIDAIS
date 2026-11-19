@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.1 – 19/11/2026 – Abrir projeto já feito
+- Novo painel "📂 Abrir um projeto já feito" em **Nova solicitação** e em **Ajuste manual e ressimulação**: escolha Cliente → Projeto
+  (lista o que está em PROJETOS) ou cole o caminho da pasta do cliente/projeto. Carrega pedido, configuração (L, C, fs, ligação),
+  resumo, gráficos, e-mails e arquivos; dá para ressimular, ajustar e gerar de novo.
+
 ## v1.8.0 – 19/11/2026 – Validação com os filtros fabricados
 - Rodados 9 projetos reais (IHR/Randon, SENAI, Gelluns, Install, AB-Powertrain, GRATT, Franklin, ASA) + Schaffner FN5040 e medições Fluke (SENAI, IHR).
 - Corrigido: o "pior caso teórico" de ressonância de baixa ordem (velocidade exata + tolerâncias) era crítico e reprovava todo LC sem resistor – agora é ALERTA.

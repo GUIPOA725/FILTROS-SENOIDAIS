@@ -15,7 +15,7 @@ from fsen.pipeline import processar
 from fsen.dimensionamento import CAT_PADRAO, carregar_catalogo
 from fsen import historico as H
 from fsen.dimensionamento import config_de_projeto
-from telas_ajuste import tela_ajuste_completa, tela_criterios
+from telas_ajuste import tela_ajuste_completa, tela_criterios, painel_abrir_projeto
 from fsen.leitor_ia import status_provedores, config_ia, salvar_config_ia
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +83,7 @@ def form_pedido(p: Pedido) -> Pedido:
 
 if pagina == "Nova solicitação":
     st.title("Nova solicitação")
+    painel_abrir_projeto(pasta_saida, "abrir_ns")
     texto = st.text_area("Cole aqui o e-mail do cliente", height=180,
                          value=open(os.path.join(RAIZ, "exemplos", "email_AW_293A.txt"), encoding="utf-8").read()
                          if st.session_state.get("exemplo") else "")
@@ -151,19 +152,23 @@ if pagina == "Nova solicitação":
                                        file_name=os.path.basename(r["arquivos"]["questionario"]))
         g = r["graficos"]
         t1, t2, t3, t4 = st.tabs(["Formas de onda / espectro", "Resposta em frequência", "Correntes", "Desenhos"])
+        def _img(*ks):
+            for k in ks:
+                if g.get(k) and os.path.exists(g[k]):
+                    st.image(g[k])
         with t1:
-            st.image(g.get("formas_onda")); st.image(g.get("espectro"))
+            _img("formas_onda", "espectro")
         with t2:
-            st.image(g.get("bode")); st.image(g.get("baixa_ordem")); st.image(g.get("impedancia"))
+            _img("bode", "baixa_ordem", "impedancia")
         with t3:
-            st.image(g.get("fluxo"))
+            _img("fluxo")
         with t4:
             pd_ = os.path.join(r["pasta"], "05_Desenhos")
-            for f in sorted(os.listdir(pd_)):
+            for f in (sorted(os.listdir(pd_)) if os.path.isdir(pd_) else []):
                 if f.endswith(".png"):
                     st.image(os.path.join(pd_, f))
         st.subheader("Downloads")
-        if r["zip"]:
+        if r.get("zip") and os.path.exists(r["zip"]):
             st.download_button("📦 Pacote completo (.zip)", open(r["zip"], "rb"), file_name=os.path.basename(r["zip"]))
         cols = st.columns(3)
         for k, (nome, cam) in enumerate(sorted(r["arquivos"].items())):
