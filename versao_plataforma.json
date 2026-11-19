@@ -1,1 +1,1 @@
-{"versao": "1.8.6", "data": "2026-11-19", "resumo": "Questionário/e-mail ao cliente específico de cada pedido: lê mais dados técnicos e lista o que já foi recebido"}
+{"versao": "1.8.7", "data": "2026-11-19", "resumo": "Leitura do pedido transparente (IA ou regras, arquivos lidos, campos não encontrados); IA via assinatura sem --json-schema; cliente obrigatório"}

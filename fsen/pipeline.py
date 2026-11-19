@@ -23,7 +23,7 @@ def pasta_cliente(nome: str) -> str:
     n = re.sub(r"\(.*?\)", " ", nome or "")
     n = re.sub(r"\b(LTDA|LTDA\.|S/?A|S\.A\.|EIRELI|ME|EPP|REVENDA)\b\.?", " ", n, flags=re.I)
     n = re.sub(r'[<>:"/\\|?*]', " ", n)
-    n = re.sub(r"\s+", " ", n).strip(" .-_")
+    n = re.sub(r"\s+", " ", n).strip(" .-_–—")
     return n[:60] or "Cliente sem nome"
 
 

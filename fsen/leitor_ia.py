@@ -201,8 +201,9 @@ def _ler_via_claude_code(pc, texto_email, anexos, historico_txt):
     prompt = (f"{INSTRUCAO}\nResponda SOMENTE com o JSON do pedido (esquema fornecido).\n\n"
               f"Arquivos anexos (leia PDF/imagens com a ferramenta Read; o texto do Word/PDF já vai abaixo):\n{lista or '(nenhum)'}\n\n"
               f"TEXTO DOS ANEXOS:\n{_texto_anexos(anexos)}\n\nE-MAIL:\n{texto_email}\n\n{historico_txt}")
-    cmd = [exe, "-p", "--output-format", "json", "--json-schema", json.dumps(esquema), "--model", pc["modelo"],
-           "--allowedTools", "Read"]
+    # o esquema vai no PROMPT (não em --json-schema): no Windows o claude.cmd passa pelo cmd.exe, que estraga aspas/JSON na linha
+    prompt += "\n\nESQUEMA (campos possíveis; omita os desconhecidos):\n" + json.dumps(esquema["properties"], ensure_ascii=False)
+    cmd = [exe, "-p", "--output-format", "json", "--model", pc["modelo"], "--allowedTools", "Read"]
     if pc.get("esforco"):
         cmd += ["--effort", pc["esforco"]]
     for d in pastas:

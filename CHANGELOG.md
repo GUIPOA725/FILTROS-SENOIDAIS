@@ -1,5 +1,15 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.8.7 – 19/11/2026 – Leitura do pedido sem surpresas
+- Problema visto no projeto das 17:16 (pasta "Cliente sem nome"): o pedido gravado tinha só corrente, quantidade e limites
+  (sem cliente, motor, cabo, faixa 41–48 Hz, inversor) → simulação genérica e e-mail ao cliente perguntando tudo de novo.
+- Agora, depois de "🔎 Ler solicitação", a tela mostra: quem leu (IA – modelo/esforço, ou REGRAS), hora, tempo e quais arquivos
+  foram lidos; e um aviso com os campos essenciais NÃO encontrados (cliente, motor, cabo, inversor, faixa de operação).
+  Se os dados não vieram de uma leitura nesta sessão, avisa. Ler de novo limpa o resultado anterior.
+- Cliente passa a ser obrigatório para dimensionar (não cria mais "Cliente sem nome").
+- IA pela assinatura: esquema JSON vai no texto do pedido (no Windows o claude.cmd estragava o --json-schema na linha de comando).
+- Pasta do cliente sem traço sobrando no fim ("A & W Suprimentos Industriais –" → "A & W Suprimentos Industriais").
+
 ## v1.8.6 – 19/11/2026 – Questionário específico de cada pedido
 - Corrigido (aviso do usuário: "faz sempre o mesmo questionário"): a leitura sem IA não reconhecia fs, tipo de controle,
   temperatura ambiente, altitude, IP, seção/blindagem do cabo, aterramento, filtro EMC, motor para inversor, mancal isolado,

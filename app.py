@@ -152,11 +152,39 @@ if pagina == "Nova solicitação":
             c = os.path.join(tmp, f.name)
             open(c, "wb").write(f.getbuffer())
             caminhos.append(c)
-        with st.spinner("Lendo e-mail e anexos..."):
-            st.session_state["pedido"] = ler_pedido(texto, caminhos, provedor=_prov).to_dict()
+        if not caminhos and not texto.strip():
+            st.error("Cole o e-mail e/ou anexe os arquivos (Word, PDF, imagem) antes de ler.")
+            st.stop()
+        import time as _t
+        _t0 = _t.time()
+        with st.spinner(f"Lendo e-mail e {len(caminhos)} anexo(s) com {_st_ia[_prov]['nome']}..."):
+            _pl = ler_pedido(texto, caminhos, provedor=_prov)
+        st.session_state["pedido"] = _pl.to_dict()
+        _ia = "[lido por IA" in (_pl.observacoes or "")
+        st.session_state["leitura_info"] = dict(
+            fonte=("IA – " + _mod + (f" · esforço {_esf}" if _esf else "")) if _ia else "REGRAS (sem IA)",
+            ia=_ia, arquivos=[os.path.basename(c) for c in caminhos], tem_texto=bool(texto.strip()),
+            hora=dt.datetime.now().strftime("%H:%M:%S"), seg=round(_t.time() - _t0, 1))
+        for k in ("resultado", "cfg_auto", "cfg_manual", "manual_res", "auto_res"):
+            st.session_state.pop(k, None)
     if "pedido" in st.session_state:
         p = Pedido.from_dict(st.session_state["pedido"])
         st.subheader("Dados extraídos – confira e ajuste")
+        _li = st.session_state.get("leitura_info")
+        if _li:
+            (st.success if _li["ia"] else st.warning)(
+                f"Leitura feita por **{_li['fonte']}** às {_li['hora']} ({_li['seg']} s) – arquivos lidos: "
+                f"{', '.join(_li['arquivos']) or 'nenhum'}" + (" + texto do e-mail" if _li["tem_texto"] else ""))
+        else:
+            st.warning("Estes dados não vieram de uma leitura nesta sessão (projeto aberto ou dados antigos). "
+                       "Para ler de novo, anexe os arquivos e clique em 🔎 Ler solicitação.")
+        _vaz = [n for n, v in (("cliente", p.cliente), ("corrente do motor", p.motor_corrente_a), ("potência do motor", p.motor_cv or p.motor_kw),
+                               ("comprimento do cabo", p.cabo_m), ("modelo do inversor", p.inversor not in ("", "GENERICO")),
+                               ("faixa de operação", "f_saida_max_hz" in (p.informados or [])))
+                if not v]
+        if _vaz:
+            st.warning("⚠️ Não foram encontrados no pedido: **" + ", ".join(_vaz) + "**. Se o cliente informou, a leitura falhou – "
+                       "confira os anexos/IA ou preencha abaixo antes de dimensionar.")
         if p.lacunas:
             st.info("Premissas: " + " | ".join(p.lacunas))
         p = form_pedido(p)
@@ -180,7 +208,7 @@ if pagina == "Nova solicitação":
         _ligs = st.multiselect("Ligação do banco de capacitores", ["Estrela", "Delta"],
                                default=_cat_ui.get("otimizacao", {}).get("ligacoes_permitidas") or ["Estrela", "Delta"],
                                help="Delta usa 3× menos capacitores, mas cada um recebe tensão de linha e √3× mais corrente.")
-        _falta = [n for n, v in (("corrente do filtro", p.corrente_a), ("tensão", p.tensao_v)) if not v]
+        _falta = [n for n, v in (("corrente do filtro", p.corrente_a), ("tensão", p.tensao_v), ("cliente", p.cliente.strip())) if not v]
         if _falta:
             st.error("Falta " + " e ".join(_falta) + " – a leitura do pedido não encontrou. Preencha acima antes de dimensionar "
                      "(a plataforma não usa mais valor padrão escondido).")
