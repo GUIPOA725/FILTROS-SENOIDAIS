@@ -52,22 +52,40 @@ def _slug(s):
 
 
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
-              ligacoes=None, prioridade="custo", queda_max=None):
+              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga"):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
     t0 = _dt.datetime.now()
     log("1/7 Dimensionando e otimizando (L, C, amortecimento)...")
+    import copy as _copy
+    ped = _copy.deepcopy(ped)                       # v1.11: não altera o pedido da tela (a corrente é redefinida pela carga)
     if projeto is not None:
         proj = projeto
         cat = getattr(projeto, "_cat", cat)
+        _cc0 = getattr(projeto, "corrente_dimensionamento", None) or {}
+        if _cc0.get("base") == "carga":             # ajuste manual: mantém a corrente térmica definida pela carga
+            if getattr(ped, "corrente_cliente_a", None) in (None, 0, 0.0):
+                ped.corrente_cliente_a = float(_cc0.get("i_cliente_a") or ped.corrente_a)
+            ped.corrente_a = float(_cc0["i_term_a"])
         if not getattr(proj, "_sims", None):
             from .dimensionamento import projeto_manual, config_de_projeto
             cfg = config_de_projeto(proj)
             proj2 = projeto_manual(ped, cat, **cfg)
             proj2._otimizacao = getattr(proj, "_otimizacao", None)
             proj = proj2
-    else:
+        try:                                    # v1.11: mantém a base de corrente no ajuste manual
+            from . import corrente_carga as CC
+            _cc0 = getattr(projeto, "corrente_dimensionamento", None) or {}
+            if _cc0.get("base") == "carga" or getattr(ped, "corrente_cliente_a", None):
+                _cc = CC.exata_do_projeto(ped, cat, proj)
+                _cc["i_term_a"] = float(ped.corrente_a)
+                proj.corrente_dimensionamento = _cc
+            elif _cc0:
+                proj.corrente_dimensionamento = _cc0
+        except Exception as e:
+            log(f"   (base de corrente não recalculada: {e})")
+    def _dim():
         proj = dimensionar(ped, cat, log=log, topologias=topologias, capacitores=capacitores, ligacoes=ligacoes)
         if prioridade == "mercado" and proj.topologia == "LC" and not proj.l2:
             # v1.9.11: indutor na faixa de mercado (MTE 8–10 %) e MENOS capacitores, aprovado e robusto (L ±10 %, C ±5 %)
@@ -114,6 +132,41 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                 proj.estudo_opcoes = _est
             except Exception as e:
                 log(f"   (prioridade 'mínimo de capacitores' não aplicada: {type(e).__name__}: {e})")
+        return proj
+
+    if projeto is None:
+        # v1.11: corrente definida pela Electric a partir da carga ("o cobre vai pela carga, o ferro vai pelo inversor")
+        from . import corrente_carga as CC
+        if getattr(ped, "corrente_cliente_a", None) in (None, 0, 0.0):
+            ped.corrente_cliente_a = float(ped.corrente_a or 0)
+        cc = None
+        if corrente_base == "carga":
+            cc = CC.calcular(ped, cat)
+            if cc["base"] == "carga":
+                ped.corrente_a = cc["i_term_a"]
+                log(f"   Corrente térmica pela carga (1ª passada): {cc['i_term_a']:.0f} A "
+                    f"(cliente pediu {ped.corrente_cliente_a:g} A; inversor {ped.inversor_corrente_a or '-'} A)")
+        proj = _dim()
+        if corrente_base == "carga" and cc and cc["base"] == "carga":
+            cc = CC.exata_do_projeto(ped, cat, proj)
+            if cc["i_term_a"] > ped.corrente_a or cc["i_term_a"] < ped.corrente_a * 0.97:   # placa nunca abaixo da exata
+                log(f"   Corrente recalculada com o banco e o ripple simulados: {cc['i_term_a']:.0f} A – redimensionando...")
+                ped.corrente_a = cc["i_term_a"]
+                proj = _dim()
+                cc = CC.exata_do_projeto(ped, cat, proj)
+            cc["i_term_a"] = float(ped.corrente_a)        # placa = a corrente usada no dimensionamento
+            log(f"   Corrente térmica de projeto: {ped.corrente_a:.0f} A | Isat ≥ {cc['isat_a']:.0f} A pico | "
+                f"sobrecarga do inversor {cc['iovl_a']:.0f} A pico")
+            for n in cc.get("notas", []):
+                log("   ! " + n)
+        elif cc is None:
+            cc = dict(base="cliente", i_term_a=float(ped.corrente_a), i_cliente_a=float(ped.corrente_cliente_a or 0),
+                      i_inversor_a=float(ped.inversor_corrente_a or 0), componentes=[],
+                      notas=["Opção 'usar a corrente informada pelo cliente' marcada."])
+        proj.corrente_dimensionamento = cc
+        if isinstance(proj.pedido, dict):
+            proj.pedido["corrente_cliente_a"] = ped.corrente_cliente_a
+        proj.avisos = list(getattr(proj, "avisos", []) or []) + [n for n in cc.get("notas", [])]
     cod = proj_codigo(proj)
     sufixo = f"_AJUSTE-MANUAL-{t0:%H%M}" if projeto is not None else ""
     # uma pasta por cliente; dentro, um projeto por solicitação: PROJETOS\<Cliente>\<data>_<código>
@@ -187,6 +240,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
             from .versao import info as _vi
             log("   Indutor: projeto de referência por elementos finitos (alguns minutos)...")
             ind = IP.projetar(proj, cat, log=log)
+            ind["corrente_dimensionamento"] = getattr(proj, "corrente_dimensionamento", None) or {}
             IDS.imagens_campo(ind, os.path.join(sub["01_Engenharia"], "Indutor_campo_FEM.png"))
             _inf = dict(titulo=f"Indutor trifásico p/ filtro senoidal – {proj.l1.l_uh:.0f} µH / {proj.l1.i_nom_a:.0f} A – {cod}",
                         linha2=f"Classe {ind['requisitos']['classe']} (sistema) | {ind['chapa_dados']['nome'][:48]} | folha {ind['cond']}",
@@ -220,6 +274,21 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                 f"elevação ≈ {ind['termico']['elev_bobina_K']:.0f} K, massa ≈ {ind['massa_kg']['total']:.0f} kg")
         except Exception as e:
             log(f"   (projeto do indutor por elementos finitos não concluído: {type(e).__name__}: {e})")
+    if proj.topologia == "LC" and not proj.l2:
+        try:                                        # v1.11: protocolo do protótipo, questionário ao fabricante, fornecedores (interno)
+            from . import doc_indutor_fornecedor as DIF
+            arqs["indutor_protocolo"] = DIF.protocolo_prototipo(proj, cat, ind, sub["03_Fornecedores"], cod, D._novo, D._tabela, D._bullets)
+            arqs["indutor_questionario"] = DIF.questionario_fabricante(proj, cat, sub["03_Fornecedores"], cod, D._novo, D._tabela, D._bullets)
+            arqs["fornecedores_interno"] = DIF.fornecedores_interno(sub["01_Engenharia"], cod)
+            _anexos = sorted(f for f in os.listdir(sub["03_Fornecedores"])
+                             if re.search(r"Indutor", f, re.I) and not f.startswith("Email_") and not f.endswith(".json"))
+            for _f in os.listdir(sub["03_Fornecedores"]):
+                if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
+                    with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:
+                        _fh.write(DIF.texto_email_extra(proj, ind, _anexos) + "\n")
+            log("   Indutor: protocolo de ensaio do protótipo e questionário ao fabricante gerados (03_Fornecedores/1_Indutor)")
+        except Exception as e:
+            log(f"   (protocolo/questionário do indutor não gerados: {type(e).__name__}: {e})")
     arqs["rfq_montagem"], arqs["email_montagem"] = D.rfq_montagem(proj, arr, orc, cat, sub["04_Montadora"])
     arqs["caderno_montagem"] = D.caderno_montagem(proj, arr, orc, cat, sub["04_Montadora"], pngs)
     shutil.copy(pdf_des, sub["04_Montadora"])

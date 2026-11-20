@@ -1,5 +1,29 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.0 – 20/11/2026 – Corrente definida pela Electric (carga × inversor) + pacote para o fabricante do indutor
+- REGRA NOVA: "o cobre vai pela carga, o ferro vai pelo inversor". A corrente pedida pelo cliente passa a ser só informativa.
+  - Corrente térmica = ⌈1,10 × √(I_fund² + I_ripple²)⌉, com I_fund = máx(|motor×FS (FP) + capacitores + cabo|, motor×FS) – sem
+    crédito da compensação capacitiva. Sem corrente de placa, estima pela potência (cv/kW, η 0,94, FP). Sem dado do motor, usa a
+    do cliente.
+  - Duas passadas: 1ª com ripple estimado (5 %), 2ª com o banco e o ripple simulados; redimensiona se mudar mais que 2 %.
+  - Saturação: Isat ≥ máx(1,25 × pico simulado; √2 × I_inversor + ripple/2). Sobrecarga: 1,5 × √2 × I_inversor + ripple/2 (L ≥ 70 %).
+  - Aviso se a corrente da carga passar a do inversor. Opção na tela "Usar a corrente informada pelo cliente" (padrão desmarcado),
+    com prévia da corrente antes de dimensionar e tabela da composição no resultado.
+  - Composição da corrente no memorial (1.1), na proposta (Corrente nominal: pedida × ofertada), na ET do indutor (3.1), no
+    e-mail ao fabricante, no memorial do indutor e no relatório de auditoria. Catálogo: bloco corrente_carga (margem, C do cabo).
+  - Ajuste manual mantém a corrente definida pela carga.
+- 03_Fornecedores/1_Indutor ganhou:
+  - Protocolo_Ensaio_Prototipo_Indutor (DOCX editável): 15 ensaios com critério numérico (L ±5 %, desequilíbrio ≤ 3 %, Rdc ±10 %,
+    L ≥ 90 % na Isat e ≥ 70 % na sobrecarga, perdas ≤ previsto +15 % e ≤ teto de mercado, elevação ≤ 100 K, ponto quente,
+    3 kV/1 min, ≥ 100 MΩ, PTC, dimensões, massa, declaração do sistema de isolação, placa) e colunas Medido/Resultado.
+  - Questionario_Fabricante_Indutor (DOCX): dados internos dos indutores já fornecidos (espiras, núcleo, chapa, entreferros,
+    condutor, perdas e temperatura medidas, software) para calibrar o método.
+  - E-mail ao fabricante: base da corrente, protótipo e série cotados SEPARADOS, protocolo e questionário, lista de anexos.
+- 01_Engenharia/5_Compras_Interno: fornecedores sugeridos para cotar (Cootrans; Pólux e Cosmo com aviso de CONCORRENTE – só ET
+  ou NDA; Eletromax; Tamura não indicado). Não vai ao fornecedor.
+- Conferência de proposta do indutor: campos novos (espiras, coluna a × b, entreferro total, ponto quente) e tabela
+  "Nosso cálculo × proposta" no parecer, comparando com o projeto de referência por elementos finitos.
+
 ## v1.10.4 – 20/11/2026 – CAD editável do indutor (STEP + DXF)
 - Indutor_3D_<projeto>.step: STEP AP214 com sólidos B-rep (um por peça: culatras, pacotes das colunas, calços, tubos,
   bobinas, terminais, cantoneiras, tirantes, base, caixa do PTC), com nome e cor. Escritor próprio sem dependências (o

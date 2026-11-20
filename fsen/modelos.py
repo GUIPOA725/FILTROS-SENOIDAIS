@@ -19,7 +19,8 @@ class Pedido:
     topologia: str = "LC"           # LC ou LCL
     tensao_v: float = 440.0         # tensão de linha (rede / saída)
     freq_rede_hz: float = 60.0
-    corrente_a: float = 0.0         # corrente nominal do filtro
+    corrente_a: float = 0.0         # corrente nominal do filtro (v1.11: definida pela carga – ver corrente_carga.py)
+    corrente_cliente_a: Optional[float] = None   # corrente pedida pelo cliente (informativa, v1.11)
     f_saida_min_hz: float = 0.0
     f_saida_max_hz: float = 60.0
     inversor: str = "GENERICO"

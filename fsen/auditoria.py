@@ -215,6 +215,7 @@ def gerar(proj, arr, orc, cat, pasta, ind=None, graficos=None, log=print):
                                         if k not in ("lacunas", "informados", "observacoes")], [1.3, 2.4, 0.8])
     R.h2("Lacunas e premissas adotadas")
     R.bul(pd_.get("lacunas") or ["–"])
+    secao_corrente_pdf(R, getattr(proj, "corrente_dimensionamento", None))
     if pd_.get("observacoes"):
         R.h2("Observações da leitura do pedido")
         R.p(pd_["observacoes"])
@@ -410,9 +411,31 @@ def gerar(proj, arr, orc, cat, pasta, ind=None, graficos=None, log=print):
     return arq
 
 
+def secao_corrente_pdf(R, cc):
+    """v1.11: base da corrente – o cobre vai pela carga, o ferro vai pelo inversor."""
+    if not cc:
+        return
+    R.h2("Corrente de dimensionamento – definida pela carga (cobre) e pelo inversor (ferro)")
+    if cc.get("base") != "carga":
+        R.p("Corrente = informada pelo cliente. " + " ".join(cc.get("notas", [])))
+        return
+    R.p("A corrente térmica do filtro é definida pela Electric Service a partir da carga: motor × FS, soma fasorial com as correntes "
+        "dos capacitores e do cabo (sem crédito da compensação capacitiva), ondulação de alta frequência em quadratura e margem. "
+        "A saturação e a sobrecarga são verificadas com a corrente do inversor. A corrente do cliente é informativa.")
+    R.tab(["Parcela", "Cálculo", "A", "Observação"],
+          [(c["item"], c["conta"], f"{c['valor_a']:.1f}", c["obs"]) for c in cc["componentes"]]
+          + [("Saturação: L ≥ 90 % até", "máx(1,25 × pico na I térmica; √2·I_inv + ripple/2)", f"{cc['isat_a']:.0f} pk", ""),
+             ("Sobrecarga do inversor: L ≥ 70 % até", "1,5·√2·I_inv + ripple/2", f"{cc['iovl_a']:.0f} pk", "60 s, 1×/h"),
+             ("Corrente pedida pelo cliente", "", f"{cc.get('i_cliente_a', 0):g}", "informativa")], [2.4, 2.6, 0.8, 2.0])
+    R.eq("I_fund = max(|I_m·(FP − j·sen φ) + j·(I_cap + I_cabo)|, I_m)\nI_rms = √(I_fund² + I_ripple,rms²)\n"
+         "I_term = ⌈margem · I_rms⌉\nIsat ≥ max(1,25·Î_sim(I_term), √2·I_inv + ΔI_pp/2)\nIovl = 1,5·√2·I_inv + ΔI_pp/2")
+    R.bul(cc.get("notas") or [])
+
+
 def _secao_indutor(R, d, pasta):
     r = d["requisitos"]
     R.h1("Indutor – projeto de referência para fabricação (elementos finitos)")
+    secao_corrente_pdf(R, d.get("corrente_dimensionamento"))
     R.h2("Requisitos elétricos (da simulação do filtro)")
     R.kv({k: v for k, v in r.items()})
     R.h2("Metodologia")

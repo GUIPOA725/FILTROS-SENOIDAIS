@@ -278,6 +278,30 @@ def _resumo_executivo(d, proj, cat):
 
 
 # ------------------------------------------------------------------ memorial técnico
+def secao_corrente(d, proj, titulo="1.1 Corrente de dimensionamento – definida pela carga (v1.11)"):
+    """Tabela da base da corrente: o cobre vai pela carga, o ferro vai pelo inversor."""
+    cc = getattr(proj, "corrente_dimensionamento", None) or {}
+    if not cc:
+        return
+    d.add_heading(titulo, 2)
+    if cc.get("base") != "carga":
+        d.add_paragraph("Corrente de dimensionamento = corrente informada pelo cliente (" + "; ".join(cc.get("notas", [])) + ").")
+        return
+    d.add_paragraph("A corrente do filtro é definida pela Electric Service a partir da carga, não pelo número pedido pelo cliente. "
+                    "O COBRE (aquecimento, perdas, placa) vai pela carga real: motor × fator de serviço, somado fasorialmente às "
+                    "correntes dos capacitores e do cabo (sem crédito da compensação capacitiva), mais a ondulação de alta frequência "
+                    "em quadratura e margem de 10 %. O FERRO (saturação) vai pela corrente que o INVERSOR consegue entregar, com "
+                    "sobrecarga de 150 % por 60 s.")
+    _tabela(d, ["Parcela", "Cálculo", "A", "Observação"],
+            [(c["item"], c["conta"], f"{c['valor_a']:.1f}", c["obs"]) for c in cc["componentes"]]
+            + [("Saturação: L ≥ 90 % até", "máx(1,25 × pico na I térmica; √2·I_inv + ripple/2)", f"{cc['isat_a']:.0f} pk", ""),
+               ("Sobrecarga do inversor: L ≥ 70 % até", "1,5·√2·I_inv + ripple/2", f"{cc['iovl_a']:.0f} pk", "60 s, 1×/h"),
+               ("Corrente pedida pelo cliente", "", f"{cc.get('i_cliente_a', 0):g}", "informativa")],
+            [5.2, 5.6, 1.8, 4.4], tam=8)
+    for n in cc.get("notas", []):
+        d.add_paragraph("• " + n)
+
+
 def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
     ped = proj.pedido
     d = _novo("Memorial de Cálculo e Relatório de Simulação",
@@ -298,7 +322,9 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
     _kv(d, [("Cliente", ped["cliente"]), ("CNPJ / Município", f"{ped['cnpj']} – {ped['cidade_uf']}"),
             ("Referência", ped["referencia"]), ("Quantidade", ped["quantidade"]),
             ("Tensão / frequência de rede", f"{ped['tensao_v']:g} V / {ped['freq_rede_hz']:g} Hz"),
-            ("Corrente nominal do filtro", f"{ped['corrente_a']:g} A"),
+            ("Corrente nominal do filtro (térmica, de projeto)", f"{ped['corrente_a']:g} A"
+             + (f" – definida pela carga; o cliente pediu {ped.get('corrente_cliente_a'):g} A (informativo)"
+                if ped.get("corrente_cliente_a") and abs(float(ped["corrente_cliente_a"]) - float(ped["corrente_a"])) > 0.5 else "")),
             ("Inversor", f"{ped['inversor']} ({ped['inversor_corrente_a'] or '-'} A)"),
             ("Motor", f"{ped['motor_cv'] or '-'} cv, {ped['motor_corrente_a'] or '-'} A, FP {ped['motor_fp']}, FS {ped['fator_servico']}, "
                       f"{ped['motor_rpm'] or '-'} rpm, {ped['motor_polos']} polos"),
@@ -325,6 +351,7 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
                 linhas.append((it["prioridade"], it["pergunta"][:70], prem, "-", "não simulável"))
         _tabela(d, ["Prioridade", "Dado", "Premissa", "Cenário testado", "Resultado"], linhas, [2.2, 5.5, 3.3, 3.3, 3.2], tam=7.5)
 
+    secao_corrente(d, proj)
     _secao_base_tecnica(d, proj, cat)
 
     d.add_heading("3. Resultado do dimensionamento", 1)
@@ -527,6 +554,11 @@ def proposta(proj, arr, orc, cat, pasta):
     pior = lambda k: max(p[k] for p in proj.pontos)
     _tabela(d, ["Requisito do cliente", "Solicitado", "Ofertado (simulado)"], [
         ("Tipo", "Senoidal", f"Senoidal {proj.topologia}, fr = {proj.fr_hz:.0f} Hz"),
+        ("Corrente nominal", f"{ped.get('corrente_cliente_a') or ped['corrente_a']:g} A",
+         (lambda cc: (f"{ped['corrente_a']:g} A contínuos, dimensionado pela carga real (motor {cc['i_motor_placa_a']:g} A × FS = "
+                      f"{cc['i_motor_a']:.0f} A + capacitores + ondulação, margem 10 %); núcleo para o inversor de "
+                      f"{cc['i_ref_pico_a']:.0f} A com sobrecarga de 150 % / 60 s sem saturar")
+          if cc.get("base") == "carga" else f"{ped['corrente_a']:g} A")(getattr(proj, "corrente_dimensionamento", None) or {})),
         ("Tensão máx. de pico no motor", f"{ped['vpk_max_v'] or '-'} V", f"{pior('vpk_saida'):.0f} V"),
         ("Rise time", f"> {ped['rise_time_min_us'] or '-'} µs", f"> 100 µs (forma senoidal)"),
         ("dv/dt máximo", f"{ped['dvdt_max_v_us'] or '-'} V/µs", f"{pior('dvdt_saida_v_us'):.1f} V/µs"),

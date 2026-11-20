@@ -241,6 +241,22 @@ if pagina == "Nova solicitação":
             _qmax = st.number_input("Perda de inserção máxima admitida @ f máx (%) – queda real de tensão na saída", 3.0, 10.0, 6.0, 0.5,
                                     help="Padrão 6 % (MTE). É a queda real de tensão na saída com o FP do motor – menor que a queda reativa ωL·I no indutor. A tensão no motor também é conferida "
                                          "(≥ 100 % do V/f na faixa de operação).")
+        _usar_cli = st.checkbox("Usar a corrente informada pelo cliente (desmarcado = a Electric define pela carga: motor × FS + "
+                                "capacitores + cabo + ripple, margem 10 %; o ferro vai pela corrente do inversor)", value=False,
+                                help="Regra v1.11: o cobre vai pela carga, o ferro vai pelo inversor. A corrente do cliente fica como informação.")
+        try:
+            from fsen import corrente_carga as _CC
+            _cc_prev = _CC.calcular(p, _cat_ui)
+            if _cc_prev["base"] == "carga" and not _usar_cli:
+                st.info(f"Corrente térmica prevista pela carga: **{_cc_prev['i_term_a']:.0f} A** "
+                        f"(motor {_cc_prev['i_motor_placa_a']:g} A × FS = {_cc_prev['i_motor_a']:.1f} A, +ripple, ×{_cc_prev['margem']:.2f}; "
+                        f"cliente pediu {p.corrente_a:g} A). Ferro: Isat ≥ {_cc_prev['isat_inversor_a']:.0f} A pico, "
+                        f"sobrecarga {_cc_prev['iovl_a']:.0f} A pico (inversor {_cc_prev['i_ref_pico_a']:.0f} A). "
+                        "Recalculada com o banco e o ripple simulados.")
+            elif _cc_prev["base"] != "carga":
+                st.warning("Sem corrente/potência do motor: será usada a corrente informada pelo cliente.")
+        except Exception as _e:
+            st.caption(f"(prévia da corrente pela carga indisponível: {_e})")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
@@ -248,9 +264,11 @@ if pagina == "Nova solicitação":
                               capacitores=_caps_sel or None, ligacoes=_ligs or None,
                               prioridade=("mercado" if st.session_state.get("prioridade_proj", "").startswith("Indutor") else
                                           "min_caps" if st.session_state.get("prioridade_proj", "").startswith("MÍNIMO") else "custo"),
-                              queda_max=_qmax)
+                              queda_max=_qmax, corrente_base=("cliente" if _usar_cli else "carga"))
             st.session_state["resultado"] = {"pasta": r["pasta"], "zip": r["zip"], "arquivos": r["arquivos"], "graficos": r["graficos"],
-                                             "resumo": r["resumo"], "opcoes": r.get("opcoes")}
+                                             "resumo": r["resumo"], "opcoes": r.get("opcoes"),
+                                             "corrente": getattr(r["projeto"], "corrente_dimensionamento", None)}
+            st.session_state["ped_dim"] = dict(r["projeto"].pedido) if isinstance(r["projeto"].pedido, dict) else None
             st.session_state["cfg_auto"] = config_de_projeto(r["projeto"])
             st.session_state["cfg_manual"] = dict(st.session_state["cfg_auto"])
             for k in ("manual_res", "auto_res"):
@@ -264,6 +282,15 @@ if pagina == "Nova solicitação":
             st.subheader("Opções – mínimo de capacitores (★ = escolhida)")
             st.dataframe(pd.DataFrame(r["opcoes"]), use_container_width=True, hide_index=True)
             st.caption("Detalhes, gráfico e todos os casos: 01_Engenharia/2_Estudos_Opcoes_e_Robustez/Estudo_Opcoes_Minimo_Capacitores.docx")
+        _cc = r.get("corrente") or {}
+        if _cc.get("base") == "carga":
+            with st.expander(f"⚡ Corrente de projeto definida pela carga: {_cc['i_term_a']:.0f} A térmicos "
+                             f"(cliente pediu {_cc.get('i_cliente_a', 0):g} A) – Isat ≥ {_cc['isat_a']:.0f} A pk, sobrecarga "
+                             f"{_cc['iovl_a']:.0f} A pk", expanded=False):
+                st.dataframe(pd.DataFrame(_cc["componentes"]).rename(columns={"item": "Parcela", "conta": "Cálculo", "valor_a": "A",
+                                                                               "obs": "Observação"}), hide_index=True, width="stretch")
+                for _n in _cc.get("notas", []):
+                    st.caption("• " + _n)
         st.markdown(r["resumo"])
         _ed = r["arquivos"].get("email_dados")
         if _ed and os.path.exists(_ed):

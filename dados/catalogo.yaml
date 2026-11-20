@@ -180,6 +180,11 @@ cabos_parametros:
   185: [0.128, 0.245, 400, 200]
   240: [0.0977, 0.24, 450, 225]
 cabo_comprimento_padrao_m: 30
+# v1.11: corrente do filtro definida pela carga (o cobre vai pela carga, o ferro vai pelo inversor)
+corrente_carga:
+  margem: 1.10                # sobre a corrente rms total (motor×FS + capacitores + cabo + ripple)
+  c_cabo_uf_km: 0.30          # capacitância fase-terra típica de cabo blindado VFD
+  rendimento_motor: 0.94      # só quando falta a corrente de placa (estimativa pela potência)
 
 # Estudo térmico do painel (IEC 61439-1 cl.10.10 / IEC TR 60890)
 termico:

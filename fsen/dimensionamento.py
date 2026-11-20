@@ -132,6 +132,7 @@ class Projeto:
     condicoes_extremas: List[Dict[str, Any]] = field(default_factory=list)
     estresse_capacitor: Dict[str, Any] = field(default_factory=dict)
     sistema: Dict[str, Any] = field(default_factory=dict)
+    corrente_dimensionamento: Dict[str, Any] = field(default_factory=dict)   # v1.11: base da corrente (carga × inversor)
 
     def circuito(self) -> ParamCircuito:
         return ParamCircuito(L1=self.l1.l_uh * 1e-6, R1=self.l1.r_dc_mohm * 1e-3, C_y=self.banco.c_y_uf * 1e-6,
@@ -791,6 +792,10 @@ def _spec_indutor(nome, cat, ped, L, res, fs, Zb, w, ripple_fonte="i1"):
     ipk = max(ipk, In * math.sqrt(2))
     cp = cat["projeto_padrao"]
     isat = cp["isat_margem"] * ipk
+    # v1.11: o ferro vai pelo inversor – saturação também ≥ pico da corrente nominal do inversor + ripple/2
+    i_inv = float(ped.inversor_corrente_a or getattr(ped, "corrente_cliente_a", None) or 0)
+    if i_inv > 0:
+        isat = max(isat, math.sqrt(2) * i_inv + rpp / 2)
     energia = 1.5 * L * ipk ** 2
     massa = cat["indutor_custo"]["kg_por_j"] * energia
     s_kva = math.sqrt(3) * ped.tensao_v * In / 1000

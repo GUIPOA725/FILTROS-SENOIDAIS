@@ -81,7 +81,10 @@ def requisitos(L, proj, arr, cat, ped):
     rpp = float(L.ripple_pp_a or 0)
     ipk = float(L.i_pico_a or In * math.sqrt(2))
     ipk_sat = max(float(L.i_sat_a or 0), ipk * 1.1)
-    ipk_sobrec = 1.5 * In * math.sqrt(2) + rpp / 2
+    # v1.11: sobrecarga pela corrente do INVERSOR (o ferro vai pelo inversor); cobre pela carga (In)
+    i_inv = float(ped.get("inversor_corrente_a") or ped.get("corrente_cliente_a") or In)
+    ipk_sobrec = 1.5 * max(i_inv, In) * math.sqrt(2) + rpp / 2
+    cc = getattr(proj, "corrente_dimensionamento", None) or {}
     fs = float(L.f_chav_hz or proj.fs_hz)
     fmx = max(float(ped.get("f_saida_max_hz") or 60), 60.0)
     v = float(ped["tensao_v"])
@@ -93,7 +96,7 @@ def requisitos(L, proj, arr, cat, ped):
     return dict(perdas_meta=perdas_meta, In=In, rpp=rpp, rrms=float(L.ripple_rms_a or 0), ifund=float(L.i_fund_a or In), ipk=ipk, ipk_sat=ipk_sat,
                 ipk_sobrec=ipk_sobrec, fs=fs, fmx=fmx, v=v, vdc=vdc, l_uh=float(L.l_uh), perdas=float(L.perdas_w or 0),
                 massa=float(L.massa_kg or 0), prototipo=In >= I_PROTOTIPO_A, ref_linhas=linhas, ref_interp=interp,
-                ref_faixa=faixa, ripple_rel=(rpp / (2 * ipk) * 100 if ipk else 0))
+                ref_faixa=faixa, ripple_rel=(rpp / (2 * ipk) * 100 if ipk else 0), i_inv=i_inv, cc=cc)
 
 
 def _classe(cat):
@@ -306,6 +309,7 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
         ("Indutância", f"{R['l_uh']:.1f} µH/fase ±5 % na In; desequilíbrio ≤ 3 %",
          "Define a frequência de ressonância e a ondulação; desequilíbrio gera tensão desigual no motor."),
         ("Corrente nominal térmica", f"{R['In']:.0f} A RMS contínua, ambiente {amb:g} °C",
+         "Definida pela Electric a partir da CARGA (motor × FS + capacitores + cabo + ondulação, margem 10 %) – ver item 3.1. "
          "Já inclui a parcela RMS da ondulação de alta frequência."),
         ("Composição da corrente", f"{R['ifund']:.0f} A fundamental (0–{R['fmx']:g} Hz) + {R['rrms']:.0f} A RMS / {R['rpp']:.0f} A p-p "
                                    f"em {R['fs'] / 1000:g} kHz",
@@ -313,7 +317,8 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
         ("Pico em operação", f"{R['ipk']:.0f} A", "Pico da fundamental somado à metade da ondulação."),
         ("Linearidade", f"L ≥ 90 % até {R['ipk_sat']:.0f} A pico; L ≥ 70 % até {R['ipk_sobrec']:.0f} A pico (sobrecarga)",
          "Se o núcleo saturar, a indutância cai, a ondulação dispara e o inversor pode desarmar por sobrecorrente."),
-        ("Sobrecarga", "1,5 × In por 60 s, 1×/h", "Partida e regime transitório do motor (prática dos fabricantes de filtro)."),
+        ("Sobrecarga", f"1,5 × corrente do inversor ({R['i_inv']:.0f} A) por 60 s, 1×/h – só linearidade (L ≥ 70 %), não é regime térmico",
+         "O núcleo é dimensionado pelo que o INVERSOR consegue entregar (partida, transitório, limite de corrente); o cobre, pela carga."),
         ("Frequência fundamental", f"0–{R['fmx']:g} Hz", "Velocidade variável; em baixa frequência a ondulação relativa é maior."),
         ("Chaveamento", f"{R['fs'] / 1000:g} kHz nominal (inversor travado em ≥ {R['fs'] / 1000:g} kHz); informar perdas a 2/3 desse valor",
          "Abaixo da frequência de projeto a ondulação aumenta e o indutor esquenta mais."),
@@ -336,6 +341,16 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
         ("Normas", "IEC 60076-6 / IEC 61558-2-20 / NBR 5356; IEC 60085", "Normas de reatores usadas pelos fabricantes de filtro."),
         ("Quantidade", f"{q} peça(s)", "")], [3.6, 7.0, 6.4], 8)
 
+    if R.get("cc") and R["cc"].get("base") == "carga":
+        _cc = R["cc"]
+        d.add_heading("3.1 Base da corrente – definida pela Electric Service a partir da carga", 2)
+        d.add_paragraph("Regra: o COBRE (aquecimento) é dimensionado pela carga real; o FERRO (saturação) pela corrente que o "
+                        "inversor consegue entregar. A corrente pedida pelo cliente é só informativa.")
+        _tabela(d, ["Parcela", "Cálculo", "Corrente (A)", "Observação"],
+                [(c["item"], c["conta"], f"{c['valor_a']:.1f}", c["obs"]) for c in _cc["componentes"]]
+                + [("Saturação – L ≥ 90 %", "máx(1,25 × pico na I térmica ; √2 × I inversor + ripple/2)", f"{_cc['isat_a']:.0f} pico", ""),
+                   ("Sobrecarga do inversor – L ≥ 70 %", "1,5 × √2 × I inversor + ripple/2", f"{_cc['iovl_a']:.0f} pico", "60 s, 1×/h"),
+                   ("Corrente pedida pelo cliente", "", f"{_cc.get('i_cliente_a', 0):g}", "informativa")])
     d.add_heading("4. Construção recomendada – orientação e motivo (não é imposição)", 1)
     _bullets(d, [
         "Núcleo de chapa de aço-silício de baixas perdas e espessura reduzida (0,23–0,30 mm) ou material próprio para alta frequência. "
@@ -454,10 +469,14 @@ def corpo_email(L, proj, arr, cat, ped, q, tag, ola, extenso, ref_fornecedor=Non
         f"- Tensão: {R['v']:g} V (±10 %) fase-fase PWM; barramento CC até ≈ {R['vdc']:.0f} V\n"
         f"- L: {R['l_uh']:.0f} µH por fase ±5 % na corrente nominal; desequilíbrio entre fases ≤ 3 %\n"
         f"- Corrente nominal: {R['In']:.0f} A RMS (fundamental {R['ifund']:.0f} A, 0–{R['fmx']:g} Hz)\n"
+        + (f"- Base da corrente (definida por nós pela carga): motor {R['cc']['i_motor_placa_a']:g} A × FS = {R['cc']['i_motor_a']:.1f} A, "
+           f"+ capacitores/cabo + ondulação em quadratura, margem {R['cc']['margem']:.2f} → {R['In']:.0f} A. O núcleo vai pelo inversor "
+           f"({R['i_inv']:.0f} A): saturação e sobrecarga abaixo.\n" if (R.get("cc") or {}).get("base") == "carga" else "")
+        + 
         f"- Ondulação de alta frequência sobreposta: {R['rpp']:.0f} A pico a pico ({R['rrms']:.0f} A RMS) a {R['fs'] / 1000:g} kHz\n"
         f"- Pico em operação: {R['ipk']:.0f} A – L ≥ 90 % do nominal até {R['ipk_sat']:.0f} A e ≥ 70 % até {R['ipk_sobrec']:.0f} A "
         "(sobrecarga), sem saturação\n"
-        "- Sobrecarga: 1,5 × In por 1 minuto, 1 vez por hora\n"
+        f"- Sobrecarga: 1,5 × corrente do inversor ({R['i_inv']:.0f} A) por 1 minuto, 1 vez por hora (linearidade, não regime térmico)\n"
         f"- Chaveamento: {R['fs'] / 1000:g} kHz nominal\n"
         f"- Classe térmica: {cl} ({cc} °C) efetivamente fornecida (constar no desenho e na placa), elevação ≤ {ce} K; impregnação VPI\n"
         "- Isolação 1,1 kV; ensaio aplicado 2,5 kV fase-fase / 3 kV fase-terra, 1 min; isolação reforçada nas primeiras espiras (dv/dt)\n"

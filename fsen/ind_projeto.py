@@ -91,8 +91,11 @@ def requisitos(proj, cat=None):
     l1 = proj.l1
     In = float(l1.i_nom_a)
     rpp = float(l1.ripple_pp_a)
-    return dict(L=float(l1.l_uh) * 1e-6, In=In, I1=float(l1.i_fund_a), Ipk=float(l1.i_pico_a), Isat=float(l1.i_sat_a),
-                Iovl=1.5 * In * math.sqrt(2) + rpp / 2, rpp=rpp, rrms=float(l1.ripple_rms_a), fs=float(proj.fs_hz),
+    # v1.11: cobre pela carga (In térmica); ferro pelo inversor (Isat, sobrecarga 150 %)
+    i_inv = max(float(ped.inversor_corrente_a or getattr(ped, "corrente_cliente_a", None) or In), In)
+    return dict(L=float(l1.l_uh) * 1e-6, In=In, I1=float(l1.i_fund_a), Ipk=float(l1.i_pico_a),
+                Isat=max(float(l1.i_sat_a), math.sqrt(2) * i_inv + rpp / 2), Iinv=i_inv,
+                Iovl=1.5 * i_inv * math.sqrt(2) + rpp / 2, rpp=rpp, rrms=float(l1.ripple_rms_a), fs=float(proj.fs_hz),
                 f1=float(ped.freq_rede_hz), V=float(ped.tensao_v), Vdc=1.35 * float(ped.tensao_v) * 1.10,
                 classe="H")          # padrão Electric: sistema de isolação classe H com elevação limitada à de classe F (margem)
 
@@ -436,7 +439,7 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     d["Lmat"] = Lm
     # ------------------------------------------------ 3) saturação: L aparente em Ipk, Isat e sobrecarga (não-linear)
     sat = []
-    for nome, I in (("Pico em operação", r["Ipk"]), ("Isat (exigido ≥ 90 %)", r["Isat"]), ("Sobrecarga 1,5×In (exigido ≥ 70 %)", r["Iovl"])):
+    for nome, I in (("Pico em operação", r["Ipk"]), ("Isat (exigido ≥ 90 %)", r["Isat"]), ("Sobrecarga 1,5×I inversor (exigido ≥ 70 %)", r["Iovl"])):
         Mn = modelo(d, gaps, ng)
         A = Mn.resolver([I, -I / 2, -I / 2])
         lam = Mn.lambda_fases(A) * d["b"]

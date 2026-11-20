@@ -58,6 +58,11 @@ def tela_ajuste(pasta_saida):
         st.info("Abra um projeto já feito acima, ou um pedido novo em **Nova solicitação**.")
         return
     ped = Pedido.from_dict(st.session_state["pedido"])
+    _pd = st.session_state.get("ped_dim")          # v1.11: corrente térmica definida pela carga no último dimensionamento
+    if _pd and _pd.get("cliente") == ped.cliente and _pd.get("referencia") == ped.referencia \
+            and float(_pd.get("corrente_cliente_a") or 0) in (float(ped.corrente_a), float(ped.corrente_cliente_a or -1)):
+        ped = Pedido.from_dict(_pd)
+        st.caption(f"Corrente térmica de projeto definida pela carga: {ped.corrente_a:g} A (cliente pediu {ped.corrente_cliente_a:g} A).")
     st.caption(f"{ped.cliente} – {ped.quantidade} × {ped.corrente_a:g} A / {ped.tensao_v:g} V – {ped.inversor} – "
                f"{ped.f_saida_min_hz:g}–{ped.f_saida_max_hz:g} Hz")
     auto = st.session_state.get("cfg_auto")

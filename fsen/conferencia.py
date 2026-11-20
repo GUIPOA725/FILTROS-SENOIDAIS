@@ -23,7 +23,9 @@ CAMPOS_INDUTOR = [
     ("perdas_total_w", "Perdas totais garantidas", "W", "num"), ("massa_kg", "Massa", "kg", "num"),
     ("classe_c", "Classe térmica (temperatura da classe)", "°C", "num"), ("elevacao_k", "Elevação média declarada", "K", "num"),
     ("chapa_mm", "Espessura da chapa", "mm", "num"), ("chapa_material", "Material da chapa", "", "txt"),
-    ("n_entreferros", "Entreferros por coluna", "", "num"),
+    ("n_entreferros", "Entreferros por coluna", "", "num"), ("entreferro_total_mm", "Entreferro total por coluna", "mm", "num"),
+    ("n_espiras", "Espiras por bobina", "", "num"), ("nucleo_a_mm", "Largura da coluna (a)", "mm", "num"),
+    ("nucleo_b_mm", "Empilhamento da coluna (b)", "mm", "num"), ("ponto_quente_c", "Ponto quente declarado", "°C", "num"),
     ("condutor", "Tipo de condutor", "", ["não declarado", "fio redondo", "retangular", "fios em paralelo / Litz", "fita (folha)"]),
     ("material_enrol", "Material do enrolamento", "", ["não declarado", "cobre", "alumínio"]),
     ("dieletrico_kv", "Ensaio dielétrico (fase-terra)", "kV", "num"), ("vpi", "Impregnação VPI / a vácuo", "", "bool"),
@@ -269,6 +271,49 @@ def _parecer(itens):
     return "APROVADO"
 
 
+def comparar_referencia(pasta_proj, decl):
+    """v1.11: tabela 'nosso cálculo × proposta' – projeto de referência (elementos finitos) contra o declarado pelo fabricante."""
+    from .organizar import achar
+    arq = achar(os.path.join(pasta_proj, "01_Engenharia"), r"^indutor_projeto\.json$")
+    if not arq:
+        return []
+    d = json.load(open(arq, encoding="utf-8"))
+    f = lambda k: _v(decl, k)
+    gaps = d.get("gaps") or []
+    g_tot = (sum(gaps[0]) if gaps and isinstance(gaps[0], list) else sum(gaps) / max(len(gaps), 1)) * 1e3 if gaps else None
+    m = d.get("massa_kg", {})
+    p = d.get("perdas", {})
+    dims = d.get("dims_mm", {})
+    linhas = [
+        ("Espiras por bobina", d.get("N"), f("n_espiras"), ""),
+        ("Coluna a × b (mm)", f"{d.get('a', 0) * 1e3:.0f} × {d.get('b', 0) * 1e3:.0f}",
+         (f"{f('nucleo_a_mm'):g} × {f('nucleo_b_mm'):g}" if f("nucleo_a_mm") and f("nucleo_b_mm") else None), ""),
+        ("Chapa", f"{d.get('chapa_dados', {}).get('nome', '')}", f("chapa_material"), ""),
+        ("Espessura da chapa (mm)", d.get("chapa_dados", {}).get("esp_mm"), f("chapa_mm"), "AF cresce com o quadrado da espessura"),
+        ("Entreferros por coluna", d.get("ng"), f("n_entreferros"), ""),
+        ("Entreferro total por coluna (mm)", round(g_tot, 1) if g_tot else None, f("entreferro_total_mm"), ""),
+        ("Condutor", f"folha {d.get('cond', '')} {d.get('tf', 0) * 1e3:.1f} × {d.get('hf', 0) * 1e3:.0f} mm", f("condutor"), ""),
+        ("Perdas 60 Hz (W)", round(p.get("enrolamento_60Hz", 0) + p.get("nucleo_60Hz", 0)), f("perdas_60hz_w"), ""),
+        ("Perdas AF (W)", round(p.get("enrolamento_AF", 0) + p.get("nucleo_AF", 0)), f("perdas_hf_w"), "a mais difícil – pedir o método"),
+        ("Perdas totais (W)", round(p.get("total", 0)), f("perdas_total_w"), ""),
+        ("Elevação média (K)", round(d.get("termico", {}).get("elev_bobina_K", 0)), f("elevacao_k"), ""),
+        ("Ponto quente (°C)", round(d.get("termico", {}).get("ponto_quente_C", 0)), f("ponto_quente_c"), ""),
+        ("Massa (kg)", round(m.get("total", 0)), f("massa_kg"), ""),
+        ("Dimensões L × A × P (mm)", "×".join(f"{v:.0f}" for v in (dims.get("largura", 0), dims.get("altura", 0), dims.get("profundidade", 0))),
+         ("×".join(f"{f(k):g}" for k in ("dim_l", "dim_a", "dim_p")) if all(f(k) for k in ("dim_l", "dim_a", "dim_p")) else None), ""),
+    ]
+    out = []
+    for item, ref, dec, obs in linhas:
+        dif = ""
+        try:
+            if isinstance(ref, (int, float)) and isinstance(dec, (int, float)) and ref:
+                dif = f"{(dec - ref) / ref * 100:+.0f} %"
+        except Exception:
+            pass
+        out.append((item, "–" if ref in (None, "") else str(ref), "não declarado" if dec in (None, "") else str(dec), dif, obs))
+    return out
+
+
 def gerar_parecer(proj, arr, cat, pasta_proj, componente, decl, res):
     """Grava o parecer .docx + e-mail de resposta ao fornecedor em 03_Fornecedores. Retorna (docx, txt)."""
     from .documentos import _novo, _tabela, _sombra
@@ -297,6 +342,17 @@ def gerar_parecer(proj, arr, cat, pasta_proj, componente, decl, res):
         _tabela(d, ["Componente", "Perdas (W)", "Ar local (°C)", "Componente (°C)", "Limite", "OK"],
                 [(c["componente"], c["perdas_W"], c["t_ar_local_C"], c["t_componente_C"], c["limite"], "sim" if c["ok"] else "NÃO")
                  for c in term["componentes"]], [4.5, 1.8, 2, 2.3, 4, 1.2], 8)
+    if componente == "indutor":
+        try:
+            comp = comparar_referencia(pasta_proj, decl)
+            if comp:
+                d.add_heading("Nosso cálculo × proposta (projeto de referência por elementos finitos)", 1)
+                d.add_paragraph("Diferenças grandes não reprovam por si: o fabricante pode ter outro padrão. Mas perdas AF bem abaixo do "
+                                "nosso cálculo, com núcleo menor ou chapa mais grossa, pedem explicação do método antes de aprovar.")
+                _tabela(d, ["Grandeza", "Nosso cálculo", "Proposta", "Diferença", "Observação"], comp, [4.2, 3.6, 3.4, 1.8, 4.0], 8)
+                res["comparacao_referencia"] = comp
+        except Exception as e:
+            d.add_paragraph(f"(comparação com o projeto de referência não disponível: {e})")
     d.add_heading("Dados declarados (registro)", 1)
     _tabela(d, ["Campo", "Valor"], [(k, str(v)) for k, v in decl.items() if v not in (None, "")], [7, 10], 8)
     slug = "".join(ch for ch in forn if ch.isalnum())[:20] or "fornecedor"

@@ -1,4 +1,4 @@
-"""Organiza a pasta do projeto em subpastas por tipo de documento / fornecedor (v1.10.2).
+"""Organiza a pasta do projeto em subpastas por tipo de documento / fornecedor (v1.11.0).
 
 Roda no final do processamento. Os arquivos de DADOS (projeto.json, arranjo_orcamento.json, indutor_projeto.json,
 alternativa_indutancia.json, pedido.json) e a pasta ATP ficam onde estão, porque a plataforma os lê para reabrir o projeto,
@@ -15,6 +15,7 @@ REGRAS = [
                                                       r"Otimizacao_todas", r"Sensibilidade_Dados"]),
     ("01_Engenharia", "3_Indutor_Elementos_Finitos", [r"^Indutor_.*\.png$"]),
     ("01_Engenharia", "4_Auditoria", [r"^AUDITORIA_"]),
+    ("01_Engenharia", "5_Compras_Interno", [r"^INTERNO_"]),
     ("02_Cliente", "1_Proposta_e_Email", [r"Proposta_Comercial", r"Email_Resposta_Cliente"]),
     ("02_Cliente", "2_Folha_de_Dados", [r"Folha_de_Dados"]),
     ("02_Cliente", "3_Relatorio_Tecnico", [r"Relatorio_Tecnico"]),
@@ -36,6 +37,7 @@ LEIA_ME = """ORGANIZAÇÃO DESTE PROJETO (Plataforma FSEN)
    2_Estudos_Opcoes_e_Robustez  estudo de mínimo de capacitores, ponto ótimo/robustez, todas as configurações, sensibilidade
    3_Indutor_Elementos_Finitos  mapa de campo e folhas do projeto do indutor (imagens)
    4_Auditoria .............. Relatório de Auditoria técnica (PDF) para revisão por engenheiro externo
+   5_Compras_Interno ........ fornecedores sugeridos para cotar (NÃO enviar a fornecedor)
    ATP ...................... decks, resultados e comparação Python × ATP-EMTP
    (arquivos .json na raiz: dados que a plataforma lê para reabrir o projeto – não mover)
 
@@ -46,7 +48,7 @@ LEIA_ME = """ORGANIZAÇÃO DESTE PROJETO (Plataforma FSEN)
    4_Dados_Faltantes ........ e-mail e questionário pedindo os dados que faltaram
 
 03_Fornecedores .......... uma subpasta por COMPONENTE – mandar só a subpasta do fornecedor
-   1_Indutor ................ ET + projeto de referência (desenhos) + memorial + e-mail → fabricante do indutor (ex.: Cootrans)
+   1_Indutor ................ ET + projeto de referência (desenhos, CAD) + memorial + protocolo do protótipo + questionário + e-mail → fabricante (ex.: Cootrans)
    2_Capacitores ............ ET + figura da corrente + e-mail
    3_Caixa_Metalica / 4_Plaqueta_Adesivos / 5_Cabos_Miscelanea
    (os pareceres de conferência de proposta são gravados na subpasta do componente)
