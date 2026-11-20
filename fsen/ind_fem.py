@@ -112,13 +112,19 @@ class ModeloIndutor:
         M = g.get("margem", 0.6 * max(W, H))
         self.W, self.H = W, H
         self.xl = [i * (a + ww) for i in range(3)]          # borda esquerda de cada coluna
-        # entreferros: ng por coluna, centrados em alturas igualmente espaçadas na janela
+        # entreferros: "distribuido" = ng por coluna, centrados em alturas igualmente espaçadas na janela (multigap);
+        # "culatra" = 2 por coluna, nas juntas coluna–culatra (em cima e embaixo) – padrão dos fabricantes nacionais (v1.11.1)
         self.gaps = []                                      # (coluna, y0, y1)
+        self.pos_gap = g.get("pos_gap", "distribuido")
         for i in range(3):
             gi = g["gaps"][i] / ng
             for k in range(ng):
-                yc = a + hw * (k + 0.5) / ng
-                self.gaps.append((i, yc - gi / 2, yc + gi / 2))
+                if self.pos_gap == "culatra":
+                    y0 = a if k % 2 == 0 else a + hw - gi
+                    self.gaps.append((i, y0, y0 + gi))
+                else:
+                    yc = a + hw * (k + 0.5) / ng
+                    self.gaps.append((i, yc - gi / 2, yc + gi / 2))
         gmin = min(y1 - y0 for _, y0, y1 in self.gaps)
         hg = hgap or max(gmin / 4, 1e-4)
         xs = [-M, W + M, 0, W] + [x for x0 in self.xl for x in (x0, x0 + a)]

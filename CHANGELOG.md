@@ -1,5 +1,17 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.1 – 20/11/2026 – Painel com o indutor real + opção de entreferros (multigap × 2 nas culatras)
+- CORREÇÃO: o painel (arranjo, térmico, caixa, ventiladores) usava a estimativa simplificada do indutor (A&W: 400×300×200 mm,
+  87 kg, 1463 W). Agora o projeto do indutor por elementos finitos roda ANTES do painel e o painel usa as dimensões e a massa
+  reais (A&W: 500×480×230 mm, 103 kg) e, como perdas, o LIMITE CONTRATUAL do indutor (FEM + 15 %, teto de mercado) – o mesmo
+  valor do protocolo de ensaio. ET e protocolo ficam coerentes com o térmico do painel.
+- Nova opção na tela "Entreferros do indutor": distribuídos – multigap (padrão) ou 2 por coluna nas juntas coluna–culatra
+  (padrão nacional). Modelo de elementos finitos, desenhos (núcleo com colunas inteiras e junta de topo), STEP/DXF e sequência
+  de fabricação tratam as duas construções. Aviso automático quando o entreferro passa de 20 % da coluna ou do limite por peça.
+- E-mail ao fabricante: item 9 pergunta se fazem coluna em pacotes com calços; se o padrão for só 2 entreferros, refazemos.
+- Avisos: removido o texto "configuração definida manualmente" nas escolhas automáticas (mercado / mínimo de capacitores).
+- Dupla checagem ATP: quando a THD passa pela tolerância absoluta (±0,5 ponto percentual) e não pela relativa, o texto diz isso.
+
 ## v1.11.0 – 20/11/2026 – Corrente definida pela Electric (carga × inversor) + pacote para o fabricante do indutor
 - REGRA NOVA: "o cobre vai pela carga, o ferro vai pelo inversor". A corrente pedida pelo cliente passa a ser só informativa.
   - Corrente térmica = ⌈1,10 × √(I_fund² + I_ripple²)⌉, com I_fund = máx(|motor×FS (FP) + capacitores + cabo|, motor×FS) – sem

@@ -111,6 +111,19 @@ def estudo_termico(proj, arr, cat, n_vent=None, vazao_unit=None) -> Dict[str, An
         zc = (f["z0"] + f["z1"]) / 2
         if f["tipo"] == "indutor":
             ta = t_ar((f["z0"] + zc) / 2)
+            fem = getattr(proj, "_ind_fem_termico", None) if f["tag"] == "L1" else None
+            if fem and fem.get("p") and fem.get("elev"):
+                # v1.11.1: elevação média do projeto FEM do indutor, escalada para as perdas usadas aqui (∝ P^0,8), + 15 K de
+                # gradiente ao ponto quente (IEC 60076-11)
+                elev = float(fem["elev"]) * (f["p"] / float(fem["p"])) ** 0.8
+                th = ta + elev + 15.0
+                lim_c = t["classe_indutor_c"]
+                ok = th <= lim_c and elev <= t["elevacao_indutor_k"]
+                add(f"{f['nome']} (ponto quente do enrolamento)", f["p"], ta, th,
+                    f"≤ {lim_c} °C e elevação média ≤ {t['elevacao_indutor_k']} K", ok,
+                    f"Projeto do indutor por elementos finitos: elevação {fem['elev']:.0f} K a {fem['p']:.0f} W, escalada para "
+                    f"{f['p']:.0f} W (limite contratual) → {elev:.0f} K + 15 K ao ponto quente")
+                continue
             dT = f["p"] / (t["h_indutor_w_m2k"] * f["area"] * t["fator_area_indutor"]) * t["fator_hotspot_indutor"]
             th = ta + dT
             lim_c = t["classe_indutor_c"]

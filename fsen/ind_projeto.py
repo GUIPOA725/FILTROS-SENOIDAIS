@@ -17,6 +17,7 @@ from .ind_fem import ModeloIndutor, MU0, BH_GO, perdas_harmonico, perdas_harmoni
 # (Schaffner/REO interpolados para a corrente) – o mesmo número de "perdas desejadas" da ET do indutor.
 CAPITALIZACAO_R_W = 1.5      # pequeno peso às perdas; o limite efetivo é P_max (faixa de mercado, igual à ET)
 GAP_MAX_PECA_MM = 3.0       # entreferro máximo por peça (espraiamento e força); acima disso dividir em mais entreferros
+GAP_MAX_PECA_CULATRA_MM = 10.0   # 2 entreferros nas juntas coluna–culatra (padrão nacional): calço de fibra até ~10 mm
 GAP_MAX_FRAC_A = 0.20       # entreferro total por coluna ≤ 20 % da largura da coluna (fluxo de dispersão pela janela)
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -309,7 +310,8 @@ def modelo(d, gaps, ng):
     a = d["a"]
     xl = [i * (a + d["ww"]) for i in range(3)]
     cond = _condutores(d, xl, a)
-    return ModeloIndutor(dict(a=a, b=d["b"], hw=d["hw"], ww=d["ww"], ng=ng, gaps=list(gaps), condutores=cond))
+    return ModeloIndutor(dict(a=a, b=d["b"], hw=d["hw"], ww=d["ww"], ng=ng, gaps=list(gaps), condutores=cond,
+                              pos_gap=d.get("pos_gap", "distribuido")))
 
 
 def L_fases(M, b, mu_r=4000, extra_3d=None):
@@ -330,11 +332,11 @@ def correcao_3d(d, Lp2d, M, mu_r=4000):
     return (L0 + extra2d * (d["a"] + d["b"]) / d["b"]) * fator_ferro
 
 
-def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print):
+def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print, construcao="distribuido"):
     """Projeto completo; se a elevação calculada no FEM passar da meta, acrescenta canal de ventilação e refaz (até 3×)."""
     nd_min, fixo, k_pmax = 0, None, 0.88
     for tent in range(5):
-        d = _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min, fixo, k_pmax)
+        d = _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min, fixo, k_pmax, construcao)
         pmax = d["requisitos"].get("P_max")
         if pmax and d["perdas"]["total"] > pmax and fixo is None and k_pmax > 0.6:
             k_pmax -= 0.08
@@ -349,7 +351,7 @@ def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb
     return d
 
 
-def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None, k_pmax=0.88):
+def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None, k_pmax=0.88, construcao="distribuido"):
     r = requisitos(proj, cat)
     try:
         esp = espectro_tensao_indutor(proj, cat)
@@ -403,8 +405,10 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         return dict(P60=P60, P_AF=P_AF, Rac=Rac, M=M)
 
     estudo_gap = []
-    for ng in (1, 2, 3, 4, 6, 8):
-        if g_tot0 / ng > GAP_MAX_PECA_MM * 1e-3 * 1.2:
+    d["pos_gap"] = "culatra" if construcao == "culatra" else "distribuido"
+    lista_ng = (2,) if construcao == "culatra" else (1, 2, 3, 4, 6, 8)
+    for ng in lista_ng:
+        if construcao != "culatra" and g_tot0 / ng > GAP_MAX_PECA_MM * 1e-3 * 1.2:
             continue
         for c_mm in (15, 25):
             dd = dict(d, c=c_mm * 1e-3)
@@ -415,7 +419,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
             log(f"     ng={ng} c={c_mm} mm: enrolamento {pe['P60']:.0f} W (60 Hz) + {pe['P_AF']:.0f} W (AF)")
     # escolha: menor nº de entreferros cuja perda total no enrolamento fica ≤ 5 % acima da melhor; depois menor c
     Pmin = min(e["P_W"] for e in estudo_gap)
-    ok = [e for e in estudo_gap if e["P_W"] <= 1.05 * Pmin and e["g_cada_mm"] * 1.15 <= GAP_MAX_PECA_MM] or \
+    lim_peca = GAP_MAX_PECA_CULATRA_MM if construcao == "culatra" else GAP_MAX_PECA_MM
+    ok = [e for e in estudo_gap if e["P_W"] <= 1.05 * Pmin and e["g_cada_mm"] * 1.15 <= lim_peca] or \
          [e for e in estudo_gap if e["P_W"] <= 1.05 * Pmin]
     esc = min(ok, key=lambda e: (e["ng"], e["c_mm"]))
     d["c"] = esc["c_mm"] * 1e-3
@@ -434,6 +439,14 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         gaps = [g * (L3[k] / r["L"]) ** 1.0 for k, g in enumerate(gaps)]
     d["gaps"] = gaps
     d["ng"] = ng
+    d["avisos"] = []
+    _gmax = max(gaps)
+    _lim_p = GAP_MAX_PECA_CULATRA_MM if d.get("pos_gap") == "culatra" else GAP_MAX_PECA_MM
+    if _gmax > GAP_MAX_FRAC_A * d["a"] or _gmax / ng * 1e3 > _lim_p * 1.15:
+        d["avisos"].append(f"Entreferro após o ajuste de L: {_gmax * 1e3:.1f} mm por coluna ({_gmax / ng * 1e3:.1f} mm por peça) – acima do "
+                           f"recomendado (≤ {GAP_MAX_FRAC_A * 100:.0f} % da coluna = {GAP_MAX_FRAC_A * d['a'] * 1e3:.0f} mm; ≤ {_lim_p:g} mm por "
+                           "peça). Construção pouco recomendada: espraiamento alto, força e ruído maiores.")
+        log("   ! " + d["avisos"][-1])
     d["L3d"] = L3
     d["L2d"] = Lp2d
     d["Lmat"] = Lm

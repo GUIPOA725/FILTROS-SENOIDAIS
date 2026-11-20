@@ -153,6 +153,21 @@ def fornecedores_interno(pasta_eng, cod):
     return cam
 
 
+def _texto_gap(ind):
+    ng = int(ind.get("ng", 0))
+    g = sum(ind.get("gaps", [0])) / max(len(ind.get("gaps", [1])), 1) * 1e3
+    if ind.get("pos_gap") == "culatra":
+        return ["9) CONSTRUÇÃO DO ENTREFERRO",
+                f"O projeto de referência usa 2 entreferros por coluna, nas juntas com as culatras ({g / 2:.1f} mm cada). Nessa construção "
+                "o espraiamento atinge as bordas da folha: favor manter a distância bobina–culatra do desenho e declarar as perdas.", ""]
+    return ["9) CONSTRUÇÃO DO ENTREFERRO – favor confirmar",
+            f"O projeto de referência usa {ng} entreferros DISTRIBUÍDOS por coluna (coluna em {ng + 1} pacotes de lâminas com calços de "
+            f"{g / ng:.2f} mm de fibra de vidro EP GC 203, total {g:.1f} mm). Com enrolamento em folha isso reduz bastante a perda por "
+            "espraiamento na folha. Vocês fazem coluna em pacotes com calços? Se o padrão de vocês for só 2 entreferros por coluna "
+            "(1 em cima e 1 embaixo), avisem antes de cotar: refazemos o projeto de referência nessa construção (o indutor fica maior "
+            "para não esquentar) e mandamos de novo.", ""]
+
+
 def texto_email_extra(proj, ind, arqs_nomes):
     """Parágrafos extras do e-mail ao fabricante: base de corrente, protótipo × série, protocolo e questionário."""
     from . import corrente_carga as CC
@@ -167,5 +182,6 @@ def texto_email_extra(proj, ind, arqs_nomes):
           "8) QUESTIONÁRIO – indutores que vocês já fabricaram para nós",
           "Pedimos, se possível, os dados internos dos indutores anteriores (espiras, núcleo, chapa, entreferros, condutor, perdas e "
           "temperatura medidas). Servem para calibrar o nosso cálculo ao padrão de fabricação de vocês.", "",
+          ] + (_texto_gap(ind) if ind else []) + [
           "Anexos desta solicitação: " + ", ".join(arqs_nomes) + "."]
     return "\n".join(ls)

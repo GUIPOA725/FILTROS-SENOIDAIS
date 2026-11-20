@@ -436,6 +436,10 @@ def _secao_indutor(R, d, pasta):
     r = d["requisitos"]
     R.h1("Indutor – projeto de referência para fabricação (elementos finitos)")
     secao_corrente_pdf(R, d.get("corrente_dimensionamento"))
+    if d.get("avisos"):
+        R.h2("Avisos do projeto do indutor")
+        R.bul(d["avisos"])
+    R.p(f"Construção do entreferro: {'2 por coluna nas juntas coluna–culatra (padrão nacional)' if d.get('pos_gap') == 'culatra' else str(d.get('ng')) + ' distribuídos por coluna (multigap, coluna em pacotes)'}.")
     R.h2("Requisitos elétricos (da simulação do filtro)")
     R.kv({k: v for k, v in r.items()})
     R.h2("Metodologia")

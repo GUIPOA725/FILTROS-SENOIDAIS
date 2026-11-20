@@ -182,7 +182,8 @@ def pecas_3d(d):
         pac = fab["pac_l"] if i != 1 else fab["pac_c"]
         z = a
         for k, ph in enumerate(pac):
-            P.append((f"Coluna {'UVW'[i]} pacote {k + 1}", caixa(x0, -b / 2, z, a, b, ph), FE))
+            if ph > 0.05:
+                P.append((f"Coluna {'UVW'[i]} pacote {k + 1}", caixa(x0, -b / 2, z, a, b, ph), FE))
             z += ph
             if k < len(pac) - 1:
                 P.append((f"Calco entreferro {'UVW'[i]}{k + 1}", caixa(x0, -b / 2, z, a, b, gc), GAP))
@@ -340,7 +341,8 @@ def gerar_dxf(d, arq, info=None):
         msp.add_line((ox2 + xx, H), (ox2 + xx + s * a, H - a), dxfattribs={"layer": "NUCLEO"})
     z = a
     for k, ph in enumerate(fab["pac_l"]):
-        cota((ox2, z), (ox2, z + ph), (ox2 - 30, 0), ang=90)
+        if ph > 0.05:
+            cota((ox2, z), (ox2, z + ph), (ox2 - 30, 0), ang=90)
         z += ph + (fab["gl"] if k < len(fab["pac_l"]) - 1 else 0)
     cota((ox2, 0), (ox2 + W, 0), (ox2, -40))
     cota((ox2 + W, 0), (ox2 + W, H), (ox2 + W + 40, 0), ang=90)

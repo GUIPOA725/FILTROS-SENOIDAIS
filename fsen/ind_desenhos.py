@@ -232,6 +232,8 @@ def fabricacao(d):
     gl, gc = g["gaps"][0] / ng, g["gaps"][1] / ng
     # pacotes da coluna: entreferros centrados em hw(k+0,5)/ng
     def pacotes(gcada):
+        if d.get("pos_gap") == "culatra":           # v1.11.1: 2 calços nas juntas coluna–culatra (coluna inteira entre eles)
+            return [0.0, g["hw"] - 2 * gcada, 0.0]
         ys = [g["hw"] * (k + 0.5) / ng for k in range(ng)]
         out, prev = [], 0.0
         for y in ys:
@@ -266,16 +268,21 @@ def fabricacao(d):
     return dict(
         n_lam=n_lam, t=t, pac_l=pac_l, pac_c=pac_c, gl=gl, gc=gc, camadas=camadas, build_real=r - g["c"], comp_folha=comp_folha,
         massa_folha=massa_folha, MLT=MLT, forca=forca, aperto_N=max(2.5 * forca, 2000),
-        corte=[("Coluna (pacotes)", f"{g['a']:.0f}", "ver pacotes", f"3 × {ng + 1} pacotes × {n_lam} lâminas"),
+        corte=[("Coluna (pacotes)", f"{g['a']:.0f}", "ver pacotes", (f"3 × 1 coluna inteira × {n_lam} lâminas" if d.get("pos_gap") == "culatra" else f"3 × {ng + 1} pacotes × {n_lam} lâminas")),
                ("Culatra superior", f"{g['a']:.0f}", f"{g['W']:.0f} (45°)", f"{n_lam} lâminas"),
                ("Culatra inferior", f"{g['a']:.0f}", f"{g['W']:.0f} (45°)", f"{n_lam} lâminas")],
         sequencia=[
             "Cortar chapas (guilhotina/estampo) e rebarbar: rebarba ≤ 0,02 mm; recozer se o fornecedor da chapa exigir.",
-            f"Montar a culatra inferior e as colunas em pacotes de {g['b']:.0f} mm (≈ {n_lam} lâminas), junta step-lap 3 degraus × 5 mm nas culatras.",
-            f"Colar os calços EP GC 203 entre pacotes (lat. {gl:.2f} mm / cen. {gc:.2f} mm) com epóxi classe H; retificar faces dos pacotes.",
+            *([f"Montar a culatra inferior; colunas inteiras de {g['b']:.0f} mm (≈ {n_lam} lâminas) com faces de topo retificadas – junta de TOPO "
+               f"(não step-lap) com as culatras, onde ficam os entreferros.",
+               f"Colar os calços EP GC 203 nas DUAS juntas coluna–culatra (lat. {gl:.2f} mm / cen. {gc:.2f} mm cada) com epóxi classe H."]
+              if d.get("pos_gap") == "culatra" else
+              [f"Montar a culatra inferior e as colunas em pacotes de {g['b']:.0f} mm (≈ {n_lam} lâminas), junta step-lap 3 degraus × 5 mm nas culatras.",
+               f"Colar os calços EP GC 203 entre pacotes (lat. {gl:.2f} mm / cen. {gc:.2f} mm) com epóxi classe H; retificar faces dos pacotes."]),
             f"Bobinar as 3 bobinas sobre mandril com o tubo EP GC 203 (folha {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras, aramida entre espiras, reforço nas 2 primeiras/últimas).",
             "Soldar as barras de saída (TIG, largura total da folha) antes de bobinar a espira inicial e depois da final; instalar PTC entre as últimas camadas.",
-            "Encaixar as bobinas nas colunas com calços de extremidade; fechar a culatra superior (step-lap).",
+            "Encaixar as bobinas nas colunas com calços de extremidade; fechar a culatra superior "
+            + ("(junta de topo sobre os calços)." if d.get("pos_gap") == "culatra" else "(step-lap)."),
             f"Prensar o conjunto: força de aperto ≥ {max(2.5 * forca, 2000):.0f} N por coluna nos entreferros (cantoneiras + tirantes M12 8.8, torque 80 N·m).",
             "Medir L por fase na corrente nominal (ou fonte CA + ponte LCR em 60 Hz com correção) e ajustar o calço: L ±5 %, desequilíbrio ≤ 3 %.",
             "Impregnar por VPI com resina classe H; curar na estufa conforme fabricante da resina; retocar pintura da estrutura.",
@@ -433,7 +440,8 @@ def folha_nucleo(F, g, d, fab):
         V.eixo(x0 + a / 2, -8, x0 + a / 2, H + 8)
     y = a
     for k, ph in enumerate(fab["pac_l"]):
-        V.cota_v(y, y + ph, 0, -6, f"{ph:.1f}", fs=5.2)
+        if ph > 0.05:
+            V.cota_v(y, y + ph, 0, -6, f"{ph:.1f}", fs=5.2)
         y += ph + (fab["gl"] if k < len(fab["pac_l"]) - 1 else 0)
     y = a
     xr = 2 * g["pitch"] + a
@@ -700,7 +708,7 @@ def lista_materiais(d):
     m = d["massa_kg"]
     ng = g["ng"]
     linhas = [
-        ("1", "Núcleo – chapas", f"{ch['nome']}; culatras a 45° step-lap 3 degraus; colunas em {ng + 1} pacotes", f"{m['nucleo']:.0f} kg", ch["norma"]),
+        ("1", "Núcleo – chapas", f"{ch['nome']}; culatras a 45° step-lap 3 degraus; " + ("colunas inteiras, calços nas juntas com as culatras" if d.get("pos_gap") == "culatra" else f"colunas em {ng + 1} pacotes"), f"{m['nucleo']:.0f} kg", ch["norma"]),
         ("2", "Enrolamento", f"{cond['nome']} {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras/bobina, 3 bobinas", f"{m['condutor']:.0f} kg", cond["norma"]),
         ("3", "Calços do entreferro", f"EP GC 203 retificado: laterais {g['gaps'][0]/ng:.2f} mm, central {g['gaps'][1]/ng:.2f} mm, {ng} por coluna",
          f"{3 * ng} pç", "IEC 60893-3-2"),

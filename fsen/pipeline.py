@@ -1,6 +1,7 @@
 """Fluxo completo: pedido -> dimensionamento -> simulação -> desenhos -> documentos -> custos -> histórico."""
 from __future__ import annotations
 import os
+import math
 import re
 import json
 import shutil
@@ -52,7 +53,7 @@ def _slug(s):
 
 
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
-              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga"):
+              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga", construcao_gap="distribuido"):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
@@ -100,7 +101,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                     _otim = getattr(proj, "_otimizacao", None)
                     proj = projeto_manual(ped, cat, proj.fs_hz / 1000, o["L_uh"], o["cap_id"], o["ligacao"], o["n_por_ramo"])
                     proj._otimizacao = _otim
-                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                    proj.avisos = [a for a in (getattr(proj, "avisos", []) or []) if "definida manualmente" not in a] + [
                         f"Configuração escolhida pela prioridade 'indutor de mercado / menos capacitores' (uk {o['uk_pct']} %, "
                         f"{o['n_caps']} capacitores, robusta a L ±10 % e C ±5 %)."]
                     log(f"   → {o['L_uh']:.0f} µH + {o['n_caps']} × {o['cap_id']} ({o['ligacao']})")
@@ -123,7 +124,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                     _otim = getattr(proj, "_otimizacao", None)
                     proj = projeto_manual(ped, cat, proj.fs_hz / 1000, o["L_uh"], o["cap_id"], o["ligacao"], o["n_por_ramo"])
                     proj._otimizacao = _otim
-                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                    proj.avisos = [a for a in (getattr(proj, "avisos", []) or []) if "definida manualmente" not in a] + [
                         f"Configuração escolhida pela prioridade 'mínimo de capacitores' com capacitor forçado ({o['cap_id']}): "
                         f"{o['n_caps']} capacitores, queda {o['queda']} % (≤ {_qm:g} %), robusta a L ±10 % e C ±5 %."]
                     log(f"   → {o['L_uh']:.0f} µH + {o['n_caps']} × {o['cap_id']} ({o['ligacao']})")
@@ -177,6 +178,33 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     for p in sub.values():
         os.makedirs(p, exist_ok=True)
     similares = H.buscar_similares(ped.tensao_v, ped.corrente_a, proj.topologia)
+    ind_pre = None
+    if proj.topologia == "LC" and not proj.l2 and (cat.get("indutor_fem") or {}).get("habilitado", True):
+        try:                                        # v1.11.1: indutor por FEM ANTES do painel – o painel usa as dimensões reais
+            from . import ind_projeto as IP
+            log(f"   Indutor: projeto de referência por elementos finitos – entreferros "
+                f"{'2 por coluna nas culatras (padrão nacional)' if construcao_gap == 'culatra' else 'distribuídos (multigap)'} "
+                "(alguns minutos)...")
+            ind_pre = IP.projetar(proj, cat, log=log, construcao=construcao_gap)
+            _p_est = float(proj.l1.perdas_w or 0)
+            _r = ind_pre["requisitos"]
+            _p_lim = float(ind_pre["perdas"]["total"]) * 1.15
+            if _r.get("P_max"):
+                _p_lim = min(_p_lim, float(_r["P_max"]) * float(_r.get("k_Pmax") or 1))
+            _p_lim = max(_p_lim, float(ind_pre["perdas"]["total"]))
+            _dm = ind_pre["dims_mm"]
+            proj.l1.perdas_w = round(_p_lim, 0)
+            proj.l1.dim_mm = [int(math.ceil(_dm["largura"] / 10) * 10), int(math.ceil(_dm["altura"] / 10) * 10),
+                              int(math.ceil(_dm["profundidade"] / 10) * 10)]
+            proj.l1.massa_kg = round(float(ind_pre["massa_kg"]["total"]), 0)
+            proj._ind_fem_termico = dict(elev=float(ind_pre["termico"]["elev_bobina_K"]), p=float(ind_pre["perdas"]["total"]))
+            proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                f"Painel dimensionado com o indutor do projeto por elementos finitos: {proj.l1.dim_mm[0]}×{proj.l1.dim_mm[1]}×"
+                f"{proj.l1.dim_mm[2]} mm, {proj.l1.massa_kg:.0f} kg e perdas = limite contratual {proj.l1.perdas_w:.0f} W "
+                f"(FEM {ind_pre['perdas']['total']:.0f} W + 15 %, teto de mercado); a estimativa simplificada era {_p_est:.0f} W."]
+            log(f"   Painel usará o indutor FEM: {proj.l1.dim_mm} mm, {proj.l1.massa_kg:.0f} kg, perdas (limite) {proj.l1.perdas_w:.0f} W")
+        except Exception as e:
+            log(f"   (projeto do indutor por elementos finitos não concluído: {type(e).__name__}: {e})")
     log("2/7 Arranjo mecânico, térmica e cabos...")
     arr = projetar_arranjo(proj, cat)
     from .termico import aplicar_termico
@@ -238,8 +266,9 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         try:                                        # v1.10.0: projeto de referência do indutor por elementos finitos
             from . import ind_projeto as IP, ind_desenhos as IDS, auditoria as AUD
             from .versao import info as _vi
-            log("   Indutor: projeto de referência por elementos finitos (alguns minutos)...")
-            ind = IP.projetar(proj, cat, log=log)
+            ind = ind_pre
+            if ind is None:
+                raise RuntimeError("projeto FEM do indutor indisponível")
             ind["corrente_dimensionamento"] = getattr(proj, "corrente_dimensionamento", None) or {}
             IDS.imagens_campo(ind, os.path.join(sub["01_Engenharia"], "Indutor_campo_FEM.png"))
             _inf = dict(titulo=f"Indutor trifásico p/ filtro senoidal – {proj.l1.l_uh:.0f} µH / {proj.l1.i_nom_a:.0f} A – {cod}",
@@ -451,7 +480,9 @@ def texto_atp(st):
         L.append(f"- **{x['ponto']}** – Python × ATP:")
         for l in x["tabela"]:
             L.append(f"  - {'✅' if l['convergiu'] else '❌'} {l['grandeza']}: Python {l['python']:g} | ATP {l['atp']:g} {l['unidade']} "
-                     f"(dif. {l['dif_pct']:+.1f} %, tolerância ±{l['tolerancia_pct']:g} %)")
+                     f"(dif. {l['dif_pct']:+.1f} %, tolerância ±{l['tolerancia_pct']:g} %"
+                     + (f" ou ±0,5 ponto percentual – diferença {abs(l['atp'] - l['python']):.2f} pp" if "THD" in l["grandeza"]
+                        and abs(l["dif_pct"]) > l["tolerancia_pct"] else "") + ")")
     L.append("")
     return L
 
