@@ -112,6 +112,119 @@
      "convergiu": true
     }
    ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 190.682,
+     "atp": 190.698,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.702,
+     "atp": 1.805,
+     "dif_pct": 6.06,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 274.136,
+     "atp": 275.013,
+     "dif_pct": 0.32,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.99,
+     "atp": 190.006,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.705,
+     "atp": 1.808,
+     "dif_pct": 6.06,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 273.133,
+     "atp": 273.979,
+     "dif_pct": 0.31,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 10.751,
+     "atp": 10.759,
+     "dif_pct": 0.07,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 10.855,
+     "atp": 10.862,
+     "dif_pct": 0.06,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 6.012,
+     "atp": 6.103,
+     "dif_pct": 1.52,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 10.994,
+     "atp": 11.002,
+     "dif_pct": 0.07,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 1.562,
+     "atp": 1.561,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.562,
+     "atp": 1.561,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
   }
  ],
  "IHR-30A": [
@@ -336,6 +449,2058 @@
      "python": 0.921,
      "atp": 0.923,
      "dif_pct": 0.24,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "INSTALL-10A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 381.852,
+     "atp": 381.846,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 3.032,
+     "atp": 2.688,
+     "dif_pct": -11.36,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 552.488,
+     "atp": 550.915,
+     "dif_pct": -0.28,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 381.205,
+     "atp": 381.2,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 3.034,
+     "atp": 2.69,
+     "dif_pct": -11.36,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 551.524,
+     "atp": 549.956,
+     "dif_pct": -0.28,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 9.515,
+     "atp": 9.511,
+     "dif_pct": -0.05,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 9.564,
+     "atp": 9.558,
+     "dif_pct": -0.06,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 6.158,
+     "atp": 6.036,
+     "dif_pct": -1.98,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 9.989,
+     "atp": 9.985,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 1.304,
+     "atp": 1.289,
+     "dif_pct": -1.12,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.304,
+     "atp": 1.289,
+     "dif_pct": -1.12,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 207.803,
+     "atp": 207.793,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.444,
+     "atp": 1.49,
+     "dif_pct": 3.19,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 298.058,
+     "atp": 299.56,
+     "dif_pct": 0.5,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 207.489,
+     "atp": 207.478,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.445,
+     "atp": 1.491,
+     "dif_pct": 3.19,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 297.616,
+     "atp": 299.11,
+     "dif_pct": 0.5,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 4.865,
+     "atp": 4.869,
+     "dif_pct": 0.08,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 4.913,
+     "atp": 4.916,
+     "dif_pct": 0.07,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 2.766,
+     "atp": 2.784,
+     "dif_pct": 0.65,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 4.997,
+     "atp": 5.001,
+     "dif_pct": 0.07,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 0.722,
+     "atp": 0.721,
+     "dif_pct": -0.18,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 0.722,
+     "atp": 0.721,
+     "dif_pct": -0.18,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "INSTALL-20A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 381.874,
+     "atp": 381.833,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 2.95,
+     "atp": 3.054,
+     "dif_pct": 3.52,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 552.028,
+     "atp": 552.495,
+     "dif_pct": 0.08,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 380.581,
+     "atp": 380.54,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 2.954,
+     "atp": 3.058,
+     "dif_pct": 3.52,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 550.101,
+     "atp": 550.748,
+     "dif_pct": 0.12,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 19.032,
+     "atp": 19.014,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 19.129,
+     "atp": 19.111,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 12.265,
+     "atp": 12.259,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 19.979,
+     "atp": 19.96,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 2.603,
+     "atp": 2.609,
+     "dif_pct": 0.23,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 2.603,
+     "atp": 2.609,
+     "dif_pct": 0.23,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 208.118,
+     "atp": 208.096,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.443,
+     "atp": 1.536,
+     "dif_pct": 6.42,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 298.493,
+     "atp": 299.672,
+     "dif_pct": 0.39,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 207.489,
+     "atp": 207.468,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.445,
+     "atp": 1.538,
+     "dif_pct": 6.42,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 297.609,
+     "atp": 298.804,
+     "dif_pct": 0.4,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 9.73,
+     "atp": 9.711,
+     "dif_pct": -0.21,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 9.826,
+     "atp": 9.806,
+     "dif_pct": -0.21,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 5.543,
+     "atp": 5.649,
+     "dif_pct": 1.91,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 9.995,
+     "atp": 9.975,
+     "dif_pct": -0.2,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 1.446,
+     "atp": 1.444,
+     "dif_pct": -0.12,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.446,
+     "atp": 1.444,
+     "dif_pct": -0.12,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "AB-48A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 350.936,
+     "atp": 350.964,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.638,
+     "atp": 1.698,
+     "dif_pct": 3.63,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 498.122,
+     "atp": 498.624,
+     "dif_pct": 0.1,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 347.83,
+     "atp": 347.857,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.645,
+     "atp": 1.705,
+     "dif_pct": 3.63,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 493.661,
+     "atp": 494.166,
+     "dif_pct": 0.1,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 45.371,
+     "atp": 45.379,
+     "dif_pct": 0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 45.629,
+     "atp": 45.638,
+     "dif_pct": 0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 29.89,
+     "atp": 30.089,
+     "dif_pct": 0.67,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 47.947,
+     "atp": 47.957,
+     "dif_pct": 0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 3.883,
+     "atp": 3.885,
+     "dif_pct": 0.06,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 3.883,
+     "atp": 3.885,
+     "dif_pct": 0.06,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 191.501,
+     "atp": 191.536,
+     "dif_pct": 0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.337,
+     "atp": 1.456,
+     "dif_pct": 8.93,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 274.245,
+     "atp": 275.442,
+     "dif_pct": 0.44,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.99,
+     "atp": 190.02,
+     "dif_pct": 0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.341,
+     "atp": 1.461,
+     "dif_pct": 8.93,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 272.061,
+     "atp": 273.186,
+     "dif_pct": 0.41,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 23.264,
+     "atp": 23.341,
+     "dif_pct": 0.33,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 23.533,
+     "atp": 23.609,
+     "dif_pct": 0.32,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 14.282,
+     "atp": 14.645,
+     "dif_pct": 2.55,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 23.987,
+     "atp": 24.064,
+     "dif_pct": 0.32,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 2.184,
+     "atp": 2.182,
+     "dif_pct": -0.07,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 2.184,
+     "atp": 2.182,
+     "dif_pct": -0.07,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "GRATT-59A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 349.401,
+     "atp": 349.383,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.8,
+     "atp": 1.789,
+     "dif_pct": -0.65,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 496.819,
+     "atp": 495.686,
+     "dif_pct": -0.23,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 345.581,
+     "atp": 345.564,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.809,
+     "atp": 1.798,
+     "dif_pct": -0.65,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 491.279,
+     "atp": 490.138,
+     "dif_pct": -0.23,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 56.346,
+     "atp": 56.32,
+     "dif_pct": -0.05,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 56.607,
+     "atp": 56.58,
+     "dif_pct": -0.05,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 32.816,
+     "atp": 32.992,
+     "dif_pct": 0.54,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 58.936,
+     "atp": 58.908,
+     "dif_pct": -0.05,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 7.164,
+     "atp": 7.158,
+     "dif_pct": -0.08,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 2.388,
+     "atp": 2.386,
+     "dif_pct": -0.08,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 191.849,
+     "atp": 191.902,
+     "dif_pct": 0.03,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.503,
+     "atp": 1.548,
+     "dif_pct": 3.01,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 275.032,
+     "atp": 275.307,
+     "dif_pct": 0.1,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.99,
+     "atp": 190.038,
+     "dif_pct": 0.03,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.509,
+     "atp": 1.554,
+     "dif_pct": 3.01,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 272.388,
+     "atp": 272.783,
+     "dif_pct": 0.14,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 28.757,
+     "atp": 28.865,
+     "dif_pct": 0.38,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 29.03,
+     "atp": 29.136,
+     "dif_pct": 0.36,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 16.136,
+     "atp": 16.272,
+     "dif_pct": 0.84,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 29.484,
+     "atp": 29.593,
+     "dif_pct": 0.37,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 4.193,
+     "atp": 4.185,
+     "dif_pct": -0.19,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.398,
+     "atp": 1.395,
+     "dif_pct": -0.19,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "GRATT-105A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 349.349,
+     "atp": 349.353,
+     "dif_pct": 0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.879,
+     "atp": 2.072,
+     "dif_pct": 10.31,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 495.968,
+     "atp": 499.498,
+     "dif_pct": 0.71,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 346.085,
+     "atp": 346.091,
+     "dif_pct": 0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.878,
+     "atp": 2.071,
+     "dif_pct": 10.31,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 491.237,
+     "atp": 494.717,
+     "dif_pct": 0.71,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 100.546,
+     "atp": 100.506,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 101.018,
+     "atp": 100.98,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 59.124,
+     "atp": 60.747,
+     "dif_pct": 2.74,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 104.886,
+     "atp": 104.848,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 12.503,
+     "atp": 12.542,
+     "dif_pct": 0.31,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 2.501,
+     "atp": 2.508,
+     "dif_pct": 0.31,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 191.536,
+     "atp": 191.513,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.633,
+     "atp": 1.764,
+     "dif_pct": 8.0,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 275.361,
+     "atp": 276.915,
+     "dif_pct": 0.56,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.99,
+     "atp": 189.971,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.63,
+     "atp": 1.761,
+     "dif_pct": 8.0,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 273.103,
+     "atp": 274.615,
+     "dif_pct": 0.55,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 51.257,
+     "atp": 51.136,
+     "dif_pct": -0.24,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 51.751,
+     "atp": 51.629,
+     "dif_pct": -0.24,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 28.971,
+     "atp": 29.657,
+     "dif_pct": 2.37,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 52.472,
+     "atp": 52.351,
+     "dif_pct": -0.23,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 7.479,
+     "atp": 7.475,
+     "dif_pct": -0.06,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.496,
+     "atp": 1.495,
+     "dif_pct": -0.06,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "FRANKLIN-120A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 349.46,
+     "atp": 349.479,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.814,
+     "atp": 1.833,
+     "dif_pct": 1.05,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 496.121,
+     "atp": 495.603,
+     "dif_pct": -0.1,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 345.729,
+     "atp": 345.751,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.813,
+     "atp": 1.832,
+     "dif_pct": 1.05,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 490.74,
+     "atp": 490.545,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 114.676,
+     "atp": 114.636,
+     "dif_pct": -0.03,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 115.217,
+     "atp": 115.176,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 67.104,
+     "atp": 66.951,
+     "dif_pct": -0.23,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 119.869,
+     "atp": 119.834,
+     "dif_pct": -0.03,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 8.401,
+     "atp": 8.399,
+     "dif_pct": -0.03,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 4.201,
+     "atp": 4.199,
+     "dif_pct": -0.03,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 191.758,
+     "atp": 191.756,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.549,
+     "atp": 1.657,
+     "dif_pct": 6.96,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 275.222,
+     "atp": 276.159,
+     "dif_pct": 0.34,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.99,
+     "atp": 189.988,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.546,
+     "atp": 1.653,
+     "dif_pct": 6.96,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 272.649,
+     "atp": 273.525,
+     "dif_pct": 0.32,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 58.512,
+     "atp": 58.539,
+     "dif_pct": 0.05,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 59.078,
+     "atp": 59.102,
+     "dif_pct": 0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 33.189,
+     "atp": 33.706,
+     "dif_pct": 1.56,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 59.967,
+     "atp": 59.993,
+     "dif_pct": 0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 4.957,
+     "atp": 4.952,
+     "dif_pct": -0.1,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 2.479,
+     "atp": 2.476,
+     "dif_pct": -0.1,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "ASA-255A": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 349.283,
+     "atp": 349.288,
+     "dif_pct": 0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.899,
+     "atp": 1.938,
+     "dif_pct": 2.09,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 495.799,
+     "atp": 494.518,
+     "dif_pct": -0.26,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 346.458,
+     "atp": 346.464,
+     "dif_pct": 0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.873,
+     "atp": 1.912,
+     "dif_pct": 2.09,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 491.729,
+     "atp": 490.571,
+     "dif_pct": -0.24,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 244.257,
+     "atp": 244.152,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 245.407,
+     "atp": 245.3,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 143.667,
+     "atp": 143.782,
+     "dif_pct": 0.08,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 254.728,
+     "atp": 254.626,
+     "dif_pct": -0.04,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 17.468,
+     "atp": 17.466,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 4.367,
+     "atp": 4.366,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 191.216,
+     "atp": 191.178,
+     "dif_pct": -0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 1.647,
+     "atp": 1.654,
+     "dif_pct": 0.44,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 274.841,
+     "atp": 274.69,
+     "dif_pct": -0.05,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.99,
+     "atp": 189.953,
+     "dif_pct": -0.02,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 1.622,
+     "atp": 1.629,
+     "dif_pct": 0.44,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 272.996,
+     "atp": 272.869,
+     "dif_pct": -0.05,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 124.513,
+     "atp": 124.277,
+     "dif_pct": -0.19,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 125.712,
+     "atp": 125.472,
+     "dif_pct": -0.19,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 70.052,
+     "atp": 70.709,
+     "dif_pct": 0.94,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 127.433,
+     "atp": 127.19,
+     "dif_pct": -0.19,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 10.479,
+     "atp": 10.452,
+     "dif_pct": -0.27,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 2.62,
+     "atp": 2.613,
+     "dif_pct": -0.27,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "FN5040-24": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 339.226,
+     "atp": 339.2,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 4.747,
+     "atp": 5.502,
+     "dif_pct": 15.89,
+     "tolerancia_pct": 10.0,
+     "convergiu": false
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 498.5,
+     "atp": 502.993,
+     "dif_pct": 0.9,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 337.674,
+     "atp": 337.649,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 4.757,
+     "atp": 5.513,
+     "dif_pct": 15.89,
+     "tolerancia_pct": 10.0,
+     "convergiu": false
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 496.202,
+     "atp": 500.682,
+     "dif_pct": 0.9,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 23.544,
+     "atp": 23.526,
+     "dif_pct": -0.08,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 23.587,
+     "atp": 23.571,
+     "dif_pct": -0.07,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 9.069,
+     "atp": 9.248,
+     "dif_pct": 1.98,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 23.978,
+     "atp": 23.96,
+     "dif_pct": -0.08,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 1.73,
+     "atp": 1.786,
+     "dif_pct": 3.25,
+     "tolerancia_pct": 3.0,
+     "convergiu": false
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.73,
+     "atp": 1.786,
+     "dif_pct": 3.25,
+     "tolerancia_pct": 3.0,
+     "convergiu": false
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 190.746,
+     "atp": 190.764,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 2.391,
+     "atp": 2.401,
+     "dif_pct": 0.42,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 276.334,
+     "atp": 277.382,
+     "dif_pct": 0.38,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.991,
+     "atp": 190.009,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 2.395,
+     "atp": 2.405,
+     "dif_pct": 0.42,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 275.26,
+     "atp": 276.349,
+     "dif_pct": 0.4,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 11.872,
+     "atp": 11.882,
+     "dif_pct": 0.09,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 11.914,
+     "atp": 11.924,
+     "dif_pct": 0.09,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 4.158,
+     "atp": 4.164,
+     "dif_pct": 0.15,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 11.995,
+     "atp": 12.005,
+     "dif_pct": 0.09,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 1.039,
+     "atp": 1.036,
+     "dif_pct": -0.26,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 1.039,
+     "atp": 1.036,
+     "dif_pct": -0.26,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  }
+ ],
+ "FN5040-75": [
+  {
+   "ponto": "Operação f máx (60 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 339.904,
+     "atp": 339.939,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 3.033,
+     "atp": 3.036,
+     "dif_pct": 0.12,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 485.272,
+     "atp": 485.891,
+     "dif_pct": 0.13,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 335.045,
+     "atp": 335.081,
+     "dif_pct": 0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 3.053,
+     "atp": 3.057,
+     "dif_pct": 0.12,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 478.309,
+     "atp": 478.914,
+     "dif_pct": 0.13,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 73.636,
+     "atp": 73.631,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 73.769,
+     "atp": 73.764,
+     "dif_pct": -0.01,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 27.14,
+     "atp": 27.013,
+     "dif_pct": -0.47,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 74.929,
+     "atp": 74.925,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 5.133,
+     "atp": 5.128,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 5.133,
+     "atp": 5.128,
+     "dif_pct": -0.09,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    }
+   ]
+  },
+  {
+   "ponto": "Operação f mín (30 Hz)",
+   "tabela": [
+    {
+     "grandeza": "Tensão de saída L-L fundamental",
+     "unidade": "V",
+     "python": 192.355,
+     "atp": 192.358,
+     "dif_pct": 0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão de saída (até 4,6·fs)",
+     "unidade": "%",
+     "python": 2.508,
+     "atp": 2.526,
+     "dif_pct": 0.72,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no banco",
+     "unidade": "V",
+     "python": 278.052,
+     "atp": 278.469,
+     "dif_pct": 0.15,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Tensão no motor L-L fundamental",
+     "unidade": "V",
+     "python": 189.991,
+     "atp": 189.995,
+     "dif_pct": 0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "THD tensão no motor",
+     "unidade": "%",
+     "python": 2.52,
+     "atp": 2.538,
+     "dif_pct": 0.72,
+     "tolerancia_pct": 10.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Pico tensão L-L no motor",
+     "unidade": "V",
+     "python": 274.673,
+     "atp": 275.193,
+     "dif_pct": 0.19,
+     "tolerancia_pct": 2.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor fundamental",
+     "unidade": "A",
+     "python": 37.113,
+     "atp": 37.113,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente inversor RMS",
+     "unidade": "A",
+     "python": 37.252,
+     "atp": 37.251,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Ondulação p-p no indutor",
+     "unidade": "A",
+     "python": 13.377,
+     "atp": 13.463,
+     "dif_pct": 0.64,
+     "tolerancia_pct": 8.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente motor fundamental",
+     "unidade": "A",
+     "python": 37.482,
+     "atp": 37.482,
+     "dif_pct": -0.0,
+     "tolerancia_pct": 1.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS ramo do banco",
+     "unidade": "A",
+     "python": 3.338,
+     "atp": 3.329,
+     "dif_pct": -0.26,
+     "tolerancia_pct": 3.0,
+     "convergiu": true
+    },
+    {
+     "grandeza": "Corrente RMS por capacitor",
+     "unidade": "A",
+     "python": 3.338,
+     "atp": 3.329,
+     "dif_pct": -0.26,
      "tolerancia_pct": 3.0,
      "convergiu": true
     }
