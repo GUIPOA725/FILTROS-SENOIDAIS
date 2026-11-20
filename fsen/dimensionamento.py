@@ -330,14 +330,15 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
     v.append(Verificacao("Amplificação de harmônicas de baixa ordem (tempo morto) – pior caso teórico (velocidade exata + tolerâncias de L e C)",
                          f"{thd_lo:.2f} % (pior em {f_lo:.1f} Hz, h{h_lo}, ganho {g_lo:.2f})", f"≤ {lim_lo:.1f} % (alerta)",
                          thd_lo <= lim_lo, "Robustez à ressonância: h = 6k±1 com amplitudes típicas de tempo morto. Validação v1.8: "
-                         "filtros LC fabricados (SENAI medido: THD 3,6 % a 60 Hz) e Schaffner FN5040 também têm este ponto; "
+                         "filtros LC fabricados (SENAI/IHR medidos com Dranetz) e Schaffner FN5040 também têm este ponto; "
                          "consequência no capacitor verificada abaixo", critico=False))
     thd_nom = risco_ressonancia_baixa_ordem(p, fmax, fmax, passo=1.0)[0]
     thd_pwm_fmax = max((r["thd_v_saida_pct"] for r in res if abs(r["f1"] - fmax) < 0.6), default=thd)
     thd_tot = math.hypot(thd_pwm_fmax, thd_nom)
     v.append(Verificacao(f"THD total no motor @ {fmax:g} Hz (PWM + baixa ordem, valores nominais)", f"{thd_tot:.2f} %",
                          f"≤ {cp['thd_v_max_pct'] + 1:.1f} %", thd_tot <= cp["thd_v_max_pct"] + 1,
-                         "Comparado à medição SENAI (958 µH / 40 µF Y, fs 6 kHz, 60 Hz): THD medido ≈ 3,6 %"))
+                         "Calibrado com medições Dranetz (formas de onda) a 60 Hz: SENAI 958 µH/40 µF Y 7,2 %; SENAI 958 µH/20 µF Y 4,9 %; "
+                         "IHR 1586 µH/20 µF Y 4,0 % (inclui o caso motor desligado/a vazio)"))
     _lo = dict(thd=thd_lo, f=f_lo, h=h_lo)
     from .simulacao import HARM_ALTAS
     thd_hi, f_hi, h_hi, g_hi = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo=0.5, harmonicas=HARM_ALTAS)

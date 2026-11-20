@@ -378,19 +378,35 @@ def resposta_frequencia(p: ParamCircuito, fmax=20000, n=2000, com_carga=True, Zc
 # queda nos semicondutores e ondulação do barramento (% da fundamental). Conservador.
 # harmônicas 6k±1 do tempo morto / pulso mínimo (% da fundamental, decaimento ~1/h) – até h49 para cobrir a
 # ressonância natural do LC com o motor em paralelo (achado na dupla checagem ATP: h35 a 41 Hz na A&W)
-# CALIBRAÇÃO DE CAMPO (19/11/2026) – SENAI S.Leopoldo, filtro 958 µH / 40 µF Y, 60 Hz, fs 6 kHz, Fluke: THD na saída
-# do filtro ≈ 3,6 % (h5 1,8 %, h11 2,2 %, h13 1,9 %). Com o PWM ideal (Python = ATP = 0,85 %) a parcela de baixa
-# ordem medida é √(3,6² − 0,85²) = 3,5 %, contra 2,5 % previstos com a tabela base → fator 1,4 sobre a tabela base.
-FATOR_CAMPO_BAIXA_ORDEM = 1.4
-_BASE_TM = {5: 1.5, 7: 1.0, 11: 0.6, 13: 0.5, 17: 0.3, 19: 0.25, 23: 0.2, 25: 0.15}
-_BASE_ALTAS = {29: 0.13, 31: 0.12, 35: 0.10, 37: 0.10, 41: 0.08, 43: 0.08, 47: 0.07, 49: 0.07}
-HARM_TEMPO_MORTO = {h: round(a * FATOR_CAMPO_BAIXA_ORDEM, 3) for h, a in _BASE_TM.items()}
-HARM_ALTAS = {h: round(a * FATOR_CAMPO_BAIXA_ORDEM, 3) for h, a in _BASE_ALTAS.items()}
+# CALIBRAÇÃO DE CAMPO (19/11/2026) – harmônicas de baixa ordem MEDIDAS na saída do inversor (Dranetz HDPQ, formas de onda
+# lidas com o leitor .ddbx da Plataforma de Estudos), mediana das capturas a 60 Hz:
+#   SENAI S.Leopoldo (sessões 110/111/112, fs 6 kHz): h5 2,2  h7 0,6  h11 1,1  h13 0,4  h17 0,4  h19 0,5  h23 0,3  h25 0,3 %
+#   IHR/Randon 2022 (MM440, 62 capturas):            h5 2,2  h7 0,5  h11 0,9  h13 0,5  h17 0,45 h19 0,5  h23 0,35 h25 0,4 %
+# Tabela = envoltória das duas medições (h29–h49 incluem o piso de ruído do analisador → conservador).
+FATOR_CAMPO_BAIXA_ORDEM = 1.0      # (v1.9.3 usava ×1,4 sobre a tabela antiga; agora a tabela é a própria medição)
+HARM_TEMPO_MORTO = {5: 2.3, 7: 0.7, 11: 1.1, 13: 0.5, 17: 0.45, 19: 0.5, 23: 0.35, 25: 0.4}
+HARM_ALTAS = {29: 0.3, 31: 0.4, 35: 0.2, 37: 0.5, 41: 0.25, 43: 0.25, 47: 0.22, 49: 0.25}
+# Amortecimento efetivo da ressonância de baixa ordem, ajustado nas mesmas medições (ganho de pico medido 17–26):
+# perdas do indutor/capacitor/cabo + impedância do inversor (tempo morto) → Q equivalente 4 (só no cálculo de baixa ordem;
+# perdas e PWM continuam com o Q_hf do indutor). Com isso: SENAI 40 µF previsto 5,8–7,1 % (medido 7,2 %), SENAI 20 µF 5,8 %
+# (medido 4,9 %), IHR 4,1 % (medido 4,0 %).
+Q_BAIXA_ORDEM_CAMPO = 4.0
 
 
-def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, passo: float = 0.25, harmonicas=None):
+def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, passo: float = 0.25, harmonicas=None,
+                                  com_motor_desligado: bool = True):
     """Varre a faixa de operação e calcula a distorção de saída causada pelas harmônicas de
-    baixa ordem do inversor amplificadas pelo filtro. Retorna (thd_pior_%, f_pior, h_pior, ganho_pior)."""
+    baixa ordem do inversor amplificadas pelo filtro. Retorna (thd_pior_%, f_pior, h_pior, ganho_pior).
+    Calibração 19/11/2026: nas medições de campo (SENAI 40 µF e 20 µF, IHR 2022) a ressonância ficou na fr do LC SEM o motor
+    (motor a vazio/desacoplado) – com o motor em paralelo o modelo previa fr 15 % maior e THD 2× menor. Por isso o pior
+    caso considera também o filtro sem o motor (com_motor_desligado=True)."""
+    if com_motor_desligado:
+        import dataclasses as _dc
+        a = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo, harmonicas, False)
+        b = risco_ressonancia_baixa_ordem(_dc.replace(p, Lm=p.Lm * 1e4 + 1.0), fmin, fmax, passo, harmonicas, False)
+        return max(a, b)
+    import dataclasses as _dc
+    p = _dc.replace(p, Q_hf=min(p.Q_hf, Q_BAIXA_ORDEM_CAMPO))
     rp = _rp(p)
     pior = (0.0, fmin, 0, 0.0)
     for f1 in np.arange(fmin, fmax + 1e-9, passo):

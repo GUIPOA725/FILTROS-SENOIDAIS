@@ -54,12 +54,57 @@
   "Na v1.7.3 a plataforma reprovava este filtro – corrigido"
  ],
  [
-  "Dranetz HDPQ (.ddbx) IHR 2022, SENAI 110/111/112, Gelluns 53, IHR 25/05/23",
+  "SENAI – Dranetz HDPQ sessões 110/111 (15/04/2024)",
+  "958 µH / 40 µF Y",
+  "60 Hz, fs 6 kHz, 12 capturas",
+  "Saída do INVERSOR – harmônicas de baixa ordem",
+  "h5 2,2 · h7 0,6 · h11 1,1 · h13 0,4 · h17 0,4 · h19 0,5 %",
+  "tabela antiga ×1,4: h5 2,1 · h7 1,4 · h11 0,8 · h13 0,7",
+  "Lido direto do .ddbx (leitor da Plataforma de Estudos). Vira a nova tabela de entrada"
+ ],
+ [
+  "SENAI – Dranetz HDPQ sessões 110/111",
+  "958 µH / 40 µF Y",
+  "60 Hz",
+  "Saída do FILTRO – THD até h50",
+  "7,2 % (h5 2,6 · h11 3,6 · h13 5,6 %)",
+  "v1.9.4: 7,2 % (pior caso sem motor) | com motor 3,5 %",
+  "Ressonância real ≈ 790 Hz (fr do LC sem o motor), ganho de pico ≈ 17"
+ ],
+ [
+  "SENAI – Dranetz HDPQ sessão 112 (com 20 µF)",
+  "958 µH / 20 µF Y",
+  "60 Hz",
+  "Saída do FILTRO – THD até h50",
+  "4,9 % (h17 2,1 · h19 3,7 %)",
+  "v1.9.4: 4,0 % com motor / 10,2 % sem motor (h19 exatamente na fr)",
+  "Ressonância real ≈ 1,13 kHz; modelo conservador no pior caso"
+ ],
+ [
+  "IHR/Randon 2022 – Dranetz HDPQ (62 capturas)",
+  "1586 µH / 20 µF Y, MM440",
+  "60 Hz",
+  "Saída do inversor / saída do filtro",
+  "entrada h5 2,2 · h11 0,9 · h13 0,5 % | saída THD 4,0 % (h5 2,5 · h11 2,1 · h13 2,0 %)",
+  "v1.9.4: 4,9 %",
+  "Corrente medida = corrente no capacitor: 2,3 A RMS (Python a plena carga: 2,6 A)"
+ ],
+ [
+  "Gelluns – Dranetz sessão 53 (2026)",
+  "—",
+  "60 Hz",
+  "Só tensões de linha na saída do inversor + corrente",
   "—",
   "—",
-  "Formas de onda e harmônicas",
-  "formato binário proprietário",
+  "Sem a saída do filtro: não serve para o ganho do filtro"
+ ],
+ [
+  "IFG – PX5 filtro_01/02 (2019)",
+  "teste em baixa tensão (onda quadrada)",
   "—",
-  "Exportar do DranView em CSV (harmônicas V e I até h50 + formas de onda) para calibração fina"
+  "—",
+  "~100 V",
+  "—",
+  "Bancada em baixa tensão – fora do escopo do filtro senoidal"
  ]
 ]

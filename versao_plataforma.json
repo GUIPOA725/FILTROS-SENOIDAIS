@@ -1,1 +1,1 @@
-{"versao": "1.9.3", "data": "2026-11-19", "resumo": "Revisão com ATP nos 11 filtros reais: passo do ATP corrigido (2048/portadora), calibração de campo da baixa ordem (x1,4, SENAI), não abre mais ATPDraw/PlotXY sozinho"}
+{"versao": "1.9.4", "data": "2026-11-19", "resumo": "Calibração com medições Dranetz (SENAI 40/20 µF, IHR 2022): tabela de baixa ordem medida, amortecimento real (Q 4), pior caso com/sem motor; Imax datasheet dos PEC 10/30 µF"}

@@ -1,5 +1,15 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.4 – 19/11/2026 – Calibração com as medições Dranetz
+- Medições lidas direto dos .ddbx (leitor da Plataforma de Estudos, em cópia separada): SENAI 110/111 (958 µH/40 µF),
+  112 (958 µH/20 µF) e IHR 2022 (1586 µH/20 µF) – saída do inversor × saída do filtro, harmônica a harmônica.
+- Tabela de harmônicas de baixa ordem do inversor = medição (h5 2,3 · h7 0,7 · h11 1,1 · h13 0,5 · h17 0,45 · h19 0,5 %…);
+  substitui a tabela teórica ×1,4 da v1.9.3.
+- Amortecimento da ressonância de baixa ordem ajustado ao ganho de pico medido (Q equivalente 4).
+- Pior caso considera também o filtro sem o motor (as 3 medições têm a ressonância na fr do LC sem motor).
+  Resultado: SENAI 40 µF previsto 7,2 % (medido 7,2 %), IHR 4,9 % (medido 4,0 %), SENAI 20 µF 4,0–10,2 % (medido 4,9 %).
+- Capacitores TDK B32361 10 µF (Imax 10 A, Î 400 A) e 30 µF (Imax 25 A, Î 800 A) com dados do datasheet.
+
 ## v1.9.3 – 19/11/2026 – Revisão dos filtros reais com ATP + calibração
 - ATP: passo de tempo 2048 por período da portadora (antes 512). Com 512 a quantização das bordas do PWM gerava harmônicas
   falsas perto da ressonância (FN5040-24 a 30 Hz: 10,9 % no ATP × 2,4 % no Python; com 2048: 2,41 %). ~4× mais lento.
