@@ -1,1 +1,1 @@
-{"versao": "1.9.6", "data": "2026-11-19", "resumo": "Relatório Técnico Final no padrão RTM (capa, revisões, sumário, especificação, normas e origem dos critérios, metodologia, softwares, Python, ATP, limites dos componentes, térmico, conclusões)"}
+{"versao": "1.9.7", "data": "2026-11-19", "resumo": "Correção na dupla checagem ATP: .pl4 antigo não é mais misturado ao resultado novo (A&W 41 Hz)"}

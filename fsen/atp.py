@@ -232,6 +232,11 @@ def ler_pl4(caminho: str) -> Dict[str, Any]:
     dt = struct.unpack("<f", b[40:44])[0]
     nvar = struct.unpack("<L", b[48:52])[0] // 2
     pl4size = struct.unpack("<L", b[56:60])[0] - 1
+    # o tpbig NÃO trunca um .pl4 já existente: se a rodada anterior foi mais longa, o fim do arquivo fica com dados
+    # VELHOS de outro caso (bug achado 19/11/2026 na A&W v1.8.8 a 41 Hz: lia o fim de um caso de 30 Hz). O cabeçalho
+    # traz o tamanho real gravado nesta rodada: corta o arquivo nele.
+    if 1000 < pl4size < len(b):
+        b = b[:pl4size]
     nomes = []
     for i in range(nvar):
         pos = 5 * 16 + i * 16
@@ -250,7 +255,11 @@ def ler_pl4(caminho: str) -> Dict[str, Any]:
         arr = np.frombuffer(b, dtype="<f4", count=n_ * (nvar + 1), offset=ini + extra).reshape(n_, nvar + 1)
         t = arr[:, 0]
         if n_ > 10 and np.all(np.diff(t[:1000]) > 0) and abs(t[0]) < 1e-3:
-            melhor = arr
+            # proteção extra: para no primeiro salto/retorno do tempo (resto de arquivo antigo)
+            d = np.diff(t)
+            med = float(np.median(d))
+            ruim = np.nonzero((d <= 0) | (d > 1.5 * med))[0]
+            melhor = arr[:ruim[0] + 1] if len(ruim) else arr
             break
     if melhor is None:
         raise ValueError("Formato .pl4 não reconhecido – verifique NEWPL4/L4BYTE no STARTUP do ATP")
@@ -408,6 +417,12 @@ def rodar_atp(arquivo_atp: str, tpbig: Optional[str] = None, timeout: int = 1800
     for st in ("startup", "STARTUP"):
         if os.path.exists(os.path.join(dir_tp, st)) and not os.path.exists(os.path.join(pasta, "startup")):
             shutil.copy(os.path.join(dir_tp, st), os.path.join(pasta, "startup"))
+    # apaga resultados antigos ANTES de rodar: o tpbig não trunca o .pl4 e, se falhar, o arquivo velho pareceria válido
+    for ext in (".pl4", ".lis", ".dbg"):
+        try:
+            os.remove(os.path.join(pasta, base + ext))
+        except OSError:
+            pass
     flags = 0x08000000 if os.name == "nt" else 0          # CREATE_NO_WINDOW
     pr = subprocess.run([tpbig, "disk", nome, "s", "-r"], cwd=pasta, capture_output=True, text=True, timeout=timeout,
                         env=env, creationflags=flags)
