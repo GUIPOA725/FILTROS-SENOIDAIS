@@ -626,12 +626,18 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
         alt = ALT.alternativas(proj, cat)
     except Exception as _e:
         alt = dict(necessaria=False, motivo=f"erro: {_e}")
+    try:
+        ALT.atp_alternativa(alt, cat, cod)
+    except Exception:
+        pass
     proj.alternativa_l = alt
     try:
         import json as _json
         _eng = os.path.join(os.path.dirname(pasta), "01_Engenharia")
         if os.path.isdir(_eng):
-            _json.dump(alt, open(os.path.join(_eng, "alternativa_indutancia.json"), "w", encoding="utf-8"), ensure_ascii=False,
+            _json.dump({k: v for k, v in alt.items()} | {"recomendada": {k: v for k, v in (alt.get("recomendada") or {}).items()
+                                                                            if k != "_proj"}},
+                       open(os.path.join(_eng, "alternativa_indutancia.json"), "w", encoding="utf-8"), ensure_ascii=False,
                        indent=1, default=str)
     except Exception:
         pass
@@ -642,7 +648,8 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
         fig = None
         if L is proj.l1:
             try:
-                fig = SI.grafico_forma_onda(proj, cat, os.path.join(pasta, f"_forma_onda_indutor_{tag}.png"))
+                fig = SI.grafico_forma_onda(proj, cat, os.path.join(pasta, f"_forma_onda_indutor_{tag}.png"),
+                                            pasta_atp=os.path.join(os.path.dirname(pasta), "01_Engenharia", "ATP"))
             except Exception:
                 fig = None
         SI.escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura=fig)
@@ -677,7 +684,8 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     from . import spec_capacitor as SC
     figc = None
     try:
-        figc = SC.grafico_corrente(proj, cat, os.path.join(pasta, f"Corrente_Capacitor_{cod}.png"))
+        figc = SC.grafico_corrente(proj, cat, os.path.join(pasta, f"Corrente_Capacitor_{cod}.png"),
+                                   pasta_atp=os.path.join(os.path.dirname(pasta), "01_Engenharia", "ATP"))
     except Exception:
         figc = None
     SC.escrever_et(d, proj, cat, ped, q, _kv, _tabela, _bullets, _f, figura=figc)

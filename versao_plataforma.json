@@ -1,1 +1,1 @@
-{"versao": "1.9.9", "data": "2026-11-20", "resumo": "Proteção contra erros de fornecedor: ET de capacitores detalhada, conferência da proposta (indutor/capacitor) com parecer e e-mail, alternativa de indutância de mercado"}
+{"versao": "1.9.10", "data": "2026-11-20", "resumo": "ATP como referência também nas figuras das ETs e na alternativa de indutância; alinhamento Python × ATP pelo padrão PWM"}

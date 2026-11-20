@@ -1,5 +1,16 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.10 – 20/11/2026 – ATP-EMTP como referência em tudo que vai para o fornecedor
+- Figuras das ETs (corrente no indutor e corrente no capacitor): quando o ATP rodou no projeto, a mesma corrente calculada no
+  ATP é sobreposta (laranja tracejado) e o título mostra RMS ATP × Python.
+- Alinhamento Python × ATP pela correlação da parcela de alta frequência (padrão PWM), em vez do cálculo de fase pelo f1 –
+  o f1 do deck é ajustado ao passo de tempo do ATP e deslocava a ondulação no zoom. Vale também para o gráfico de dupla
+  checagem (comparacao_fsen_casoN.png). Conferido com o ATP da A&W (138 µH): corrente no indutor 0,8–1,5 % de erro ponto a
+  ponto do RMS (60 e 48 Hz); picos de corrente no capacitor no ATP 4–9 % maiores que no Python (Python limitado a 4,6·fs) –
+  a exigência de Î na ET tem margem 1,5×.
+- Alternativa de indutância recomendada passa pela dupla checagem no ATP (f máx e f mín) no PC com ATP; resultado na seção 9
+  da ET do indutor e no e-mail ("confirmada no ATP-EMTP"). Sem ATP, a ET diz que a alternativa foi verificada só no Python.
+
 ## v1.9.9 – 20/11/2026 – Proteção contra erros de fornecedor (alta frequência)
 - ET de CAPACITORES no padrão detalhado (fsen/spec_capacitor.py): "por que NÃO serve capacitor de correção de FP",
   figura da corrente real em um capacitor (Corrente_Capacitor_*.png), requisitos com coluna "Por quê" (IEC 61071, Imax,

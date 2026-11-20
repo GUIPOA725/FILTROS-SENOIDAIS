@@ -102,7 +102,66 @@ def _classe(cat):
     return ({130: "B", 155: "F", 180: "H", 200: "N", 220: "R"}.get(int(c), "?"), int(c), int(e))
 
 
-def grafico_forma_onda(proj, cat, arquivo_png):
+def atp_no_tempo_python(pl4_path, f1, t_py_s, n_ciclos=2):
+    """Lê o .pl4 do ATP (últimos n ciclos) e devolve uma função que interpola qualquer sinal no eixo de tempo do Python
+    (mesma fase), para sobrepor ATP × Python. Retorna None se não houver .pl4."""
+    import os
+    import numpy as np
+    if not pl4_path or not os.path.exists(pl4_path):
+        return None
+    from .atp import ler_pl4
+    d = ler_pl4(pl4_path)
+    t, D = d["t"], d["dados"]
+    T = n_ciclos / f1
+    sel = t >= t[-1] - T
+    ta = t[sel] - (t[-1] - T)
+    t0 = (t[-1] - T) % (1 / f1)
+    tq = (np.asarray(t_py_s) - t0) % T
+
+    def sinal(chave):
+        for k, v in D.items():
+            if k.replace("'", "") == chave:
+                return np.interp(tq, ta, v[sel])
+        raise KeyError(chave)
+    return sinal
+
+
+def alinhar_fundamental(atp, py, n_ciclos=2):
+    """Alinha a curva do ATP à do Python no eixo do tempo (janela periódica de n ciclos, grade uniforme).
+    Usa a correlação circular da parcela de ALTA frequência (ondulação, sem a fundamental): é o padrão PWM que precisa
+    coincidir para a comparação ponto a ponto. Corrige o pequeno desvio de fase causado pelo f1 do deck (ajustado ao passo de
+    tempo do ATP)."""
+    import numpy as np
+    n = len(py)
+
+    def hf(x):
+        F = np.fft.rfft(x)
+        F[: 3 * n_ciclos + 1] = 0                     # remove a fundamental e as baixas ordens
+        return np.fft.irfft(F, n=n)
+    A, P = np.fft.rfft(hf(atp)), np.fft.rfft(hf(py))
+    cc = np.fft.irfft(P * np.conj(A), n=n)
+    k = int(np.argmax(cc))
+    return np.roll(atp, k)
+
+
+def _pl4_caso1(proj, pasta_atp):
+    import os
+    if pasta_atp:
+        c = os.path.join(pasta_atp, "fsen_caso1.pl4")
+        if os.path.exists(c):
+            return c
+    return None
+
+
+def _f1_deck(proj, op):
+    try:
+        from .atp import gerar_deck  # noqa: F401  (f1 do deck = fs_ef/mf; diferença < 0,05 %)
+    except Exception:
+        pass
+    return op.f1
+
+
+def grafico_forma_onda(proj, cat, arquivo_png, pasta_atp=None):
     """Figura para o fornecedor: corrente no indutor (fundamental + ondulação) e tensão PWM sobre ele.
     Mostra que o indutor NÃO trabalha com 60 Hz senoidal puro."""
     import os
@@ -122,7 +181,8 @@ def grafico_forma_onda(proj, cat, arquivo_png):
                       L2=L2, pts_por_portadora=24)
     op = pontos_operacao(ped, vdc, proj.fs_hz)[0]["op"]
     r = simular(p, op, pts_por_portadora=120, ciclos_analise=2)
-    t = np.asarray(r.t) * 1e3
+    tt_s = np.asarray(r.t)
+    t = tt_s * 1e3
     i1 = np.asarray(r.i1)
     vl = np.asarray(r.u_ab) - np.asarray(r.vc_ab)             # tensão sobre os dois indutores entre fases (La − Lb)
     n = len(i1)
@@ -139,11 +199,24 @@ def grafico_forma_onda(proj, cat, arquivo_png):
     ax = [fig.add_subplot(gs[0])]
     ax += [fig.add_subplot(gs[1])]
     ax += [fig.add_subplot(gs[2], sharex=ax[1]), fig.add_subplot(gs[3], sharex=ax[1])]
-    ax[0].plot(t, i1, color="#c0392b", lw=0.8, label="Corrente REAL no indutor (fundamental + ondulação)")
+    atp_s, atp_info = None, ""
+    try:
+        sig = atp_no_tempo_python(_pl4_caso1(proj, pasta_atp), op.f1, tt_s)
+        if sig is not None:
+            ia = [sig(f"I:VL{k}-LI{k}") for k in "ABC"]
+            atp_s = alinhar_fundamental(ia[0] - sum(ia) / 3, i1)
+            rp, ra = float(np.sqrt(np.mean(i1 ** 2))), float(np.sqrt(np.mean(atp_s ** 2)))
+            atp_info = f" | ATP-EMTP: {ra:.0f} A RMS × Python {rp:.0f} A ({100 * (ra - rp) / rp:+.1f} %)"
+    except Exception:
+        atp_s = None
+    ax[0].plot(t, i1, color="#c0392b", lw=0.8, label="Corrente REAL no indutor (fundamental + ondulação) – Python")
+    if atp_s is not None:
+        ax[0].plot(t, atp_s, color="#e67e22", lw=0.7, ls=":", label="Mesma corrente no ATP-EMTP (dupla checagem)")
     ax[0].plot(t, fund, color="#1b4f9c", lw=1.2, ls="--", label=f"Só a fundamental ({op.f1:g} Hz) – o que um reator de linha veria")
     ax[0].axvspan(t0, t0 + 1.0, color="#f1c40f", alpha=0.35, label="Trecho ampliado nos gráficos ② ③ ④ (1 ms)")
     ax[0].set_ylabel("Corrente fase A (A)")
-    ax[0].set_title(f"① Corrente no indutor – {op.f1:g} Hz de saída, chaveamento {proj.fs_hz / 1000:g} kHz (2 ciclos)", fontsize=11)
+    ax[0].set_title(f"① Corrente no indutor – {op.f1:g} Hz de saída, chaveamento {proj.fs_hz / 1000:g} kHz (2 ciclos){atp_info}",
+                    fontsize=10.5)
     ax[0].legend(loc="lower left", fontsize=8, framealpha=0.95)
     ax[0].set_xlabel("t (ms)")
     ax[1].plot(t[sel], u[sel], color="#7f8c8d", lw=0.9, label="Lado do INVERSOR: pulsos de 0 / ±Vcc (entrada do indutor)")
@@ -157,7 +230,10 @@ def grafico_forma_onda(proj, cat, arquivo_png):
     ax[2].set_ylabel("Tensão SOBRE os\nindutores (V)")
     ax[2].set_title("③ A DIFERENÇA entre os dois lados (cinza − azul do ②) fica SOBRE o indutor:\n"
                     f"blocos retangulares de centenas de volts trocando de sinal em {proj.fs_hz / 1000:g} kHz", fontsize=10)
-    ax[3].plot(t[sel], i1[sel], color="#c0392b", lw=1.1)
+    ax[3].plot(t[sel], i1[sel], color="#c0392b", lw=1.1, label="Python")
+    if atp_s is not None:
+        ax[3].plot(t[sel], atp_s[sel], color="#e67e22", lw=1.0, ls="--", label="ATP-EMTP")
+        ax[3].legend(loc="lower left", fontsize=8)
     ax[3].set_ylabel("Corrente (A)")
     ax[3].set_xlabel("t (ms)")
     ax[3].set_title("④ Resultado na corrente: bloco POSITIVO em ③ → corrente SOBE; bloco NEGATIVO → corrente DESCE "
@@ -214,7 +290,10 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
                             "lados do indutor – pulsos do inversor na entrada e tensão quase senoidal do capacitor na saída; ③ a "
                             "diferença entre eles, que é a tensão aplicada sobre o indutor: blocos retangulares de centenas de volts "
                             "em alta frequência; ④ o efeito na corrente: cada bloco positivo faz a corrente subir e cada bloco "
-                            "negativo faz descer (V = L·di/dt), formando a ondulação.")
+                            "negativo faz descer (V = L·di/dt), formando a ondulação. Quando o ATP-EMTP rodou neste projeto, a curva laranja "
+                            "tracejada em ① e ④ é a mesma corrente calculada no ATP (referência do setor), sobreposta para conferência; "
+                            "o Python é calculado por harmônicas até ~4,6× a frequência de chaveamento, por isso os cantos levemente "
+                            "arredondados.")
         except Exception:
             pass
 

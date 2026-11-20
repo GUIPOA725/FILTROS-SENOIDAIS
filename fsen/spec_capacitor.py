@@ -30,7 +30,7 @@ def requisitos(proj, cat, ped, q):
                 hf_pct=(100 * i_hf / i_rms if i_rms else 0))
 
 
-def grafico_corrente(proj, cat, arquivo_png):
+def grafico_corrente(proj, cat, arquivo_png, pasta_atp=None):
     """Corrente REAL em um capacitor (fundamental + alta frequência) – para o fornecedor ver o que o capacitor sofre."""
     import os
     import numpy as np
@@ -65,15 +65,30 @@ def grafico_corrente(proj, cat, arquivo_png):
     t0 = max(0.0, t[j] - 0.5)
     sel = (t >= t0) & (t <= t0 + 1.0)
     fig, ax = plt.subplots(2, 1, figsize=(11, 7.5))
-    ax[0].plot(t, ic, color="#c0392b", lw=0.6, label="Corrente REAL em 1 capacitor (fundamental + alta frequência)")
+    from .spec_indutor import atp_no_tempo_python, _pl4_caso1, alinhar_fundamental
+    atp_c, atp_info = None, ""
+    try:
+        sig = atp_no_tempo_python(_pl4_caso1(proj, pasta_atp), op.f1, tt)
+        if sig is not None:
+            atp_c = (sig("I:KMAB-CPB") if b.ligacao == "Delta" else sig("I:KMA-NCAP")) / max(b.n_por_ramo, 1)
+            atp_c = alinhar_fundamental(atp_c, ic)
+            rp, ra = float(np.sqrt(np.mean(ic ** 2))), float(np.sqrt(np.mean(atp_c ** 2)))
+            atp_info = f"\nATP-EMTP: {ra:.2f} A RMS × Python {rp:.2f} A ({100 * (ra - rp) / rp:+.1f} %)"
+    except Exception:
+        atp_c = None
+    ax[0].plot(t, ic, color="#c0392b", lw=0.6, label="Corrente REAL em 1 capacitor (fundamental + alta frequência) – Python")
+    if atp_c is not None:
+        ax[0].plot(t, atp_c, color="#e67e22", lw=0.6, ls=":", label="Mesma corrente no ATP-EMTP (dupla checagem)")
     ax[0].plot(t, fund, color="#1b4f9c", lw=1.4, ls="--", label=f"Só a fundamental ({op.f1:g} Hz) – o que um capacitor de correção de FP veria")
     ax[0].axvspan(t0, t0 + 1.0, color="#f1c40f", alpha=0.35, label="Trecho ampliado abaixo (1 ms)")
     ax[0].set_ylabel("Corrente (A)")
     ax[0].set_title(f"① Corrente em um capacitor do filtro – {op.f1:g} Hz de saída, chaveamento {proj.fs_hz / 1000:g} kHz "
-                    f"({b.n_por_ramo} capacitor(es) por ramo, ligação {b.ligacao})", fontsize=10.5)
+                    f"({b.n_por_ramo} capacitor(es) por ramo, ligação {b.ligacao}){atp_info}", fontsize=10.5)
     ax[0].legend(loc="lower left", fontsize=8, framealpha=0.95)
     ax[1].plot(t[sel], ic[sel], color="#c0392b", lw=1.0)
     ax[1].plot(t[sel], fund[sel], color="#1b4f9c", lw=1.4, ls="--")
+    if atp_c is not None:
+        ax[1].plot(t[sel], atp_c[sel], color="#e67e22", lw=1.0, ls="--")
     ax[1].set_ylabel("Corrente (A)")
     ax[1].set_xlabel("t (ms)")
     ax[1].set_title("② ZOOM de 1 ms: a componente de alta frequência DOMINA – é ela que aquece o capacitor (ESR) e exige "
@@ -116,7 +131,8 @@ def escrever_et(d, proj, cat, ped, q, _kv, _tabela, _bullets, _f, figura=None):
         try:
             d.add_picture(figura, width=Cm(16.5))
             d.add_paragraph("Figura – corrente simulada pela plataforma em um capacitor deste projeto: ① 2 ciclos (tracejado: só a "
-                            "fundamental); ② zoom de 1 ms mostrando a componente de alta frequência.")
+                            "fundamental); ② zoom de 1 ms mostrando a componente de alta frequência. Quando o ATP-EMTP rodou, a curva laranja "
+                            "tracejada é a mesma corrente calculada no ATP, sobreposta para conferência.")
         except Exception:
             pass
 

@@ -533,6 +533,12 @@ def grafico_comparacao(caso, pasta_pl4: str, arquivo_png: str, n_ciclos: int = 2
     ia = [g(f"I:VL{k}-LI{k}") for k in "ABC"]
     i1_atp = ia[0] - sum(ia) / 3
     shift = lambda y: np.interp((tp / 1e3 + t0) % T, r.t, y)
+    # ATP levado ao mesmo eixo do Python e alinhado pelo padrão PWM (correlação da parcela de alta frequência)
+    from .spec_indutor import alinhar_fundamental as _al
+    _no_tp = lambda y_atp, y_py: _al(np.interp(tp, ta, y_atp), y_py, n_ciclos)
+    vab_atp = _no_tp(vab_atp, shift(r.vc_ab))
+    i1_atp = _no_tp(i1_atp, shift(r.i1))
+    ta = tp
     fig, ax = plt.subplots(3, 1, figsize=(11, 8.5), sharex=True)
     ax[0].plot(ta, vab_atp, color="#d95f02", lw=0.8, label="ATP")
     ax[0].plot(tp, shift(r.vc_ab), color="#1b4f9c", lw=0.8, ls="--", label="Python")
@@ -549,6 +555,12 @@ def grafico_comparacao(caso, pasta_pl4: str, arquivo_png: str, n_ciclos: int = 2
             ic_py = shift((p.C_y / 3.0) * (np.roll(v, -1) - np.roll(v, 1)) / (2 * dtp))
         else:
             ic_py = shift(r.icap_y) * k_i
+    except Exception:
+        pass
+    try:
+        ic_atp = np.interp(tp, (t[sel] - (t[-1] - T)) * 1e3, ic_atp)
+        if ic_py is not None:
+            ic_atp = _al(ic_atp, ic_py, n_ciclos)
     except Exception:
         pass
     ax[2].plot(ta, ic_atp, color="#d95f02", lw=0.6, label="ATP – ramo AB" if lig == "Delta" else "ATP – ramo A")
