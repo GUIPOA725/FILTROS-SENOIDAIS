@@ -722,7 +722,8 @@ def folha_3d(F, g, d):
     caixa(W - 75, -b / 2 - g["fe"] - 30, H + g["fr"], 55, 30, 30, "#e6e6e6")
     pc = Poly3DCollection(TODAS_F, facecolors=TODAS_C, edgecolors=TODAS_C, linewidths=0.4)   # sem costuras visíveis
     pc.set_sort_zpos(None)
-    ax.add_collection3d(pc)
+    ax.set_autoscale_on(False)
+    ax.add_collection3d(pc, autolim=False)
     ax.set_box_aspect((g["Lb"], g["Bb"] + 40, H + 2 * g["fr"] + g["base_h"] + g["term_h"]))
     ax.set_xlim(xb0, xb0 + g["Lb"])
     ax.set_ylim(-g["Bb"] / 2 - 20, g["Bb"] / 2 + 20)
@@ -762,6 +763,206 @@ def folha_bom(F, d, fab):
         F.texto(25, y - 3 - 4 * k, l, fontsize=5.6)
 
 
+VPI_PASSOS = [
+    "Pré-secagem da parte ativa (bobinas montadas no núcleo) em estufa a 130–150 °C até massa constante (≥ 4 h).",
+    "Resfriar a 60–70 °C, levar ao autoclave e fazer vácuo ≤ 1 mbar (100 Pa) por ≥ 1 h, até estabilizar.",
+    "Admitir a resina classe H (poliéster-imida ou silicone, índice térmico ≥ 180 °C, IEC 60464-3) sob vácuo, cobrindo a peça.",
+    "Pressurizar com ar seco ou N₂ a 4–6 bar por ≥ 2 h: a resina penetra entre fios, camadas, calços e lâminas.",
+    "Escorrer 30 min e curar em estufa conforme a ficha da resina (típico 150–160 °C por 8–12 h).",
+    "2ª impregnação por imersão + cura: superfície vitrificada (pó, umidade, ruído a 4–8 kHz).",
+    "Controle: isolamento ≥ 100 MΩ após a cura, sem bolhas/regiões secas, lote da resina registrado.",
+]
+
+
+def folha_realista(F, d, png_dir=None):
+    """Folha 6 – vista realista (render 3D com materiais) + detalhe da bobina em corte + sistema de isolação + VPI (v1.11.4)."""
+    import tempfile
+    import matplotlib.image as mpimg
+    from . import ind_render as R
+    tmp = png_dir or tempfile.mkdtemp()
+    f1, f2 = os.path.join(tmp, "Indutor_render_geral.png"), os.path.join(tmp, "Indutor_render_corte.png")
+    W1, H1, W2, H2 = 1800, 1300, 1400, 1200
+    px1 = R.render(d, f1, W1, H1, "geral")
+    px2 = R.render(d, f2, W2, H2, "corte")
+    ax = F.ax
+    # vista geral
+    x0, x1 = 22, 230
+    hgt = (x1 - x0) * H1 / W1
+    y1 = 284
+    y0 = y1 - hgt
+    ax.imshow(mpimg.imread(f1), extent=(x0, x1, y0, y1), zorder=1)
+    F.texto(x0 + 2, y1 - 4, "VISTA REALISTA – reator trifásico a seco, bobina U em corte (sem escala)", fontsize=7.4, weight="bold")
+    itens = {n: (t, e) for n, t, e in R.ITENS_VISTA}
+
+    usados = {}
+
+    def chamar(px, Wp, Hp, xa, xb, ya, yb, n, lado):
+        X = xa + px[0] / Wp * (xb - xa)
+        Y = yb - px[1] / Hp * (yb - ya)
+        if not (xa + 1 < X < xb - 1 and ya + 1 < Y < yb - 1):
+            return
+        Xb = xa + 6 if lado < 0 else xb - 6
+        Yb = Y
+        lst = usados.setdefault((xa, lado), [])
+        while any(abs(Yb - u) < 7.0 for u in lst):      # não sobrepor balões do mesmo lado
+            Yb -= 7.0
+        lst.append(Yb)
+        Xm = Xb + (8 if lado < 0 else -8)
+        ax.plot([X, Xm, Xb], [Y, Yb, Yb], lw=0.35, color="k", zorder=6)
+        ax.add_patch(Circle((X, Y), 0.7, color="k", zorder=7))
+        ax.add_patch(Circle((Xb, Yb), 3.0, fc="white", ec="k", lw=0.6, zorder=8))
+        ax.text(Xb, Yb, str(n), fontsize=6.5, ha="center", va="center", zorder=9, weight="bold")
+    xm = (x0 + x1) / 2
+    for n, pp in px1.items():
+        X = x0 + pp[0] / W1 * (x1 - x0)
+        chamar(pp, W1, H1, x0, x1, y0, y1, n, -1 if X < xm else 1)
+    # detalhe aproximado
+    u0, u1 = 236, 408
+    h2 = (u1 - u0) * H2 / W2
+    v1 = 284
+    v0 = v1 - h2
+    ax.imshow(mpimg.imread(f2), extent=(u0, u1, v0, v1), zorder=1)
+    ax.add_patch(Rectangle((u0, v0), u1 - u0, h2, fill=False, lw=0.6, zorder=2))
+    F.texto(u0 + 2, v1 - 4, "DETALHE – bobina em corte: coluna, calços do entreferro, tubo, fios isolados, resina", fontsize=6.6,
+            weight="bold", zorder=10, bbox=dict(fc="white", ec="none", alpha=0.8, pad=0.6))
+    um = (u0 + u1) / 2
+    for n in (2, 3, 4, 6, 10):
+        if n in px2:
+            X = u0 + px2[n][0] / W2 * (u1 - u0)
+            chamar(px2[n], W2, H2, u0, u1, v0, v1, n, -1 if X < um else 1)
+    # legenda dos itens (materiais) – sistema de isolação classe H
+    F.texto(22, y0 - 6, f"CONSTRUÇÃO E SISTEMA DE ISOLAÇÃO CLASSE {d['requisitos'].get('classe', 'H')} (a classe é do SISTEMA – IEC 60085 / IEC 61857)",
+            fontsize=7.2, weight="bold")
+    from .ind_projeto import descr_condutor
+    esp = {1: f"{d['chapa_dados']['nome']}, revestimento C-5; empilhamento em pacotes; cantos a 45° step-lap 3 degraus",
+           2: ((lambda f: f"{descr_condutor(d, curto=True)} {('cobre' if d.get('cond') == 'CU' else 'alumínio')}, papel aramida "
+                f"enrolado; {d['N']} espiras ({f['n_cam']} camada(s)); paralelos TRANSPOSTOS")(d["fio"]) if d.get("fio")
+               else descr_condutor(d))[:150],
+           3: (f"vidro-epóxi EP GC 203 retificado ±0,05 mm, colado com epóxi classe H – "
+               + ("2 por coluna, nas juntas com as culatras" if d.get("pos_gap") == "culatra" else f"{d['ng']} por coluna, distribuídos"))}
+    linhas = []
+    for n, t, e in R.ITENS_VISTA:
+        linhas.append((str(n), t, esp.get(n, e)))
+    yt = F.tabela(22, y0 - 9, ["Nº", "Item", "Material / construção"], linhas, [8, 34, 166], fs=5.2, h=4.3)
+    # VPI
+    F.texto(236, v0 - 6, "IMPREGNAÇÃO VPI (vácuo e pressão) – CLASSE H", fontsize=7.2, weight="bold")
+    import textwrap
+    yy = v0 - 10.5
+    for k, passo in enumerate(VPI_PASSOS, start=1):
+        for j, lin in enumerate(textwrap.wrap(passo, 92)):
+            F.texto(236 if j == 0 else 240, yy, (f"{k}. " if j == 0 else "") + lin, fontsize=5.4)
+            yy -= 3.4
+        yy -= 0.4
+    F.texto(236, yy - 1, "Valores típicos – seguir a ficha técnica da resina escolhida (declarar fabricante, tipo e índice térmico).",
+            fontsize=5.2, style="italic")
+    F.info["escala_folha"] = "sem escala"
+
+
+def folha_entreferro(F, d):
+    """Folha 7 – DETALHE G: entreferro (desenho ampliado, material, cotas, fluxo espraiado) + memorial do cálculo (v1.11.4)."""
+    from .ind_fem import MU0
+    ax = F.ax
+    g = geo_mm(d)
+    fab = fabricacao(d)
+    culatra = d.get("pos_gap") == "culatra"
+    ng = g["ng"]
+    gl, gc = fab["gl"], fab["gc"]
+    dbc = (g["hw"] - g["hc"]) / 2
+    import numpy as _np
+    k = 2.6                                               # ampliação do esquema
+    xa, yb = 30, 100
+    F.texto(25, 280, ("DETALHE G – ENTREFERRO NA JUNTA COLUNA–CULATRA (esquema ampliado, sem escala)" if culatra else
+                      "DETALHE G – ENTREFERRO ENTRE PACOTES DA COLUNA (esquema ampliado, sem escala)"), fontsize=8.2, weight="bold")
+
+    def R_(x, y, w, h, **kw):
+        ax.add_patch(Rectangle((xa + x * k, yb + y * k), w * k, h * k, **kw))
+    # culatra
+    R_(0, 0, 66, 14, fc="#9aa0a8", ec="k", lw=0.7, hatch="----")
+    ax.text(xa + 2 * k, yb + 7 * k, "CULATRA – lâminas de aço-silício GO empilhadas (corte transversal)", fontsize=6.2, va="center",
+            bbox=dict(fc="white", ec="none", alpha=0.85, pad=0.8))
+    yg = 14
+    tg = 5.0
+    R_(15, yg, 22, 0.6, fc="#e0c060", ec="none")
+    R_(15, yg + 0.6, 22, tg - 1.2, fc="#b23a2a", ec="k", lw=0.7)
+    R_(15, yg + tg - 0.6, 22, 0.6, fc="#e0c060", ec="none")
+    R_(15, yg + tg, 22, 36, fc="#9aa0a8", ec="k", lw=0.7, hatch="||||")
+    ax.text(xa + 26 * k, yb + (yg + tg + 22) * k, "COLUNA\n(lâminas GO)", fontsize=6.4, ha="center", va="center",
+            bbox=dict(fc="white", ec="none", alpha=0.85, pad=0.8))
+    # bobinas dos dois lados
+    for sx in (-1, 1):
+        xb_ = 26 + sx * 18.5
+        R_(xb_ - 3.5, yg + tg + 2 + dbc / 25 * 2, 7, 30, fc="#c56a2f", ec="k", lw=0.5)
+        for j in range(6):
+            ax.plot([xa + (xb_ - 3.5) * k, xa + (xb_ + 3.5) * k], [yb + (yg + tg + 6 + j * 4.6) * k] * 2, lw=0.4, color="#f0d9a0")
+    ax.text(xa + 50 * k, yb + (yg + tg + 24) * k, "BOBINA\nfio retangular + papel aramida\n+ resina VPI" if d.get("fio") else
+            "BOBINA\nfolha + aramida + resina VPI", fontsize=6.0, va="center")
+    # fluxo espraiado
+    t = _np.linspace(0, _np.pi, 40)
+    for r_ in (2.5, 4.5, 6.5, 8.5):
+        for sx in (-1, 1):
+            cx = 15 if sx < 0 else 37
+            ax.plot(xa + (cx + sx * r_ * _np.sin(t) * 0.8) * k, yb + (yg + tg / 2 + r_ * _np.cos(t)) * k, lw=0.5, color="#2c7fb8", ls="--")
+    ax.text(xa - 4, yb + (yg + tg + 3) * k, "fluxo espraiado\n(fringing)", fontsize=5.8, color="#2c7fb8", ha="right")
+    # cotas
+    ax.annotate("", (xa + 40 * k, yb + (yg + 0.6) * k), (xa + 40 * k, yb + (yg + tg - 0.6) * k),
+                arrowprops=dict(arrowstyle="<|-|>", lw=0.6, mutation_scale=6))
+    ax.text(xa + 41 * k, yb + (yg + tg / 2) * k, f"g por peça = {gl:.2f} mm (colunas U, W)\n                 {gc:.2f} mm (coluna V)",
+            fontsize=6.4, va="center", weight="bold")
+    ax.annotate("", (xa + 9 * k, yb + yg * k), (xa + 9 * k, yb + (yg + tg + 2 + dbc / 25 * 2) * k),
+                arrowprops=dict(arrowstyle="<|-|>", lw=0.5, mutation_scale=5))
+    ax.text(xa + 4 * k, yb + (yg + 3.5) * k, f"{dbc:.0f} mm", fontsize=6.0, va="center", rotation=90)
+    # chamadas de material
+    ax.annotate("calço: laminado vidro-epóxi EP GC 203 (IEC 60893-3-2,\nclasse 180 °C), retificado ±0,05 mm, peça inteira na seção\n"
+                f"{g['a']:.0f} × {g['b']:.0f} mm", (xa + 30 * k, yb + (yg + tg / 2) * k), (xa + 46 * k, yb - 12),
+                fontsize=6.0, arrowprops=dict(arrowstyle="-", lw=0.4))
+    ax.annotate("cola epóxi classe H (camada fina dos dois lados)", (xa + 20 * k, yb + (yg + 0.3) * k), (xa, yb - 12),
+                fontsize=6.0, arrowprops=dict(arrowstyle="-", lw=0.4))
+    F.texto(25, 44, f"Construção: {'2 entreferros por coluna – um em cada junta coluna–culatra (em cima e embaixo); coluna inteira com faces de topo retificadas' if culatra else f'{ng} entreferros distribuídos por coluna (coluna em {ng + 1} pacotes)'}.",
+            fontsize=6.2)
+    F.texto(25, 39, "Montagem: medir a espessura de cada calço (micrômetro), colar, fechar a culatra e apertar os tirantes no torque indicado;"
+                    " medir L e corrigir o calço se preciso.", fontsize=6.2)
+    F.texto(25, 34, "Força magnética no entreferro (pico) " + f"≈ {d.get('forca_gap_N', 0):.0f} N por junta – aperto mínimo "
+                    f"{max(2.5 * d.get('forca_gap_N', 0), 2000):.0f} N por coluna; calço colado + VPI evitam vibração/ruído.", fontsize=6.2)
+    # memorial
+    r = d["requisitos"]
+    L = r["L"]
+    N = d["N"]
+    Ag = d["a"] * d["b"]
+    g_id = MU0 * N * N * Ag / L * 1e3
+    gcol = [x * 1e3 for x in d["gaps"]]
+    L3 = [x * 1e6 for x in d.get("L3d", [L] * 3)]
+    k_esp = gcol[1] / g_id if g_id else 0
+    xm = 238
+    linhas = [
+        ("COMO A DISTÂNCIA DO ENTREFERRO É CALCULADA", True),
+        ("1) Entreferro IDEAL (sem espraiamento, ferro ideal):", True),
+        (f"    g = μ0 · N² · A / L = 4π·10⁻⁷ × {N}² × ({d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm²) / {L*1e6:.0f} µH = {g_id:.1f} mm por coluna", False),
+        ("2) Entreferro REAL – espraiamento:", True),
+        ("    Em volta do entreferro o fluxo 'abre' (linhas azuis); a área efetiva fica maior e a indutância sobe.", False),
+        ("    Para manter L, o entreferro precisa ser MAIOR que o ideal. Isso é calculado por elementos finitos:", False),
+        ("    • modelo 2D do núcleo com ferro não linear (curva B-H do aço GO) + correção 3D das faces da frente/trás;", False),
+        ("    • a plataforma ajusta o entreferro de cada coluna até L = valor exigido (laterais e central têm", False),
+        ("      acoplamentos magnéticos diferentes, por isso a central leva calço um pouco maior).", False),
+        ("3) Resultado deste projeto:", True),
+        (f"    g total por coluna = {gcol[0]:.1f} mm (U, W)  /  {gcol[1]:.1f} mm (V)   → fator de espraiamento ≈ {k_esp:.2f}", False),
+        (f"    {'2 calços' if culatra else f'{ng} calços'} por coluna → {gl:.2f} mm (U, W)  /  {gc:.2f} mm (V) cada", False),
+        (f"    L calculada: U {L3[0]:.1f} µH  ·  V {L3[1]:.1f} µH  ·  W {L3[2]:.1f} µH   (exigido {L*1e6:.0f} µH ± 5 %)", False),
+        ("4) Limites de projeto (verificados):", True),
+        (f"    peça ≤ {10 if culatra else 3} mm; total ≤ 20 % da largura da coluna ({0.2 * d['a'] * 1e3:.0f} mm); bobina a {dbc:.0f} mm da junta.", False),
+        ("    Acima disso o espraiamento atinge as espiras (perdas) e aumentam força e ruído.", False),
+        ("    Linearidade (FEM): L ≥ 90 % na corrente de saturação e ≥ 70 % na sobrecarga do inversor.", False),
+        ("5) Ajuste na fábrica:", True),
+        (f"    Sensibilidade ≈ {100 / max(gcol[1], 1e-6):.0f} % de L por mm de entreferro total (L ∝ 1/g): calço mais grosso → L menor.", False),
+        ("    Medir L por fase (ponte LCR 60 Hz ou corrente nominal) e corrigir o calço até L ±5 % e desequilíbrio ≤ 3 %.", False),
+        ("    Registrar a espessura final de cada calço no relatório do protótipo.", False),
+    ]
+    yy = 280
+    for t, neg in linhas:
+        F.texto(xm, yy, t, fontsize=7.6 if t.startswith("COMO") else 6.2, weight="bold" if neg else "normal")
+        yy -= 6.2 if t.startswith("COMO") else (5.0 if neg else 4.4)
+    F.info["escala_folha"] = "sem escala"
+
+
 def lista_materiais(d):
     g = geo_mm(d)
     ch, cond = d["chapa_dados"], d["cond_dados"]
@@ -793,16 +994,32 @@ def lista_materiais(d):
 def gerar_pdf(d, pdf_path, info, png_dir=None):
     g = geo_mm(d)
     fab = fabricacao(d)
-    total = 5
+    folhas = [("Conjunto – vistas", lambda F: folha_conjunto(F, g, d)),
+              ("Núcleo – chapas, step-lap, pacotes e calços", lambda F: folha_nucleo(F, g, d, fab)),
+              ("Bobina – cortes, bobinagem e terminal", lambda F: folha_bobina(F, g, d, fab)),
+              ("Vista 3D e características", lambda F: folha_3d(F, g, d)),
+              ("Lista de materiais, ficha de fabricação e notas", lambda F: folha_bom(F, d, fab))]
+    try:
+        from . import ind_render as _R
+        if _R.disponivel():
+            folhas.append(("Vista realista em corte, isolação e impregnação VPI", lambda F: folha_realista(F, d, png_dir)))
+    except Exception:
+        pass
+    folhas.append(("Entreferro – detalhe, material e cálculo", lambda F: folha_entreferro(F, d)))
+    total = len(folhas)
     with PdfPages(pdf_path) as pdf:
-        for n, (nome, fun) in enumerate([("Conjunto – vistas", lambda F: folha_conjunto(F, g, d)),
-                                         ("Núcleo – chapas, step-lap, pacotes e calços", lambda F: folha_nucleo(F, g, d, fab)),
-                                         ("Bobina – cortes, bobinagem e terminal", lambda F: folha_bobina(F, g, d, fab)),
-                                         ("Vista 3D e características", lambda F: folha_3d(F, g, d)),
-                                         ("Lista de materiais, ficha de fabricação e notas", lambda F: folha_bom(F, d, fab))], start=1):
+        for n, (nome, fun) in enumerate(folhas, start=1):
             inf = dict(info)
-            F = Folha(inf, n, total, nome)
-            fun(F)
+            for tent in range(2):                      # 1 nova tentativa se a folha falhar (ex.: limites 3D do matplotlib)
+                F = Folha(inf, n, total, nome)
+                try:
+                    fun(F)
+                    break
+                except Exception as e:
+                    plt.close(F.fig)
+                    if tent == 1:
+                        F = Folha(inf, n, total, nome)
+                        F.texto(30, 200, f"(folha não gerada: {type(e).__name__}: {e})", fontsize=8)
             F.salvar(pdf, os.path.join(png_dir, f"Indutor_folha{n}.png") if png_dir else None)
     return pdf_path
 

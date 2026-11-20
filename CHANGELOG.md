@@ -1,5 +1,17 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.4 – 20/11/2026 – Desenho realista do indutor + folha do entreferro
+- Projeto de referência do indutor ganhou 2 folhas:
+  - Folha 6 – VISTA REALISTA: render 3D com materiais (aço-silício laminado, calços vermelhos de vidro-epóxi, tubo, fios de
+    cobre/alumínio com papel aramida, resina VPI, cantoneiras, tirantes, base, terminais), bobina U em corte e um detalhe
+    aproximado do corte; chamadas numeradas; tabela da construção e do sistema de isolação classe H; processo de impregnação VPI
+    passo a passo (pré-secagem, vácuo, resina classe H, pressão, cura, 2ª imersão, controle).
+  - Folha 7 – ENTREFERRO: esquema ampliado da junta coluna–culatra (calço EP GC 203, cola epóxi, lâminas, bobina afastada, fluxo
+    espraiado, cotas) e o memorial de como a distância é calculada (ideal μ0·N²·A/L → FEM com espraiamento + correção 3D →
+    valor por coluna e por peça, limites, sensibilidade e ajuste na fábrica).
+- Render com pyvista/VTK (acrescentado ao requirements.txt). Sem pyvista, a folha 6 é pulada e o resto segue.
+- Folhas do PDF com nova tentativa automática se alguma falhar (limites 3D do matplotlib eram intermitentes na folha 4).
+
 ## v1.11.3 – 20/11/2026 – Base de dados completa para o indutor de 2 entreferros por coluna
 - Chapas: os 7 graus de grão orientado da Aperam (único fabricante nacional), perdas garantidas do catálogo "Aços Elétricos GO
   e GNO": M108-23, M117-23, M112-27, M125-27, M130-30, M140-30, M150-35 (preço R$/kg estimado – confirmar cotação).
