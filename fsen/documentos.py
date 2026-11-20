@@ -131,6 +131,7 @@ def _rs(x):
 NORMAS = [
     ("IEC 61800-2 / IEC 61800-5-1", "Sistemas de acionamento de velocidade variável – requisitos gerais e segurança elétrica/térmica do filtro de saída"),
     ("IEC TS 60034-25 / IEC TS 60034-17", "Motores alimentados por conversor: limites de tensão de pico e dv/dt nos terminais"),
+    ("IEC TS 61800-8", "Especificação da tensão na interface de potência do acionamento (inclui o efeito de filtros de saída)"),
     ("NEMA MG1 Part 30 / Part 31", "Motores de uso geral (≤ 1000 V pico) e motores para inversor (≤ 1600 V pico, tr ≥ 0,1 µs)"),
     ("IEC 60076-6", "Reatores – indutância, tolerâncias, elevação de temperatura e ensaios"),
     ("IEC 61558-2-20", "Pequenos reatores – construção e ensaios de isolamento"),
@@ -140,6 +141,140 @@ NORMAS = [
     ("NBR 5410 / IEC 60364-5-52", "Dimensionamento de condutores e condutor de proteção"),
     ("IEC 60529 / NR-10", "Grau de proteção IP e segurança em instalações elétricas (placas, descarga de capacitores)"),
 ]
+
+
+CRITERIOS_ORIGEM = [
+    # (critério, valor adotado (formatado depois), origem/natureza, fonte)
+    ("Tensão de pico e dv/dt no motor", "{vpk} V / {dvdt} V/µs (cliente) – NEMA ≤ 1000 V", "Norma",
+     "NEMA MG1 Pt 30/31; IEC TS 60034-17 / 60034-25"),
+    ("Capacitores: tensão, corrente, pico, dv/dt, vida", "datasheet + 1,10·Un contínuo", "Norma + datasheet",
+     "IEC 61071 (eletrônica de potência) / IEC 60831; datasheet TDK B3236"),
+    ("Queda de tensão no indutor", "≤ {ukmax} % na f máx (busca {ukmin}–{ukbusca} %)", "Guia de fabricante",
+     "Danfoss – Output Filters Design Guide: 4–10 % para filtro senoidal"),
+    ("Frequência de chaveamento fixa e mínima", "{fs} kHz (parametrizada no inversor)", "Guia de fabricante",
+     "Danfoss: não operar abaixo de 80 % da fs nominal do filtro"),
+    ("Distorção (THD) da tensão no motor", "≤ {thd} % (PWM) e ≤ {thd1} % total com baixa ordem", "Prática de mercado",
+     "Catálogos de filtros senoidais (Schaffner, ABB, WEG); IEC 61000-2-4 como referência de 5 %"),
+    ("Faixa da frequência de ressonância", "≥ {frmult}·f saída máx e ≤ fs/2", "Artigo + calibração",
+     "Liserre, Blaabjerg, Hansen – IEEE Trans. Ind. Appl. 2005 (10·f < fr < fs/2); 13× calibrado nos filtros fabricados"),
+    ("Ondulação de corrente no indutor", "≤ {rip} % do pico nominal", "Prática de projeto",
+     "Holmes & Lipo (espectro PWM); limita perdas HF, ruído e corrente nos capacitores"),
+    ("Harmônicas de baixa ordem do inversor", "h5 2,3 · h7 0,7 · h11 1,1 · h13 0,5 … %", "Medição de campo",
+     "Dranetz HDPQ: SENAI (958 µH/40 e 20 µF) e IHR 2022 – saída do inversor"),
+    ("Amortecimento real da ressonância", "Q equivalente 4", "Medição de campo",
+     "Ganho de pico medido 17–26 nas mesmas medições"),
+    ("Caso sem motor (teste/comissionamento)", "alerta; capacitor verificado", "Medição de campo",
+     "Ressonância medida na fr do LC sem motor (SENAI 40 µF: 7,2 % medido = previsto)"),
+]
+
+REFERENCIAS = [
+    "IEC TS 60034-17 – Cage induction motors when fed from converters – Application guide.",
+    "IEC TS 60034-25 – Rotating electrical machines – AC electrical machines used in power drive systems – Application guide.",
+    "NEMA MG 1 – Motors and Generators, Parts 30 e 31 (motores alimentados por inversor).",
+    "IEC TS 61800-8 – Adjustable speed electrical power drive systems – Specification of voltage on the power interface.",
+    "IEC 61071 – Capacitors for power electronics. IEC 60076-6 – Reactors.",
+    "Danfoss – Output Filters Design Guide (MG90N5): filtros dU/dt e senoidais, queda de tensão 4–10 %.",
+    "M. Liserre, F. Blaabjerg, S. Hansen – Design and control of an LCL-filter-based three-phase active rectifier, "
+    "IEEE Trans. Industry Applications, 2005.",
+    "J. K. Steinke – Use of an LC filter to achieve a motor-friendly performance of the PWM voltage source inverter, "
+    "IEEE Trans. Energy Conversion, 1999.",
+    "A. von Jouanne, P. N. Enjeti – Design considerations for an inverter output filter to mitigate the effects of long motor leads "
+    "in ASD applications, IEEE Trans. Industry Applications.",
+    "R. Peña-Alzola et al. – Robust design of LCL filters / análise de perdas do amortecimento passivo, IEEE Trans. Ind. Informatics, 2014.",
+    "D. G. Holmes, T. A. Lipo – Pulse Width Modulation for Power Converters (IEEE Press/Wiley).",
+    "B. Wu – High-Power Converters and AC Drives (IEEE Press/Wiley).",
+    "N. Mohan, T. Undeland, W. Robbins – Power Electronics: Converters, Applications and Design (Wiley).",
+]
+
+
+def _secao_base_tecnica(d, proj, cat):
+    """2. Normas, critérios (com a origem de cada um), referências, metodologia, softwares e validação."""
+    cp = cat["projeto_padrao"]
+    ped = proj.pedido
+    d.add_heading("2. Base normativa e critérios de projeto", 1)
+    d.add_paragraph("Não existe norma que fixe os valores de projeto de um filtro senoidal (indutância, ressonância, queda). "
+                    "As normas definem o que o filtro deve garantir ao motor e aos componentes; os valores de projeto seguem guias de "
+                    "fabricantes, a literatura técnica e a calibração com filtros fabricados e medidos pela Electric Service. "
+                    "A tabela 2.2 mostra a origem de cada critério.")
+    d.add_heading("2.1 Normas aplicáveis", 2)
+    _tabela(d, ["Norma / referência", "Aplicação no projeto"], NORMAS, [5.5, 11.5])
+    d.add_heading("2.2 Critérios de projeto e sua origem", 2)
+    fmt = dict(vpk=ped.get("vpk_max_v") or 1000, dvdt=ped.get("dvdt_max_v_us") or 500, ukmax=f"{cp['uk_max_pct']:g}",
+               ukmin=f"{cp['uk_min_pct']:g}", ukbusca=f"{cp.get('uk_busca_max_pct', 15):g}", fs=f"{proj.fs_hz / 1000:g}",
+               thd=f"{cp['thd_v_max_pct']:g}", thd1=f"{cp['thd_v_max_pct'] + 1:g}", frmult=f"{cp['fr_min_mult_fout']:g}",
+               rip=f"{cp['ripple_pp_max_pct']:g}")
+    _tabela(d, ["Critério", "Valor adotado", "Natureza", "Fonte"],
+            [(a, b.format(**fmt), c, e) for a, b, c, e in CRITERIOS_ORIGEM], [3.8, 4.2, 2.4, 6.6], tam=8)
+    d.add_heading("2.3 Metodologia", 2)
+    _bullets(d, [
+        "Dimensionamento: busca de todas as combinações de indutor (uk {0}–{1} %), capacitores do catálogo (estrela/delta, nº por ramo) "
+        "e topologia; cada combinação é simulada e verificada; escolhe-se a de menor custo/perdas que passa em todos os critérios críticos."
+        .format(cp["uk_min_pct"], cp.get("uk_busca_max_pct", 15)),
+        "Simulação no domínio do tempo e da frequência: inversor PWM vetorial (SVPWM) com a portadora real, barramento CC = 1,35·Vrede, "
+        "indutor com perdas de alta frequência, banco de capacitores, cabo em células π (R, L, C fase-terra e fase-fase) e motor "
+        "(f.c.e.m. + indutância de dispersão, resistência com efeito pelicular).",
+        "Pontos de operação: frequência máxima, mínima e condição de placa do filtro; cantos de tolerância de L (±5 %) e C (−5/+10 %).",
+        "Robustez: harmônicas de baixa ordem do inversor (valores medidos) amplificadas pela ressonância em toda a faixa de velocidade, "
+        "com e sem motor; consequência no capacitor (corrente e pico) verificada nos dois casos.",
+        "Dupla checagem independente: a mesma rede é montada e simulada no ATP-EMTP; as grandezas de projeto são comparadas com o "
+        "Python (seção 5.5).",
+        "Componentes reais: indutor (núcleo, perdas, elevação de temperatura), capacitores (datasheet, ponto quente, vida), "
+        "estudo térmico do painel e arranjo mecânico (seções 6 e 7)."])
+    d.add_heading("2.4 Softwares utilizados", 2)
+    from .versao import info as _info
+    _tabela(d, ["Software", "Uso"], [
+        (f"Plataforma FSEN v{_info().get('versao', '?')} (Python 3, NumPy, SciPy, Matplotlib)",
+         "Dimensionamento, simulação, verificações, otimização, documentos"),
+        ("ATP-EMTP (tpbig) + ATPDraw 7", "Simulação eletromagnética independente da mesma rede (dupla checagem) e desenho do circuito"),
+        ("Dranetz HDPQ + leitor de arquivos .ddbx", "Medições de campo usadas na calibração (formas de onda e harmônicas)")], [7.5, 9.5], tam=9)
+    d.add_heading("2.5 Validação da plataforma", 2)
+    _bullets(d, [
+        "11 filtros reais (fabricados pela Electric Service e Schaffner FN5040 de catálogo) simulados no Python e no ATP-EMTP em 60 Hz e "
+        "30 Hz: 21 de 22 pontos coincidem em todas as grandezas (tensões, picos, correntes no indutor e nos capacitores, THD).",
+        "Medições de campo (Dranetz HDPQ, sem motor): SENAI 958 µH/40 µF – THD medido 7,2 %, previsto 7,2 %; IHR 1586 µH/20 µF – "
+        "medido 4,0 %, previsto 4,9 %; SENAI 958 µH/20 µF – medido 4,9 %, previsto 4,0 % (com motor) a 10,2 % (sem motor).",
+        "As harmônicas que o inversor produz foram medidas em dois inversores diferentes e coincidem (h5 ≈ 2,2 %).",
+        "Corrente medida no capacitor (IHR): 2,3 A RMS; calculada 2,6 A (plena carga)."])
+    d.add_heading("2.6 Referências bibliográficas", 2)
+    for i, r_ in enumerate(REFERENCIAS, 1):
+        d.add_paragraph(f"[{i}] {r_}")
+
+
+def _resumo_executivo(d, proj, cat):
+    ped = proj.pedido
+    b = proj.banco
+    pts = proj.pontos
+    v = {x.item: x for x in proj.verificacoes}
+    def achar(prefixo):
+        return next((x for k, x in v.items() if k.startswith(prefixo)), None)
+    d.add_heading("Resumo para o cliente", 1)
+    linhas = [("Filtro", f"Senoidal {proj.topologia} sem resistor de amortecimento – {ped['corrente_a']:g} A / {ped['tensao_v']:g} V"),
+              ("Indutor L1", f"{proj.l1.l_uh:.0f} µH/fase, {proj.l1.i_nom_a:.0f} A (impedância {proj.l1.uk_pct:.1f} % a 60 Hz)"),
+              ("Capacitores", f"{b.n_total} × {b.uf_unit:g} µF {b.v_unit:g} V ({b.fabricante}) em {b.ligacao}, {b.n_por_ramo} por ramo"),
+              ("Frequência de ressonância", f"{proj.fr_hz:.0f} Hz"),
+              ("Frequência de chaveamento do inversor", f"{proj.fs_hz / 1000:g} kHz (fixa)")]
+    for pref, rot in (("THD total no motor", "Distorção da tensão no motor (total)"), ("Tensão de pico no motor", "Tensão de pico no motor"),
+                      ("dv/dt no motor", "dv/dt no motor"), ("Queda de tensão", "Queda de tensão no indutor")):
+        x = achar(pref)
+        if x:
+            linhas.append((rot, f"{x.valor}  (limite {x.limite})"))
+    if pts:
+        p0 = pts[0]
+        if p0.get("v_inv_ll_fund"):
+            q = 100 * (1 - p0["v_motor_ll_fund"] / p0["v_inv_ll_fund"])
+            linhas.append((f"Tensão no motor – {p0['nome']}", f"{p0['v_motor_ll_fund']:.0f} V (inversor {p0['v_inv_ll_fund']:.0f} V; queda real {q:.1f} %)"))
+    da = getattr(proj, "dupla_checagem_atp", None) or {}
+    linhas.append(("Dupla checagem no ATP-EMTP", "convergiu com o Python" if da.get("convergiu") else
+                   ("divergência – ver 5.5" if da.get("resultados") else "não executada nesta emissão")))
+    linhas.append(("Resultado", "APROVADO em todas as verificações críticas" if proj.aprovado else "REPROVADO – ver seção 4"))
+    _kv(d, linhas)
+    alertas = [x for x in proj.verificacoes if not x.ok and not x.critico]
+    if alertas:
+        d.add_paragraph("Pontos de atenção (não impedem a aprovação):")
+        _bullets(d, [f"{x.item}: {x.valor}" for x in alertas])
+    d.add_paragraph("Como o projeto foi verificado: (1) simulação completa do inversor, filtro, cabo e motor na Plataforma FSEN; "
+                    "(2) simulação independente da mesma rede no ATP-EMTP; (3) critérios calibrados em filtros já fabricados e em "
+                    "medições de campo (Dranetz). Detalhes nas seções 2 e 5.")
 
 
 # ------------------------------------------------------------------ memorial técnico
@@ -154,6 +289,10 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
     r.font.color.rgb = RGBColor(0x1B, 0x7F, 0x3A) if proj.aprovado else RGBColor(0xC0, 0x1E, 0x1E)
     for a in proj.avisos:
         d.add_paragraph("Aviso: " + a)
+    try:
+        _resumo_executivo(d, proj, cat)
+    except Exception as _e:
+        d.add_paragraph(f"(resumo não gerado: {_e})")
 
     d.add_heading("1. Dados de entrada (solicitação do cliente)", 1)
     _kv(d, [("Cliente", ped["cliente"]), ("CNPJ / Município", f"{ped['cnpj']} – {ped['cidade_uf']}"),
@@ -186,20 +325,7 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
                 linhas.append((it["prioridade"], it["pergunta"][:70], prem, "-", "não simulável"))
         _tabela(d, ["Prioridade", "Dado", "Premissa", "Cenário testado", "Resultado"], linhas, [2.2, 5.5, 3.3, 3.3, 3.2], tam=7.5)
 
-    d.add_heading("2. Normas e critérios de projeto", 1)
-    _tabela(d, ["Norma / referência", "Aplicação no projeto"], NORMAS, [5.5, 11.5])
-    cp = cat["projeto_padrao"]
-    _bullets(d, [
-        f"Frequência de ressonância entre {cp['fr_min_mult_fout']:g}·f saída máx e fs/2 (prática Schaffner FN5040/5045, ABB, Danfoss MCC101).",
-        f"THD de tensão no motor ≤ {cp['thd_v_max_pct']:g} % (tensão 'senoidal'), calculada até 4·fs.",
-        f"Queda de tensão no indutor ≤ {cp['uk_max_pct']:g} % e reserva de tensão do inversor sem sobremodulação na faixa de operação.",
-        f"Ondulação p-p no indutor ≤ {cp['ripple_pp_max_pct']:g} % do pico nominal (perdas HF, ruído e corrente nos capacitores).",
-        "Robustez: harmônicas de baixa ordem do inversor (tempo morto: 5ª…25ª) não podem ser amplificadas pela ressonância na faixa de operação; "
-        "quando necessário é inserido resistor de amortecimento em série com o banco.",
-        f"Capacitores: tensão ≤ {cp['vcap_max_pu']:g}·Un e corrente RMS (fundamental + HF) ≤ 1,3·In (IEC 60831-1) ou Imax do datasheet.",
-        "Simulação: PWM vetorial (SVPWM) com portadora real, barramento CC = 1,35·Vrede, motor representado por f.c.e.m. + indutância de dispersão "
-        "(0,15 pu); regime permanente exato por superposição harmônica; perdas HF do núcleo por resistência paralela equivalente (Q=40 em fs).",
-    ])
+    _secao_base_tecnica(d, proj, cat)
 
     d.add_heading("3. Resultado do dimensionamento", 1)
     b = proj.banco

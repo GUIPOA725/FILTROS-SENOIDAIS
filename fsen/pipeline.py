@@ -124,6 +124,16 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     arqs["rfq_montagem"], arqs["email_montagem"] = D.rfq_montagem(proj, arr, orc, cat, sub["04_Montadora"])
     arqs["caderno_montagem"] = D.caderno_montagem(proj, arr, orc, cat, sub["04_Montadora"], pngs)
     shutil.copy(pdf_des, sub["04_Montadora"])
+    # relatório técnico final (padrão RTM da Electric) – resultados Python + ATP + limites dos componentes
+    try:
+        from . import relatorio_final as RF
+        _da = getattr(proj, "dupla_checagem_atp", None) or {}
+        _atp = [dict(ponto=x["ponto"], tabela=x["tabela"]) for x in (_da.get("resultados") or [])] or None
+        arqs["relatorio_final"] = RF.gerar(proj, {"arranjo": arr.to_dict()}, pasta, cat, atp=_atp,
+                                           vistas_dir=os.path.join(sub["01_Engenharia"], "ATP"), log=log)
+        log("   Relatório técnico final (RTM) gerado em 02_Cliente")
+    except Exception as e:
+        log(f"   (relatório técnico final não gerado: {type(e).__name__}: {e})")
     # resposta ao cliente
     email_cli = _email_cliente(proj, orc, cat)
     with open(os.path.join(sub["02_Cliente"], "Email_Resposta_Cliente.txt"), "w", encoding="utf-8") as f:

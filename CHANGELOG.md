@@ -1,5 +1,15 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.6 – 19/11/2026 – Relatório Técnico Final (padrão RTM)
+- Novo documento em 02_Cliente: RTM-FSEN-<I>-<V>_Relatorio_Tecnico_Final.docx (+ PDF quando há Word/LibreOffice), no mesmo
+  modelo dos relatórios de QEE/proteção da Plataforma de Estudos (capa Electric, índice de revisões, sumário com páginas):
+  introdução, dados do sistema, especificação, referências técnicas (normas, critérios COM A ORIGEM de cada um, bibliografia),
+  metodologia e softwares, validação da ferramenta, resultados Python, condições extremas, dupla checagem ATP-EMTP, limites de
+  todos os componentes (motor, inversor/indutor, capacitores, ressonância, painel/cabos/refrigeração), estudo térmico,
+  conclusões, síntese, pontos de atenção e recomendações.
+- Memorial de cálculo: novo "Resumo para o cliente" e seção 2 com base normativa, origem dos critérios, metodologia,
+  softwares, validação e bibliografia.
+
 ## v1.9.5 – 19/11/2026 – Medições sem motor
 - As medições Dranetz de calibração foram SEM motor (confirmado pelo usuário). O modelo sem motor bate com elas.
 - THD total ≤ 6 % a f máx (crítico) passa a ser calculado COM o motor (operação real); novo ALERTA "THD na saída do filtro
