@@ -254,6 +254,11 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     resumo = resumo_texto(proj, arr, orc, similares, pasta)
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as f:
         f.write(resumo)
+    try:                                            # v1.10.2: subpastas por tipo de documento / fornecedor
+        from .organizar import organizar
+        organizar(pasta, arqs, log)
+    except Exception as e:
+        log(f"   (organização em subpastas não aplicada: {e})")
     from .versao import carimbar_pasta
     carimbar_pasta(pasta, log)
     log("7/7 Registrando no histórico...")

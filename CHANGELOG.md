@@ -1,5 +1,15 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.10.2 – 20/11/2026 – Pastas e tela organizadas
+- Cada pasta principal do projeto agora tem subpastas: 01_Engenharia (memorial/custos, estudos, indutor FEM, auditoria, ATP),
+  02_Cliente (proposta, folha de dados, relatório técnico, dados faltantes), 03_Fornecedores (1_Indutor, 2_Capacitores,
+  3_Caixa_Metalica, 4_Plaqueta_Adesivos, 5_Cabos_Miscelanea), 04_Montadora (cotação, caderno, desenhos), 05_Desenhos (painel,
+  indutor). Arquivo LEIA-ME_PASTAS.txt na raiz de cada projeto explica o que vai para quem.
+- Os dados que a plataforma lê (projeto.json etc.) e a pasta ATP ficam no lugar – abrir projeto, ajuste manual e conferência
+  continuam funcionando, inclusive com projetos antigos.
+- Tela "Nova solicitação": arquivos gerados agrupados por pasta/subpasta (Fornecedores aberto por padrão).
+- Conferência de proposta: parecer gravado na subpasta do componente (1_Indutor / 2_Capacitores).
+
 ## v1.10.1 – 20/11/2026 – Elemento finito do indutor mais rápido (notebook)
 - Malha até 4× mais grossa no ar distante (fora da caixa núcleo+bobinas), metade dos nós com a mesma indutância (validação
   repetida: 427,7/435,1 µH idênticos).

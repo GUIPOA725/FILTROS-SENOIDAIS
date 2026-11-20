@@ -272,8 +272,8 @@ def _parecer(itens):
 def gerar_parecer(proj, arr, cat, pasta_proj, componente, decl, res):
     """Grava o parecer .docx + e-mail de resposta ao fornecedor em 03_Fornecedores. Retorna (docx, txt)."""
     from .documentos import _novo, _tabela, _sombra
-    pasta = os.path.join(pasta_proj, "03_Fornecedores")
-    os.makedirs(pasta, exist_ok=True)
+    from .organizar import subpasta_fornecedor
+    pasta = subpasta_fornecedor(pasta_proj, componente)       # 03_Fornecedores/1_Indutor ou 2_Capacitores
     forn = (decl.get("fornecedor") or "fornecedor").strip()
     tag = "Indutor" if componente == "indutor" else "Capacitores"
     agora = _dt.datetime.now()

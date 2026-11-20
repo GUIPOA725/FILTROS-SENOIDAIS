@@ -263,7 +263,7 @@ if pagina == "Nova solicitação":
         if r.get("opcoes"):
             st.subheader("Opções – mínimo de capacitores (★ = escolhida)")
             st.dataframe(pd.DataFrame(r["opcoes"]), use_container_width=True, hide_index=True)
-            st.caption("Detalhes, gráfico e todos os casos: 01_Engenharia/Estudo_Opcoes_Minimo_Capacitores.docx")
+            st.caption("Detalhes, gráfico e todos os casos: 01_Engenharia/2_Estudos_Opcoes_e_Robustez/Estudo_Opcoes_Minimo_Capacitores.docx")
         st.markdown(r["resumo"])
         _ed = r["arquivos"].get("email_dados")
         if _ed and os.path.exists(_ed):
@@ -286,16 +286,34 @@ if pagina == "Nova solicitação":
             _img("rms", "fluxo")
         with t4:
             pd_ = os.path.join(r["pasta"], "05_Desenhos")
-            for f in (sorted(os.listdir(pd_)) if os.path.isdir(pd_) else []):
-                if f.endswith(".png"):
-                    st.image(os.path.join(pd_, f))
-        st.subheader("Downloads")
+            for raiz_, _, fs_ in (os.walk(pd_) if os.path.isdir(pd_) else []):
+                for f in sorted(fs_):
+                    if f.endswith(".png"):
+                        st.image(os.path.join(raiz_, f))
+        st.subheader("Arquivos do projeto (por pasta)")
         if r.get("zip") and os.path.exists(r["zip"]):
             st.download_button("📦 Pacote completo (.zip)", open(r["zip"], "rb"), file_name=os.path.basename(r["zip"]))
-        cols = st.columns(3)
-        for k, (nome, cam) in enumerate(sorted(r["arquivos"].items())):
-            if os.path.exists(cam):
-                cols[k % 3].download_button(os.path.basename(cam), open(cam, "rb"), file_name=os.path.basename(cam), key=nome)
+        _rotulos = {"01_Engenharia": "🔧 01 Engenharia (uso interno)", "02_Cliente": "📨 02 Cliente",
+                    "03_Fornecedores": "🏭 03 Fornecedores (uma subpasta por componente)", "04_Montadora": "🔩 04 Montadora",
+                    "05_Desenhos": "📐 05 Desenhos"}
+        _ign = (".json", ".pl4", ".lis", ".dbg", ".mat", ".xml", ".bat")
+        for _pp, _rot in _rotulos.items():
+            _base = os.path.join(r["pasta"], _pp)
+            if not os.path.isdir(_base):
+                continue
+            with st.expander(_rot, expanded=_pp == "03_Fornecedores"):
+                st.caption(_base)
+                for _raiz, _dirs, _fs in sorted(os.walk(_base)):
+                    _dirs.sort()
+                    _vis = [f for f in sorted(_fs) if not f.lower().endswith(_ign)]
+                    if not _vis:
+                        continue
+                    _sub = os.path.relpath(_raiz, _base)
+                    st.markdown(f"**{'(raiz)' if _sub == '.' else _sub.replace('_', ' ')}**")
+                    _c = st.columns(3)
+                    for _k, _f in enumerate(_vis):
+                        _cam = os.path.join(_raiz, _f)
+                        _c[_k % 3].download_button(_f, open(_cam, "rb"), file_name=_f, key=f"dl_{_cam}")
         st.subheader("E-mails prontos")
         for nome, cam in r["arquivos"].items():
             if nome.startswith("email_"):
