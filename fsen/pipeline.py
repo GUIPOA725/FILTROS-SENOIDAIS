@@ -52,7 +52,7 @@ def _slug(s):
 
 
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
-              ligacoes=None):
+              ligacoes=None, prioridade="custo"):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
@@ -69,6 +69,27 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
             proj = proj2
     else:
         proj = dimensionar(ped, cat, log=log, topologias=topologias, capacitores=capacitores, ligacoes=ligacoes)
+        if prioridade == "mercado" and proj.topologia == "LC" and not proj.l2:
+            # v1.9.11: indutor na faixa de mercado (MTE 8–10 %) e MENOS capacitores, aprovado e robusto (L ±10 %, C ±5 %)
+            try:
+                from . import ponto_otimo as PO
+                from .dimensionamento import projeto_manual
+                log("   Prioridade 'indutor de mercado / menos capacitores': varrendo opções...")
+                _caps = capacitores or None
+                _ops = PO.otimizar_mercado(ped, cat, proj.fs_hz / 1000, caps=_caps, ligacoes=tuple(ligacoes or ("Delta", "Estrela")))
+                if _ops:
+                    o = _ops[0]
+                    _otim = getattr(proj, "_otimizacao", None)
+                    proj = projeto_manual(ped, cat, proj.fs_hz / 1000, o["L_uh"], o["cap_id"], o["ligacao"], o["n_por_ramo"])
+                    proj._otimizacao = _otim
+                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                        f"Configuração escolhida pela prioridade 'indutor de mercado / menos capacitores' (uk {o['uk_pct']} %, "
+                        f"{o['n_caps']} capacitores, robusta a L ±10 % e C ±5 %)."]
+                    log(f"   → {o['L_uh']:.0f} µH + {o['n_caps']} × {o['cap_id']} ({o['ligacao']})")
+                else:
+                    log("   Nenhuma opção de mercado robusta – mantida a otimização por custo")
+            except Exception as e:
+                log(f"   (prioridade de mercado não aplicada: {e})")
     cod = proj_codigo(proj)
     sufixo = f"_AJUSTE-MANUAL-{t0:%H%M}" if projeto is not None else ""
     # uma pasta por cliente; dentro, um projeto por solicitação: PROJETOS\<Cliente>\<data>_<código>
@@ -117,6 +138,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         "folha_dados": D.folha_dados(proj, arr, cat, sub["02_Cliente"], pngs),
         "desenhos_pdf": pdf_des,
     }
+    try:                                            # v1.9.11: estudo de ponto ótimo de mercado + robustez + referências
+        from . import ponto_otimo as PO
+        proj.estudo_mercado = PO.estudo(proj, cat, log=log)
+        arqs["estudo_ponto_otimo"] = PO.gerar_docx(proj, cat, proj.estudo_mercado, sub["01_Engenharia"], D._novo, D._tabela, D._bullets)
+        log("   Estudo de ponto ótimo e robustez gerado (01_Engenharia)")
+    except Exception as e:
+        log(f"   (estudo de ponto ótimo não gerado: {type(e).__name__}: {e})")
     ets = D.et_fornecedores(proj, arr, orc, cat, sub["03_Fornecedores"], pdf_des)
     for k, (doc, mail) in ets.items():
         arqs[f"et_{k}"] = doc

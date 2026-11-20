@@ -228,11 +228,16 @@ if pagina == "Nova solicitação":
         st.caption(f"Entra na simulação: filtro {p.corrente_a:g} A / {p.tensao_v:g} V · inversor {p.inversor} {p.inversor_corrente_a:g} A · "
                    f"motor {p.motor_cv:g} CV, {p.motor_corrente_a:g} A, FP {p.motor_fp:g}, FS {p.fator_servico:g} · "
                    f"cabo {p.cabo_m:g} m · {p.f_saida_min_hz:g}–{p.f_saida_max_hz:g} Hz · {p.quantidade} pç")
+        st.radio("Prioridade do projeto", ["Menor custo (otimização global)",
+                                            "Indutor de mercado (uk 7–10 %, padrão MTE) e MENOS capacitores – robusto a L ±10 % / C ±5 %"],
+                 key="prioridade_proj", help="A segunda opção varre L × capacitores × ligação e escolhe a configuração aprovada e robusta "
+                                             "com menos capacitores. Em ambos os casos é gerado o Estudo de Ponto Ótimo e Robustez.")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
                 r = processar(p, pasta_saida, log=lambda m: msgs.write(m), topologias=topos or None,
-                              capacitores=_caps_sel or None, ligacoes=_ligs or None)
+                              capacitores=_caps_sel or None, ligacoes=_ligs or None,
+                              prioridade="mercado" if st.session_state.get("prioridade_proj", "").startswith("Indutor") else "custo")
             st.session_state["resultado"] = {"pasta": r["pasta"], "zip": r["zip"], "arquivos": r["arquivos"], "graficos": r["graficos"],
                                              "resumo": r["resumo"]}
             st.session_state["cfg_auto"] = config_de_projeto(r["projeto"])

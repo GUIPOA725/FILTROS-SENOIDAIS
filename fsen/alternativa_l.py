@@ -40,9 +40,29 @@ def alternativas(proj, cat, max_opcoes=3):
         return dict(necessaria=False, motivo="corrente fora da faixa de referência", atual=atual)
     lo, hi = fx["l_mh"][0] * 1000, fx["l_mh"][1] * 1000
     nec = atual["l_uh"] < 0.85 * lo
+    cfg = config_de_projeto(proj)
+    est = getattr(proj, "estudo_mercado", None)
+    if est and est.get("recomendada"):
+        # v1.9.11: usa o ponto ótimo de mercado (menos capacitores, robusto) como alternativa recomendada
+        r0 = est["recomendada"]
+        ops = [dict(rotulo=f"{o['L_uh']:.0f} µH + {o['n_caps']} × {o['cap_id'].replace('TDK_PEC_', '')} {o['ligacao']}", l_uh=o["L_uh"],
+                    n_total=o["n_caps"], fr_hz=o["fr_hz"], ripple_pp=o["ripple"], queda_pct=o["queda"], thd_motor=o["thd"],
+                    custo=o["custo"], aprovado=True) for o in est["opcoes"][:3]]
+        try:
+            pr = projeto_manual(ped, cat, cfg["fs_khz"], r0["L_uh"], r0["cap_id"], r0["ligacao"], r0["n_por_ramo"])
+            rec = _linha(pr, f"RECOMENDADA: {r0['L_uh']:.0f} µH + {pr.banco.n_total} × {r0['cap_id'].replace('TDK_PEC_', '')} "
+                             f"{r0['ligacao']}")
+            rec["_proj"] = pr
+        except Exception:
+            rec = None
+        if rec and (abs(rec["l_uh"] - atual["l_uh"]) > 1 or rec["n_total"] != atual["n_total"] or rec["cap"] != atual["cap"]):
+            return dict(necessaria=True, faixa=(lo, hi), atual=atual, opcoes=ops[1:], recomendada=rec,
+                        motivo=(f"L do projeto ({atual['l_uh']:.0f} µH) abaixo da faixa de mercado ({lo:.0f}–{hi:.0f} µH)" if nec else
+                                "Opção com indutor de mercado e menos capacitores (ponto ótimo robusto)"))
+        if not nec:
+            return dict(necessaria=False, motivo="projeto já está no ponto ótimo de mercado", faixa=(lo, hi), atual=atual)
     if not nec:
         return dict(necessaria=False, motivo="L dentro da faixa de mercado", faixa=(lo, hi), atual=atual)
-    cfg = config_de_projeto(proj)
     alvos = sorted({int(round(x / 5.0) * 5) for x in (lo, (lo + hi) / 2, hi)})
     nmax = max(cfg["n_por_ramo"] + 1, 2)
     ops = []

@@ -1,5 +1,18 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.11 – 20/11/2026 – Ponto ótimo de mercado e robustez (referências MTE / FRAKO / Schaffner / REO)
+- Novo fsen/ponto_otimo.py e documento 01_Engenharia/Estudo_Ponto_Otimo_e_Robustez.docx em TODO projeto:
+  - critérios de referência: MTE (L = 8–10 % da impedância nominal; fr 25–35 % de fs), FRAKO/IEC 61071 (UN do capacitor ≥ Vcc máx
+    – em filtro PWM o pico pode chegar ao barramento), Schaffner/REO (L, perdas, massa por corrente);
+  - robustez do projeto: THD no motor com L ±5/±10 %, C ±5 %, cabo ¼× e 4×, capacitância do motor ×3;
+  - varredura "indutor de mercado (uk 7–10 %) × capacitores (IEC 61071) × ligação × nº por ramo", só aprovadas E robustas,
+    ordenadas por nº de capacitores e custo; recomendação + robustez completa da recomendada;
+  - seção explicando como cabo e motor entram no modelo e o que o ATP confirma (a conta) e o que só a medição confirma.
+- Tela "Nova solicitação": escolha da prioridade – "Menor custo" ou "Indutor de mercado e MENOS capacitores (robusto)".
+- A alternativa de indutância da ET do indutor passa a ser o ponto ótimo de mercado (com dupla checagem no ATP no PC).
+- Fontes salvas no próprio estudo (MTE: artigo T. Luu IEEE 2020, manual SineWave Guardian, patentes US 9.571.058 e
+  US 9.548.154; FRAKO: guia de projeto PEC, também no Gmail técnico; Schaffner; REO).
+
 ## v1.9.10 – 20/11/2026 – ATP-EMTP como referência em tudo que vai para o fornecedor
 - Figuras das ETs (corrente no indutor e corrente no capacitor): quando o ATP rodou no projeto, a mesma corrente calculada no
   ATP é sobreposta (laranja tracejado) e o título mostra RMS ATP × Python.
