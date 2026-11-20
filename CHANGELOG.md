@@ -1,5 +1,14 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.12 – 20/11/2026 – Alternativa de indutância com o capacitor que a empresa tem
+- A varredura de ponto ótimo (e a alternativa "favor cotar também" da ET do indutor) passa a usar o MESMO capacitor do projeto
+  (ex.: 20 µF 480 V, que é o que há em estoque) – a alternativa não pode depender de um capacitor que não temos.
+  Para liberar outros capacitores na varredura: `alternativa_mesmo_capacitor: false` no catálogo.
+- Regra de escolha FIXA e documentada (determinística): 1º menos capacitores; 2º indutância mais próxima da faixa MTE
+  (8–10 % da impedância nominal); 3º menor custo. Só entram opções aprovadas em todos os critérios E robustas
+  (L ±10 %, C ±5 %, cabo, motor).
+- Teste de repetibilidade: o mesmo pedido rodado 3× dá resultado idêntico (projeto, verificações e alternativa).
+
 ## v1.9.11 – 20/11/2026 – Ponto ótimo de mercado e robustez (referências MTE / FRAKO / Schaffner / REO)
 - Novo fsen/ponto_otimo.py e documento 01_Engenharia/Estudo_Ponto_Otimo_e_Robustez.docx em TODO projeto:
   - critérios de referência: MTE (L = 8–10 % da impedância nominal; fr 25–35 % de fs), FRAKO/IEC 61071 (UN do capacitor ≥ Vcc máx

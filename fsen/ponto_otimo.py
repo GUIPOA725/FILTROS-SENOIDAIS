@@ -1,4 +1,4 @@
-"""Ponto ótimo "de mercado" + robustez + referências internacionais (v1.9.11).
+"""Ponto ótimo "de mercado" + robustez + referências internacionais (v1.9.11; regra da alternativa v1.9.12).
 
 Pedido do usuário (20/11/2026): usar a IA para aprofundar as análises antes de fabricar – comparar o modelo com fabricantes
 de referência (MTE, Schaffner, REO, FRAKO/TDK), priorizar indutor maior e MENOS capacitores (capacitor 20 µF/480 V difícil
@@ -80,7 +80,8 @@ def robustez(ped, cat, fs_khz, L_uh, cap_id, lig, n, detalhar=True):
 
 def otimizar_mercado(ped, cat, fs_khz=None, caps=None, ligacoes=("Delta", "Estrela"), n_max=6, passo_uh=10, max_resultados=8):
     """Varre L na faixa de mercado (uk 7–10 %) × capacitores × ligação × nº por ramo. Mantém aprovados e ROBUSTOS e ordena por
-    nº de capacitores, depois custo. Retorna lista de dicts (o primeiro é o recomendado)."""
+    nº de capacitores, depois PROXIMIDADE da faixa MTE (8–10 % de Zb), depois custo (v1.9.12 – regra fixa, determinística).
+    Retorna lista de dicts (o primeiro é o recomendado)."""
     from .dimensionamento import projeto_manual
     fs_khz = fs_khz or (ped.fs_khz or 4.0)
     w = 2 * math.pi * ped.freq_rede_hz
@@ -107,7 +108,9 @@ def otimizar_mercado(ped, cat, fs_khz=None, caps=None, ligacoes=("Delta", "Estre
                                      queda=round(pr.l1.queda_v_pct, 1), custo=round(pr.custo_componentes or 0),
                                      massa_l=round(pr.l1.massa_kg), fr_fs=round(pr.fr_hz / (fs_khz * 1000), 2),
                                      icap=round(pr.banco.i_unit_rms, 1)))
-    cand.sort(key=lambda c: (c["n_caps"], c["custo"]))
+    m_lo, m_hi = 8 / 100 * Zb / w * 1e6, 10 / 100 * Zb / w * 1e6
+    dist_mte = lambda L: max(m_lo - L, 0.0, L - m_hi)
+    cand.sort(key=lambda c: (c["n_caps"], round(dist_mte(c["L_uh"])), c["custo"], c["L_uh"]))
     out, vistos = [], set()
     for c in cand:
         chave = (c["cap_id"], c["ligacao"], c["n_por_ramo"])
@@ -146,7 +149,9 @@ def estudo(proj, cat, log=None):
     rb_atual = robustez(ped, cat, fs_khz, atual["L_uh"], b.cap_id, b.ligacao, b.n_por_ramo, detalhar=True)
     if log:
         log("   Ponto ótimo de mercado: varrendo L (uk 7–10 %) × capacitores × ligação...")
-    ops = otimizar_mercado(ped, cat, fs_khz) if proj.topologia == "LC" and not proj.l2 else []
+    # v1.9.12: a alternativa usa o MESMO capacitor do projeto (o que a empresa tem/compra), salvo se o catálogo pedir outra coisa
+    caps_alt = [b.cap_id] if cat.get("alternativa_mesmo_capacitor", True) else None
+    ops = otimizar_mercado(ped, cat, fs_khz, caps=caps_alt) if proj.topologia == "LC" and not proj.l2 else []
     rec = ops[0] if ops else None
     rb_rec = robustez(ped, cat, fs_khz, rec["L_uh"], rec["cap_id"], rec["ligacao"], rec["n_por_ramo"], detalhar=True) if rec else None
     w = 2 * math.pi * ped.freq_rede_hz

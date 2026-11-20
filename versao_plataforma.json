@@ -1,1 +1,1 @@
-{"versao": "1.9.11", "data": "2026-11-20", "resumo": "Ponto ótimo de mercado (MTE 8–10 %, menos capacitores), robustez L ±10 %/C ±5 %/cabo/motor, regra FRAKO UN ≥ Vcc, estudo com referências internacionais"}
+{"versao": "1.9.12", "data": "2026-11-20", "resumo": "Alternativa de indutância com o MESMO capacitor do projeto (estoque) e regra fixa: menos capacitores → faixa MTE 8–10 % → custo"}
