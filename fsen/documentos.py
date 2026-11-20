@@ -624,67 +624,26 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     for L in [proj.l1] + ([proj.l2] if proj.l2 else []):
         tag = L.nome.split(" ")[0]
         d = _novo(f"Especificação Técnica – Indutor {tag}", f"Reator trifásico para filtro senoidal – {cod}", proj, cat)
-        d.add_heading("1. Aplicação", 1)
-        d.add_paragraph(f"Indutor série trifásico de filtro senoidal LC instalado na saída de inversor PWM ({ped['inversor']}), "
-                        f"frequência de chaveamento {proj.fs_hz / 1000:g} kHz, alimentando motor de indução {ped['motor_cv'] or ''} cv / "
-                        f"{ped['tensao_v']:g} V. O componente conduz corrente fundamental de 0–{max(ped['f_saida_max_hz'], 60):g} Hz "
-                        "sobreposta a ondulação de alta frequência — o projeto do núcleo deve considerar as perdas HF.")
-        d.add_heading("2. Características elétricas", 1)
-        _kv(d, [("Tipo", "Trifásico, núcleo comum de 3 colunas (alternativa: 3 monofásicos) – uso interno"),
-                ("Indutância nominal", f"{L.l_uh:.1f} µH por fase, tolerância ±5 %, desequilíbrio entre fases ≤ 3 %"),
-                ("Tensão nominal / isolação", f"{ped['tensao_v']:g} V / 1,1 kV; ensaio aplicado 3 kV 1 min; tensão de pico admissível 1600 V"),
-                ("Corrente nominal térmica", f"{L.i_nom_a:.0f} A RMS (contínua, 40 °C)"),
-                ("Composição da corrente", f"Fundamental {L.i_fund_a:.0f} A (5–{max(ped['f_saida_max_hz'], 60):g} Hz) + ondulação "
-                                           f"{L.ripple_rms_a:.0f} A RMS / {L.ripple_pp_a:.0f} A p-p em {L.f_chav_hz / 1000:g} kHz e múltiplos"),
-                ("Linearidade", f"L ≥ 90 % do nominal até {L.i_sat_a:.0f} A pico (sem saturação)"),
-                ("Sobrecarga", "150 % In por 60 s a cada 10 min"),
-                ("Suportabilidade a dv/dt", "Tensão PWM do inversor nos terminais de entrada (bordas de alguns kV/µs): reforçar isolação entre "
-                                            "espiras/camadas da primeira espira e entre bobina e núcleo"),
-                ("Perdas máximas desejadas", f"≤ {L.perdas_w:.0f} W totais (informar perdas a 60 Hz e com ondulação em {L.f_chav_hz / 1000:g} kHz)"),
-                ("Núcleo sugerido", "Aço-silício GO ≤ 0,23 mm, amorfo, nanocristalino ou pó (Kool Mµ/ferro-silício) com entreferro distribuído; "
-                                    "minimizar fluxo disperso no entreferro"),
-                ("Enrolamento", "Cobre ou alumínio, fio/folha adequado ao efeito pelicular em 4–12 kHz (folha ou Litz recomendados)"),
-                ("Classe térmica / elevação", "Classe {0} ({1} °C); elevação média do enrolamento ≤ {2} K; ambiente interno do painel até "
-                                              "{3:g} °C com ventilação forçada".format(*_classe_ind(cat), cat["projeto_padrao"].get("amb_max_c", 40) + 15)),
-                ("Terminais", "Barras com furo ou terminais para cabo 150 mm² (informar); identificação U1/V1/W1 – U2/V2/W2"),
-                ("Fixação", "Base com furos oblongos para fixação em perfil; olhais de içamento"),
-                ("Espaço disponível", f"até {arr.caixa_l - 150}×700×{arr.caixa_p - 150} mm (L×A×P) no armário {arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm; "
-                                      f"nossa estimativa {L.dim_mm[0]}×{L.dim_mm[1]}×{L.dim_mm[2]} mm, {L.massa_kg:.0f} kg – informar real"),
-                ("Normas", "IEC 60076-6 / IEC 61558-2-20 / NBR 5356"),
-                ("Ensaios de rotina", "Indutância por fase em In, resistência ôhmica, tensão aplicada, isolamento, relatório individual"),
-                ("Quantidade", f"{q} peças")])
-        d.add_heading("3. Informações solicitadas na cotação", 1)
-        _bullets(d, ["Preço unitário, prazo, condição de pagamento, frete.", "Desenho dimensional com furação e terminais.",
-                     "Perdas garantidas, massa, curva L × I, elevação de temperatura.", "Relatório de ensaio de tipo de produto similar, se houver."])
+        from . import spec_indutor as SI
+        fig = None
+        if L is proj.l1:
+            try:
+                fig = SI.grafico_forma_onda(proj, cat, os.path.join(pasta, f"_forma_onda_indutor_{tag}.png"))
+            except Exception:
+                fig = None
+        SI.escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura=fig)
+        if fig:
+            try:
+                os.replace(fig, os.path.join(pasta, f"Forma_de_onda_Indutor_{tag}_{cod}.png"))
+            except OSError:
+                pass
         p = os.path.join(pasta, f"ET_Indutor_{tag}_{cod}.docx")
         d.save(p)
         f0 = forn["indutor"][0]
-        cl, cc, ce = _classe_ind(cat)
-        fmx = max(ped['f_saida_max_hz'], 60)
         e = _email(pasta, f"Email_Indutor_{tag}.txt", _para(f0),
-                   f"Orçamento: Indutor Trifásico p/ Filtro Senoidal {L.l_uh:.0f}uH@{L.i_nom_a:.0f}A – {q} pç ({cod})",
-                   f"{_ola(f0)}\n\n"
-                   f"Gostaria de uma proposta para {q} ({_extenso(q)}) indutor(es) trifásico(s) conforme ET abaixo (detalhada no anexo), "
-                   "para uso em filtro senoidal na saída de inversor de frequência.\n\n"
-                   f"INDUTOR {tag}: PARA USO EM FILTRO SENOIDAL\n"
-                   "- Tipo: indutor trifásico com núcleo de ferro (3 colunas), uso interno em painel ventilado\n"
-                   f"- Tensão eficaz fase-fase PWM: {ped['tensao_v']:g} V (±10 %) – saída do inversor {ped['inversor']}\n"
-                   f"- L: {L.l_uh:.0f} µH por fase ±5 % (medida em 60 Hz e In); desequilíbrio entre fases ≤ 3 %\n"
-                   f"- Ir (térmica): {L.i_nom_a:.0f} A RMS = fundamental {L.i_fund_a:.0f} A + ondulação {L.ripple_rms_a:.0f} A RMS "
-                   f"({L.ripple_pp_a:.0f} A p-p) em {L.f_chav_hz / 1000:g} kHz\n"
-                   f"- Linearidade: L ≥ 90 % do nominal até {L.i_sat_a:.0f} A pico (sem saturação)\n"
-                   "- Sobrecarga: 1,5 × Ir por 1 minuto a cada 10 min\n"
-                   f"- Frequência fundamental: 0–{fmx:g} Hz (variação de velocidade do motor)\n"
-                   f"- Frequência de chaveamento: {L.f_chav_hz / 1000:g} kHz fixa (informar também as perdas a 2 kHz)\n"
-                   "- Modulação da tensão de entrada: PWM – dv/dt alta suportabilidade (kV/µs), isolação reforçada na entrada\n"
-                   f"- Classe: {cl} ({cc} °C), elevação ≤ {ce} K; isolação 1,1 kV, ensaio aplicado 3 kV/1 min\n"
-                   f"- Perdas totais desejadas: ≤ {L.perdas_w:.0f} W (60 Hz + ondulação em {L.f_chav_hz / 1000:g} kHz)\n"
-                   f"- Espaço disponível: até {arr.caixa_l - 150} × 700 × {arr.caixa_p - 150} mm (L × A × P) – vai em armário "
-                   f"{arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm com ventilação forçada de baixo para cima\n"
-                   "- Terminais: barras com furação para os cabos de saída (informar bitola máxima); identificação U1/V1/W1 – U2/V2/W2\n\n"
-                   "Favor informar: preço unitário, prazo, perdas garantidas (cobre a 60 Hz e núcleo com a ondulação), massa, "
-                   "desenho dimensional com furação, curva L × I e relatório de ensaio de rotina (L por fase, resistência, tensão aplicada)."
-                   + (f"\n\nReferência: {f0['ref']}." if f0.get("ref") else "") + assin)
+                   f"Cotação: Indutor trifásico p/ filtro senoidal {L.l_uh:.0f} µH @ {L.i_nom_a:.0f} A – {ped['tensao_v']:g} V "
+                   f"({q} pç) + dados técnicos e ensaios ({cod})",
+                   SI.corpo_email(L, proj, arr, cat, ped, q, tag, _ola(f0), _extenso, f0.get("ref")) + assin)
         saidas[f"indutor_{tag}"] = (p, e)
 
     # --- CAPACITORES

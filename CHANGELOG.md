@@ -1,5 +1,19 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.8 – 20/11/2026 – Especificação detalhada do indutor (padrão para qualquer fornecedor)
+- Nova ET_Indutor (fsen/spec_indutor.py), escrita para fornecedor que não conhece filtro senoidal:
+  - "Por que este indutor NÃO é um reator de 60 Hz" + figura da forma de onda simulada do projeto (corrente com ondulação,
+    zoom e pulsos de tensão PWM) – também salva como Forma_de_onda_Indutor_*.png para anexar;
+  - tabela de requisitos com coluna "Por quê" (linearidade L × I até o pico e a sobrecarga, classe efetivamente fornecida,
+    VPI, proteção térmica PTC/termostato, isolação para dv/dt, placa);
+  - construção recomendada com o motivo (chapa fina, 2–4 entreferros por coluna – sem exigir entreferro distribuído –,
+    bobina afastada do entreferro, sem fita atravessando o entreferro);
+  - dados que o fornecedor deve DECLARAR, ensaios de rotina e de tipo (aquecimento com inversor + termografia), protótipo
+    obrigatório ≥ 100 A, critérios de aceitação/rejeição;
+  - referência de mercado (Schaffner FN5040 / REO N CNW 933) com faixa interpolada de L, perdas e massa; alerta se o L do
+    projeto estiver abaixo da faixa; meta de perdas = menor entre a estimativa da plataforma e o teto do mercado.
+- E-mail ao fornecedor reescrito no mesmo padrão, com o "por quê" de cada pedido.
+
 ## v1.9.7 – 19/11/2026 – Correção da leitura do ATP (.pl4 antigo)
 - O tpbig não trunca um .pl4 que já existe. Quando a rodada anterior na mesma pasta de trabalho era mais longa (ex.: caso a
   30 Hz → 0,60 s), o fim do arquivo novo (41 Hz → 0,44 s) ficava com dados velhos e a comparação lia esse trecho.
