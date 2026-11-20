@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.5 – 19/11/2026 – Medições sem motor
+- As medições Dranetz de calibração foram SEM motor (confirmado pelo usuário). O modelo sem motor bate com elas.
+- THD total ≤ 6 % a f máx (crítico) passa a ser calculado COM o motor (operação real); novo ALERTA "THD na saída do filtro
+  SEM motor (teste/comissionamento a vazio)". Corrente e pico no capacitor continuam verificados com e sem motor (crítico).
+- Validação: 8 de 11 projetos reais aprovados; GRATT 105 A, ASA e Franklin reprovam por pouco (6,1–6,4 %).
+
 ## v1.9.4 – 19/11/2026 – Calibração com as medições Dranetz
 - Medições lidas direto dos .ddbx (leitor da Plataforma de Estudos, em cópia separada): SENAI 110/111 (958 µH/40 µF),
   112 (958 µH/20 µF) e IHR 2022 (1586 µH/20 µF) – saída do inversor × saída do filtro, harmônica a harmônica.

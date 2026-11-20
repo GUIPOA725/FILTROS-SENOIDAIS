@@ -332,13 +332,22 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
                          thd_lo <= lim_lo, "Robustez à ressonância: h = 6k±1 com amplitudes típicas de tempo morto. Validação v1.8: "
                          "filtros LC fabricados (SENAI/IHR medidos com Dranetz) e Schaffner FN5040 também têm este ponto; "
                          "consequência no capacitor verificada abaixo", critico=False))
-    thd_nom = risco_ressonancia_baixa_ordem(p, fmax, fmax, passo=1.0)[0]
+    # v1.9.5: as medições de calibração (SENAI 40/20 µF, IHR) foram SEM motor (confirmado pelo usuário). Elas validam o filtro,
+    # o inversor (tabela de baixa ordem) e o amortecimento (Q 4). Em operação o motor está ligado → critério crítico COM motor;
+    # sem motor (teste/comissionamento a vazio) vira alerta, e o capacitor é verificado nos dois casos.
+    thd_nom = risco_ressonancia_baixa_ordem(p, fmax, fmax, passo=1.0, com_motor_desligado=False)[0]
+    thd_sem_motor = risco_ressonancia_baixa_ordem(p, fmax, fmax, passo=1.0)[0]
     thd_pwm_fmax = max((r["thd_v_saida_pct"] for r in res if abs(r["f1"] - fmax) < 0.6), default=thd)
     thd_tot = math.hypot(thd_pwm_fmax, thd_nom)
+    thd_tot_sm = math.hypot(thd_pwm_fmax, thd_sem_motor)
     v.append(Verificacao(f"THD total no motor @ {fmax:g} Hz (PWM + baixa ordem, valores nominais)", f"{thd_tot:.2f} %",
                          f"≤ {cp['thd_v_max_pct'] + 1:.1f} %", thd_tot <= cp["thd_v_max_pct"] + 1,
                          "Calibrado com medições Dranetz (formas de onda) a 60 Hz: SENAI 958 µH/40 µF Y 7,2 %; SENAI 958 µH/20 µF Y 4,9 %; "
-                         "IHR 1586 µH/20 µF Y 4,0 % (inclui o caso motor desligado/a vazio)"))
+                         "IHR 1586 µH/20 µF Y 4,0 % – medições SEM motor; com motor o valor é calculado (modelo do motor)"))
+    v.append(Verificacao(f"THD na saída do filtro SEM motor @ {fmax:g} Hz (teste/comissionamento a vazio)", f"{thd_tot_sm:.2f} %",
+                         f"≤ {cp['thd_v_max_pct'] + 1:.1f} % (alerta)", thd_tot_sm <= cp["thd_v_max_pct"] + 1,
+                         "Modelo calibrado nas medições Dranetz sem motor (SENAI 40 µF: previsto 7,2 % × medido 7,2 %). "
+                         "Só afeta a operação sem carga; o capacitor é verificado abaixo também neste caso", critico=False))
     _lo = dict(thd=thd_lo, f=f_lo, h=h_lo)
     from .simulacao import HARM_ALTAS
     thd_hi, f_hi, h_hi, g_hi = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo=0.5, harmonicas=HARM_ALTAS)

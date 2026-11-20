@@ -65,25 +65,25 @@
  [
   "SENAI – Dranetz HDPQ sessões 110/111",
   "958 µH / 40 µF Y",
-  "60 Hz",
+  "60 Hz, SEM motor",
   "Saída do FILTRO – THD até h50",
   "7,2 % (h5 2,6 · h11 3,6 · h13 5,6 %)",
-  "v1.9.4: 7,2 % (pior caso sem motor) | com motor 3,5 %",
+  "v1.9.5: 7,2 % sem motor (alerta) | com motor 3,5 % (critério)",
   "Ressonância real ≈ 790 Hz (fr do LC sem o motor), ganho de pico ≈ 17"
  ],
  [
   "SENAI – Dranetz HDPQ sessão 112 (com 20 µF)",
   "958 µH / 20 µF Y",
-  "60 Hz",
+  "60 Hz, SEM motor",
   "Saída do FILTRO – THD até h50",
   "4,9 % (h17 2,1 · h19 3,7 %)",
-  "v1.9.4: 4,0 % com motor / 10,2 % sem motor (h19 exatamente na fr)",
+  "v1.9.5: 10,2 % sem motor (alerta) | com motor 4,0 %",
   "Ressonância real ≈ 1,13 kHz; modelo conservador no pior caso"
  ],
  [
   "IHR/Randon 2022 – Dranetz HDPQ (62 capturas)",
   "1586 µH / 20 µF Y, MM440",
-  "60 Hz",
+  "60 Hz, SEM motor",
   "Saída do inversor / saída do filtro",
   "entrada h5 2,2 · h11 0,9 · h13 0,5 % | saída THD 4,0 % (h5 2,5 · h11 2,1 · h13 2,0 %)",
   "v1.9.4: 4,9 %",
