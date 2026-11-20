@@ -365,7 +365,9 @@ def gerar_dxf(d, arq, info=None):
     r += g["wrap"]
     rret(0, 0, a + 2 * r, b + 2 * r, r, "BOBINA", ox3, oy3)
     cota((ox3 - a / 2 - r, oy3), (ox3 + a / 2 + r, oy3), (ox3, oy3 + b / 2 + r + 30))
-    txt(ox3 - a / 2 - r, oy3 - b / 2 - r - 30, f"CORTE A-A – {g['N']} espiras folha {g['tf']:.1f} x {g['hf']:.0f} mm, tubo {g['tube']:.0f} mm, c = {g['c']:.0f} mm", 7)
+    _cd = (f"fio {d['fio']['t']*1e3:.2f} x {d['fio']['h']*1e3:.1f} mm x{d['fio']['np']} ({d['fio']['n_cam']} cam.)" if d.get("fio")
+           else f"folha {g['tf']:.1f} x {g['hf']:.0f} mm")
+    txt(ox3 - a / 2 - r, oy3 - b / 2 - r - 30, f"CORTE A-A – {g['N']} espiras {_cd}, tubo {g['tube']:.0f} mm, c = {g['c']:.0f} mm", 7)
     # carimbo simples
     i = info or {}
     txt(0, oy - g["Bb"] / 2 - 120, f"ELECTRIC SERVICE – {i.get('titulo', 'Indutor')} – {i.get('versao', '')} – {i.get('data', '')}", 9)

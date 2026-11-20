@@ -156,6 +156,16 @@ def fornecedores_interno(pasta_eng, cod):
 def _texto_gap(ind):
     ng = int(ind.get("ng", 0))
     g = sum(ind.get("gaps", [0])) / max(len(ind.get("gaps", [1])), 1) * 1e3
+    if ind.get("pos_gap") == "culatra" and ind.get("fio"):
+        from .ind_projeto import descr_condutor
+        f = ind["fio"]
+        return ["9) CONSTRUÇÃO – padrão de vocês: 2 entreferros por coluna + fio retangular",
+                f"O projeto de referência usa 2 entreferros por coluna, nas juntas com as culatras ({g / 2:.1f} mm cada, calço de fibra "
+                f"EP GC 203), e enrolamento em fio retangular: {descr_condutor(ind)}.",
+                "Pontos que pedimos manter: distância bobina–culatra do desenho (o espraiamento das juntas não pode atingir as espiras "
+                "das pontas) e, havendo fios em paralelo, a TRANSPOSIÇÃO deles (sem ela aparecem correntes de circulação e as perdas sobem).",
+                "Se preferirem outra bitola de fio ou outro arranjo de camadas, mandem a proposta: conferimos no nosso modelo antes de fechar.",
+                ""]
     if ind.get("pos_gap") == "culatra":
         return ["9) CONSTRUÇÃO DO ENTREFERRO",
                 f"O projeto de referência usa 2 entreferros por coluna, nas juntas com as culatras ({g / 2:.1f} mm cada). Nessa construção "

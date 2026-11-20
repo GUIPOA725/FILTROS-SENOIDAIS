@@ -7,6 +7,7 @@ terminal) · 4 Vista 3D · 5 Lista de materiais, ficha de fabricação e notas.
 O fabricante emite o desenho de fabricação próprio a partir deste e declara as diferenças.
 """
 import math
+from .ind_projeto import descr_condutor
 import os
 import numpy as np
 import matplotlib
@@ -203,6 +204,8 @@ class Vista:
 def geo_mm(d):
     g = {k: d[k] * 1e3 for k in ("a", "b", "hw", "ww", "c", "build", "hc", "hf", "tf", "tube", "wrap", "wd")}
     g["N"], g["nd"], g["ng"] = d["N"], d["nd"], d["ng"]
+    f = d.get("fio")
+    g["fio"] = ({k: (v * 1e3 if k in ("t", "h", "iso", "t_cam") else v) for k, v in f.items()} if f else None)
     g["gaps"] = [x * 1e3 for x in d["gaps"]]
     g["W"] = 3 * g["a"] + 2 * g["ww"]
     g["H"] = 2 * g["a"] + g["hw"]
@@ -249,21 +252,37 @@ def fabricacao(d):
     r += g["tube"]
     camadas.append(("Aramida 2×0,13 (início)", "0.26", r, r + 0.26))
     r += 0.26
-    canais = sorted(set(round((k + 1) * g["N"] / (g["nd"] + 1)) for k in range(g["nd"])))
-    for k in range(g["N"]):
-        if k in canais:
-            camadas.append((f"Canal axial (réguas EP GC 203 {g['wd']:.0f} mm)", f"{g['wd']:.1f}", r, r + g["wd"]))
-            r += g["wd"]
-        reforco = k in (0, 1, g["N"] - 2, g["N"] - 1)
-        ti = 0.26 + (0.13 if reforco else 0)
-        camadas.append((f"Espira {k + 1}: folha {g['tf']:.1f} + aramida {ti:.2f}" + (" (reforço)" if reforco else ""),
-                        f"{g['tf'] + ti:.2f}", r, r + g["tf"] + ti))
-        r += g["tf"] + ti
+    fw = g.get("fio")
+    if fw:                                                  # v1.11.2: fio retangular em camadas
+        canais = sorted(set(round((k + 1) * fw["n_cam"] / (g["nd"] + 1)) for k in range(g["nd"])))
+        esp_cam = fw["np"] * (fw["t"] + fw["iso"])
+        for j in range(fw["n_cam"]):
+            if j in canais:
+                camadas.append((f"Canal axial (réguas EP GC 203 {g['wd']:.0f} mm)", f"{g['wd']:.1f}", r, r + g["wd"]))
+                r += g["wd"]
+            camadas.append((f"Camada {j + 1}: {fw['n_ax']} espiras × {fw['np']} fio(s) {fw['t']:.2f}×{fw['h']:.1f} (isolado)",
+                            f"{esp_cam:.2f}", r, r + esp_cam))
+            r += esp_cam
+            camadas.append((f"Aramida entre camadas {fw['t_cam']:.2f}" if j < fw["n_cam"] - 1 else f"Aramida final {fw['t_cam']:.2f}",
+                            f"{fw['t_cam']:.2f}", r, r + fw["t_cam"]))
+            r += fw["t_cam"]
+    else:
+        canais = sorted(set(round((k + 1) * g["N"] / (g["nd"] + 1)) for k in range(g["nd"])))
+        for k in range(g["N"]):
+            if k in canais:
+                camadas.append((f"Canal axial (réguas EP GC 203 {g['wd']:.0f} mm)", f"{g['wd']:.1f}", r, r + g["wd"]))
+                r += g["wd"]
+            reforco = k in (0, 1, g["N"] - 2, g["N"] - 1)
+            ti = 0.26 + (0.13 if reforco else 0)
+            camadas.append((f"Espira {k + 1}: folha {g['tf']:.1f} + aramida {ti:.2f}" + (" (reforço)" if reforco else ""),
+                            f"{g['tf'] + ti:.2f}", r, r + g["tf"] + ti))
+            r += g["tf"] + ti
     camadas.append(("Enfaixamento externo (fita de vidro + aramida)", f"{g['wrap']:.1f}", r, r + g["wrap"]))
     r += g["wrap"]
     MLT = d["MLT"] * 1e3
-    comp_folha = g["N"] * MLT / 1000
-    massa_folha = comp_folha * g["tf"] * g["hf"] * 1e-6 * cond["dens"]
+    comp_folha = g["N"] * MLT / 1000 * (fw["np"] if fw else 1)          # fio: comprimento total de fio (todos os paralelos)
+    A_mm2 = (fw["np"] * fw["t"] * fw["h"]) if fw else g["tf"] * g["hf"]
+    massa_folha = g["N"] * MLT / 1000 * A_mm2 * 1e-6 * cond["dens"]
     forca = d.get("forca_gap_N", 0)
     return dict(
         n_lam=n_lam, t=t, pac_l=pac_l, pac_c=pac_c, gl=gl, gc=gc, camadas=camadas, build_real=r - g["c"], comp_folha=comp_folha,
@@ -279,8 +298,16 @@ def fabricacao(d):
               if d.get("pos_gap") == "culatra" else
               [f"Montar a culatra inferior e as colunas em pacotes de {g['b']:.0f} mm (≈ {n_lam} lâminas), junta step-lap 3 degraus × 5 mm nas culatras.",
                f"Colar os calços EP GC 203 entre pacotes (lat. {gl:.2f} mm / cen. {gc:.2f} mm) com epóxi classe H; retificar faces dos pacotes."]),
-            f"Bobinar as 3 bobinas sobre mandril com o tubo EP GC 203 (folha {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras, aramida entre espiras, reforço nas 2 primeiras/últimas).",
-            "Soldar as barras de saída (TIG, largura total da folha) antes de bobinar a espira inicial e depois da final; instalar PTC entre as últimas camadas.",
+            *([f"Bobinar as 3 bobinas sobre mandril com o tubo EP GC 203: {fw['n_cam']} camada(s) × {fw['n_ax']} espiras de "
+               f"{fw['np']} fio(s) retangular(es) {fw['t']:.2f} × {fw['h']:.1f} mm em paralelo, aramida {fw['t_cam']:.2f} mm entre camadas, "
+               "espiras encostadas (sem folga axial), calço de cunha nas extremidades de cada camada.",
+               (f"TRANSPOR os {fw['np']} fios em paralelo: permutar a posição radial dos fios a cada 1/{fw['np']} do comprimento da bobina "
+                "(ou usar cabo transposto); sem transposição, aparecem correntes de circulação e as perdas sobem."
+                if fw["np"] > 1 else "Fio único por espira: sem necessidade de transposição."),
+               "Saídas: unir os fios em paralelo em terminal de barra (solda TIG em Al ou brasagem em Cu) fora da região das juntas "
+               "coluna–culatra; instalar PTC entre as 2 últimas camadas."] if fw else
+              [f"Bobinar as 3 bobinas sobre mandril com o tubo EP GC 203 (folha {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras, aramida entre espiras, reforço nas 2 primeiras/últimas).",
+               "Soldar as barras de saída (TIG, largura total da folha) antes de bobinar a espira inicial e depois da final; instalar PTC entre as últimas camadas."]),
             "Encaixar as bobinas nas colunas com calços de extremidade; fechar a culatra superior "
             + ("(junta de topo sobre os calços)." if d.get("pos_gap") == "culatra" else "(step-lap)."),
             f"Prensar o conjunto: força de aperto ≥ {max(2.5 * forca, 2000):.0f} N por coluna nos entreferros (cantoneiras + tirantes M12 8.8, torque 80 N·m).",
@@ -498,14 +525,26 @@ def folha_bobina(F, g, d, fab):
     V.rret(-a / 2 - r, -b / 2 - r, a + 2 * r, b + 2 * r, r + 0.01, fill=False, ec=C["tubo"], lw=1.2)
     r += g["tube"]
     V.rret(-a / 2 - r, -b / 2 - r, a + 2 * r, b + 2 * r, r, fill=False, ec=C["tubo"], lw=1.2)
-    canais = sorted(set(round((k + 1) * g["N"] / (g["nd"] + 1)) for k in range(g["nd"])))
-    r += 0.26
-    for k in range(g["N"]):
-        if k in canais:
-            r += g["wd"]
-        r += g["tf"]
-        V.rret(-a / 2 - r, -b / 2 - r, a + 2 * r, b + 2 * r, r, fill=False, ec=C["bob_esc"], lw=0.5)
-        r += 0.26 + (0.13 if k in (0, 1, g["N"] - 2, g["N"] - 1) else 0)
+    fw = g.get("fio")
+    if fw:
+        canais = sorted(set(round((k + 1) * fw["n_cam"] / (g["nd"] + 1)) for k in range(g["nd"])))
+        r += 0.26
+        for j in range(fw["n_cam"]):
+            if j in canais:
+                r += g["wd"]
+            for p in range(fw["np"]):
+                r += fw["t"] + fw["iso"]
+                V.rret(-a / 2 - r, -b / 2 - r, a + 2 * r, b + 2 * r, r, fill=False, ec=C["bob_esc"], lw=0.5)
+            r += fw["t_cam"]
+    else:
+        canais = sorted(set(round((k + 1) * g["N"] / (g["nd"] + 1)) for k in range(g["nd"])))
+        r += 0.26
+        for k in range(g["N"]):
+            if k in canais:
+                r += g["wd"]
+            r += g["tf"]
+            V.rret(-a / 2 - r, -b / 2 - r, a + 2 * r, b + 2 * r, r, fill=False, ec=C["bob_esc"], lw=0.5)
+            r += 0.26 + (0.13 if k in (0, 1, g["N"] - 2, g["N"] - 1) else 0)
     r += g["wrap"]
     V.rret(-a / 2 - r, -b / 2 - r, a + 2 * r, b + 2 * r, r, fill=False, ec="k", lw=LW_G)
     V.eixo(-a / 2 - r - 6, 0, a / 2 + r + 6, 0)
@@ -540,13 +579,24 @@ def folha_bobina(F, g, d, fab):
         VB.ret(min(xi, xi + s * g["tube"]), y0 - 6, g["tube"], g["hc"] + 12, fc=C["tubo"], lw=0.3)
         xa, xb = xi + s * g["tube"], xo
         VB.ret(min(xa, xb), y0, abs(xb - xa), g["hc"], fc=C["isol"], lw=LW_M)
-        VB.ret(min(xa, xb) + 0.5, y0 + (g["hc"] - g["hf"]) / 2, abs(xb - xa) - 1, g["hf"], fc=C["bob"], lw=0, alpha=0.95)
+        if fw:                                              # cada fio desenhado (camadas × espiras × paralelos)
+            yb0 = y0 + (g["hc"] - g["hf"]) / 2
+            rr = abs(xa) - abs(xi) + 0.26
+            for j in range(fw["n_cam"]):
+                for p in range(fw["np"]):
+                    xx = s * (abs(xi) + rr + p * (fw["t"] + fw["iso"]) + fw["iso"] / 2)
+                    for k in range(fw["n_ax"]):
+                        VB.ret(min(xx, xx + s * fw["t"]), yb0 + k * (fw["h"] + fw["iso"]) + fw["iso"] / 2, fw["t"], fw["h"],
+                               fc=C["bob"], lw=0.15)
+                rr += fw["np"] * (fw["t"] + fw["iso"]) + fw["t_cam"]
+        else:
+            VB.ret(min(xa, xb) + 0.5, y0 + (g["hc"] - g["hf"]) / 2, abs(xb - xa) - 1, g["hf"], fc=C["bob"], lw=0, alpha=0.95)
         for yy in (0, g["hw"] - y0):
             VB.ret(min(xa, xb), yy, abs(xb - xa), y0, fc="#cfe8c4", lw=0.3, hatch="xxx")
     xr = a / 2 + g["c"] + g["build"]
     VB.cota_v(0, y0, xr, 6, f"{y0:.0f}")
     VB.cota_v(y0, y0 + (g["hc"] - g["hf"]) / 2, xr, 6, f"{(g['hc'] - g['hf']) / 2:.0f}")
-    VB.cota_v(y0 + (g["hc"] - g["hf"]) / 2, y0 + (g["hc"] + g["hf"]) / 2, xr, 6, f"folha {g['hf']:.0f}")
+    VB.cota_v(y0 + (g["hc"] - g["hf"]) / 2, y0 + (g["hc"] + g["hf"]) / 2, xr, 6, (f"bobina {g['hf']:.0f}" if fw else f"folha {g['hf']:.0f}"))
     VB.cota_v(0, g["hw"], xr, 16, f"{g['hw']:.0f}")
     VB.balao(0, fab["pac_c"][0] + fab["gc"] / 2, 3, -16, 4)
     VB.balao(-(a / 2 + g["c"] + g["build"] / 2), y0 / 2, 9, -14, -4)
@@ -563,14 +613,23 @@ def folha_bobina(F, g, d, fab):
     F.texto(212, 272, "TABELA DE BOBINAGEM (por bobina, de dentro para fora; raio a partir da face da coluna)", fontsize=7.4,
             weight="bold")
     yt = F.tabela(212, 268, ["Camada", "Espessura", "r inicial", "r final"], linhas, [100, 18, 18, 18], fs=5.3)
-    F.texto(212, yt - 4.5, f"Folha {d['cond_dados']['nome']}: {g['tf']:.1f} × {g['hf']:.0f} mm, bordas sem rebarba e arredondadas;"
-                           f" margem de aramida {12:.0f} mm além da borda.", fontsize=5.6)
-    F.texto(212, yt - 8.5, f"Espiras: {g['N']} por bobina – sentido de bobinagem IGUAL nas 3 bobinas (horário visto de cima). "
-                           f"Comprimento de folha ≈ {fab['comp_folha']:.1f} m/bobina ({fab['massa_folha']:.1f} kg).", fontsize=5.6)
+    if fw:
+        F.texto(212, yt - 4.5, f"Fio retangular {('Al 1350-O' if d['cond'] == 'AL' else 'Cu ETP')} {fw['t']:.2f} × {fw['h']:.1f} mm, cantos "
+                               f"arredondados, papel aramida enrolado (classe H); {fw['np']} em paralelo" + (" TRANSPOSTOS." if fw["np"] > 1 else "."),
+                fontsize=5.6)
+        F.texto(212, yt - 8.5, f"Espiras: {g['N']} por bobina ({fw['n_cam']} camada(s) × {fw['n_ax']}) – sentido IGUAL nas 3 bobinas. "
+                               f"Fio ≈ {fab['comp_folha']:.0f} m/bobina (todos os paralelos, {fab['massa_folha']:.1f} kg).", fontsize=5.6)
+    else:
+        F.texto(212, yt - 4.5, f"Folha {d['cond_dados']['nome']}: {g['tf']:.1f} × {g['hf']:.0f} mm, bordas sem rebarba e arredondadas;"
+                               f" margem de aramida {12:.0f} mm além da borda.", fontsize=5.6)
+        F.texto(212, yt - 8.5, f"Espiras: {g['N']} por bobina – sentido de bobinagem IGUAL nas 3 bobinas (horário visto de cima). "
+                               f"Comprimento de folha ≈ {fab['comp_folha']:.1f} m/bobina ({fab['massa_folha']:.1f} kg).", fontsize=5.6)
     F.texto(212, yt - 12.5, f"Espira média (MLT) ≈ {fab['MLT']:.0f} mm.  Espessura radial calculada {fab['build_real']:.1f} mm.  "
-                            "PTC (item 21) entre as 2 últimas camadas, no meio da altura.", fontsize=5.6)
+                            ("PTC (item 21) sobre a camada externa, no meio da altura, sob o enfaixamento." if (fw and fw["n_cam"] == 1)
+                             else "PTC (item 21) entre as 2 últimas camadas, no meio da altura."), fontsize=5.6)
     # Detalhe terminal
-    F.texto(212, 150, "DETALHE D – SAÍDA DA FOLHA E TERMINAL (sem escala)", fontsize=7.4, weight="bold")
+    F.texto(212, 150, ("DETALHE D – SAÍDA DOS FIOS E TERMINAL (sem escala)" if fw else "DETALHE D – SAÍDA DA FOLHA E TERMINAL (sem escala)"),
+            fontsize=7.4, weight="bold")
     ax = F.ax
     ax.add_patch(Rectangle((215, 102), 3, 38, fc=C["bob"], ec="k", lw=0.4))
     ax.add_patch(Rectangle((218, 114), 38, 7, fc="#c8c8c8" if d["cond"] == "AL" else C["cu"], ec="k", lw=0.4))
@@ -580,8 +639,9 @@ def folha_bobina(F, g, d, fab):
     ax.annotate("", (264, 128), (282, 128), arrowprops=dict(arrowstyle="<|-|>", lw=0.35, color=C["cota"], mutation_scale=4.5))
     ax.text(273, 129, "44,5", fontsize=5.6, ha="center", color=C["cota"])
     ax.text(256, 106.5, "furos Ø13 (NEMA 2 furos)", fontsize=5.6)
-    ax.text(215, 143, "folha (largura total)", fontsize=5.6)
-    ax.text(219, 123, ("barra Al 40×6 soldada TIG em toda a largura" if d["cond"] == "AL" else "barra Cu 40×6 brasada em toda a largura"),
+    ax.text(215, 143, ("fios em paralelo unidos" if fw else "folha (largura total)"), fontsize=5.6)
+    ax.text(219, 123, (("barra Al 40×6 – fios soldados TIG" if d["cond"] == "AL" else "barra Cu 40×6 – fios brasados") if fw else
+                       ("barra Al 40×6 soldada TIG em toda a largura" if d["cond"] == "AL" else "barra Cu 40×6 brasada em toda a largura")),
             fontsize=5.4)
     ax.text(256, 102.5, ("placa bimetálica Cu-Al ou Al estanhado" if d["cond"] == "AL" else "Cu estanhado"), fontsize=5.4)
     F.info["escala_folha"] = f"A-A 1:{e:g} / B-B 1:{eb:g}"
@@ -678,7 +738,7 @@ def folha_3d(F, g, d):
         ("Chaveamento", f"{r['fs']/1e3:.0f} kHz (tensão PWM, barramento ≈ {r['Vdc']:.0f} V)"),
         ("Isolação", f"Sistema classe {r['classe']} – elevação média ≤ {d['termico']['meta_elev_K']:.0f} K"),
         ("Perdas (calc.)", f"{d['perdas']['total']:.0f} W"), ("Elevação (calc.)", f"{d['termico']['elev_bobina_K']:.0f} K"),
-        ("Massa (calc.)", f"{m['total']:.0f} kg (núcleo {m['nucleo']:.0f} / folha {m['condutor']:.0f})"),
+        ("Massa (calc.)", f"{m['total']:.0f} kg (núcleo {m['nucleo']:.0f} / condutor {m['condutor']:.0f})"),
         ("Dimensões", f"{g['Lb']:.0f} × {g['Bb']:.0f} × {g['base_h'] + 2 * g['fr'] + H + g['term_h']:.0f} mm (C × L × A)"),
     ]
     F.tabela(272, 255, ["Característica", "Valor"], resumo, [34, 100], fs=5.8, h=5)
@@ -709,7 +769,8 @@ def lista_materiais(d):
     ng = g["ng"]
     linhas = [
         ("1", "Núcleo – chapas", f"{ch['nome']}; culatras a 45° step-lap 3 degraus; " + ("colunas inteiras, calços nas juntas com as culatras" if d.get("pos_gap") == "culatra" else f"colunas em {ng + 1} pacotes"), f"{m['nucleo']:.0f} kg", ch["norma"]),
-        ("2", "Enrolamento", f"{cond['nome']} {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras/bobina, 3 bobinas", f"{m['condutor']:.0f} kg", cond["norma"]),
+        ("2", "Enrolamento", (descr_condutor(d) + ", 3 bobinas") if d.get("fio") else f"{cond['nome']} {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras/bobina, 3 bobinas",
+         f"{m['condutor']:.0f} kg", ("IEC 60317-0-2 / ABNT NBR (fio retangular); " + cond["norma"].split("/")[0]) if d.get("fio") else cond["norma"]),
         ("3", "Calços do entreferro", f"EP GC 203 retificado: laterais {g['gaps'][0]/ng:.2f} mm, central {g['gaps'][1]/ng:.2f} mm, {ng} por coluna",
          f"{3 * ng} pç", "IEC 60893-3-2"),
     ]

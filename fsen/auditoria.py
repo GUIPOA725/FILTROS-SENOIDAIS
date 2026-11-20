@@ -436,6 +436,23 @@ def _secao_indutor(R, d, pasta):
     r = d["requisitos"]
     R.h1("Indutor – projeto de referência para fabricação (elementos finitos)")
     secao_corrente_pdf(R, d.get("corrente_dimensionamento"))
+    if d.get("comparacao_condutor"):
+        R.h2("Alumínio × cobre (2 entreferros por coluna + fio retangular)")
+        R.tab(["Condutor", "Fio", "Espiras", "Coluna (mm)", "Perdas (W)", "Elevação (K)", "Massa (kg)", "Material (R$)", "Escolhido"],
+              [(c["condutor"], c["fio"], c["N"], c["coluna"], c["perdas_W"], c["elev_K"], c["massa_kg"], c["custo_material"],
+                "sim" if c["escolhido"] else "") for c in d["comparacao_condutor"]], [0.8, 1.6, 0.6, 0.8, 0.7, 0.7, 0.7, 0.8, 0.6])
+    if d.get("triagem_fio"):
+        R.h2("Triagem por elementos finitos dos candidatos de fio retangular")
+        R.p("O pré-dimensionamento analítico gera os candidatos mais baratos (núcleo, espiras, bitola, paralelos, camadas); cada um é "
+            "conferido no FEM com os 2 entreferros nas culatras (perda no enrolamento com espraiamento real) + núcleo + perda de "
+            "entreferro (Lee). Fica o mais barato que passa nos limites.")
+        R.tab(["Fio t×h×paralelos (mm)", "Espiras", "Camadas", "Coluna (mm)", "Enrolamento (W)", "Total (W)", "Passa"],
+              [(x["fio"], x["N"], x["camadas"], x["coluna"], x["P_enrol_W"], x["P_total_W"], "sim" if x["ok"] else "não")
+               for x in d["triagem_fio"]], [1.6, 0.6, 0.6, 0.9, 0.9, 0.8, 0.5])
+    if d.get("perdas", {}).get("nucleo_entreferro"):
+        R.p(f"Perda adicional no núcleo junto aos entreferros (fórmula empírica de Lee/McLyman, Pg = Ki·E·lg·f·B², Ki = 0,155 para "
+            f"lâminas): {d['perdas']['nucleo_entreferro']:.0f} W – somada às perdas como margem para o efeito 3D que o FEM 2D não vê.")
+    R.p("Condutor: " + __import__("fsen.ind_projeto", fromlist=["descr_condutor"]).descr_condutor(d) + ".")
     if d.get("avisos"):
         R.h2("Avisos do projeto do indutor")
         R.bul(d["avisos"])
@@ -482,7 +499,7 @@ def _secao_indutor(R, d, pasta):
         from .ind_desenhos import fabricacao
         fab = fabricacao(d)
         R.h2("Ficha de fabricação")
-        R.p(f"Empilhamento ≈ {fab['n_lam']} lâminas de {fab['t']} mm; comprimento de folha ≈ {fab['comp_folha']:.1f} m por bobina "
+        R.p(f"Empilhamento ≈ {fab['n_lam']} lâminas de {fab['t']} mm; comprimento de {'fio (todos os paralelos)' if d.get('fio') else 'folha'} ≈ {fab['comp_folha']:.1f} m por bobina "
             f"({fab['massa_folha']:.1f} kg); espira média {fab['MLT']:.0f} mm; espessura radial {fab['build_real']:.1f} mm.")
         R.tab(["Peça", "Largura (mm)", "Comprimento", "Quantidade"], fab["corte"], [1.4, 0.8, 1.2, 2.0])
         R.tab(["Coluna", "calço (mm)", "pacotes (mm, de baixo p/ cima)"],

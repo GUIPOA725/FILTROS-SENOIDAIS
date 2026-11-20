@@ -18,7 +18,8 @@ from .ind_fem import ModeloIndutor, MU0, BH_GO, perdas_harmonico, perdas_harmoni
 CAPITALIZACAO_R_W = 1.5      # pequeno peso às perdas; o limite efetivo é P_max (faixa de mercado, igual à ET)
 GAP_MAX_PECA_MM = 3.0       # entreferro máximo por peça (espraiamento e força); acima disso dividir em mais entreferros
 GAP_MAX_PECA_CULATRA_MM = 10.0   # 2 entreferros nas juntas coluna–culatra (padrão nacional): calço de fibra até ~10 mm
-GAP_MAX_FRAC_A = 0.20       # entreferro total por coluna ≤ 20 % da largura da coluna (fluxo de dispersão pela janela)
+GAP_MAX_FRAC_A = 0.20
+SUB_ISO_MM = 0.5          # isolação entre as partes do condutor subdividido (papel/esmalte + folga)       # entreferro total por coluna ≤ 20 % da largura da coluna (fluxo de dispersão pela janela)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Materiais
@@ -51,7 +52,7 @@ def sistema_isolacao(classe):
     conforme IEC 61857 / IEC 61858 (ou UL 1446); não basta um componente 'classe H'."""
     H = classe == "H"
     return [
-        dict(item="Isolação entre camadas da folha", mat=("Papel aramida (Nomex® 410 ou equiv.) 0,13 mm, 2 camadas" if H else
+        dict(item="Isolação entre espiras/camadas", mat=("Papel aramida (Nomex® 410 ou equiv.) 0,13 mm, 2 camadas" if H else
                                                           "DMD 0,18 mm (poliéster-filme-poliéster) ou papel aramida"),
              ti=220 if H else 155, norma="IEC 60819 / IEC 60626", por_que="isola espira–espira; o DMD é classe F e NÃO serve em classe H"),
         dict(item="Reforço nas 2 primeiras e 2 últimas espiras", mat="+1 camada de papel aramida 0,13 mm", ti=220,
@@ -183,19 +184,45 @@ _CACHE_AF = {}
 K_EXC_AF = 1.3        # perdas em excesso (paredes de domínio) sobre a clássica em AF – GO fino, laços menores (literatura)
 
 
-def _geo(r, N, a, b, tf, hf, nd, c, cond, ch):
-    """Geometria e massas para um candidato (unidades SI)."""
+def descr_condutor(d, curto=False):
+    """Texto do condutor do enrolamento (folha ou fio retangular) para desenhos, BOM, ET e memorial (v1.11.2)."""
+    f = d.get("fio")
+    mat = "alumínio 1350-O" if d.get("cond", "AL") == "AL" else "cobre ETP recozido"
+    if not f:
+        return (f"folha {d['tf'] * 1e3:.1f} × {d['hf'] * 1e3:.0f} mm" if curto else
+                f"Folha de {mat} {d['tf'] * 1e3:.1f} × {d['hf'] * 1e3:.0f} mm, {d['N']} espiras (1 espira por camada)")
+    t, h = f["t"] * 1e3, f["h"] * 1e3
+    par = f"{f['np']} fios em paralelo transpostos" if f["np"] > 1 else "1 fio"
+    if curto:
+        return f"fio retangular {t:.2f} × {h:.1f} mm × {f['np']}"
+    return (f"Fio retangular de {mat} {t:.2f} × {h:.1f} mm (IEC 60317-0-2 / NBR), isolado com papel aramida enrolado "
+            f"(classe H, +{f['iso'] * 1e3:.1f} mm), {par} por espira; {f['n_cam']} camada(s) × {f['n_ax']} espiras = {d['N']} espiras; "
+            f"aramida {f['t_cam'] * 1e3:.2f} mm entre camadas")
+
+
+def area_espira(d):
+    """Seção de cobre/alumínio de uma espira (m²): folha tf×hf ou fio retangular np×t×h (v1.11.2)."""
+    f = d.get("fio")
+    return f["np"] * f["t"] * f["h"] if f else d["tf"] * d["hf"]
+
+
+def _geo(r, N, a, b, tf, hf, nd, c, cond, ch, fio=None):
+    """Geometria e massas para um candidato (unidades SI). fio = enrolamento em camadas de fio retangular (v1.11.2)."""
     ti = 0.26e-3                                   # 2 × 0,13 mm de aramida
     wd = 8e-3                                      # canal de ventilação axial
     tube, wrap = 3e-3, 1.5e-3
-    build = N * (tf + ti) + 4 * 0.13e-3 + nd * wd + tube + wrap
+    if fio:
+        build = fio["n_cam"] * (fio["np"] * (fio["t"] + fio["iso"]) + fio["t_cam"]) + 4 * 0.13e-3 + nd * wd + tube + wrap
+    else:
+        build = N * (tf + ti) + 4 * 0.13e-3 + nd * wd + tube + wrap
     hc = hf + 2 * DIST["borda_folha_mm"] * 1e-3
     hw = hc + 2 * DIST["bobina_culatra_mm"] * 1e-3
     ww = 2 * (c + build) + DIST["entre_fases_mm"] * 1e-3
     MLT = 2 * (a + b) + 8 * (c + tube) + math.pi * build
     kf = ch["kf"]
     m_fe = (3 * a * b * hw + 2 * (3 * a + 2 * ww) * a * b) * kf * ch["dens"]
-    m_cond = 3 * N * MLT * tf * hf * cond["dens"]
+    A_esp = fio["np"] * fio["t"] * fio["h"] if fio else tf * hf
+    m_cond = 3 * N * MLT * A_esp * cond["dens"]
     return dict(build=build, hc=hc, hw=hw, ww=ww, MLT=MLT, m_fe=m_fe, m_cond=m_cond, ti=ti, wd=wd, tube=tube, wrap=wrap)
 
 
@@ -213,15 +240,18 @@ def pre_dimensionar(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev
     melhor = None
     if fixo:
         N, a, b, tf, hf = fixo["N"], fixo["a"], fixo["b"], fixo["tf"], fixo["hf"]
+        fio = fixo.get("fio")
         Aen = a * b * ch["kf"]
-        g = _geo(r, N, a, b, tf, hf, nd_min, c, cond, ch)
+        g = _geo(r, N, a, b, tf, hf, nd_min, c, cond, ch, fio=fio)
         Bpk = r["L"] * r["I1"] * math.sqrt(2) / (N * Aen)
         dB = r["L"] * r["rpp"] / (N * Aen)
-        R = rhoT * N * g["MLT"] / (tf * hf)
+        R = rhoT * N * g["MLT"] / (fio["np"] * fio["t"] * fio["h"] if fio else tf * hf)
         p1, ps = perdas_nucleo_W(ch, g["m_fe"], Bpk, r["f1"], dB, r["fs"], espectro, N * Aen)
         d = dict(kae=None, N=N, a=a, b=b, tf=tf, hf=hf, nd=nd_min, c=c, Bpk=Bpk, dBpp=dB, custo=None, P_cu=None, P_fe1=p1, P_fes=ps,
                  dT_w=None, dT_fe=None, Fr=_dowell(N, tf / delta), delta=delta, R=R, rhoT=rhoT, **g)
         d.update(chapa=chapa, cond=cond_id, h_conv=h_conv, alvo=alvo, amb_c=amb_c)
+        if fio:
+            d["fio"] = dict(fio)
         return d
     Ns = sorted(set(list(range(6, 41)) + list(range(42, 81, 2)) + list(range(85, 161, 5))))
     TF = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0]) * 1e-3
@@ -285,23 +315,198 @@ def pre_dimensionar(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+KI_LEE_LAMINADO = 0.155   # McLyman, Transformer and Inductor Design Handbook, tab. 10-1 (laminações)
+
+
+def perda_entreferro_lee(d, r, gaps, ch):
+    """Perda adicional no núcleo junto aos entreferros (fluxo espraiado entrando perpendicular às lâminas) – fórmula empírica
+    de Lee/McLyman Pg = Ki·E·lg·f·B² (E = largura da coluna em cm, lg em cm, B de pico 60 Hz em T). O FEM 2D não vê esse
+    efeito 3D; somado como margem conservadora (v1.11.2). Aplicada só a entreferros CONCENTRADOS (peça > 3 mm), que é o caso
+    para o qual a fórmula foi levantada; com entreferros distribuídos pequenos o espraiamento é pequeno e o FEM 2D cobre."""
+    ng = 2 if str(d.get("pos_gap", "")).startswith("culatra") else max(int(d.get("ng") or 1), 1)
+    if max(gaps) / ng * 1e3 <= GAP_MAX_PECA_MM:          # entreferros distribuídos pequenos: fórmula não aplicável (FEM 2D cobre)
+        return 0.0
+    Bc = r["L"] * r["I1"] * math.sqrt(2) / (d["N"] * d["a"] * d["b"] * ch["kf"])
+    return float(KI_LEE_LAMINADO * d["a"] * 100 * sum(gaps) * 100 * r["f1"] * Bc ** 2)
+
+
+def _perdas_nucleo_lin(d, M, r, esp, ch):
+    """Perdas no núcleo pelo campo do FEM LINEAR (μr 4000) – usado na triagem dos candidatos de fio (rápido)."""
+    M.matriz_L()
+    I1p = r["I1"] * math.sqrt(2)
+    Bu = []
+    for k in range(3):
+        Bx, By = M.B(M._sol_unit[k])
+        Bu.append((Bx[M.ferro], By[M.ferro]))
+    Bpk_el = np.zeros(int(M.ferro.sum()))
+    for k in range(3):
+        cur = [-I1p / 2] * 3
+        cur[k] = I1p
+        bx = sum(cur[j] * Bu[j][0] for j in range(3))
+        by = sum(cur[j] * Bu[j][1] for j in range(3))
+        Bpk_el = np.maximum(Bpk_el, np.hypot(bx, by))
+    dBpp_el = np.sqrt(sum((np.hypot(*Bu[k]) * r["rpp"]) ** 2 for k in range(3)))
+    m_el = M.m.area[M.ferro] * d["b"] * ch["kf"] * ch["dens"]
+    kh, k_exc, dlam = _steinmetz(ch)
+    P1 = float((m_el * (kh * r["f1"] * Bpk_el ** 1.9 + k_exc * (math.pi * dlam * r["f1"] * Bpk_el) ** 2 / (6 * ch["rho"] * ch["dens"]))).sum())
+    NAe = d["N"] * d["a"] * d["b"] * ch["kf"]
+    dB_ref = r["L"] * r["rpp"] / NAe
+    p_ref_e = (K_EXC_AF * p_parasitas_lamina_Wkg(ch, esp[0], esp[1] / (2 * math.pi * esp[0] * NAe)) if esp is not None else
+               K_EXC_AF * dlam ** 2 / (12 * ch["rho"] * ch["dens"]) * (2 * dB_ref * r["fs"]) ** 2)
+    Ps = float((m_el * (1.3 * kh * r["fs"] * (dBpp_el / 2) ** 2 + p_ref_e * (dBpp_el / dB_ref) ** 2)).sum())
+    return P1, Ps
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# v1.11.2 – fio retangular (padrão dos fabricantes nacionais com 2 entreferros por coluna nas culatras)
+FIO_T_MM = (1.6, 1.8, 2.0, 2.24, 2.5, 2.8, 3.15, 3.55, 4.0)          # espessura (radial) – série IEC 60317-0-2 / NBR
+FIO_H_MM = (5.0, 6.3, 7.1, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0)   # altura (axial)
+FIO_ISO_MM = 0.40       # isolação total por fio (papel aramida enrolado 2 × 0,10 mm por lado – classe H)
+FIO_T_CAM_MM = 0.25     # isolação entre camadas (aramida 0,25 mm)
+FIO_K_ESPRAIO = 1.65   # entreferro real / ideal com 2 entreferros nas culatras (FEM A&W: 16,9 / 11,0 mm × 1,10 ≈ 1,7)
+FIO_FR60 = 1.25         # fator de espraiamento das juntas na perda 60 Hz usado só na triagem (o FEM decide)
+
+
+def pre_dimensionar_fio(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=None, amb_c=50.0, espectro=None, nd_min=0,
+                        n_cand=16):
+    """Triagem analítica do enrolamento em CAMADAS de fio retangular: devolve os n_cand candidatos mais baratos (núcleo, espiras,
+    dimensão do fio, nº de fios em paralelo e de camadas) que passam na estimativa térmica; o FEM escolhe entre eles."""
+    ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
+    cl = CLASSE[r["classe"]]
+    alvo = alvo_elev or min(cl["elev_media"], 100.0)
+    T = 40 + alvo
+    rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
+    delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
+    Bsat_d, c = 1.45, 15e-3
+    iso, tcam = FIO_ISO_MM * 1e-3, FIO_T_CAM_MM * 1e-3
+    combos = [(t * 1e-3, h * 1e-3, npar, nd) for t in FIO_T_MM for h in FIO_H_MM if 1.4 <= h / t <= 8.0
+              for npar in (1, 2, 3, 4) for nd in range(nd_min, 3)]
+    T_, H_, NP_, ND_ = (np.array(v, dtype=float) for v in zip(*combos))
+    A_ = NP_ * T_ * H_
+    ok_J = (A_ >= r["In"] / 3.0e6) & (A_ <= r["In"] / 0.8e6)          # densidade de corrente 0,8–3,0 A/mm² (Al)
+    eta_ = H_ / (H_ + iso)
+    wd, tube, wrap = 8e-3, 3e-3, 1.5e-3
+    bc, borda, entre = DIST["bobina_culatra_mm"] * 1e-3, DIST["borda_folha_mm"] * 1e-3, DIST["entre_fases_mm"] * 1e-3
+
+    def dowell_v(m, x):
+        x = np.maximum(x, 1e-6)
+        aa = (np.sinh(2 * x) + np.sin(2 * x)) / (np.cosh(2 * x) - np.cos(2 * x))
+        bb = (np.sinh(x) - np.sin(x)) / (np.cosh(x) + np.cos(x))
+        return x * (aa + 2 * (m * m - 1) / 3 * bb)
+
+    cands = []
+    kh, k_exc, dl = _steinmetz(ch)
+    for N in range(8, 61):
+        for n_cam in (1, 2, 3, 4, 5, 6, 8):
+            if N % n_cam:
+                continue
+            n_ax = N // n_cam
+            build_ = n_cam * (NP_ * (T_ + iso) + tcam) + 4 * 0.13e-3 + ND_ * wd + tube + wrap
+            hf_ = n_ax * (H_ + iso)
+            hc_ = hf_ + 2 * borda
+            hw_ = hc_ + 2 * bc
+            ww_ = 2 * (c + build_) + entre
+            Fr_ = dowell_v(n_cam * NP_, T_ / delta * np.sqrt(eta_))
+            for kae in (1.0, 1.25, 1.5, 1.75, 2.0, 2.5):
+                Ae = kae * r["L"] * r["Isat"] / (N * Bsat_d)
+                for a_mm in range(40, 261, 10):
+                    a = a_mm * 1e-3
+                    b = Ae / (ch["kf"] * a)
+                    if not (0.9 <= b / a <= 2.2):
+                        continue
+                    b = math.ceil(b * 1e3 / 5) * 5e-3
+                    Aen = a * b * ch["kf"]
+                    g_tot = MU0 * N * N * a * b * FIO_K_ESPRAIO / r["L"]
+                    if g_tot > GAP_MAX_FRAC_A * a or g_tot / 2 > GAP_MAX_PECA_CULATRA_MM * 1e-3:
+                        continue
+                    Bpk = r["L"] * r["I1"] * math.sqrt(2) / (N * Aen)
+                    dB = r["L"] * r["rpp"] / (N * Aen)
+                    _, ps1 = perdas_nucleo_W(ch, 1.0, Bpk, r["f1"], dB, r["fs"], espectro, N * Aen)
+                    p1_kg = kh * r["f1"] * Bpk ** 1.9 + k_exc * (math.pi * dl * r["f1"] * Bpk) ** 2 / (6 * ch["rho"] * ch["dens"])
+                    MLT_ = 2 * (a + b) + 8 * (c + tube) + math.pi * build_
+                    m_fe_ = (3 * a * b * hw_ + 2 * (3 * a + 2 * ww_) * a * b) * ch["kf"] * ch["dens"]
+                    m_cond_ = 3 * N * MLT_ * A_ * cond["dens"]
+                    R_ = rhoT * N * MLT_ / A_
+                    P_cu_ = 3 * R_ * (FIO_FR60 * r["I1"] ** 2 + Fr_ * r["rrms"] ** 2) * 1.10
+                    p1_, ps_ = m_fe_ * p1_kg, m_fe_ * ps1
+                    perim_out = 2 * (a + b) + 8 * (c + build_)
+                    perim_in = 2 * (a + b) + 8 * c
+                    A_w = (perim_out + 0.5 * perim_in + ND_ * 2 * 0.6 * (perim_in + perim_out) / 2) * hc_
+                    dT_w_ = (P_cu_ / 3) / (h_conv * A_w)
+                    A_fe = 2 * (3 * a + 2 * ww_) * (2 * a + hw_) * 0.55 + 2 * (3 * a + 2 * ww_) * b
+                    dT_fe_ = (p1_ + ps_) / (h_conv * A_fe)
+                    val = ok_J & (dT_w_ <= alvo) & (dT_fe_ <= alvo)
+                    if r.get("P_max"):
+                        val &= (P_cu_ + p1_ + ps_) <= r["P_max"] * r.get("k_Pmax", 0.88)
+                    if not val.any():
+                        continue
+                    custo_ = m_fe_ * ch["preco_kg"] + m_cond_ * cond["preco_kg"] * 1.15 + CAPITALIZACAO_R_W * (P_cu_ + p1_ + ps_)
+                    i = int(np.argmin(np.where(val, custo_, np.inf)))
+                    fio = dict(t=float(T_[i]), h=float(H_[i]), np=int(NP_[i]), n_cam=n_cam, n_ax=n_ax, iso=iso, t_cam=tcam)
+                    g = _geo(r, N, a, b, fio["np"] * fio["t"], float(hf_[i]), int(ND_[i]), c, cond, ch, fio=fio)
+                    cands.append(dict(kae=kae, N=N, a=a, b=b, tf=fio["np"] * fio["t"], hf=float(hf_[i]), nd=int(ND_[i]), c=c, Bpk=Bpk,
+                                      dBpp=dB, custo=float(custo_[i]), P_cu=float(P_cu_[i]), P_fe1=float(p1_[i]), P_fes=float(ps_[i]),
+                                      dT_w=float(dT_w_[i]), dT_fe=float(dT_fe_[i]), Fr=float(Fr_[i]), delta=delta, R=float(R_[i]),
+                                      rhoT=rhoT, fio=fio, **g))
+    cands.sort(key=lambda x: x["custo"])
+    out, vistos = [], set()
+    for cd in cands:                                   # candidatos distintos (núcleo/espiras/fio)
+        k = (cd["N"], round(cd["a"] * 1e3), round(cd["b"] * 1e3), cd["fio"]["n_cam"])
+        if k in vistos:
+            continue
+        vistos.add(k)
+        cd.update(chapa=chapa, cond=cond_id, h_conv=h_conv, alvo=alvo, amb_c=amb_c)
+        out.append(cd)
+        if len(out) >= n_cand:
+            break
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------------------
 def _condutores(d, gaps_xl, a, ng_lado=None):
     """Lista de condutores (folha) para o modelo FEM: cada espira = 1 retângulo de cada lado de cada coluna."""
     out = []
     y0 = a + DIST["bobina_culatra_mm"] * 1e-3 + DIST["borda_folha_mm"] * 1e-3
     y1 = y0 + d["hf"]
+    f = d.get("fio")
+    if f:
+        # v1.11.2: fio retangular em CAMADAS – n_cam camadas (radial) × n_ax espiras por camada (axial), espiras em série
+        # (cada uma leva I); cada espira = np fios em paralelo empilhados no raio, transpostos (I/np cada)
+        pos_canal = set(round((k + 1) * f["n_cam"] / (d["nd"] + 1)) for k in range(d["nd"]))
+        p_ax = f["h"] + f["iso"]
+        for i, x0 in enumerate(gaps_xl):
+            r = d["c"] + d["tube"] + 2 * 0.13e-3
+            for j in range(f["n_cam"]):
+                if j in pos_canal:
+                    r += d["wd"]
+                for p in range(f["np"]):
+                    rr = r + p * (f["t"] + f["iso"]) + f["iso"] / 2
+                    for k in range(f["n_ax"]):
+                        ya = y0 + k * p_ax + f["iso"] / 2
+                        yb = ya + f["h"]
+                        esp = j * f["n_ax"] + k
+                        out.append(dict(x0=x0 + a + rr, x1=x0 + a + rr + f["t"], y0=ya, y1=yb, fase=i, lado=-1.0 / f["np"], esp=esp))
+                        out.append(dict(x0=x0 - rr - f["t"], x1=x0 - rr, y0=ya, y1=yb, fase=i, lado=+1.0 / f["np"], esp=esp))
+                r += f["np"] * (f["t"] + f["iso"]) + f["t_cam"]
+        return out
     passo = d["tf"] + d["ti"]
     # canais distribuídos igualmente entre as camadas
     pos_canal = set(round((k + 1) * d["N"] / (d["nd"] + 1)) for k in range(d["nd"]))
+    # v1.11.2: condutor subdividido na altura (m fitas/fios retangulares em paralelo, transpostos) – cada parte leva I/m
+    m = max(int(d.get("sub_axial", 1) or 1), 1)
+    t_iso = SUB_ISO_MM * 1e-3
+    hs = (d["hf"] - (m - 1) * t_iso) / m
+    faixas = [(y0 + j * (hs + t_iso), y0 + j * (hs + t_iso) + hs) for j in range(m)]
     for i, x0 in enumerate(gaps_xl):
         r = d["c"] + d["tube"] + 2 * 0.13e-3
         for k in range(d["N"]):
             if k in pos_canal:
                 r += d["wd"]
             xr0 = x0 + a + r
-            out.append(dict(x0=xr0, x1=xr0 + d["tf"], y0=y0, y1=y1, fase=i, lado=-1, esp=k))
             xl1 = x0 - r
-            out.append(dict(x0=xl1 - d["tf"], x1=xl1, y0=y0, y1=y1, fase=i, lado=+1, esp=k))
+            for (ya, yb) in faixas:
+                out.append(dict(x0=xr0, x1=xr0 + d["tf"], y0=ya, y1=yb, fase=i, lado=-1.0 / m, esp=k))
+                out.append(dict(x0=xl1 - d["tf"], x1=xl1, y0=ya, y1=yb, fase=i, lado=+1.0 / m, esp=k))
             r += passo
     return out
 
@@ -333,6 +538,36 @@ def correcao_3d(d, Lp2d, M, mu_r=4000):
 
 
 def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print, construcao="distribuido"):
+    """Projeto completo. Com 2 entreferros nas culatras + fio retangular, calcula alumínio E cobre e fica com o de menor custo
+    total (material + perdas capitalizadas) que passa em todas as verificações (v1.11.2)."""
+    if construcao != "culatra_fio":
+        return _projetar_tent(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao)
+    res = []
+    for cid in ("AL", "CU"):
+        log(f"   Indutor – 2 entreferros/coluna + fio retangular de {'ALUMÍNIO' if cid == 'AL' else 'COBRE'}:")
+        try:
+            dd = _projetar_tent(proj, cat, chapa, cid, h_conv, amb_c, log, construcao)
+            res.append(dd)
+        except Exception as e:
+            log(f"   ({cid}: sem solução – {e})")
+    if not res:
+        raise RuntimeError("sem solução com fio retangular")
+    pmx = lambda dd: (dd["requisitos"].get("P_max") or 1e9) * 0.88
+    ok = lambda dd: dd["perdas"]["total"] <= pmx(dd) and not dd.get("avisos")
+    res.sort(key=lambda dd: (not ok(dd), dd.get("custo") or 0))
+    d = res[0]
+    d["comparacao_condutor"] = [dict(condutor=("alumínio" if x["cond"] == "AL" else "cobre"), fio=descr_condutor(x, curto=True),
+                                     N=x["N"], coluna=f"{x['a']*1e3:.0f}×{x['b']*1e3:.0f}", perdas_W=round(x["perdas"]["total"]),
+                                     elev_K=round(float(x["termico"]["elev_bobina_K"])), massa_kg=round(x["massa_kg"]["total"]),
+                                     custo_material=round(x["m_fe"] * x["chapa_dados"]["preco_kg"] + x["m_cond"] * x["cond_dados"]["preco_kg"]),
+                                     escolhido=(x is d), ok=ok(x)) for x in res]
+    for c in d["comparacao_condutor"]:
+        log(f"   {'→' if c['escolhido'] else ' '} {c['condutor']}: {c['fio']}, {c['N']} esp, coluna {c['coluna']}, {c['perdas_W']} W, "
+            f"{c['massa_kg']} kg, material ≈ R$ {c['custo_material']}")
+    return d
+
+
+def _projetar_tent(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao):
     """Projeto completo; se a elevação calculada no FEM passar da meta, acrescenta canal de ventilação e refaz (até 3×)."""
     nd_min, fixo, k_pmax = 0, None, 0.88
     for tent in range(5):
@@ -345,13 +580,13 @@ def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb
         if d["termico"]["elev_bobina_K"] <= d["termico"]["meta_elev_K"] + 0.5:
             break
         nd_min = d["nd"] + 1
-        fixo = dict(N=d["N"], a=d["a"], b=d["b"], tf=d["tf"], hf=d["hf"])     # mesmo núcleo e folha: só acrescenta canal
+        fixo = dict(N=d["N"], a=d["a"], b=d["b"], tf=d["tf"], hf=d["hf"], fio=d.get("fio"))   # mesmo núcleo e condutor: só acrescenta canal
         log(f"   Elevação {d['termico']['elev_bobina_K']:.0f} K > meta {d['termico']['meta_elev_K']:.0f} K → refazendo com {nd_min} canal(is)")
     d["tentativas_termico"] = tent + 1
     return d
 
 
-def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None, k_pmax=0.88, construcao="distribuido"):
+def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None, k_pmax=0.88, construcao="distribuido", sub_axial=1):
     r = requisitos(proj, cat)
     try:
         esp = espectro_tensao_indutor(proj, cat)
@@ -366,11 +601,21 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     except Exception:
         r["P_max"] = None
     r["k_Pmax"] = k_pmax
-    d = pre_dimensionar(r, chapa, cond_id, h_conv, amb_c=amb_c, espectro=esp, nd_min=nd_min, fixo=fixo)
+    eh_fio = construcao == "culatra_fio"
+    cands = None
+    if eh_fio and not fixo:
+        cands = pre_dimensionar_fio(r, chapa, cond_id, h_conv, amb_c=amb_c, espectro=esp, nd_min=nd_min)
+        d = cands[0] if cands else None
+    else:
+        d = pre_dimensionar(r, chapa, cond_id, h_conv, amb_c=amb_c, espectro=esp, nd_min=nd_min, fixo=fixo)
     if not d:
         raise RuntimeError("pré-dimensionamento sem solução – rever limites")
-    log(f"   Indutor: pré-dimensionamento N={d['N']}, coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, folha {d['tf']*1e3:.1f}×{d['hf']*1e3:.0f} mm, "
-        f"{d['nd']} canais")
+    d["sub_axial"] = int((fixo or {}).get("sub_axial") or sub_axial or 1)
+    if d.get("fio"):
+        log(f"   Indutor: triagem de fio retangular – {len(cands or [])} candidatos (2 entreferros por coluna nas culatras)")
+    else:
+        log(f"   Indutor: pré-dimensionamento N={d['N']}, coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, folha {d['tf']*1e3:.1f}×{d['hf']*1e3:.0f} mm, "
+            f"{d['nd']} canais")
     cond = CONDUTORES[cond_id]
     ch = CHAPAS[chapa]
     sig = 1 / d["rhoT"]
@@ -404,28 +649,56 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         P_AF = 3 * float((0.5 * Ih ** 2 * R_h).sum())
         return dict(P60=P60, P_AF=P_AF, Rac=Rac, M=M)
 
+    if cands:
+        # v1.11.2: o FEM (2 entreferros nas culatras) confere a perda real de cada candidato de fio; fica o mais barato que passa
+        pmx = (r.get("P_max") or 1e9) * k_pmax
+        avals = []
+        for cd in cands:
+            cd["pos_gap"] = "culatra"
+            gt = MU0 * cd["N"] ** 2 * cd["a"] * cd["b"] * FIO_K_ESPRAIO / r["L"]
+            pe_c = perdas_enrolamento(cd, [gt] * 3, 2, freqs=[2 * r["fs"]])
+            Pw = pe_c["P60"] + pe_c["P_AF"]
+            try:
+                p1c, psc = _perdas_nucleo_lin(cd, pe_c["M"], r, esp, ch)
+            except Exception:
+                p1c, psc = cd["P_fe1"], cd["P_fes"]
+            Ptot = Pw + p1c + psc + perda_entreferro_lee(cd, r, [gt] * 3, ch)
+            dTw = cd["dT_w"] * Pw / max(cd["P_cu"], 1e-9)
+            custo = cd["m_fe"] * ch["preco_kg"] + cd["m_cond"] * cond["preco_kg"] * 1.15 + CAPITALIZACAO_R_W * Ptot
+            ok_c = Ptot <= pmx and dTw <= cd["alvo"]
+            f = cd["fio"]
+            log(f"     fio {f['t']*1e3:.2f}×{f['h']*1e3:.1f} mm ×{f['np']} | {cd['N']} esp ({f['n_cam']} cam × {f['n_ax']}) | coluna "
+                f"{cd['a']*1e3:.0f}×{cd['b']*1e3:.0f}: enrol. {Pw:.0f} W, total {Ptot:.0f} W, ΔT≈{dTw:.0f} K {'✓' if ok_c else '✗'}")
+            avals.append((not ok_c, custo if ok_c else Ptot, cd, Pw, Ptot))
+        avals.sort(key=lambda x: (x[0], x[1]))
+        d = avals[0][2]
+        d["triagem_fio"] = [dict(fio=f"{x[2]['fio']['t']*1e3:.2f}×{x[2]['fio']['h']*1e3:.1f}×{x[2]['fio']['np']}", N=x[2]["N"],
+                                 camadas=x[2]["fio"]["n_cam"], coluna=f"{x[2]['a']*1e3:.0f}×{x[2]['b']*1e3:.0f}",
+                                 P_enrol_W=round(x[3]), P_total_W=round(x[4]), ok=not x[0]) for x in avals]
+        sig = 1 / d["rhoT"]
+        g_tot0 = MU0 * d["N"] ** 2 * d["a"] * d["b"] * 1.10 / r["L"]
     estudo_gap = []
-    d["pos_gap"] = "culatra" if construcao == "culatra" else "distribuido"
-    lista_ng = (2,) if construcao == "culatra" else (1, 2, 3, 4, 6, 8)
+    d["pos_gap"] = "culatra" if construcao.startswith("culatra") else "distribuido"
+    lista_ng = (2,) if construcao.startswith("culatra") else (1, 2, 3, 4, 6, 8)
     for ng in lista_ng:
-        if construcao != "culatra" and g_tot0 / ng > GAP_MAX_PECA_MM * 1e-3 * 1.2:
+        if not construcao.startswith("culatra") and g_tot0 / ng > GAP_MAX_PECA_MM * 1e-3 * 1.2:
             continue
         for c_mm in (15, 25):
             dd = dict(d, c=c_mm * 1e-3)
-            dd.update(_geo(r, d["N"], d["a"], d["b"], d["tf"], d["hf"], d["nd"], dd["c"], cond, ch))
+            dd.update(_geo(r, d["N"], d["a"], d["b"], d["tf"], d["hf"], d["nd"], dd["c"], cond, ch, fio=d.get("fio")))
             pe = perdas_enrolamento(dd, [g_tot0] * 3, ng, freqs=[2 * r["fs"]])
             estudo_gap.append(dict(ng=ng, c_mm=c_mm, g_cada_mm=g_tot0 / ng * 1e3, P60_W=pe["P60"], P_AF_W=pe["P_AF"],
                                    P_W=pe["P60"] + pe["P_AF"]))
             log(f"     ng={ng} c={c_mm} mm: enrolamento {pe['P60']:.0f} W (60 Hz) + {pe['P_AF']:.0f} W (AF)")
     # escolha: menor nº de entreferros cuja perda total no enrolamento fica ≤ 5 % acima da melhor; depois menor c
     Pmin = min(e["P_W"] for e in estudo_gap)
-    lim_peca = GAP_MAX_PECA_CULATRA_MM if construcao == "culatra" else GAP_MAX_PECA_MM
+    lim_peca = GAP_MAX_PECA_CULATRA_MM if construcao.startswith("culatra") else GAP_MAX_PECA_MM
     ok = [e for e in estudo_gap if e["P_W"] <= 1.05 * Pmin and e["g_cada_mm"] * 1.15 <= lim_peca] or \
          [e for e in estudo_gap if e["P_W"] <= 1.05 * Pmin]
     esc = min(ok, key=lambda e: (e["ng"], e["c_mm"]))
     d["c"] = esc["c_mm"] * 1e-3
-    d.update(_geo(r, d["N"], d["a"], d["b"], d["tf"], d["hf"], d["nd"], d["c"], cond, ch))
-    d["R"] = d["rhoT"] * d["N"] * d["MLT"] / (d["tf"] * d["hf"])
+    d.update(_geo(r, d["N"], d["a"], d["b"], d["tf"], d["hf"], d["nd"], d["c"], cond, ch, fio=d.get("fio")))
+    d["R"] = d["rhoT"] * d["N"] * d["MLT"] / area_espira(d)
     ng = esc["ng"]
     log(f"   FEM: {ng} entreferro(s) por coluna, bobina a {esc['c_mm']} mm do núcleo")
     # ------------------------------------------------ 2) ajuste do entreferro para L alvo (3D corrigido) e equalização
@@ -508,7 +781,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     pe = perdas_enrolamento(d, gaps, ng)
     d["Rac_ohm"] = {f"{k:.0f} Hz": v for k, v in pe["Rac"].items()}
     d["Rdc_ohm"] = d["R"]
-    d["perdas"] = dict(enrolamento_60Hz=pe["P60"], enrolamento_AF=pe["P_AF"], nucleo_60Hz=P_fe1, nucleo_AF=P_fes)
+    P_gap = perda_entreferro_lee(d, r, gaps, ch)
+    d["perdas"] = dict(enrolamento_60Hz=pe["P60"], enrolamento_AF=pe["P_AF"], nucleo_60Hz=P_fe1, nucleo_AF=P_fes, nucleo_entreferro=P_gap)
     d["perdas"]["total"] = sum(d["perdas"].values())
     d["Bpk_max"] = float(Bpk_el.max())
     d["Bpk_coluna"] = float(np.percentile(Bpk_el, 50))
@@ -521,7 +795,7 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     P_w = (d["perdas"]["enrolamento_60Hz"] + d["perdas"]["enrolamento_AF"]) / 3
     dT_w = P_w / (h_conv * A_w)
     A_fe = 2 * (3 * a + 2 * d["ww"]) * (2 * a + d["hw"]) * 0.55 + 2 * (3 * a + 2 * d["ww"]) * b
-    dT_fe = (P_fe1 + P_fes) / (h_conv * A_fe)
+    dT_fe = (P_fe1 + P_fes + P_gap) / (h_conv * A_fe)
     cl = CLASSE[r["classe"]]
     d["termico"] = dict(h_conv=h_conv, A_bobina_m2=A_w, elev_bobina_K=dT_w, elev_nucleo_K=dT_fe,
                         ponto_quente_C=amb_c + dT_w + PONTO_QUENTE_ACRESCIMO_K, amb_painel_C=amb_c,

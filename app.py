@@ -257,11 +257,12 @@ if pagina == "Nova solicitação":
                 st.warning("Sem corrente/potência do motor: será usada a corrente informada pelo cliente.")
         except Exception as _e:
             st.caption(f"(prévia da corrente pela carga indisponível: {_e})")
-        _gap = st.radio("Entreferros do indutor (projeto de referência por elementos finitos)",
-                        ["Distribuídos – multigap (recomendado para filtro senoidal com enrolamento em folha)",
-                         "2 por coluna nas culatras (padrão nacional: 1 em cima e 1 embaixo)"], horizontal=False, key="gap_ind",
-                        help="Com 2 entreferros nas juntas coluna–culatra, o espraiamento atinge a borda da folha e as perdas no enrolamento "
-                             "sobem muito; para compensar, o indutor fica bem maior. O estudo comparativo vai no memorial do indutor.")
+        _gap = st.radio("Construção do indutor (projeto de referência por elementos finitos)",
+                        ["2 entreferros por coluna nas culatras + FIO RETANGULAR (padrão nacional) – compara alumínio × cobre",
+                         "Entreferros distribuídos – multigap + folha (o mais leve, se o fabricante fizer)",
+                         "2 entreferros por coluna + folha (não recomendado: indutor muito maior)"], horizontal=False, key="gap_ind",
+                        help="Padrão dos fabricantes nacionais: 2 entreferros por coluna (1 em cima e 1 embaixo) com fio retangular. Com folha, "
+                             "o espraiamento nas juntas atinge a borda da folha e o indutor fica muito maior.")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
@@ -270,7 +271,8 @@ if pagina == "Nova solicitação":
                               prioridade=("mercado" if st.session_state.get("prioridade_proj", "").startswith("Indutor") else
                                           "min_caps" if st.session_state.get("prioridade_proj", "").startswith("MÍNIMO") else "custo"),
                               queda_max=_qmax, corrente_base=("cliente" if _usar_cli else "carga"),
-                              construcao_gap=("culatra" if st.session_state.get("gap_ind", "").startswith("2 por") else "distribuido"))
+                              construcao_gap=("distribuido" if st.session_state.get("gap_ind", "").startswith("Entreferros distribuídos")
+                                              else "culatra" if "+ folha" in st.session_state.get("gap_ind", "") else "culatra_fio"))
             st.session_state["resultado"] = {"pasta": r["pasta"], "zip": r["zip"], "arquivos": r["arquivos"], "graficos": r["graficos"],
                                              "resumo": r["resumo"], "opcoes": r.get("opcoes"),
                                              "corrente": getattr(r["projeto"], "corrente_dimensionamento", None)}

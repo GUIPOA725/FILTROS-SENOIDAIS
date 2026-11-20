@@ -1,5 +1,20 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.2 – 20/11/2026 – Indutor com 2 entreferros por coluna + fio retangular (padrão nacional)
+- Nova construção (agora a PADRÃO): 2 entreferros por coluna nas juntas coluna–culatra + enrolamento em CAMADAS de fio
+  retangular (espiras em série; fios em paralelo transpostos). É o padrão dos fabricantes nacionais (a Cootrans usou fio nos
+  indutores menores).
+  - Modelo FEM do enrolamento em fio: cada fio de cada espira é um condutor com corrente imposta (série) e I/np nos paralelos.
+  - Triagem: o pré-dimensionamento analítico gera os 16 candidatos mais baratos (núcleo, espiras, bitola IEC 60317-0-2,
+    paralelos, camadas) e o FEM confere a perda REAL de cada um com os 2 entreferros; fica o mais barato que passa.
+  - Calcula alumínio E cobre e escolhe o de menor custo total (material + perdas capitalizadas) que passa em tudo.
+  - Restrições de fabricação: entreferro ≤ 10 mm por peça e ≤ 20 % da coluna (espraiamento ×1,65 calibrado no FEM).
+- Perda adicional no núcleo junto aos entreferros concentrados (fórmula de Lee/McLyman, Ki = 0,155 lâminas) somada às perdas e
+  ao térmico do núcleo – margem para o efeito 3D que o FEM 2D não vê. Não se aplica a entreferros distribuídos ≤ 3 mm.
+- Desenhos, lista de materiais, CAD (texto), memorial/auditoria e e-mail ao fabricante tratam o fio retangular: tabela de
+  bobinagem por camada, corte B-B com cada fio, transposição dos paralelos, saída com barra, tabelas Al × Cu e triagem FEM.
+- Tela: "Construção do indutor" com 3 opções – 2 entreferros + fio retangular (padrão), multigap + folha, 2 entreferros + folha.
+
 ## v1.11.1 – 20/11/2026 – Painel com o indutor real + opção de entreferros (multigap × 2 nas culatras)
 - CORREÇÃO: o painel (arranjo, térmico, caixa, ventiladores) usava a estimativa simplificada do indutor (A&W: 400×300×200 mm,
   87 kg, 1463 W). Agora o projeto do indutor por elementos finitos roda ANTES do painel e o painel usa as dimensões e a massa
