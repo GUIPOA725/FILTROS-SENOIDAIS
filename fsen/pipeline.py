@@ -193,6 +193,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                         cod=cod, data=f"{t0:%d/%m/%Y}", versao=f"FSEN v{_vi().get('versao')}")
             arqs["indutor_desenhos"] = IDS.gerar_pdf(ind, os.path.join(sub["03_Fornecedores"], f"Projeto_Referencia_Indutor_{cod}.pdf"),
                                                      _inf, png_dir=sub["01_Engenharia"])
+            try:                                    # v1.10.4: CAD editável (STEP 3D + DXF 2D)
+                from . import ind_cad as ICAD
+                arqs["indutor_step"] = ICAD.gerar_step(ind, os.path.join(sub["03_Fornecedores"], f"Indutor_3D_{cod}.step"),
+                                                       f"INDUTOR_{cod}")
+                arqs["indutor_dxf"] = ICAD.gerar_dxf(ind, os.path.join(sub["03_Fornecedores"], f"Indutor_2D_{cod}.dxf"), _inf)
+            except Exception as _e:
+                log(f"   (CAD do indutor não gerado: {type(_e).__name__}: {_e})")
             arqs["indutor_memorial"] = AUD.memorial_indutor(ind, os.path.join(sub["03_Fornecedores"], f"Memorial_Indutor_{cod}.pdf"),
                                                             _inf["titulo"])
             with open(os.path.join(sub["01_Engenharia"], "indutor_projeto.json"), "w", encoding="utf-8") as f:
@@ -202,7 +209,8 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                     with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:
                         _fh.write(
                             "\n\nANEXOS – PROJETO DE REFERÊNCIA DO INDUTOR\n"
-                            f"Seguem também o Projeto de Referência (desenhos com vistas, cortes, 3D e lista de materiais) e o Memorial de "
+                            f"Seguem também o Projeto de Referência (desenhos com vistas, cortes, 3D e lista de materiais), os arquivos CAD "
+                            f"editáveis (3D em STEP e 2D em DXF, escala 1:1) e o Memorial de "
                             f"cálculo por elementos finitos ({os.path.basename(arqs['indutor_desenhos'])}, {os.path.basename(arqs['indutor_memorial'])}). "
                             f"Ele foi calculado com as correntes e tensões reais do filtro: {ind['N']} espiras de folha, {ind['ng']} entreferros por "
                             f"coluna, bobina a {ind['c']*1e3:.0f} mm do núcleo, chapa {ind['chapa_dados']['esp_mm']} mm, sistema de isolação classe "

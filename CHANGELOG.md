@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.10.4 – 20/11/2026 – CAD editável do indutor (STEP + DXF)
+- Indutor_3D_<projeto>.step: STEP AP214 com sólidos B-rep (um por peça: culatras, pacotes das colunas, calços, tubos,
+  bobinas, terminais, cantoneiras, tirantes, base, caixa do PTC), com nome e cor. Escritor próprio sem dependências (o
+  OpenCascade/CadQuery não tem versão para Python 3.15). Validado: 68 sólidos lidos e válidos no OpenCascade (motor do FreeCAD).
+- Indutor_2D_<projeto>.dxf: vistas frontal, lateral, superior/furação, planta do núcleo com calços e corte da bobina em
+  escala 1:1 (mm), camadas (NUCLEO, BOBINA, ISOLACAO, CALCOS, ESTRUTURA, TERMINAIS, COTAS, EIXOS) e cotas associativas (ezdxf).
+- Os dois vão para 03_Fornecedores/1_Indutor e são citados no e-mail ao fabricante. Dependência nova: ezdxf (instalação automática).
+
 ## v1.10.3 – 20/11/2026 – Desenhos do indutor padrão fábrica + ficha de fabricação
 - 5 folhas A3 (ABNT NBR 10068/10582): carimbo completo com nº do desenho, escala normalizada, 1º diedro (símbolo), tabela de
   revisões, tolerâncias gerais ISO 2768-m; desenho em mm reais com escala por vista.

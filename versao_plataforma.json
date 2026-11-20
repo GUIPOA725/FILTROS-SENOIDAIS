@@ -1,1 +1,1 @@
-{"versao": "1.10.3", "data": "2026-11-20", "resumo": "Desenhos do indutor em padrão de fábrica (A3 ABNT, 1º diedro, escala, cotas em cadeia, balões↔BOM, folhas de núcleo e bobina, 3D sombreado) + ficha de fabricação no memorial"}
+{"versao": "1.10.4", "data": "2026-11-20", "resumo": "CAD editável do indutor: 3D em STEP (sólidos B-rep, validado no OpenCascade) e 2D em DXF 1:1 com camadas e cotas"}
