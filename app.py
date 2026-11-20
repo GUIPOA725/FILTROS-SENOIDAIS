@@ -18,7 +18,7 @@ except Exception:
     _v_disco = "?"
 if os.environ.get("FSEN_VER_CARREGADA") != _v_disco:
     for _m in list(sys.modules):
-        if _m in ("telas_ajuste", "fsen") or _m.startswith("fsen."):
+        if _m in ("telas_ajuste", "telas_conferencia", "fsen") or _m.startswith("fsen."):
             del sys.modules[_m]
     os.environ["FSEN_VER_CARREGADA"] = _v_disco
 
@@ -38,7 +38,8 @@ st.set_page_config(page_title=f"FSEN v{_vinfo().get('versao')} – Filtros Senoi
 st.sidebar.title(f"⚡ FSEN v{_vinfo().get('versao')}")
 st.sidebar.caption(f"{NOME} – versão {_vinfo().get('versao')} de {_vinfo().get('data', '')}")
 st.sidebar.caption("Dimensionamento, simulação e documentação de filtros senoidais LC/LCL")
-pagina = st.sidebar.radio("Menu", ["Nova solicitação", "Ajuste manual e ressimulação", "Critérios de projeto", "Histórico e clientes",
+pagina = st.sidebar.radio("Menu", ["Nova solicitação", "Ajuste manual e ressimulação", "Conferir proposta de fornecedor",
+                                   "Critérios de projeto", "Histórico e clientes",
                                    "Catálogo e preços", "Melhorias / atualizações"])
 from seletor import seletor_pasta
 with st.sidebar.expander("📂 Pasta de saída (PROJETOS)", expanded=False):
@@ -283,6 +284,10 @@ if pagina == "Nova solicitação":
 
 elif pagina == "Ajuste manual e ressimulação":
     tela_ajuste_completa(pasta_saida)
+
+elif pagina == "Conferir proposta de fornecedor":
+    from telas_conferencia import tela_conferencia
+    tela_conferencia(pasta_saida)
 
 elif pagina == "Critérios de projeto":
     tela_criterios()

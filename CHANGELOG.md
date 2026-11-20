@@ -1,5 +1,20 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.9 – 20/11/2026 – Proteção contra erros de fornecedor (alta frequência)
+- ET de CAPACITORES no padrão detalhado (fsen/spec_capacitor.py): "por que NÃO serve capacitor de correção de FP",
+  figura da corrente real em um capacitor (Corrente_Capacitor_*.png), requisitos com coluna "Por quê" (IEC 61071, Imax,
+  UN de pico, Î, ESR, ponto quente, vida, sobrepressão, lote ≤ 12 meses), dados a declarar, recebimento e critérios de
+  aceitação (IEC 60831 = rejeição). E-mail reescrito no mesmo padrão.
+- NOVA tela "Conferir proposta de fornecedor" (fsen/conferencia.py + telas_conferencia.py): digita-se o que o fornecedor
+  declarou (indutor: L, linearidade, perdas 60 Hz/HF/total, massa, classe, chapa, entreferros, condutor, ensaios, protótipo,
+  dimensões; capacitor: norma, UN, Imax, Î, ESR, ponto quente, sobrepressão, lote). A plataforma compara item a item com o
+  porquê, aponta o que NÃO foi declarado (ex.: perdas de alta frequência), refaz o estudo térmico do painel com as perdas
+  declaradas e o ponto quente do capacitor com a ESR declarada, e emite Parecer_Proposta_*.docx (+ .json) e o e-mail de
+  resposta com as pendências em 03_Fornecedores. Parecer: APROVADO / COM RESSALVAS / INCOMPLETO / REPROVADO.
+- Alternativa de indutância de mercado (fsen/alternativa_l.py): quando o L do projeto fica abaixo da faixa Schaffner/REO,
+  simula L na faixa com o nº de capacitores reajustado, guarda as aprovadas (01_Engenharia/alternativa_indutancia.json),
+  acrescenta a seção 9 na ET do indutor e pede no e-mail que o fornecedor cote também a recomendada.
+
 ## v1.9.8 – 20/11/2026 – Especificação detalhada do indutor (padrão para qualquer fornecedor)
 - Nova ET_Indutor (fsen/spec_indutor.py), escrita para fornecedor que não conhece filtro senoidal:
   - "Por que este indutor NÃO é um reator de 60 Hz" + figura da forma de onda simulada do projeto (corrente com ondulação,

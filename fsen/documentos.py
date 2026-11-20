@@ -621,6 +621,20 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     assin = f"\n\nAtenciosamente,\n{emp['responsavel']}\n{emp['nome']}\n{emp['email']} | {emp['telefone']}"
 
     # --- INDUTOR
+    from . import alternativa_l as ALT
+    try:
+        alt = ALT.alternativas(proj, cat)
+    except Exception as _e:
+        alt = dict(necessaria=False, motivo=f"erro: {_e}")
+    proj.alternativa_l = alt
+    try:
+        import json as _json
+        _eng = os.path.join(os.path.dirname(pasta), "01_Engenharia")
+        if os.path.isdir(_eng):
+            _json.dump(alt, open(os.path.join(_eng, "alternativa_indutancia.json"), "w", encoding="utf-8"), ensure_ascii=False,
+                       indent=1, default=str)
+    except Exception:
+        pass
     for L in [proj.l1] + ([proj.l2] if proj.l2 else []):
         tag = L.nome.split(" ")[0]
         d = _novo(f"Especificação Técnica – Indutor {tag}", f"Reator trifásico para filtro senoidal – {cod}", proj, cat)
@@ -632,6 +646,8 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
             except Exception:
                 fig = None
         SI.escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura=fig)
+        if L is proj.l1:
+            ALT.escrever_secao(d, alt, _tabela)
         if fig:
             try:
                 os.replace(fig, os.path.join(pasta, f"Forma_de_onda_Indutor_{tag}_{cod}.png"))
@@ -643,7 +659,9 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
         e = _email(pasta, f"Email_Indutor_{tag}.txt", _para(f0),
                    f"Cotação: Indutor trifásico p/ filtro senoidal {L.l_uh:.0f} µH @ {L.i_nom_a:.0f} A – {ped['tensao_v']:g} V "
                    f"({q} pç) + dados técnicos e ensaios ({cod})",
-                   SI.corpo_email(L, proj, arr, cat, ped, q, tag, _ola(f0), _extenso, f0.get("ref")) + assin)
+                   SI.corpo_email(L, proj, arr, cat, ped, q, tag, _ola(f0), _extenso, f0.get("ref"))
+                   .replace("\nCritério de aceitação", (ALT.texto_email(alt) if L is proj.l1 else "") + "\nCritério de aceitação", 1)
+                   + assin)
         saidas[f"indutor_{tag}"] = (p, e)
 
     # --- CAPACITORES
@@ -656,35 +674,19 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     n_comp = max(0, n_nec - est)
     e_ = getattr(proj, "estresse_capacitor", {}) or {}
     d = _novo("Especificação Técnica – Capacitores", f"Banco de capacitores para filtro senoidal – {cod}", proj, cat)
-    _kv(d, [("Tipo", f"Capacitor monofásico MKP para eletrônica de potência (filtro AC) – {b.linha}"),
-            ("Código", f"{b.pn} ({b.fabricante})"),
-            ("Norma", f"{lc['norma_txt']}"),
-            ("Capacitância", f"{b.uf_unit:g} µF ±5 %"),
-            ("Tensão nominal", f"{b.v_unit:g} V RMS" + (f" / UN {capd['vn_pico_v']:g} V pico" if capd.get("vn_pico_v") else "")),
-            ("Tensão de operação", f"{b.v_cap_rms:.0f} V RMS, pico {e_.get('vpk', 0):.0f} V (ligação {b.ligacao})"),
-            ("Corrente de operação", f"{b.i_unit_rms:.2f} A RMS por unidade (fundamental {b.i_unit_fund:.2f} A + harmônicas em "
-                                     f"{proj.fs_hz / 1000:g}–{3 * proj.fs_hz / 1000:g} kHz)"),
-            ("Corrente admissível", f"Imax ≥ {lc['imax']:.1f} A RMS ({lc['imax_fonte']}); Î e dv/dt conforme datasheet"),
-            ("Temperatura", f"Ponto quente ≤ {lc['t_hot']:g} °C; ar interno do painel ≤ 55 °C"),
-            ("Proteção", "Dispositivo de sobrepressão (desconexão interna); resistor de descarga externo "
-                         f"{b.r_descarga_mohm * 1000:.0f} kΩ se não houver interno"),
-            ("Quantidade", f"{n_nec} peças ({b.n_total} por filtro × {q})" + (f" – {est} em estoque, comprar {n_comp}" if est else ""))])
+    from . import spec_capacitor as SC
+    figc = None
+    try:
+        figc = SC.grafico_corrente(proj, cat, os.path.join(pasta, f"Corrente_Capacitor_{cod}.png"))
+    except Exception:
+        figc = None
+    SC.escrever_et(d, proj, cat, ped, q, _kv, _tabela, _bullets, _f, figura=figc)
     p = os.path.join(pasta, f"ET_Capacitores_{cod}.docx")
     d.save(p)
     fc = forn["capacitor"][0]
-    qtd_txt = f"{n_comp} peças (necessidade {n_nec}; {est} em estoque)" if est else \
-        f"{n_nec} peças (+ 2 de reserva, se o preço for o mesmo) – vamos descontar o que tivermos em estoque"
     e = _email(pasta, "Email_Capacitores.txt", _para(fc),
-               f"Cotação – capacitor {b.pn} {b.uf_unit:g} µF {b.v_unit:g} V – {n_nec} pç ({cod})",
-               f"{_ola(fc)}\n\nPreciso de cotação do capacitor abaixo, o mesmo que compramos de vocês para os filtros senoidais:\n\n"
-               f"- Código: {b.pn} ({b.fabricante} – {b.linha})\n"
-               f"- {b.uf_unit:g} µF ±5 % / {b.v_unit:g} V RMS, monofásico MKP, {lc['norma_txt']}\n"
-               f"- Quantidade: {qtd_txt}\n\n"
-               f"Aplicação: filtro senoidal {ped['corrente_a']:g} A / {ped['tensao_v']:g} V, ligação em {b.ligacao.lower()}, "
-               f"{b.i_unit_rms:.1f} A RMS por capacitor com componente em {proj.fs_hz / 1000:g} kHz "
-               f"(dentro do Imax de {lc['imax']:.0f} A do datasheet).\n\n"
-               "Favor informar preço unitário, prazo/disponibilidade em estoque, data de fabricação dos lotes e enviar o datasheet atualizado."
-               + (f"\n\nReferência: {fc['ref']}." if fc.get("ref") else "") + assin)
+               f"Cotação – capacitor {b.pn} {b.uf_unit:g} µF {b.v_unit:g} V – {n_nec} pç – filtro senoidal ({cod})",
+               SC.corpo_email(proj, cat, ped, q, _ola(fc), fc.get("ref")) + assin)
     saidas["capacitores"] = (p, e)
 
     # --- RESISTORES DE AMORTECIMENTO
