@@ -129,28 +129,45 @@ def grafico_forma_onda(proj, cat, arquivo_png):
     F = np.fft.rfft(i1) / n
     k = 2                                                     # 2 ciclos na janela → fundamental no bin 2
     fund = 2 * np.abs(F[k]) * np.cos(2 * np.pi * op.f1 * np.asarray(r.t) + np.angle(F[k]))
-    fig, ax = plt.subplots(3, 1, figsize=(11, 9))
-    ax[0].plot(t, i1, color="#c0392b", lw=0.8, label="Corrente REAL no indutor (fundamental + ondulação PWM)")
-    ax[0].plot(t, fund, color="#1b4f9c", lw=1.2, ls="--", label=f"Só a fundamental ({op.f1:g} Hz) – o que um reator de linha vê")
-    ax[0].set_ylabel("Corrente fase A (A)")
-    ax[0].set_title(f"Indutor do filtro senoidal – {op.f1:g} Hz de saída, chaveamento {proj.fs_hz / 1000:g} kHz", fontsize=11)
-    ax[0].legend(loc="lower left", fontsize=8, framealpha=0.95)
-    T1 = 1e3 / op.f1
+    u = np.asarray(r.u_ab)
+    vc = np.asarray(r.vc_ab)
     j = int(np.argmax(i1[: int(n / 2)]))
     t0 = max(0.0, t[j] - 0.5)
     sel = (t >= t0) & (t <= t0 + 1.0)
-    ax[1].plot(t[sel], i1[sel], color="#c0392b", lw=1.0)
-    ax[1].set_ylabel("Corrente (A) – zoom 1 ms")
-    ax[1].set_title(f"Zoom de 1 ms no pico: ondulação de alta frequência (até {proj.l1.ripple_pp_a:.0f} A p-p) a "
-                    f"{proj.fs_hz / 1000:g} kHz e múltiplos", fontsize=10)
-    ax[2].plot(t[sel], vl[sel], color="#6c3483", lw=0.8)
-    ax[2].set_ylabel("Tensão sobre os indutores\nentre fases (V)")
-    ax[2].set_xlabel("t (ms)")
-    ax[2].set_title(f"O indutor recebe PULSOS retangulares de tensão a {proj.fs_hz / 1000:g} kHz (bordas de kV/µs), "
-                    "não uma senoide de 60 Hz", fontsize=10)
+    fig = plt.figure(figsize=(11, 12.5))
+    gs = fig.add_gridspec(4, 1, height_ratios=[1.2, 1, 1, 1])
+    ax = [fig.add_subplot(gs[0])]
+    ax += [fig.add_subplot(gs[1])]
+    ax += [fig.add_subplot(gs[2], sharex=ax[1]), fig.add_subplot(gs[3], sharex=ax[1])]
+    ax[0].plot(t, i1, color="#c0392b", lw=0.8, label="Corrente REAL no indutor (fundamental + ondulação)")
+    ax[0].plot(t, fund, color="#1b4f9c", lw=1.2, ls="--", label=f"Só a fundamental ({op.f1:g} Hz) – o que um reator de linha veria")
+    ax[0].axvspan(t0, t0 + 1.0, color="#f1c40f", alpha=0.35, label="Trecho ampliado nos gráficos ② ③ ④ (1 ms)")
+    ax[0].set_ylabel("Corrente fase A (A)")
+    ax[0].set_title(f"① Corrente no indutor – {op.f1:g} Hz de saída, chaveamento {proj.fs_hz / 1000:g} kHz (2 ciclos)", fontsize=11)
+    ax[0].legend(loc="lower left", fontsize=8, framealpha=0.95)
+    ax[0].set_xlabel("t (ms)")
+    ax[1].plot(t[sel], u[sel], color="#7f8c8d", lw=0.9, label="Lado do INVERSOR: pulsos de 0 / ±Vcc (entrada do indutor)")
+    ax[1].plot(t[sel], vc[sel], color="#1b4f9c", lw=1.6, label="Lado do CAPACITOR/motor: quase senoidal (saída do indutor)")
+    ax[1].set_ylabel("Tensão entre fases (V)")
+    ax[1].set_title("② ZOOM de 1 ms – tensão nos DOIS lados do indutor", fontsize=10)
+    ax[1].legend(loc="lower left", fontsize=8, framealpha=0.95)
+    ax[2].plot(t[sel], vl[sel], color="#6c3483", lw=0.9)
+    ax[2].fill_between(t[sel], 0, vl[sel], color="#6c3483", alpha=0.25)
+    ax[2].axhline(0, color="k", lw=0.6)
+    ax[2].set_ylabel("Tensão SOBRE os\nindutores (V)")
+    ax[2].set_title("③ A DIFERENÇA entre os dois lados (cinza − azul do ②) fica SOBRE o indutor:\n"
+                    f"blocos retangulares de centenas de volts trocando de sinal em {proj.fs_hz / 1000:g} kHz", fontsize=10)
+    ax[3].plot(t[sel], i1[sel], color="#c0392b", lw=1.1)
+    ax[3].set_ylabel("Corrente (A)")
+    ax[3].set_xlabel("t (ms)")
+    ax[3].set_title("④ Resultado na corrente: bloco POSITIVO em ③ → corrente SOBE; bloco NEGATIVO → corrente DESCE "
+                    f"(V = L·di/dt) – ondulação de até {proj.l1.ripple_pp_a:.0f} A p-p", fontsize=10)
+    fig.text(0.5, 0.004, "Num reator de linha de 60 Hz a tensão sobre ele é uma senoide pequena (poucos % da tensão da rede).\n"
+             "Aqui são pulsos de centenas de volts em alta frequência – é isso que aquece núcleo, enrolamento e entreferro.",
+             ha="center", fontsize=8.5, style="italic")
     for a_ in ax:
         a_.grid(alpha=0.3)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.035, 1, 1))
     os.makedirs(os.path.dirname(arquivo_png) or ".", exist_ok=True)
     fig.savefig(arquivo_png, dpi=130)
     plt.close(fig)
@@ -192,8 +209,12 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
     if figura:
         try:
             d.add_picture(figura, width=Cm(16.5))
-            d.add_paragraph("Figura – forma de onda simulada pela plataforma para este projeto: corrente no indutor (com a "
-                            "fundamental tracejada para comparação), zoom da ondulação e tensão PWM aplicada ao indutor.")
+            d.add_paragraph("Figura – forma de onda simulada pela plataforma para este projeto. ① corrente no indutor em 2 ciclos "
+                            "(tracejado: só a fundamental, como num reator de linha); ② zoom de 1 ms mostrando a tensão nos dois "
+                            "lados do indutor – pulsos do inversor na entrada e tensão quase senoidal do capacitor na saída; ③ a "
+                            "diferença entre eles, que é a tensão aplicada sobre o indutor: blocos retangulares de centenas de volts "
+                            "em alta frequência; ④ o efeito na corrente: cada bloco positivo faz a corrente subir e cada bloco "
+                            "negativo faz descer (V = L·di/dt), formando a ondulação.")
         except Exception:
             pass
 
