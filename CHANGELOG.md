@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.10.1 – 20/11/2026 – Elemento finito do indutor mais rápido (notebook)
+- Malha até 4× mais grossa no ar distante (fora da caixa núcleo+bobinas), metade dos nós com a mesma indutância (validação
+  repetida: 427,7/435,1 µH idênticos).
+- Perdas harmônicas: 1 fatoração por frequência para as 2 excitações; saturação da coluna central só em Isat; indução de pico
+  da fase W pela simetria da fase U. Projeto A&W: 162 s → 71 s, resultados idênticos (671 W, 75 K, 180 µH).
+
 ## v1.10.0 – 20/11/2026 – Indutor por elementos finitos (projeto de referência para fabricação) + Relatório de Auditoria
 - Novo solver de elementos finitos 2D próprio (fsen/ind_fem.py): magnetostático não-linear (curva B-H do aço GO) para saturação,
   linear para matriz de indutâncias 3×3 e ajuste do entreferro, e HARMÔNICO NO TEMPO com correntes induzidas e corrente imposta

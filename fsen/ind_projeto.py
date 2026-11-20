@@ -11,7 +11,7 @@ Todas as fórmulas e constantes estão aqui, com a origem. Incertezas declaradas
 import math
 import numpy as np
 
-from .ind_fem import ModeloIndutor, MU0, BH_GO, perdas_harmonico
+from .ind_fem import ModeloIndutor, MU0, BH_GO, perdas_harmonico, perdas_harmonico_multi
 
 # Critério de escolha: MENOR CUSTO de material (como o fabricante) com perdas totais ≤ P_max = topo da faixa de mercado
 # (Schaffner/REO interpolados para a corrente) – o mesmo número de "perdas desejadas" da ET do indutor.
@@ -380,12 +380,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         fr = freqs or [r["fs"], 2 * r["fs"], 4 * r["fs"]]
         Rac = {}
         for f in [r["f1"]] + fr:
-            Rk = []
-            for k in (0, 1):
-                cur = [0, 0, 0]
-                cur[k] = 1.0
-                P, _ = perdas_harmonico(M, f, cur, sig, ell)
-                Rk.append(P.sum() / 0.5)                 # R_ac da fase k (inclui correntes induzidas nas outras fases)
+            Ps, _ = perdas_harmonico_multi(M, f, [[1.0, 0, 0], [0, 1.0, 0]], sig, ell)   # 1 fatoração, 2 excitações
+            Rk = [P.sum() / 0.5 for P in Ps]             # R_ac da fase k (inclui correntes induzidas nas outras fases)
             Rac[f] = (2 * Rk[0] + Rk[1]) / 3            # média das 3 fases (a = c)
         P60 = 3 * 0.5 * (r["I1"] * math.sqrt(2)) ** 2 * Rac[r["f1"]]
         lf = np.log(np.array(fr))
@@ -446,9 +442,12 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         lam = Mn.lambda_fases(A) * d["b"]
         # fase a com correntes (I, −I/2, −I/2): λa = (Laa − Mab/2 − Mac/2)·I  → L+ aparente da coluna lateral
         Lap2 = lam[0] / I
-        A2 = Mn.resolver([-I / 2, I, -I / 2])
-        lam2 = Mn.lambda_fases(A2) * d["b"]
-        Lbp = lam2[1] / I
+        if nome.startswith("Isat"):
+            A2 = Mn.resolver([-I / 2, I, -I / 2])
+            lam2 = Mn.lambda_fases(A2) * d["b"]
+            Lbp = lam2[1] / I
+        else:
+            Lbp = float("nan")                          # coluna central só em Isat (economia de tempo; lateral é o pior caso)
         Bx, By = Mn.B(A)
         Bmax = float(np.hypot(Bx, By)[Mn.ferro].max())
         sat.append(dict(caso=nome, I=I, L_lat_pct=100 * Lap2 / Lp2d[0], L_cen_pct=100 * Lbp / Lp2d[1], Bmax=Bmax))
@@ -459,12 +458,20 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     Mn, A = d["campo_pico"]
     Bpk_el = np.zeros(int(Mn.ferro.sum()))
     I1p = r["I1"] * math.sqrt(2)
-    for k in range(3):
+    for k in range(2):                                  # fases U e V; W é o espelho de U (simetria do núcleo)
         cur = [-I1p / 2] * 3
         cur[k] = I1p
         Ak = Mn.resolver(cur)
         Bx, By = Mn.B(Ak)
-        Bpk_el = np.maximum(Bpk_el, np.hypot(Bx, By)[Mn.ferro])
+        Bk = np.hypot(Bx, By)
+        Bpk_el = np.maximum(Bpk_el, Bk[Mn.ferro])
+        if k == 0:                                      # espelho x → W − x
+            cx = Mn.m.cent[Mn.ferro, 0]
+            cy = Mn.m.cent[Mn.ferro, 1]
+            from scipy.spatial import cKDTree
+            arv = cKDTree(np.column_stack([cx, cy]))
+            _, idx = arv.query(np.column_stack([Mn.W - cx, cy]))
+            Bpk_el = np.maximum(Bpk_el, Bk[Mn.ferro][idx])
     Ml = modelo(d, gaps, ng)
     Ml.matriz_L()
     dB2 = np.zeros(int(Ml.ferro.sum()))

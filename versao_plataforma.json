@@ -1,1 +1,1 @@
-{"versao": "1.10.0", "data": "2026-11-20", "resumo": "Projeto do indutor por elementos finitos para fabricação (desenhos, cortes, 3D, lista de materiais, isolação classe F/H, perdas com espectro PWM real) + Relatório de Auditoria técnica completo (PDF)"}
+{"versao": "1.10.1", "data": "2026-11-20", "resumo": "Elementos finitos do indutor 2,3× mais rápido (malha grossa no ar distante, 1 fatoração por frequência, simetria) – mesmos resultados"}

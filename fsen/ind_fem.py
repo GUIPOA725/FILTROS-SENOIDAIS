@@ -42,14 +42,18 @@ def _graded(p, q, h_l, h_r, hmax, r=1.25):
     return pts_l + sorted(pts_r) + [q]
 
 
-def linhas(chaves, hmin_map, hmax):
-    """chaves: coordenadas obrigatórias; hmin_map: dict coord→tamanho local mínimo."""
+def linhas(chaves, hmin_map, hmax, faixa=None, hmax_fora=None):
+    """chaves: coordenadas obrigatórias; hmin_map: dict coord→tamanho local mínimo.
+    faixa=(lo, hi): fora dela (ar distante) usa hmax_fora (malha mais grossa)."""
     c = sorted(set(round(v, 7) for v in chaves))
     out = [c[0]]
     for p, q in zip(c[:-1], c[1:]):
-        hl = min(hmin_map.get(p, hmax), q - p)
-        hr = min(hmin_map.get(q, hmax), q - p)
-        out += _graded(p, q, hl, hr, hmax)
+        hm = hmax
+        if faixa and hmax_fora and (q <= faixa[0] + 1e-9 or p >= faixa[1] - 1e-9):
+            hm = hmax_fora
+        hl = min(hmin_map.get(p, hm), q - p)
+        hr = min(hmin_map.get(q, hm), q - p)
+        out += _graded(p, q, hl, hr, hm)
     return np.array(out)
 
 
@@ -133,7 +137,12 @@ class ModeloIndutor:
                 hx[round(v, 7)] = min(hx.get(round(v, 7), 1), max(t / 2, 2e-4))
         for v in (a, a + hw):
             hy[round(v, 7)] = min(hy.get(round(v, 7), 1), 2e-3)
-        self.m = Malha(linhas(xs, hx, hmax), linhas(ys, hy, hmax))
+        # ar distante: malha até 4× mais grossa (a borda das bobinas externas define a faixa fina)
+        cx0 = min([0.0] + [c["x0"] for c in g["condutores"]]) - 0.02
+        cx1 = max([W] + [c["x1"] for c in g["condutores"]]) + 0.02
+        xs += [cx0, cx1]
+        ys += [-0.02, H + 0.02]
+        self.m = Malha(linhas(xs, hx, hmax, (cx0, cx1), 4 * hmax), linhas(ys, hy, hmax, (-0.02, H + 0.02), 4 * hmax))
         cx, cy = self.m.cent[:, 0], self.m.cent[:, 1]
         ferro = (cx > 0) & (cx < W) & (cy > 0) & (cy < H)
         janela = np.zeros_like(ferro)
@@ -253,6 +262,12 @@ class ModeloIndutor:
 # ---------------------------------------------------------------------------------------------------------------------
 # Harmônico no tempo com correntes induzidas (correntes parasitas reais, com blindagem/efeito pelicular)
 def perdas_harmonico(M, f_hz, correntes, sigma, ell_por_cond, mu_r=1500.0):
+    """Compatível: uma excitação. Ver perdas_harmonico_multi para várias excitações com 1 fatoração."""
+    P, A = perdas_harmonico_multi(M, f_hz, [correntes], sigma, ell_por_cond, mu_r)
+    return P[0], A[0]
+
+
+def perdas_harmonico_multi(M, f_hz, lista_correntes, sigma, ell_por_cond, mu_r=1500.0):
     """Resolve (K + jωσM)A − σB·u = 0 ;  −jωσBᵀA + σS·u = I_j  (corrente total imposta em cada seção de condutor).
     correntes: [Ia, Ib, Ic] amplitudes (complexas permitidas) da fase; cada seção leva lado·I_fase.
     Retorna perdas (W) por seção de condutor, já multiplicadas pelo comprimento efetivo."""
@@ -282,17 +297,21 @@ def perdas_harmonico(M, f_hz, correntes, sigma, ell_por_cond, mu_r=1500.0):
     A12 = -B[L]
     A21 = -1j * w * B[L].T
     sysm = sp.bmat([[A11, A12], [A21, S]]).tocsc()
-    rhs = np.zeros(len(L) + nc, complex)
-    for j, c in enumerate(M.g["condutores"]):
-        rhs[len(L) + j] = c["lado"] * correntes[c["fase"]]
-    x = spla.spsolve(sysm, rhs)
-    A = np.zeros(n, complex)
-    A[L] = x[:len(L)]
-    u = x[len(L):]
-    # J nodal por elemento: σ(−jωA + u_j)
-    Jn = sigma * (-1j * w * A[t] + u[M.cond[ce]][:, None])
-    q = np.einsum("ei,ij,ej->e", Jn.conj(), Me, Jn).real * ar      # ∫|J|² dS
-    P = np.zeros(nc)
-    np.add.at(P, M.cond[ce], q)
-    P = 0.5 * P / sigma * np.asarray(ell_por_cond)
-    return P, A
+    lu = spla.splu(sysm)
+    Ps, As = [], []
+    for correntes in lista_correntes:
+        rhs = np.zeros(len(L) + nc, complex)
+        for j, c in enumerate(M.g["condutores"]):
+            rhs[len(L) + j] = c["lado"] * correntes[c["fase"]]
+        x = lu.solve(rhs)
+        A = np.zeros(n, complex)
+        A[L] = x[:len(L)]
+        u = x[len(L):]
+        # J nodal por elemento: σ(−jωA + u_j)
+        Jn = sigma * (-1j * w * A[t] + u[M.cond[ce]][:, None])
+        q = np.einsum("ei,ij,ej->e", Jn.conj(), Me, Jn).real * ar      # ∫|J|² dS
+        P = np.zeros(nc)
+        np.add.at(P, M.cond[ce], q)
+        Ps.append(0.5 * P / sigma * np.asarray(ell_por_cond))
+        As.append(A)
+    return Ps, As
