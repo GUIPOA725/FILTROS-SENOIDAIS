@@ -180,6 +180,38 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     for k, (doc, mail) in ets.items():
         arqs[f"et_{k}"] = doc
         arqs[f"email_{k}"] = mail
+    ind = None
+    if proj.topologia == "LC" and not proj.l2 and (cat.get("indutor_fem") or {}).get("habilitado", True):
+        try:                                        # v1.10.0: projeto de referência do indutor por elementos finitos
+            from . import ind_projeto as IP, ind_desenhos as IDS, auditoria as AUD
+            from .versao import info as _vi
+            log("   Indutor: projeto de referência por elementos finitos (alguns minutos)...")
+            ind = IP.projetar(proj, cat, log=log)
+            IDS.imagens_campo(ind, os.path.join(sub["01_Engenharia"], "Indutor_campo_FEM.png"))
+            _inf = dict(titulo=f"Indutor trifásico p/ filtro senoidal – {proj.l1.l_uh:.0f} µH / {proj.l1.i_nom_a:.0f} A – {cod}",
+                        linha2=f"Classe {ind['requisitos']['classe']} (sistema) | {ind['chapa_dados']['nome'][:48]} | folha {ind['cond']}",
+                        cod=cod, data=f"{t0:%d/%m/%Y}", versao=f"FSEN v{_vi().get('versao')}")
+            arqs["indutor_desenhos"] = IDS.gerar_pdf(ind, os.path.join(sub["03_Fornecedores"], f"Projeto_Referencia_Indutor_{cod}.pdf"),
+                                                     _inf, png_dir=sub["01_Engenharia"])
+            arqs["indutor_memorial"] = AUD.memorial_indutor(ind, os.path.join(sub["03_Fornecedores"], f"Memorial_Indutor_{cod}.pdf"),
+                                                            _inf["titulo"])
+            with open(os.path.join(sub["01_Engenharia"], "indutor_projeto.json"), "w", encoding="utf-8") as f:
+                json.dump({k: v for k, v in ind.items() if k not in ("campo_pico",)}, f, ensure_ascii=False, indent=1, default=_json_default)
+            for _f in os.listdir(sub["03_Fornecedores"]):
+                if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
+                    with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:
+                        _fh.write(
+                            "\n\nANEXOS – PROJETO DE REFERÊNCIA DO INDUTOR\n"
+                            f"Seguem também o Projeto de Referência (desenhos com vistas, cortes, 3D e lista de materiais) e o Memorial de "
+                            f"cálculo por elementos finitos ({os.path.basename(arqs['indutor_desenhos'])}, {os.path.basename(arqs['indutor_memorial'])}). "
+                            f"Ele foi calculado com as correntes e tensões reais do filtro: {ind['N']} espiras de folha, {ind['ng']} entreferros por "
+                            f"coluna, bobina a {ind['c']*1e3:.0f} mm do núcleo, chapa {ind['chapa_dados']['esp_mm']} mm, sistema de isolação classe "
+                            f"{ind['requisitos']['classe']}. Vocês podem adaptar ao padrão de fabricação de vocês – peço só que declarem as "
+                            "diferenças (chapa, espiras, entreferros, condutor, isolação) para conferirmos.\n")
+            log(f"   Indutor: {ind['N']} espiras, {ind['ng']} entreferros/coluna, perdas ≈ {ind['perdas']['total']:.0f} W, "
+                f"elevação ≈ {ind['termico']['elev_bobina_K']:.0f} K, massa ≈ {ind['massa_kg']['total']:.0f} kg")
+        except Exception as e:
+            log(f"   (projeto do indutor por elementos finitos não concluído: {type(e).__name__}: {e})")
     arqs["rfq_montagem"], arqs["email_montagem"] = D.rfq_montagem(proj, arr, orc, cat, sub["04_Montadora"])
     arqs["caderno_montagem"] = D.caderno_montagem(proj, arr, orc, cat, sub["04_Montadora"], pngs)
     shutil.copy(pdf_des, sub["04_Montadora"])
@@ -193,6 +225,11 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         log("   Relatório técnico final (RTM) gerado em 02_Cliente")
     except Exception as e:
         log(f"   (relatório técnico final não gerado: {type(e).__name__}: {e})")
+    try:                                            # v1.10.0: relatório de auditoria (uso interno)
+        from . import auditoria as AUD
+        arqs["auditoria"] = AUD.gerar(proj, arr, orc, cat, pasta, ind=ind, graficos=graf, log=log)
+    except Exception as e:
+        log(f"   (relatório de auditoria não gerado: {type(e).__name__}: {e})")
     # resposta ao cliente
     email_cli = _email_cliente(proj, orc, cat)
     with open(os.path.join(sub["02_Cliente"], "Email_Resposta_Cliente.txt"), "w", encoding="utf-8") as f:

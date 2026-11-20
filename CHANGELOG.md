@@ -1,5 +1,27 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.10.0 – 20/11/2026 – Indutor por elementos finitos (projeto de referência para fabricação) + Relatório de Auditoria
+- Novo solver de elementos finitos 2D próprio (fsen/ind_fem.py): magnetostático não-linear (curva B-H do aço GO) para saturação,
+  linear para matriz de indutâncias 3×3 e ajuste do entreferro, e HARMÔNICO NO TEMPO com correntes induzidas e corrente imposta
+  por condutor (blindagem/efeito pelicular reais na folha) para as perdas do enrolamento. Validado: limite CC exato e indutância
+  entre o valor sem espraiamento e McLyman.
+- Novo projeto magnético (fsen/ind_projeto.py): varredura de espiras × núcleo (inclusive maior que o mínimo para reduzir perda
+  AF) × folha × canais; entreferro por peça ≤ 3 mm; estudo nº de entreferros × distância bobina–núcleo; equalização das colunas;
+  saturação em pico/Isat/sobrecarga; perdas no núcleo elemento a elemento com o ESPECTRO REAL da tensão PWM sobre o indutor e
+  correntes parasitas na lâmina com efeito pelicular; elevação de temperatura (IEC 60076-11); forças no entreferro; sistema de
+  isolação classe F/H componente a componente (IEC 60085/61857: DMD e GPO-3 só servem em classe F); distâncias IEC 60664-1.
+- Desenhos do projeto de referência (fsen/ind_desenhos.py), 4 folhas A3: vistas, cortes A-A/B-B, detalhes de entreferro e
+  terminal, vista 3D, lista de materiais com normas e notas. Memorial de cálculo do indutor em PDF. Ambos vão para
+  03_Fornecedores e são citados no e-mail ao fabricante.
+- Novo Relatório de Auditoria (fsen/auditoria.py, 01_Engenharia/AUDITORIA_<projeto>.pdf, uso interno): entradas e origem de
+  cada dado, normas, modelo e parâmetros, varreduras e motivos de descarte, robustez, todas as verificações, ATP completo,
+  capacitores, indutor (FEM, perdas, térmico, isolação, desenhos), mecânica, custos, dados faltantes, incertezas, rastreabilidade
+  (SHA-256 dos arquivos) e formulário de parecer do auditor.
+- Calibração: o mesmo método aplicado aos indutores Cootrans já fornecidos (1586 µH/28 A, 0,588 mH/135 A, 0,336 mH/217 A) chega
+  a massa e dimensões na mesma faixa (16/80/134 kg × reais 20/90/130 kg). Filtros anteriores (IHR, SENAI/Gelluns, AB) reavaliados
+  na plataforma – resultados no relatório de auditoria.
+- Dependência nova: reportlab (instalada automaticamente pelo ABRIR_FSEN).
+
 ## v1.9.13 – 20/11/2026 – Mínimo de capacitores com o capacitor do estoque
 - Nova prioridade na tela "Nova solicitação": "MÍNIMO de capacitores com o capacitor escolhido (estoque)". Marque o capacitor
   (ex.: TDK 20 µF 480 V) e a ligação (ex.: Delta); a plataforma varre nº de capacitores × indutância (uk 4–14 %), simula todos
