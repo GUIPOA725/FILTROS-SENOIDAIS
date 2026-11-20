@@ -1,1 +1,1 @@
-{"versao": "1.9.12", "data": "2026-11-20", "resumo": "Alternativa de indutância com o MESMO capacitor do projeto (estoque) e regra fixa: menos capacitores → faixa MTE 8–10 % → custo"}
+{"versao": "1.9.13", "data": "2026-11-20", "resumo": "Prioridade 'mínimo de capacitores' com capacitor forçado (estoque): varredura de casos, opções e escolha ancorada nos produtos de mercado (Schaffner/REO/MTE); critério de perda de inserção"}

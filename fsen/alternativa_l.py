@@ -41,6 +41,25 @@ def alternativas(proj, cat, max_opcoes=3):
     lo, hi = fx["l_mh"][0] * 1000, fx["l_mh"][1] * 1000
     nec = atual["l_uh"] < 0.85 * lo
     cfg = config_de_projeto(proj)
+    eo = getattr(proj, "estudo_opcoes", None)
+    if eo and eo.get("recomendada"):
+        # v1.9.13: projeto escolhido por 'mínimo de capacitores' → alternativa = 2ª melhor com a MESMA quantidade de capacitores
+        r0 = eo["recomendada"]
+        mesmas = [o for o in eo["opcoes"] if o["n_caps"] == r0["n_caps"] and o is not r0]
+        if not mesmas:
+            return dict(necessaria=False, motivo="sem outra indutância válida com a mesma quantidade de capacitores", atual=atual)
+        o = mesmas[0]
+        try:
+            pr = projeto_manual(ped, cat, cfg["fs_khz"], o["L_uh"], o["cap_id"], o["ligacao"], o["n_por_ramo"])
+            rec = _linha(pr, f"ALTERNATIVA: {o['L_uh']:.0f} µH + {pr.banco.n_total} × {o['cap_id'].replace('TDK_PEC_', '')} {o['ligacao']}")
+            rec["_proj"] = pr
+        except Exception:
+            return dict(necessaria=False, motivo="alternativa não simulada", atual=atual)
+        ops = [dict(rotulo=f"{x['L_uh']:.0f} µH + {x['n_caps']} cap.", l_uh=x["L_uh"], n_total=x["n_caps"], fr_hz=x["fr_hz"],
+                    ripple_pp=x["ripple"], queda_pct=x["queda"], thd_motor=x["thd"], custo=x["custo"], aprovado=True) for x in mesmas[1:]]
+        return dict(necessaria=True, faixa=(lo, hi), atual=atual, opcoes=ops, recomendada=rec,
+                    motivo=(f"Outra indutância válida com os mesmos {r0['n_caps']} capacitores (aprovada, robusta e com queda dentro do "
+                            f"limite) – útil se for mais fácil de fabricar"))
     est = getattr(proj, "estudo_mercado", None)
     if est and est.get("recomendada"):
         # v1.9.11: usa o ponto ótimo de mercado (menos capacitores, robusto) como alternativa recomendada

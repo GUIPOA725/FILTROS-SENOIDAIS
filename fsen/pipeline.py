@@ -52,7 +52,7 @@ def _slug(s):
 
 
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
-              ligacoes=None, prioridade="custo"):
+              ligacoes=None, prioridade="custo", queda_max=None):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
@@ -90,6 +90,30 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                     log("   Nenhuma opção de mercado robusta – mantida a otimização por custo")
             except Exception as e:
                 log(f"   (prioridade de mercado não aplicada: {e})")
+        elif prioridade == "min_caps" and proj.topologia == "LC" and not proj.l2:
+            # v1.9.13: capacitor FORÇADO (estoque) e o MÍNIMO de capacitores, compensando no indutor, com queda máxima
+            try:
+                from . import opcoes_caps as OC
+                from .dimensionamento import projeto_manual
+                _caps = list(capacitores or [proj.banco.cap_id])
+                _ligs = tuple(ligacoes or ("Delta", "Estrela"))
+                _qm = float(queda_max or OC.QUEDA_MAX_PADRAO)
+                log(f"   Prioridade 'mínimo de capacitores': {', '.join(_caps)} ({', '.join(_ligs)}), queda ≤ {_qm:g} % – varrendo casos...")
+                _est = OC.varrer(ped, cat, proj.fs_hz / 1000, _caps, _ligs, queda_max=_qm, log=log)
+                o = _est["recomendada"]
+                if o:
+                    _otim = getattr(proj, "_otimizacao", None)
+                    proj = projeto_manual(ped, cat, proj.fs_hz / 1000, o["L_uh"], o["cap_id"], o["ligacao"], o["n_por_ramo"])
+                    proj._otimizacao = _otim
+                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                        f"Configuração escolhida pela prioridade 'mínimo de capacitores' com capacitor forçado ({o['cap_id']}): "
+                        f"{o['n_caps']} capacitores, queda {o['queda']} % (≤ {_qm:g} %), robusta a L ±10 % e C ±5 %."]
+                    log(f"   → {o['L_uh']:.0f} µH + {o['n_caps']} × {o['cap_id']} ({o['ligacao']})")
+                else:
+                    log("   Nenhum caso válido com o capacitor forçado – mantida a otimização por custo")
+                proj.estudo_opcoes = _est
+            except Exception as e:
+                log(f"   (prioridade 'mínimo de capacitores' não aplicada: {type(e).__name__}: {e})")
     cod = proj_codigo(proj)
     sufixo = f"_AJUSTE-MANUAL-{t0:%H%M}" if projeto is not None else ""
     # uma pasta por cliente; dentro, um projeto por solicitação: PROJETOS\<Cliente>\<data>_<código>
@@ -145,6 +169,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         log("   Estudo de ponto ótimo e robustez gerado (01_Engenharia)")
     except Exception as e:
         log(f"   (estudo de ponto ótimo não gerado: {type(e).__name__}: {e})")
+    if getattr(proj, "estudo_opcoes", None):
+        try:
+            from . import opcoes_caps as OC
+            arqs["estudo_opcoes"] = OC.gerar_docx(proj, cat, proj.estudo_opcoes, sub["01_Engenharia"], D._novo, D._tabela, D._bullets)
+            log("   Estudo de opções – mínimo de capacitores gerado (01_Engenharia)")
+        except Exception as e:
+            log(f"   (estudo de opções não gerado: {type(e).__name__}: {e})")
     ets = D.et_fornecedores(proj, arr, orc, cat, sub["03_Fornecedores"], pdf_des)
     for k, (doc, mail) in ets.items():
         arqs[f"et_{k}"] = doc
@@ -195,8 +226,12 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     if zipar:
         z = shutil.make_archive(pasta, "zip", pasta)
     log(f"Concluído em {(_dt.datetime.now() - t0).total_seconds():.1f} s → {pasta}")
+    _op = None
+    if getattr(proj, "estudo_opcoes", None):
+        from . import opcoes_caps as OC
+        _op = OC.tabela_ui(proj.estudo_opcoes)
     return dict(projeto=proj, arranjo=arr, orcamento=orc, pasta=pasta, zip=z, arquivos=arqs, graficos=graf, resumo=resumo,
-                similares=similares)
+                similares=similares, opcoes=_op)
 
 
 def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):

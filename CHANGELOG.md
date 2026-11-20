@@ -1,5 +1,17 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.9.13 – 20/11/2026 – Mínimo de capacitores com o capacitor do estoque
+- Nova prioridade na tela "Nova solicitação": "MÍNIMO de capacitores com o capacitor escolhido (estoque)". Marque o capacitor
+  (ex.: TDK 20 µF 480 V) e a ligação (ex.: Delta); a plataforma varre nº de capacitores × indutância (uk 4–14 %), simula todos
+  os casos e escolhe o de MENOS capacitores aprovado em todos os critérios, robusto e com perda de inserção ≤ 6 % (MTE).
+- Regra de escolha fixa, ancorada no que o mercado já fabrica: 1º menos capacitores; 2º L mais perto dos produtos de mercado
+  para a corrente (Schaffner FN5040 / REO CNW 933 interpolados; sem referência, MTE 8–10 %); 3º menor custo.
+- Critério de queda corrigido: a perda de inserção (queda real de tensão na saída, com o FP do motor) é o que vale para o motor
+  (MTE ≤ 6 %); a queda reativa ωL·I no indutor continua mostrada, mas não é a tensão que o motor perde.
+- Novo documento 01_Engenharia/Estudo_Opcoes_Minimo_Capacitores.docx: critérios, por que menos capacitores não serve, tabela de
+  opções, gráfico THD × L e inserção × L, todos os casos válidos e referências. Tabela de opções também na tela.
+- Alternativa "favor cotar também" da ET do indutor: 2ª melhor indutância com a MESMA quantidade de capacitores.
+
 ## v1.9.12 – 20/11/2026 – Alternativa de indutância com o capacitor que a empresa tem
 - A varredura de ponto ótimo (e a alternativa "favor cotar também" da ET do indutor) passa a usar o MESMO capacitor do projeto
   (ex.: 20 µF 480 V, que é o que há em estoque) – a alternativa não pode depender de um capacitor que não temos.

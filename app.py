@@ -214,7 +214,7 @@ if pagina == "Nova solicitação":
             topos = st.multiselect("Avaliar somente", list(TOPOLOGIAS), default=["LC"], format_func=lambda k: TOPOLOGIAS[k]["nome"])
         _cat_ui = carregar_catalogo()
         _caps_ids = [c["id"] for c in _cat_ui["capacitores"]]
-        _caps_sel = st.multiselect("Capacitores a considerar (ex.: só os do estoque; vazio = todos)", _caps_ids,
+        _caps_sel = st.multiselect("Capacitores a considerar / FORÇAR capacitor do estoque (vazio = todos)", _caps_ids,
                                    default=_cat_ui.get("otimizacao", {}).get("capacitores_permitidos") or [],
                                    format_func=lambda i: next(f"{c['fabricante']} {c['uf']:g} µF {c['v_ac']} V – estoque {c.get('estoque', 0)}"
                                                               for c in _cat_ui["capacitores"] if c["id"] == i))
@@ -229,17 +229,28 @@ if pagina == "Nova solicitação":
                    f"motor {p.motor_cv:g} CV, {p.motor_corrente_a:g} A, FP {p.motor_fp:g}, FS {p.fator_servico:g} · "
                    f"cabo {p.cabo_m:g} m · {p.f_saida_min_hz:g}–{p.f_saida_max_hz:g} Hz · {p.quantidade} pç")
         st.radio("Prioridade do projeto", ["Menor custo (otimização global)",
-                                            "Indutor de mercado (uk 7–10 %, padrão MTE) e MENOS capacitores – robusto a L ±10 % / C ±5 %"],
-                 key="prioridade_proj", help="A segunda opção varre L × capacitores × ligação e escolhe a configuração aprovada e robusta "
-                                             "com menos capacitores. Em ambos os casos é gerado o Estudo de Ponto Ótimo e Robustez.")
+                                            "Indutor de mercado (uk 7–10 %, padrão MTE) e MENOS capacitores – robusto a L ±10 % / C ±5 %",
+                                            "MÍNIMO de capacitores com o capacitor escolhido acima (estoque) – compensa no indutor, queda limitada"],
+                 key="prioridade_proj", help="A terceira opção usa SÓ o(s) capacitor(es) marcado(s) acima, varre nº de capacitores × indutância, "
+                                             "simula todos os casos e escolhe o de MENOS capacitores aprovado, robusto e com queda ≤ limite. "
+                                             "Gera o 'Estudo de Opções – Mínimo de Capacitores' com as melhores combinações para comparar.")
+        _qmax = 6.0
+        if st.session_state.get("prioridade_proj", "").startswith("MÍNIMO"):
+            if not _caps_sel:
+                st.warning("Marque acima o capacitor do estoque (ex.: TDK 20 µF 480 V) e a ligação (ex.: Delta).")
+            _qmax = st.number_input("Perda de inserção máxima admitida @ f máx (%) – queda real de tensão na saída", 3.0, 10.0, 6.0, 0.5,
+                                    help="Padrão 6 % (MTE). É a queda real de tensão na saída com o FP do motor – menor que a queda reativa ωL·I no indutor. A tensão no motor também é conferida "
+                                         "(≥ 100 % do V/f na faixa de operação).")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
                 r = processar(p, pasta_saida, log=lambda m: msgs.write(m), topologias=topos or None,
                               capacitores=_caps_sel or None, ligacoes=_ligs or None,
-                              prioridade="mercado" if st.session_state.get("prioridade_proj", "").startswith("Indutor") else "custo")
+                              prioridade=("mercado" if st.session_state.get("prioridade_proj", "").startswith("Indutor") else
+                                          "min_caps" if st.session_state.get("prioridade_proj", "").startswith("MÍNIMO") else "custo"),
+                              queda_max=_qmax)
             st.session_state["resultado"] = {"pasta": r["pasta"], "zip": r["zip"], "arquivos": r["arquivos"], "graficos": r["graficos"],
-                                             "resumo": r["resumo"]}
+                                             "resumo": r["resumo"], "opcoes": r.get("opcoes")}
             st.session_state["cfg_auto"] = config_de_projeto(r["projeto"])
             st.session_state["cfg_manual"] = dict(st.session_state["cfg_auto"])
             for k in ("manual_res", "auto_res"):
@@ -249,6 +260,10 @@ if pagina == "Nova solicitação":
         st.success(f"Projeto gerado em {r['pasta']}")
         st.info("Quer mudar algo (uk, fr, capacitores, fechamento, amortecimento, fs)? Abra **Ajuste manual e ressimulação** no menu.")
         painel_atp(r["pasta"])
+        if r.get("opcoes"):
+            st.subheader("Opções – mínimo de capacitores (★ = escolhida)")
+            st.dataframe(pd.DataFrame(r["opcoes"]), use_container_width=True, hide_index=True)
+            st.caption("Detalhes, gráfico e todos os casos: 01_Engenharia/Estudo_Opcoes_Minimo_Capacitores.docx")
         st.markdown(r["resumo"])
         _ed = r["arquivos"].get("email_dados")
         if _ed and os.path.exists(_ed):
