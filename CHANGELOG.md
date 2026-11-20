@@ -6,6 +6,7 @@
   Foi o que gerou a falsa divergência na A&W v1.8.8 a 41 Hz (ATP 126 V × Python 302 V). Relido com a correção: 301,8 V × 302,1 V.
 - Agora: .pl4/.lis/.dbg antigos são apagados antes de cada rodada; a leitura corta o arquivo no tamanho gravado no cabeçalho
   e para no primeiro salto de tempo (dupla proteção).
+- Gráfico Python × ATP: a corrente no ramo do banco em triângulo agora também mostra a curva do Python (antes só a do ATP).
 
 ## v1.9.6 – 19/11/2026 – Relatório Técnico Final (padrão RTM)
 - Novo documento em 02_Cliente: RTM-FSEN-<I>-<V>_Relatorio_Tecnico_Final.docx (+ PDF quando há Word/LibreOffice), no mesmo

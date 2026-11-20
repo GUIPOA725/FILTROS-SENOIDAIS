@@ -542,11 +542,17 @@ def grafico_comparacao(caso, pasta_pl4: str, arquivo_png: str, n_ciclos: int = 2
     ax[1].set_ylabel("I inversor fase A (A)")
     ic_py = None
     try:
-        ic_py = shift(r.icap_y) * k_i
+        if lig == "Delta":
+            # ramo AB do triângulo: i = C_Δ·dv_ab/dt, com C_Δ = C_Y/3 (derivada periódica da tensão do banco)
+            dtp = float(r.t[1] - r.t[0])
+            v = np.asarray(r.vc_ab, float)
+            ic_py = shift((p.C_y / 3.0) * (np.roll(v, -1) - np.roll(v, 1)) / (2 * dtp))
+        else:
+            ic_py = shift(r.icap_y) * k_i
     except Exception:
         pass
     ax[2].plot(ta, ic_atp, color="#d95f02", lw=0.6, label="ATP – ramo AB" if lig == "Delta" else "ATP – ramo A")
-    if ic_py is not None and lig != "Delta":
+    if ic_py is not None:
         ax[2].plot(tp, ic_py, color="#1b4f9c", lw=0.6, ls="--", label="Python")
     ax[2].set_ylabel(f"I ramo do banco (A)\n{n} cap. em paralelo")
     ax[2].set_xlabel("t (ms) – últimos 2 ciclos em regime")
