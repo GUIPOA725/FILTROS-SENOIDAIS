@@ -437,18 +437,21 @@ def _secao_indutor(R, d, pasta):
     R.h1("Indutor – projeto de referência para fabricação (elementos finitos)")
     secao_corrente_pdf(R, d.get("corrente_dimensionamento"))
     if d.get("comparacao_condutor"):
-        R.h2("Alumínio × cobre (2 entreferros por coluna + fio retangular)")
-        R.tab(["Condutor", "Fio", "Espiras", "Coluna (mm)", "Perdas (W)", "Elevação (K)", "Massa (kg)", "Material (R$)", "Escolhido"],
-              [(c["condutor"], c["fio"], c["N"], c["coluna"], c["perdas_W"], c["elev_K"], c["massa_kg"], c["custo_material"],
-                "sim" if c["escolhido"] else "") for c in d["comparacao_condutor"]], [0.8, 1.6, 0.6, 0.8, 0.7, 0.7, 0.7, 0.8, 0.6])
+        R.h2("Melhor alumínio × melhor cobre (2 entreferros por coluna + fio/barra retangular)")
+        R.tab(["Condutor", "Fio t×h×paralelos", "Chapa", "Espiras", "Coluna (mm)", "Perdas FEM (W)", "Custo triagem (R$)", "Escolhido"],
+              [(c["condutor"], c["fio"], c["chapa"], c["N"], c["coluna"], c["perdas_W"], c["custo_triagem"],
+                "sim" if c["escolhido"] else "") for c in d["comparacao_condutor"]], [0.8, 1.3, 1.0, 0.6, 0.8, 0.8, 0.9, 0.6])
     if d.get("triagem_fio"):
         R.h2("Triagem por elementos finitos dos candidatos de fio retangular")
         R.p("O pré-dimensionamento analítico gera os candidatos mais baratos (núcleo, espiras, bitola, paralelos, camadas); cada um é "
             "conferido no FEM com os 2 entreferros nas culatras (perda no enrolamento com espraiamento real) + núcleo + perda de "
             "entreferro (Lee). Fica o mais barato que passa nos limites.")
-        R.tab(["Fio t×h×paralelos (mm)", "Espiras", "Camadas", "Coluna (mm)", "Enrolamento (W)", "Total (W)", "Passa"],
-              [(x["fio"], x["N"], x["camadas"], x["coluna"], x["P_enrol_W"], x["P_total_W"], "sim" if x["ok"] else "não")
-               for x in d["triagem_fio"]], [1.6, 0.6, 0.6, 0.9, 0.9, 0.8, 0.5])
+        R.tab(["Cond.", "Chapa", "Fio t×h×par. (mm)", "Esp.", "Cam.", "Coluna", "Enrol. (W)", "Total (W)", "Massa (kg)", "Custo (R$)", "Passa"],
+              [(x["cond"], x["chapa"], x["fio"], x["N"], x["camadas"], x["coluna"], x["P_enrol_W"], x["P_total_W"], x.get("massa_kg", ""),
+                x.get("custo") or "", "sim" if x["ok"] else "não") for x in d["triagem_fio"]],
+              [0.45, 0.8, 1.1, 0.35, 0.35, 0.65, 0.6, 0.6, 0.6, 0.65, 0.4])
+        R.p("Custo da triagem = chapa + condutor (R$/kg estimados) + perdas capitalizadas (R$ 1,5/W) + mão de obra R$ 10/kg (estimativa). "
+            "Exige folga: perdas ≤ 92 % do limite e elevação ≤ 90 % da meta.")
     if d.get("perdas", {}).get("nucleo_entreferro"):
         R.p(f"Perda adicional no núcleo junto aos entreferros (fórmula empírica de Lee/McLyman, Pg = Ki·E·lg·f·B², Ki = 0,155 para "
             f"lâminas): {d['perdas']['nucleo_entreferro']:.0f} W – somada às perdas como margem para o efeito 3D que o FEM 2D não vê.")

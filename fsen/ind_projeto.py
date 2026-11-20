@@ -30,6 +30,22 @@ CHAPAS = {
                         p17_50=1.20, rho=48e-8, dens=7650, kf=0.96, preco_kg=28.0),
     "GO_M110-23S": dict(nome="Aço-silício de grão orientado M110-23S (0,23 mm)", norma="IEC 60404-8-7", esp_mm=0.23,
                         p17_50=1.10, rho=48e-8, dens=7650, kf=0.955, preco_kg=32.0),
+    # v1.11.3 – graus GO da Aperam (único fabricante nacional; catálogo "Aços Elétricos GO e GNO", perdas máximas garantidas
+    # P1,7/50 Hz, revestimento C-5, densidade 7,65). Preço R$/kg: ESTIMATIVA relativa (confirmar cotação).
+    "GO_APERAM_M108-23": dict(nome="Aço GO Aperam M108-23 (E003-9) 0,23 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.23,
+                              p17_50=1.08, rho=48e-8, dens=7650, kf=0.945, preco_kg=34.0),
+    "GO_APERAM_M117-23": dict(nome="Aço GO Aperam M117-23 (E003-9) 0,23 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.23,
+                              p17_50=1.17, rho=48e-8, dens=7650, kf=0.945, preco_kg=32.0),
+    "GO_APERAM_M112-27": dict(nome="Aço GO Aperam M112-27 (E004-7) 0,27 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.27,
+                              p17_50=1.12, rho=48e-8, dens=7650, kf=0.95, preco_kg=30.0),
+    "GO_APERAM_M125-27": dict(nome="Aço GO Aperam M125-27 (E004-7) 0,27 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.27,
+                              p17_50=1.24, rho=48e-8, dens=7650, kf=0.95, preco_kg=28.0),
+    "GO_APERAM_M130-30": dict(nome="Aço GO Aperam M130-30 (E005-4) 0,30 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.30,
+                              p17_50=1.30, rho=48e-8, dens=7650, kf=0.955, preco_kg=27.0),
+    "GO_APERAM_M140-30": dict(nome="Aço GO Aperam M140-30 (E005-4) 0,30 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.30,
+                              p17_50=1.40, rho=48e-8, dens=7650, kf=0.955, preco_kg=26.0),
+    "GO_APERAM_M150-35": dict(nome="Aço GO Aperam M150-35 (E006-2) 0,35 mm", norma="IEC 60404-8-7 / Aperam", esp_mm=0.35,
+                              p17_50=1.50, rho=48e-8, dens=7650, kf=0.96, preco_kg=25.0),
     "GNO_M400-50A": dict(nome="Aço-silício de grão NÃO orientado M400-50A (0,50 mm) – só para comparação", norma="IEC 60404-8-4",
                          esp_mm=0.50, p17_50=5.6, rho=42e-8, dens=7700, kf=0.97, preco_kg=14.0),
 }
@@ -359,16 +375,26 @@ def _perdas_nucleo_lin(d, M, r, esp, ch):
 
 # ---------------------------------------------------------------------------------------------------------------------
 # v1.11.2 – fio retangular (padrão dos fabricantes nacionais com 2 entreferros por coluna nas culatras)
-FIO_T_MM = (1.6, 1.8, 2.0, 2.24, 2.5, 2.8, 3.15, 3.55, 4.0)          # espessura (radial) – série IEC 60317-0-2 / NBR
-FIO_H_MM = (5.0, 6.3, 7.1, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0)   # altura (axial)
+FIO_T_MM = (0.80, 0.90, 1.00, 1.12, 1.25, 1.40, 1.60, 1.80, 2.00, 2.24, 2.50, 2.80, 3.15, 3.55, 4.00, 4.50, 5.00, 5.60, 6.30, 7.10,
+            8.00, 9.00, 10.0)   # espessura (radial) – série R20 da IEC 60317-0-2 (fio e barra retangular)
+FIO_H_MM = (2.00, 2.24, 2.50, 2.80, 3.15, 3.55, 4.00, 4.50, 5.00, 5.60, 6.30, 7.10, 8.00, 9.00, 10.0, 11.2, 12.5, 14.0, 16.0,
+            18.0, 20.0, 22.4, 25.0, 28.0, 31.5)   # largura (axial) – série R20; relação largura/espessura 1,4 a 8
+CHAPAS_FIO = ("GO_APERAM_M108-23", "GO_APERAM_M117-23", "GO_APERAM_M112-27", "GO_APERAM_M125-27", "GO_APERAM_M130-30",
+              "GO_APERAM_M140-30", "GO_APERAM_M150-35")
+CONDS_FIO = ("AL", "CU")
+PARALELOS_FIO = (1, 2, 3, 4, 6)
+CAMADAS_FIO = (1, 2, 3, 4, 6, 8)
 FIO_ISO_MM = 0.40       # isolação total por fio (papel aramida enrolado 2 × 0,10 mm por lado – classe H)
 FIO_T_CAM_MM = 0.25     # isolação entre camadas (aramida 0,25 mm)
 FIO_K_ESPRAIO = 1.65   # entreferro real / ideal com 2 entreferros nas culatras (FEM A&W: 16,9 / 11,0 mm × 1,10 ≈ 1,7)
+MAO_OBRA_R_KG = 10.0      # mão de obra/estrutura do fabricante proporcional à massa (estimativa – fabricantes cotam por kg)
+FOLGA_PERDAS_FIO = 0.92   # o candidato precisa ficar ≥ 8 % abaixo do limite de perdas (margem de fabricação)
+FOLGA_ELEV_FIO = 0.90     # e ≥ 10 % abaixo da meta de elevação
 FIO_FR60 = 1.25         # fator de espraiamento das juntas na perda 60 Hz usado só na triagem (o FEM decide)
 
 
-def pre_dimensionar_fio(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=None, amb_c=50.0, espectro=None, nd_min=0,
-                        n_cand=16):
+def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=None, amb_c=50.0, espectro=None, nd_min=0,
+                n_cand=16):
     """Triagem analítica do enrolamento em CAMADAS de fio retangular: devolve os n_cand candidatos mais baratos (núcleo, espiras,
     dimensão do fio, nº de fios em paralelo e de camadas) que passam na estimativa térmica; o FEM escolhe entre eles."""
     ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
@@ -379,11 +405,15 @@ def pre_dimensionar_fio(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
     Bsat_d, c = 1.45, 15e-3
     iso, tcam = FIO_ISO_MM * 1e-3, FIO_T_CAM_MM * 1e-3
+    Jmin, Jmax = (0.8e6, 3.0e6) if cond_id == "AL" else (1.2e6, 4.5e6)     # densidade de corrente admissível (A/m²)
     combos = [(t * 1e-3, h * 1e-3, npar, nd) for t in FIO_T_MM for h in FIO_H_MM if 1.4 <= h / t <= 8.0
-              for npar in (1, 2, 3, 4) for nd in range(nd_min, 3)]
+              for npar in PARALELOS_FIO for nd in range(nd_min, 3)
+              if r["In"] / Jmax <= npar * t * h * 1e-6 <= r["In"] / Jmin]
+    if not combos:
+        return []
     T_, H_, NP_, ND_ = (np.array(v, dtype=float) for v in zip(*combos))
     A_ = NP_ * T_ * H_
-    ok_J = (A_ >= r["In"] / 3.0e6) & (A_ <= r["In"] / 0.8e6)          # densidade de corrente 0,8–3,0 A/mm² (Al)
+    ok_J = np.ones_like(A_, dtype=bool)
     eta_ = H_ / (H_ + iso)
     wd, tube, wrap = 8e-3, 3e-3, 1.5e-3
     bc, borda, entre = DIST["bobina_culatra_mm"] * 1e-3, DIST["borda_folha_mm"] * 1e-3, DIST["entre_fases_mm"] * 1e-3
@@ -396,8 +426,8 @@ def pre_dimensionar_fio(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_
 
     cands = []
     kh, k_exc, dl = _steinmetz(ch)
-    for N in range(8, 61):
-        for n_cam in (1, 2, 3, 4, 5, 6, 8):
+    for N in list(range(8, 41)) + list(range(42, 61, 2)):
+        for n_cam in CAMADAS_FIO:
             if N % n_cam:
                 continue
             n_ax = N // n_cam
@@ -407,7 +437,7 @@ def pre_dimensionar_fio(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_
             hw_ = hc_ + 2 * bc
             ww_ = 2 * (c + build_) + entre
             Fr_ = dowell_v(n_cam * NP_, T_ / delta * np.sqrt(eta_))
-            for kae in (1.0, 1.25, 1.5, 1.75, 2.0, 2.5):
+            for kae in (1.0, 1.25, 1.5, 2.0):
                 Ae = kae * r["L"] * r["Isat"] / (N * Bsat_d)
                 for a_mm in range(40, 261, 10):
                     a = a_mm * 1e-3
@@ -460,6 +490,42 @@ def pre_dimensionar_fio(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_
         if len(out) >= n_cand:
             break
     return out
+
+
+def pre_dimensionar_fio(r, chapas=None, conds=None, h_conv=12.0, alvo_elev=None, amb_c=50.0, espectro=None, nd_min=0,
+                        por_combo=2, n_global=10, log=None):
+    """v1.11.3 – varre TODAS as chapas (graus GO Aperam) × condutores (Al, Cu) × fio/barra (série R20 IEC 60317-0-2) × paralelos ×
+    camadas × espiras × núcleo; devolve os 2 melhores de cada chapa×condutor + os 10 melhores no geral para o FEM conferir."""
+    chapas = chapas or CHAPAS_FIO
+    conds = conds or CONDS_FIO
+    todos, resumo = [], []
+    for ch_id in chapas:
+        for c_id in conds:
+            lst = _pre_fio_um(r, ch_id, c_id, h_conv, alvo_elev, amb_c, espectro, nd_min, n_cand=max(por_combo, n_global))
+            resumo.append((ch_id, c_id, len(lst), lst[0]["custo"] if lst else None))
+            todos.extend(lst)
+    if log:
+        ok = [x for x in resumo if x[2]]
+        log(f"     base: {len(FIO_T_MM)}×{len(FIO_H_MM)} bitolas IEC 60317-0-2 × {len(PARALELOS_FIO)} paralelos × {len(CAMADAS_FIO)} camadas × "
+            f"{len(chapas)} chapas × {len(conds)} condutores → {len(ok)} combinações chapa×condutor com solução")
+    escolhidos, vistos = [], set()
+
+    def chave(x):
+        return (x["chapa"], x["cond"], x["N"], round(x["a"] * 1e3), round(x["b"] * 1e3), x["fio"]["n_cam"], x["fio"]["np"],
+                round(x["fio"]["t"] * 1e4), round(x["fio"]["h"] * 1e4))
+    for ch_id in chapas:
+        for c_id in conds:
+            sub = sorted([x for x in todos if x["chapa"] == ch_id and x["cond"] == c_id], key=lambda x: x["custo"])[:por_combo]
+            for x in sub:
+                if chave(x) not in vistos:
+                    vistos.add(chave(x))
+                    escolhidos.append(x)
+    for x in sorted(todos, key=lambda x: x["custo"])[:n_global]:
+        if chave(x) not in vistos:
+            vistos.add(chave(x))
+            escolhidos.append(x)
+    escolhidos.sort(key=lambda x: x["custo"])
+    return escolhidos
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -542,28 +608,20 @@ def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb
     total (material + perdas capitalizadas) que passa em todas as verificações (v1.11.2)."""
     if construcao != "culatra_fio":
         return _projetar_tent(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao)
-    res = []
-    for cid in ("AL", "CU"):
-        log(f"   Indutor – 2 entreferros/coluna + fio retangular de {'ALUMÍNIO' if cid == 'AL' else 'COBRE'}:")
-        try:
-            dd = _projetar_tent(proj, cat, chapa, cid, h_conv, amb_c, log, construcao)
-            res.append(dd)
-        except Exception as e:
-            log(f"   ({cid}: sem solução – {e})")
-    if not res:
-        raise RuntimeError("sem solução com fio retangular")
-    pmx = lambda dd: (dd["requisitos"].get("P_max") or 1e9) * 0.88
-    ok = lambda dd: dd["perdas"]["total"] <= pmx(dd) and not dd.get("avisos")
-    res.sort(key=lambda dd: (not ok(dd), dd.get("custo") or 0))
-    d = res[0]
-    d["comparacao_condutor"] = [dict(condutor=("alumínio" if x["cond"] == "AL" else "cobre"), fio=descr_condutor(x, curto=True),
-                                     N=x["N"], coluna=f"{x['a']*1e3:.0f}×{x['b']*1e3:.0f}", perdas_W=round(x["perdas"]["total"]),
-                                     elev_K=round(float(x["termico"]["elev_bobina_K"])), massa_kg=round(x["massa_kg"]["total"]),
-                                     custo_material=round(x["m_fe"] * x["chapa_dados"]["preco_kg"] + x["m_cond"] * x["cond_dados"]["preco_kg"]),
-                                     escolhido=(x is d), ok=ok(x)) for x in res]
-    for c in d["comparacao_condutor"]:
-        log(f"   {'→' if c['escolhido'] else ' '} {c['condutor']}: {c['fio']}, {c['N']} esp, coluna {c['coluna']}, {c['perdas_W']} W, "
-            f"{c['massa_kg']} kg, material ≈ R$ {c['custo_material']}")
+    log("   Indutor – 2 entreferros/coluna + fio/barra retangular: busca em toda a base (chapas Aperam × Al/Cu × bitolas IEC)...")
+    d = _projetar_tent(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao)
+    tri = d.get("triagem_fio") or []
+    comp = []
+    for cnd in ("AL", "CU"):
+        oks = [x for x in tri if x["cond"] == cnd and x["ok"]]
+        if oks:
+            x = min(oks, key=lambda y: y["custo"])
+            comp.append(dict(condutor=("alumínio" if cnd == "AL" else "cobre"), fio=x["fio"], chapa=x["chapa"], N=x["N"],
+                             coluna=x["coluna"], perdas_W=x["P_total_W"], custo_triagem=x["custo"],
+                             escolhido=(cnd == d["cond"] and x["fio"] == f"{d['fio']['t']*1e3:.2f}×{d['fio']['h']*1e3:.1f}×{d['fio']['np']}")))
+    d["comparacao_condutor"] = comp
+    log(f"   → escolhido: {('alumínio' if d['cond'] == 'AL' else 'cobre')}, {d['chapa_dados']['nome']}, {descr_condutor(d, curto=True)}, "
+        f"{d['N']} espiras, coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {d['perdas']['total']:.0f} W, {d['massa_kg']['total']:.0f} kg")
     return d
 
 
@@ -572,6 +630,7 @@ def _projetar_tent(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao):
     nd_min, fixo, k_pmax = 0, None, 0.88
     for tent in range(5):
         d = _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min, fixo, k_pmax, construcao)
+        chapa, cond_id = d.get("chapa", chapa), d.get("cond", cond_id)
         pmax = d["requisitos"].get("P_max")
         if pmax and d["perdas"]["total"] > pmax and fixo is None and k_pmax > 0.6:
             k_pmax -= 0.08
@@ -604,7 +663,7 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     eh_fio = construcao == "culatra_fio"
     cands = None
     if eh_fio and not fixo:
-        cands = pre_dimensionar_fio(r, chapa, cond_id, h_conv, amb_c=amb_c, espectro=esp, nd_min=nd_min)
+        cands = pre_dimensionar_fio(r, None, None, h_conv, amb_c=amb_c, espectro=esp, nd_min=nd_min, log=log)
         d = cands[0] if cands else None
     else:
         d = pre_dimensionar(r, chapa, cond_id, h_conv, amb_c=amb_c, espectro=esp, nd_min=nd_min, fixo=fixo)
@@ -655,6 +714,9 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         avals = []
         for cd in cands:
             cd["pos_gap"] = "culatra"
+            sig = 1 / cd["rhoT"]
+            ch = CHAPAS[cd["chapa"]]
+            cond = CONDUTORES[cd["cond"]]
             gt = MU0 * cd["N"] ** 2 * cd["a"] * cd["b"] * FIO_K_ESPRAIO / r["L"]
             pe_c = perdas_enrolamento(cd, [gt] * 3, 2, freqs=[2 * r["fs"]])
             Pw = pe_c["P60"] + pe_c["P_AF"]
@@ -664,17 +726,38 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
                 p1c, psc = cd["P_fe1"], cd["P_fes"]
             Ptot = Pw + p1c + psc + perda_entreferro_lee(cd, r, [gt] * 3, ch)
             dTw = cd["dT_w"] * Pw / max(cd["P_cu"], 1e-9)
-            custo = cd["m_fe"] * ch["preco_kg"] + cd["m_cond"] * cond["preco_kg"] * 1.15 + CAPITALIZACAO_R_W * Ptot
-            ok_c = Ptot <= pmx and dTw <= cd["alvo"]
+            m_tot = cd["m_fe"] + cd["m_cond"]
+            custo = (cd["m_fe"] * ch["preco_kg"] + cd["m_cond"] * cond["preco_kg"] * 1.15 + CAPITALIZACAO_R_W * Ptot
+                     + MAO_OBRA_R_KG * m_tot)
+            try:                                         # entreferro que o FEM pede para chegar em L (coluna central = a pior)
+                Lp2d_c, _ = L_fases(pe_c["M"], cd["b"])
+                L1 = float(max(correcao_3d(cd, Lp2d_c, pe_c["M"])))
+                g1 = gt * L1 / r["L"]                                   # 1ª estimativa (L ∝ 1/g)
+                M2 = modelo(cd, [g1] * 3, 2)
+                Lp2d_2, _ = L_fases(M2, cd["b"])
+                L2 = float(max(correcao_3d(cd, Lp2d_2, M2)))
+                k = math.log(L1 / L2) / math.log(g1 / gt) if abs(g1 - gt) > 1e-6 else 1.0   # L ∝ g^-k (secante log)
+                g_need = g1 * (L2 / r["L"]) ** (1 / max(k, 0.3))
+            except Exception:
+                g_need = gt
+            ok_gap = g_need <= GAP_MAX_FRAC_A * cd["a"] * 0.90 and g_need / 2 <= GAP_MAX_PECA_CULATRA_MM * 1e-3 * 0.90   # folga p/ o ajuste final (+7 %)
+            cd["_g_need"] = g_need
+            ok_c = Ptot <= FOLGA_PERDAS_FIO * pmx and dTw <= FOLGA_ELEV_FIO * cd["alvo"] and ok_gap
             f = cd["fio"]
-            log(f"     fio {f['t']*1e3:.2f}×{f['h']*1e3:.1f} mm ×{f['np']} | {cd['N']} esp ({f['n_cam']} cam × {f['n_ax']}) | coluna "
-                f"{cd['a']*1e3:.0f}×{cd['b']*1e3:.0f}: enrol. {Pw:.0f} W, total {Ptot:.0f} W, ΔT≈{dTw:.0f} K {'✓' if ok_c else '✗'}")
+            log(f"     {cd['cond']} {cd['chapa'].replace('GO_APERAM_', '')} | fio {f['t']*1e3:.2f}×{f['h']*1e3:.1f} mm ×{f['np']} | {cd['N']} esp ({f['n_cam']} cam × {f['n_ax']}) | coluna "
+                f"{cd['a']*1e3:.0f}×{cd['b']*1e3:.0f}: enrol. {Pw:.0f} W, total {Ptot:.0f} W, ΔT≈{dTw:.0f} K, entreferro "
+                f"{g_need*1e3:.1f} mm/col {'✓' if ok_c else '✗'}")
+            cd["_m_tot"] = m_tot
             avals.append((not ok_c, custo if ok_c else Ptot, cd, Pw, Ptot))
         avals.sort(key=lambda x: (x[0], x[1]))
         d = avals[0][2]
-        d["triagem_fio"] = [dict(fio=f"{x[2]['fio']['t']*1e3:.2f}×{x[2]['fio']['h']*1e3:.1f}×{x[2]['fio']['np']}", N=x[2]["N"],
+        chapa, cond_id = d["chapa"], d["cond"]
+        ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
+        d["triagem_fio"] = [dict(cond=x[2]["cond"], chapa=x[2]["chapa"].replace("GO_APERAM_", ""), custo=round(x[1]) if not x[0] else None,
+                                 fio=f"{x[2]['fio']['t']*1e3:.2f}×{x[2]['fio']['h']*1e3:.1f}×{x[2]['fio']['np']}", N=x[2]["N"],
                                  camadas=x[2]["fio"]["n_cam"], coluna=f"{x[2]['a']*1e3:.0f}×{x[2]['b']*1e3:.0f}",
-                                 P_enrol_W=round(x[3]), P_total_W=round(x[4]), ok=not x[0]) for x in avals]
+                                 P_enrol_W=round(x[3]), P_total_W=round(x[4]), massa_kg=round(x[2].get("_m_tot", 0) * 1.12),
+                                 ok=not x[0]) for x in avals]
         sig = 1 / d["rhoT"]
         g_tot0 = MU0 * d["N"] ** 2 * d["a"] * d["b"] * 1.10 / r["L"]
     estudo_gap = []

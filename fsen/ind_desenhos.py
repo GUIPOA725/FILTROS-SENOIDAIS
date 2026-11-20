@@ -625,7 +625,7 @@ def folha_bobina(F, g, d, fab):
         F.texto(212, yt - 8.5, f"Espiras: {g['N']} por bobina – sentido de bobinagem IGUAL nas 3 bobinas (horário visto de cima). "
                                f"Comprimento de folha ≈ {fab['comp_folha']:.1f} m/bobina ({fab['massa_folha']:.1f} kg).", fontsize=5.6)
     F.texto(212, yt - 12.5, f"Espira média (MLT) ≈ {fab['MLT']:.0f} mm.  Espessura radial calculada {fab['build_real']:.1f} mm.  "
-                            ("PTC (item 21) sobre a camada externa, no meio da altura, sob o enfaixamento." if (fw and fw["n_cam"] == 1)
+                            + ("PTC (item 21) sobre a camada externa, no meio da altura, sob o enfaixamento." if (fw and fw["n_cam"] == 1)
                              else "PTC (item 21) entre as 2 últimas camadas, no meio da altura."), fontsize=5.6)
     # Detalhe terminal
     F.texto(212, 150, ("DETALHE D – SAÍDA DOS FIOS E TERMINAL (sem escala)" if fw else "DETALHE D – SAÍDA DA FOLHA E TERMINAL (sem escala)"),

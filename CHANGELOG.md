@@ -1,5 +1,18 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.3 – 20/11/2026 – Base de dados completa para o indutor de 2 entreferros por coluna
+- Chapas: os 7 graus de grão orientado da Aperam (único fabricante nacional), perdas garantidas do catálogo "Aços Elétricos GO
+  e GNO": M108-23, M117-23, M112-27, M125-27, M130-30, M140-30, M150-35 (preço R$/kg estimado – confirmar cotação).
+- Condutores: série R20 COMPLETA da IEC 60317-0-2 – 23 espessuras (0,80 a 10 mm) × 25 larguras (2 a 31,5 mm), relação 1,4 a 8
+  (de fio retangular a barra), em alumínio e cobre; 1 a 6 fios em paralelo; 1 a 8 camadas.
+- Busca: triagem analítica de todas as combinações chapa × condutor × bitola × paralelos × camadas × espiras × núcleo; os 2
+  melhores de cada chapa×condutor + os 10 melhores no geral vão para o FEM (perdas reais com os 2 entreferros, núcleo, perda de
+  entreferro de Lee e o ENTREFERRO necessário para chegar em L, calculado por 2 pontos no FEM).
+- Folgas exigidas: perdas ≤ 92 % do limite, elevação ≤ 90 % da meta, entreferro ≤ 90 % de 20 % da coluna e de 10 mm por peça –
+  o escolhido sai sem nenhum aviso.
+- Custo da escolha inclui mão de obra proporcional à massa (R$ 10/kg, estimativa); tabela de todos os candidatos com massa e custo
+  no memorial/auditoria.
+
 ## v1.11.2 – 20/11/2026 – Indutor com 2 entreferros por coluna + fio retangular (padrão nacional)
 - Nova construção (agora a PADRÃO): 2 entreferros por coluna nas juntas coluna–culatra + enrolamento em CAMADAS de fio
   retangular (espiras em série; fios em paralelo transpostos). É o padrão dos fabricantes nacionais (a Cootrans usou fio nos
