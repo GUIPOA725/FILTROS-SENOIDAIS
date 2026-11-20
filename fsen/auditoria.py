@@ -451,6 +451,25 @@ def _secao_indutor(R, d, pasta):
     R.h2("Sistema de isolação")
     R.tab(["Item", "Material", "Índice térmico °C", "Norma", "Por quê"], [(i["item"], i["mat"], i["ti"], i["norma"], i["por_que"])
                                                                          for i in d["isolacao"]], [1.2, 2.2, 0.6, 1.0, 2.0], fs=6.2)
+    try:
+        from .ind_desenhos import fabricacao
+        fab = fabricacao(d)
+        R.h2("Ficha de fabricação")
+        R.p(f"Empilhamento ≈ {fab['n_lam']} lâminas de {fab['t']} mm; comprimento de folha ≈ {fab['comp_folha']:.1f} m por bobina "
+            f"({fab['massa_folha']:.1f} kg); espira média {fab['MLT']:.0f} mm; espessura radial {fab['build_real']:.1f} mm.")
+        R.tab(["Peça", "Largura (mm)", "Comprimento", "Quantidade"], fab["corte"], [1.4, 0.8, 1.2, 2.0])
+        R.tab(["Coluna", "calço (mm)", "pacotes (mm, de baixo p/ cima)"],
+              [("Laterais U/W", f"{fab['gl']:.2f}", " / ".join(f"{p:.1f}" for p in fab["pac_l"])),
+               ("Central V", f"{fab['gc']:.2f}", " / ".join(f"{p:.1f}" for p in fab["pac_c"]))], [1.0, 0.7, 3.0])
+        R.h3("Tabela de bobinagem (por bobina)")
+        R.tab(["Camada", "Espessura (mm)", "r inicial", "r final"], [(c[0], c[1], f"{c[2]:.1f}", f"{c[3]:.1f}") for c in fab["camadas"]],
+              [3.2, 0.8, 0.7, 0.7], fs=6.2)
+        R.h3("Sequência de fabricação, ajuste e ensaios")
+        R.bul(fab["sequencia"])
+        R.p(f"Força magnética por entreferro ≈ {fab['forca']:.0f} N (pico) – aperto mínimo {fab['aperto_N']:.0f} N por coluna; "
+            "calços colados e conjunto impregnado (VPI) para não vibrar a 4–8 kHz.")
+    except Exception as e:
+        R.p(f"(ficha de fabricação não gerada: {e})")
     eng = os.path.join(pasta, "01_Engenharia")
     for f in sorted(os.listdir(eng)) if os.path.isdir(eng) else []:
         if f.startswith("Indutor_") and f.endswith(".png"):

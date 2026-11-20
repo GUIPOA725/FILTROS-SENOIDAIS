@@ -1,5 +1,19 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.10.3 – 20/11/2026 – Desenhos do indutor padrão fábrica + ficha de fabricação
+- 5 folhas A3 (ABNT NBR 10068/10582): carimbo completo com nº do desenho, escala normalizada, 1º diedro (símbolo), tabela de
+  revisões, tolerâncias gerais ISO 2768-m; desenho em mm reais com escala por vista.
+- Folha 1 Conjunto: vistas frontal, lateral esquerda e superior/furação da base, cotas em cadeia (colunas, janelas, passo,
+  distância entre bobinas, altura total, furação), balões numerados = itens da lista de materiais, tirantes FORA das bobinas,
+  olhais, caixa de bornes do PTC, placa, PE, quadro de características.
+- Folha 2 Núcleo: planta das chapas com juntas a 45°, posição e espessura dos calços por coluna, alturas dos pacotes cotadas,
+  detalhe step-lap, tabela de corte e de calços, força no entreferro e aperto mínimo.
+- Folha 3 Bobina: cortes A-A e B-B cotados, tabela de bobinagem camada a camada (raios), comprimento/massa da folha, sentido de
+  bobinagem, posição do PTC, detalhe do terminal (solda TIG, placa bimetálica, furação NEMA).
+- Folha 4: vista 3D sombreada (bobinas arredondadas) + características. Folha 5: lista de materiais, sequência de fabricação
+  (corte, montagem, calços, bobinagem, prensagem, ajuste de L no ensaio, VPI, ensaios) e notas.
+- Memorial do indutor: nova seção "Ficha de fabricação" (lâminas, corte, pacotes/calços, bobinagem, sequência, aperto).
+
 ## v1.10.2 – 20/11/2026 – Pastas e tela organizadas
 - Cada pasta principal do projeto agora tem subpastas: 01_Engenharia (memorial/custos, estudos, indutor FEM, auditoria, ATP),
   02_Cliente (proposta, folha de dados, relatório técnico, dados faltantes), 03_Fornecedores (1_Indutor, 2_Capacitores,
