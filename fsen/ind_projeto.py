@@ -617,11 +617,13 @@ def correcao_3d(d, Lp2d, M, mu_r=4000):
 def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print, construcao="distribuido",
              condutor="barra_cu"):
     """condutor (só para 2 entreferros + fio): "barra_cu" = barra retangular de COBRE única por espira (mais fácil de fabricar –
-    padrão); "livre" = fio ou barra, Cu ou Al, até 6 em paralelo transpostos (mais leve)."""
+    padrão); "barra_al" = barra/chapa de ALUMÍNIO única (padrão Electric dos reatores de banco dessintonizado/sintonizado); "livre" = fio ou barra, Cu ou Al, até 6 em paralelo transpostos (mais leve)."""
     global PARALELOS_FIO, CONDS_FIO
     _p0, _c0 = PARALELOS_FIO, CONDS_FIO
     if construcao == "culatra_fio" and condutor == "barra_cu":
         PARALELOS_FIO, CONDS_FIO = (1,), ("CU",)
+    elif construcao == "culatra_fio" and condutor == "barra_al":      # v1.14.0: padrão Electric dos reatores de banco (alumínio)
+        PARALELOS_FIO, CONDS_FIO = (1,), ("AL",)
     try:
         d = _projetar_construcao(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao)
     finally:

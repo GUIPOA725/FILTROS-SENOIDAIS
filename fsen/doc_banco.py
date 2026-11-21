@@ -1,5 +1,6 @@
-"""Documentos de bancos dessintonizados / filtros sintonizados (v1.13.0): memorial (PDF), figuras, ET do reator e dos
-capacitores (DOCX) e e-mails aos fornecedores (TXT)."""
+"""Documentos de bancos dessintonizados / filtros sintonizados no PADRÃO ELECTRIC (v1.14.0): memorial (PDF), planilha ESTAGIO
+(XLSX com fórmulas, mesmo leiaute da engenharia), especificação do indutor (carta ao fabricante, formato Cootrans), ET do painel
+para o montador (DOCX + XLSX), proposta técnica e comercial (DOCX) e e-mails."""
 import datetime as _dt
 import math
 import os
@@ -20,14 +21,15 @@ def titulo_tipo(ped):
     if ped.tipo == "sintonizado":
         hs = "/".join(f"{h:g}ª" for h in sorted(set(ped.ordens)))
         return f"Filtro harmônico sintonizado {hs}"
-    return f"Banco de capacitores dessintonizado p = {ped.p_pct:g} %"
+    return f"Banco de capacitores dessintonizado FD {_f(ped.p_pct, 2)} %"
 
 
 def codigo(ped):
     Q = sum(ped.estagios_kvar)
     if ped.tipo == "sintonizado":
-        return f"FSIN-H{'-'.join(f'{h:g}' for h in sorted(set(ped.ordens)))}-{Q:g}kvar-{ped.tensao_v:g}V"
-    return f"BDES-P{ped.p_pct:g}-{Q:g}kvar-{ped.tensao_v:g}V".replace(".", ",")
+        return f"FHSBT-H{'-'.join(f'{h:g}' for h in sorted(set(ped.ordens)))}-{Q:g}kvar-{ped.tensao_v:g}V"
+    fd = {3.5: "8,16", 3.78: "7", 2.67: "14", 2.5: "16"}.get(round(ped.nr, 2), f"{ped.p_pct:.1f}".replace(".", ","))
+    return f"BCD-FD{fd}-{Q:g}kvar-{ped.tensao_v:g}V"
 
 
 # ------------------------------------------------------------------------------------------------------------- figuras
@@ -65,9 +67,9 @@ def figuras(ped, res, pasta, cod):
     hs = sorted(e0["Ih"])
     w = 0.8 / max(len(res["estagios"]), 1)
     for k, e in enumerate(res["estagios"]):
-        axs[0].bar([h + (k - len(res["estagios"]) / 2) * w for h in hs], [e["Ih"][h] / e["I1"] * 100 for h in hs], width=w,
-                   label=f"Estágio {k+1} ({e['Q_kvar']:g} kvar)")
-        axs[1].bar([h + (k - len(res["estagios"]) / 2) * w for h in hs], [e["Uch"][h] / e["Uc1"] * 100 for h in hs], width=w)
+        axs[0].bar([h + (k - len(res["estagios"]) / 2) * w for h in hs], [e["Ih"].get(h, 0) / e["I1"] * 100 for h in hs], width=w,
+                   label=f"Estágio {k+1} ({e['Q_kvar']:.0f} kvar)")
+        axs[1].bar([h + (k - len(res["estagios"]) / 2) * w for h in hs], [e["Uch"].get(h, 0) / e["Uc1"] * 100 for h in hs], width=w)
     axs[0].set_title("Corrente harmônica no estágio (% de I1)")
     axs[1].set_title("Tensão harmônica no capacitor (% de U_C1)")
     for a in axs:
@@ -82,107 +84,6 @@ def figuras(ped, res, pasta, cod):
     return out
 
 
-# ------------------------------------------------------------------------------------------------------------- memorial
-def memorial(ped, res, grupos, inds, arq, figs, versao=""):
-    from .auditoria import Rel, _Doc, _esc
-    from reportlab.platypus import Paragraph
-    R = Rel()
-    tit = f"{titulo_tipo(ped)} – {sum(ped.estagios_kvar):g} kvar / {ped.tensao_v:g} V / {ped.freq_hz:g} Hz"
-    R.f.append(Paragraph(_esc(tit), R.st["CAPA"]))
-    R.p(f"Cliente: {ped.cliente or '–'} | Projeto: {ped.projeto or '–'} | Código {codigo(ped)} | Emissão {HOJE:%d/%m/%Y} | {versao}")
-    R.p("Memorial de cálculo do banco/filtro e do(s) reator(es). O reator de cada estágio é projetado pelo mesmo motor de elementos "
-        "finitos usado nos filtros senoidais (triagem de chapas e condutores, 2 entreferros por coluna, barra de cobre, térmico, "
-        "verificação independente no NGSolve e análise avançada com as formas de onda do espectro harmônico).")
-    R.h1("Dados de entrada")
-    lin = [("Tensão nominal / frequência", f"{ped.tensao_v:g} V / {ped.freq_hz:g} Hz"),
-           ("Estágios", " + ".join(f"{q:g}" for q in ped.estagios_kvar) + f" = {sum(ped.estagios_kvar):g} kvar (potência efetiva na tensão nominal)"),
-           ("Tipo", titulo_tipo(ped)),
-           ("Transformador", f"{ped.trafo_kva:g} kVA, Z = {ped.trafo_z_pct:g} %"),
-           ("Potência de curto-circuito da rede (MT)", f"{ped.scc_rede_mva:g} MVA"),
-           ("Reatância de curto-circuito na barra", f"{res['x_rede_ohm']*1e3:.2f} mΩ"),
-           ("Distorção de fundo da rede a montante – Thévenin (% de Un)" if ped.tipo == "sintonizado" else "Distorção de tensão de projeto nos terminais (% de Un)", ", ".join(f"{h}ª {_f(u)} %" for h, u in sorted(ped.harm_tensao_pct.items()))),
-           ("Corrente harmônica da carga (A)", ", ".join(f"{h}ª {i:g} A" for h, i in sorted(ped.harm_carga_a.items())) or "–"),
-           ("Temperatura ambiente", f"{ped.amb_c:g} °C"),
-           ("Sobretensão permanente admitida", f"{(ped.sobretensao-1)*100:.0f} %"),
-           ("Tolerância da capacitância", f"±{ped.tol_c_pct:g} %")]
-    R.tab(["Grandeza", "Valor"], lin, [2, 3])
-    R.h1("Equações")
-    R.eq("X_C (por fase, estrela equivalente) = Un² / (Q·(1 − p))      X_L = p·X_C      f_sint = f1/√p\n"
-         "U_C1 = Un/(1 − p)      I1 = Q/(√3·Un)\n"
-         "I_h = (u_h·Un/√3) / |R + j(h·X_L − X_C/h)|      U_C,h = √3·I_h·X_C/h\n"
-         "Z_barra(h) = [1/(j·h·X_rede) + Σ 1/Z_estágio(h)]^-1   (ressonância paralela = pico de |Z|)\n"
-         "Reator: I_th = 1,05·√(I1'² + Σ I_h²), I1' = I1·√(1,1·(1+tol_C)); linearidade L ≥ 95 % até "
-         + ("1,8" if ped.tipo == "dessintonizado" else "1,5") + "·I1 (pico)")
-    R.h1("Estágios")
-    cab = ["Est.", "Q (kvar)", "p (%)", "f sint. (Hz)", "L (µH/fase)", "C Δ (µF/fase)", "I1 (A)", "I_th reator (A)", "U_C (V rms)",
-           "Capacitor"]
-    lin = []
-    for i, e in enumerate(res["estagios"]):
-        lin.append((i + 1, _f(e['Q_kvar'], 1), _f(e['p_pct'], 2), _f(e['f_sintonia']), _f(e['L_uH']), _f(e['C_delta_uF']),
-                    _f(e['I1']), _f(e['requisitos']['In']), _f(e['Uc_rms'], 0),
-                    f"{_f(e['Q_cap_nom_kvar'])} kvar / {e['U_cap_nom']:g} V"))
-    R.tab(cab, lin, [0.6, 1, 0.8, 1, 1.2, 1.2, 0.9, 1.2, 1, 2.2])
-    R.p("O capacitor é especificado na sua tensão nominal (≥ 1,1 × U_C rms e ≥ soma aritmética/1,1); a potência de placa na tensão "
-        "nominal do capacitor é maior que a efetiva do estágio – é o que se compra (ex.: 525 V em rede de 440 V com p = 7 %).")
-    R.h2("Correntes e tensões harmônicas por estágio")
-    hs = sorted(res["estagios"][0]["Ih"])
-    lin = []
-    for i, e in enumerate(res["estagios"]):
-        lin.append([f"{i+1} – I (A)"] + [_f(e['Ih'][h]) for h in hs])
-        lin.append([f"{i+1} – U_C (V)"] + [_f(e['Uch'][h]) for h in hs])
-    R.tab(["Estágio"] + [f"{h}ª" for h in hs], lin)
-    R.img(figs.get("espectro"), legenda="Espectro de corrente no estágio e de tensão no capacitor.")
-    R.h1("Ressonância com a rede")
-    R.img(figs.get("varredura"), legenda="Impedância na barra com todos os estágios ligados.")
-    pk = res["varredura"]["picos"]
-    R.p("Ressonância(s) paralela(s) na barra: " + (", ".join(f"{x:.2f}ª ({x*ped.freq_hz:.0f} Hz)" for x in pk) or "nenhuma acima de 1,5× a rede")
-        + ". Com reator, a ressonância paralela fica ABAIXO da sintonia e longe das harmônicas características (5ª, 7ª...).")
-    if res.get("thd"):
-        t = res["thd"]
-        R.h2("Distorção de tensão na barra (corrente harmônica da carga)")
-        R.tab(["h", "sem filtro (%)", "com filtro (%)"], [(h, f"{a:.2f}", f"{b:.2f}") for h, (a, b) in sorted(t["por_h"].items())]
-              + [("THD", f"{t['sem']:.2f}", f"{t['com']:.2f}")])
-    if res["avisos"]:
-        R.h2("Avisos")
-        R.bul(res["avisos"])
-    R.h1("Reator(es)")
-    for gi, (grp, d) in enumerate(zip(grupos, inds)):
-        e = res["estagios"][grp[0]]
-        R.h2(f"Reator {gi+1} – estágio(s) {', '.join(str(i+1) for i in grp)} – {e['L_uH']:.0f} µH / {e['requisitos']['In']:.0f} A")
-        if not d:
-            R.p("Projeto por elementos finitos não concluído – ver log.")
-            continue
-        from .ind_projeto import descr_condutor
-        L3 = d.get("L3d")
-        lin = [("Indutância (projeto / 3D por fase)", f"{d['requisitos']['L']*1e6:.0f} µH / " + (", ".join(f"{x*1e6:.0f}" for x in L3) if L3 is not None else "–") + " µH"),
-               ("Núcleo", f"{d['chapa_dados']['nome']}; coluna {d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm; {d['ng']} entreferros por coluna"),
-               ("Enrolamento", f"{d['N']} espiras de {descr_condutor(d, curto=True)}; bobina a {d['c']*1e3:.0f} mm do núcleo"),
-               ("Perdas (projeto)", f"{d['perdas']['total']:.0f} W (Cu 60 Hz {d['perdas']['enrolamento_60Hz']:.0f} W; Cu harm. "
-                f"{d['perdas']['enrolamento_AF']:.0f} W; núcleo {d['perdas']['nucleo_60Hz'] + d['perdas']['nucleo_AF']:.0f} W) – "
-                f"{d['perdas']['total']/e['Q_kvar']:.1f} W/kvar"),
-               ("Elevação do enrolamento / ponto quente", f"{d['termico']['elev_bobina_K']:.0f} K / {d['termico']['ponto_quente_C']:.0f} °C"),
-               ("Massa", f"{d['massa_kg']['total']:.0f} kg")]
-        av = d.get("avancado")
-        if av:
-            lin.append(("Análise avançada (formas de onda do espectro, 3D)", f"{av['perdas']['total']:.0f} W; bobina média "
-                        f"{av['termico']['T_cobre_med_C']:.0f} °C, ponto quente {av['termico']['T_cobre_max_C']:.0f} °C"))
-        vf = d.get("verificacao_resumo")
-        if vf:
-            lin.append(("Verificação independente (NGSolve)", vf))
-        sat = d.get("saturacao") or []
-        for s in sat:
-            lin.append((f"L em {s['caso']}", f"{min(s.get('L_lat_pct') or 999, s.get('L_cen_pct') or 999):.0f} % da nominal"))
-        R.tab(["Grandeza", "Valor"], lin, [2, 4])
-        if d.get("avisos_avancado"):
-            R.bul(d["avisos_avancado"])
-    R.p("Os desenhos, o CAD (STEP/DXF), o memorial de elementos finitos, a verificação independente e a análise avançada de cada "
-        "reator estão em 01_Engenharia e 03_Fornecedores.")
-    doc = _Doc(arq, tit, rotulo="MEMORIAL DE CÁLCULO – ELECTRIC SERVICE")
-    doc.multiBuild(R.f)
-    return arq
-
-
-# ------------------------------------------------------------------------------------------------------------- DOCX
 def _novo(titulo, subtitulo, cod, cat):
     from docx import Document
     from docx.shared import Pt, Cm, RGBColor
@@ -216,95 +117,464 @@ def _novo(titulo, subtitulo, cod, cat):
     return d
 
 
-def et_reator(ped, res, grp, d, pasta, cod, cat, n_banco=1):
+
+MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
+
+
+def _data_ext(d=None):
+    d = d or HOJE
+    return f"{d.day:02d} de {MESES[d.month - 1]} de {d.year}"
+
+
+def _fd_txt(e):
+    return f"FD {_f(e['p_pct'], 2)} % (Nr {_f(e['nr'], 2)})"
+
+
+def _cap_txt(e):
+    n, u, V = e["cap"]
+    return f"{_f(n * u, 1)} kVAr/{V:g} V ({n} × {_f(u, 1)} kVAr/{V:g} V)"
+
+
+# ------------------------------------------------------------------------------------------------------------- memorial
+def memorial(ped, res, grupos, inds, arq, figs, versao=""):
+    from .auditoria import Rel, _Doc, _esc
+    from reportlab.platypus import Paragraph
+    from . import banco as B
+    R = Rel()
+    sint = ped.tipo == "sintonizado"
+    tit = f"{titulo_tipo(ped)} – {_f(res['Q_total_kvar'], 0)} kvar / {ped.tensao_v:g} V / {ped.freq_hz:g} Hz"
+    R.f.append(Paragraph(_esc(tit), R.st["CAPA"]))
+    R.p(f"Cliente: {ped.cliente or '–'} | Projeto: {ped.projeto or '–'} | Código {codigo(ped)} | Emissão {HOJE:%d/%m/%Y} | {versao}")
+    R.p("Memorial de cálculo no padrão de engenharia da Electric (mesmas equações das planilhas 'ESTAGIO …kVAr …V FD8,16 %' e "
+        "'Ajuste Indutor Trifásico/Monofásico'), com a conferência física da plataforma: espectro harmônico, ressonância com a rede, "
+        "limites do capacitor (IEEE 18) e faixa de sintonia. Cada reator é projetado pelo motor de elementos finitos da plataforma "
+        "(o mesmo do filtro senoidal), com verificação independente e análise avançada.")
+    R.h1("Dados de entrada")
+    lin = [("Tensão da rede / frequência", f"{ped.tensao_v:g} V / {ped.freq_hz:g} Hz"),
+           ("Tipo", titulo_tipo(ped)),
+           ("Estágios pedidos (kvar efetivos)", " + ".join(f"{q:g}" for q in ped.estagios_kvar) + f" = {sum(ped.estagios_kvar):g} kvar"),
+           ("Fator de qualidade do reator FQ", f"{ped.fq_():g} (por fase, 60 Hz)"),
+           ("Fator de corrente de projeto k = I_projeto/I60", f"{_f(ped.k_(), 2)}" + (f" ({B.K_HIST_SINT})" if sint else " (planilha ESTAGIO: ×1,3)")),
+           ("Transformador / Scc da rede", f"{ped.trafo_kva:g} kVA, Z = {_f(ped.trafo_z_pct)} % / {ped.scc_rede_mva:g} MVA"),
+           ("Reatância de curto-circuito na barra", f"{_f(res['x_rede_ohm']*1e3, 2)} mΩ"),
+           ("Distorção de tensão " + ("de fundo (Thévenin)" if sint else "de projeto nos terminais") + " (% de Un)",
+            ", ".join(f"{h}ª {_f(u)} %" for h, u in sorted(ped.harm_tensao_pct.items()))),
+           ("Corrente harmônica da carga (A)", ", ".join(f"{h}ª {_f(i, 0)} A" for h, i in sorted(ped.harm_carga_a.items())) or "–"),
+           ("Tolerâncias C / L", f"±{_f(ped.tol_c_pct, 0)} % / ±{_f(ped.tol_l_pct, 0)} %"),
+           ("Reator", f"classe {ped.classe}, isolação 1 kV, IP00, enrolamento de {'alumínio' if ped.condutor == 'AL' else 'cobre'}"
+                      + (", 3 monofásicos de 2 colunas por ramo" if ped.monofasico else ", trifásico 3 colunas"))]
+    R.tab(["Grandeza", "Valor"], lin, [2.2, 3])
+    R.h1("Método (padrão Electric)")
+    R.eq("X_C = V_cap²/Q_cap      X_L = X_C/Nr²      FD = 1/Nr²      L = X_L/(2π·60)\n"
+         "I60 = (V/(X_C − X_L))/√3      Q_efetivo = √3·V·I60      I_cap = Q_cap/(√3·V_cap)\n"
+         "V_cap(operação) = Nr²/(Nr² − 1)·V   (+10 %)      R = X_L/FQ      P_fund = 3·I60²·R\n"
+         "I_projeto = max( k·I60 ; √(I1² + Σ I_h²) )   I1 = 1,1·I60      ajuste: I60 com V_fase = I60·X_L (ensaio trifásico 60 Hz)"
+         + ("\nEspectro mínimo do sintonizado (planilha do monofásico): I_h0 = 1,1·I1; seguintes 0,55·I1 e 0,44·I1" if sint else ""))
+    R.h1("Estágios – parâmetros de ajuste e dados calculados")
+    cab = ["Grandeza"] + [f"Est. {i+1}" for i in range(len(res["estagios"]))]
+    E = res["estagios"]
+    linhas = [
+        ("Código do módulo", [e["codigo"] for e in E]),
+        ("Capacitor associado", [_cap_txt(e) for e in E]),
+        ("Nr / FD", [f"{_f(e['nr'], 2)} / {_f(e['p_pct'], 2)} %" for e in E]),
+        ("Sintonia (Hz)", [_f(e["f_sintonia"], 0) for e in E]),
+        ("X_C / X_L (Ω)", [f"{_f(e['Xc'], 3)} / {_f(e['Xl'], 4)}" for e in E]),
+        ("L por fase (µH)", [_f(e["L_uH"], 1) for e in E]),
+        ("Q efetivo na rede (kvar)", [_f(e["Q_kvar"], 1) for e in E]),
+        ("I60 rede = corrente de AJUSTE (A)", [_f(e["I60"], 1) for e in E]),
+        ("V por fase no ajuste (V)", [_f(e["V_ajuste_fase"], 1) for e in E]),
+        ("I_cap nominal na V_cap (A)", [_f(e["I_cap_nom"], 1) for e in E]),
+        ("V_cap operação / +10 % (V)", [f"{_f(e['Uc1'], 0)} / {_f(e['Uc1_110'], 0)}" for e in E]),
+        ("R = X_L/FQ (mΩ) / perda fund. 3F (W)", [f"{_f(e['R_ohm']*1e3, 2)} / {_f(e['P_fund_W'], 0)}" for e in E]),
+        ("I projeto padrão k·I60 (A)", [_f(e["requisitos"]["I_electric"], 1) for e in E]),
+        ("I pelo espectro (A)", [_f(e["requisitos"]["I_fisica"], 1) for e in E]),
+        ("I de PROJETO do reator (A)", [_f(e["requisitos"]["In"], 1) for e in E]),
+        ("I rms no capacitor (A)", [_f(e["I_cap_rms"], 1) for e in E]),
+    ]
+    R.tab(cab, [[a] + b for a, b in linhas], [2.6] + [1.6] * len(E), 6.6)
+    R.h2("Espectro de corrente de projeto por estágio (A)")
+    hs = sorted(set(h for e in E for h in e["Ih_projeto"]))
+    R.tab(["Estágio"] + [f"{h}ª" for h in hs], [[i + 1] + [_f(e["Ih_projeto"].get(h, 0), 1) for h in hs] for i, e in enumerate(E)])
+    R.img(figs.get("espectro"), legenda="Espectro de corrente no estágio e de tensão no capacitor (física).")
+    R.h2("Limites do capacitor (IEEE 18) e faixa de sintonia")
+    lin = []
+    for i, e in enumerate(E):
+        fs = e["faixa_sintonia"]
+        lin.append([i + 1] + [f"{v*100:.0f} % (≤ {l*100:.0f})" for _, v, l in e["limites_cap"]]
+                   + [f"{_f(fs['f_min'], 0)}–{_f(fs['f_max'], 0)} Hz"])
+    R.tab(["Est.", "V pico", "V rms", "I rms", "kvar", "Sintonia c/ tolerâncias"], lin, [0.5, 1.3, 1.3, 1.3, 1.3, 1.8])
+    R.h1("Ressonância com a rede")
+    R.p(f"Sem reator, o banco ressonaria com o transformador em h ≈ √(Scc/Q) = {_f(res['hr_sem_reator'], 2)} (usando a potência de "
+        "placa dos capacitores) – é o motivo do reator.")
+    R.img(figs.get("varredura"), legenda="Impedância na barra com todos os estágios ligados.")
+    pk = res["varredura"]["picos"]
+    R.p("Ressonância(s) paralela(s) na barra com o banco: " + (", ".join(f"{x:.2f}ª ({x*ped.freq_hz:.0f} Hz)" for x in pk) or "nenhuma")
+        + ". Com o reator ela fica ABAIXO da sintonia, longe das harmônicas características.")
+    if res.get("thd"):
+        t = res["thd"]
+        R.h2("Distorção de tensão na barra (corrente harmônica da carga)")
+        R.tab(["h", "sem filtro (%)", "com filtro (%)"], [(h, _f(a, 2), _f(b, 2)) for h, (a, b) in sorted(t["por_h"].items())]
+              + [("DHTv", _f(t["sem"], 2), _f(t["com"], 2))])
+    if res["avisos"]:
+        R.h2("Avisos")
+        R.bul(res["avisos"])
+    R.h1("Proteção e manobra por estágio (padrão ET Electric)")
+    lin = []
+    for i, e in enumerate(E):
+        pr = B.protecao_estagio(ped, e)
+        lin.append((i + 1, f"{pr['chave_A']} A {pr['base']}", f"{pr['fusivel_A']} A", pr["contator"], f"{pr['cabo_mm2']} mm²",
+                    f"{pr['cabo_ind_cap_mm2']} mm²"))
+    R.tab(["Est.", "Chave-fusível", "Fusível", "Contator", "Cabo barra→reator", "Cabo reator→cap."], lin, [0.5, 1.4, 0.9, 3, 1.3, 1.3])
+    R.h1("Reator(es) – projeto de referência por elementos finitos")
+    for gi, (grp, d) in enumerate(zip(grupos, inds)):
+        e = E[grp[0]]
+        R.h2(f"Reator {gi+1} – estágio(s) {', '.join(str(i+1) for i in grp)} – {_f(e['L_uH'], 0)} µH / {_f(e['requisitos']['In'], 0)} A")
+        if not d:
+            R.p("Projeto por elementos finitos não concluído – ver log.")
+            continue
+        from .ind_projeto import descr_condutor
+        L3 = d.get("L3d")
+        lin = [("Indutância (projeto / 3D por fase)", f"{d['requisitos']['L']*1e6:.0f} µH / "
+                + (", ".join(f"{x*1e6:.0f}" for x in L3) if L3 is not None else "–") + " µH"),
+               ("Núcleo", f"{d['chapa_dados']['nome']}; coluna {d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm; {d['ng']} entreferros por coluna"),
+               ("Enrolamento", f"{d['N']} espiras de {descr_condutor(d, curto=True)}; bobina a {d['c']*1e3:.0f} mm do núcleo"),
+               ("Perdas (projeto)", f"{d['perdas']['total']:.0f} W ({d['perdas']['total']/e['Q_kvar']:.1f} W/kvar)"),
+               ("Elevação do enrolamento / ponto quente", f"{d['termico']['elev_bobina_K']:.0f} K / {d['termico']['ponto_quente_C']:.0f} °C (classe {ped.classe})"),
+               ("Massa", f"{d['massa_kg']['total']:.0f} kg")]
+        av = d.get("avancado")
+        if av:
+            lin.append(("Análise avançada (espectro, 3D)", f"{av['perdas']['total']:.0f} W; bobina média {av['termico']['T_cobre_med_C']:.0f} °C, "
+                        f"ponto quente {av['termico']['T_cobre_max_C']:.0f} °C"))
+        if d.get("verificacao_resumo"):
+            lin.append(("Verificação independente (NGSolve)", d["verificacao_resumo"]))
+        R.tab(["Grandeza", "Valor"], lin, [2, 4])
+        if d.get("avisos_avancado"):
+            R.bul(d["avisos_avancado"])
+    R.h1("Conferência com as planilhas da Electric")
+    R.p("O mesmo código recalcula casos reais das planilhas de engenharia (valores da planilha entre parênteses):")
+    R.tab(["Caso (planilha)", "L (µH)", "I60 (A)", "I projeto (A)"], conferencia_planilhas(), [3.5, 1.6, 1.4, 1.6])
+    doc = _Doc(arq, tit, rotulo="MEMORIAL DE CÁLCULO – ELECTRIC SERVICE")
+    doc.multiBuild(R.f)
+    return arq
+
+
+CASOS_PLANILHA = [
+    ("ESTAGIO 10KVAR 380V FD8,16 % – cap 15/480", dict(tensao_v=380, estagios_kvar=[10], caps=[[1, 15, 480]], nr=3.5), 3326.0, 15.55, 20.2),
+    ("Ajuste FD14 % 10kVAr 220V – cap 27,5/380", dict(tensao_v=220, estagios_kvar=[10], caps=[[1, 27.5, 380]], nr=2.67), 1953.8, 28.14, 36.6),
+    ("20kVAr 380V FD7 % – cap 25/440", dict(tensao_v=380, estagios_kvar=[20], caps=[[1, 25, 440]], nr=3.78), 1437.6, 30.46, 39.6),
+    ("mem calculo 50kvar 440V – cap 80/600", dict(tensao_v=440, estagios_kvar=[50], caps=[[4, 20, 600]], nr=3.5, k_corrente=1.34), 974.4, 61.47, 82.4),
+    ("Ajuste 1mH 45kVAr 440V – cap 60/525", dict(tensao_v=440, estagios_kvar=[45], caps=[[3, 20, 525]], nr=3.5), 994.7, 60.22, 78.3),
+    ("Monofásico sintonizado 0,365 mH 51kVAr 380V – cap 160/690", dict(tipo="sintonizado", tensao_v=380, estagios_kvar=[50],
+     caps=[[4, 40, 690]], ordens=[5], fator_sintonia=0.93, harm_tensao_pct={}), 365.2, 77.5, 140.3),
+]
+
+
+def conferencia_planilhas():
+    from . import banco as B
+    out = []
+    for nome, kw, L, I, Ip in CASOS_PLANILHA:
+        e = B.dimensionar(B.PedidoBanco(**kw))["estagios"][0]
+        out.append((nome, f"{_f(e['L_uH'], 1)} ({_f(L, 1)})", f"{_f(e['I60'], 2)} ({_f(I, 2)})", f"{_f(e['requisitos']['In'], 1)} ({_f(Ip, 1)})"))
+    return out
+
+
+# ------------------------------------------------------------------------------------------------------------- planilha ESTAGIO
+def planilha_estagio(ped, e, arq):
+    """Planilha no MESMO leiaute da 'ESTAGIO xxKVAR yyyV FD…' da Electric, com fórmulas vivas (o engenheiro continua usando)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plan1"
+    b = Font(bold=True)
+    amarelo = PatternFill("solid", fgColor="FFF2CC")
+    n, u, V = e["cap"]
+    cel = {"C1": "PARAMETROS DE AJUSTE", "G1": "DADOS CALCULADOS", "D2": "Amps", "F2": "Volts", "H2": "Ohms", "J2": "Indutância uH",
+           "B3": "Ajuste por Tensões e Correntes Trifásicas"}
+    for k, v in cel.items():
+        ws[k] = v
+        ws[k].font = b
+    for r, (fase, ang) in zip((3, 4, 5), (("A", "0°"), ("B", "120°"), ("C", "240°"))):
+        ws[f"C{r}"] = f"Corrente I{fase} [60Hz] - {ang}"
+        ws[f"D{r}"] = "=(M9/(M16-M15))/SQRT(3)"
+        ws[f"E{r}"] = f"Tensão V{fase}1 - V{fase}2 [60Hz]"
+        ws[f"F{r}"] = f"=D{r}*M15"
+        ws[f"G{r}"] = f"XL {fase} [Ω]"
+        ws[f"H{r}"] = f"=F{r}/D{r}"
+        ws[f"I{r}"] = f"mH {fase}"
+        ws[f"J{r}"] = f"=(H{r}/(2*PI()*M13))*1000000"
+        ws[f"K{r}"] = f"FASE {fase}"
+    ws["C6"] = "Corrente Indutor (projeto)"
+    ws["D6"] = f"=D5*{ped.k_():g}"
+    ws["F6"] = "=D6*M15"
+    ws["C9"] = "DHTi% (IRMS INDUTOR)"
+    ws["D9"] = "=(SQRT(D6^2-D5^2)/D5)"
+    ws["B16"] = "IRMS DHTI 50% +10%"
+    ws["C16"] = "=SQRT((D5*1.1)^2+(D5*1.1*0.5)^2)"
+    inp = [("L9", "V_Rede", "M9", ped.tensao_v), ("L10", "Cap Kvar", "M10", n * u), ("L11", "Cap V", "M11", V),
+           ("L12", "Nr", "M12", round(e["nr"], 4)), ("L13", "FQ (freq.)", "M13", ped.freq_hz)]
+    for lc, lt, vc, vv in inp:
+        ws[lc] = lt
+        ws[vc] = vv
+        ws[vc].fill = amarelo
+    ws["N9"] = "INSERIR"
+    form = [("L14", "FD[%]", "M14", "=1/M12^2"), ("L15", "XL", "M15", "=(((M11^2/M10)/1000)/M12^2)"), ("L16", "XC", "M16", "=(M11^2/M10)/1000"),
+            ("L17", "R[Ω] (XL/FQ)", "M17", f"=M15/{e['fq']:g}"), ("L18", "kVAr_Rede", "M18", "=(D3*M9*SQRT(3))/1000"),
+            ("L19", "I60HZ CAPACITOR", "M19", "=(M10/(M11*SQRT(3)))*1000"), ("L20", "I60HZ REDE", "M20", "=(M18/(M9*SQRT(3)))*1000"),
+            ("L21", "IHARM CAP", "M21", "=SQRT(M19^2-M20^2)"), ("L22", "DHTI% IN CAP", "M22", "=(SQRT(M19^2-M20^2))/M20"),
+            ("L23", "DHTI% IN IND", "M23", "=D9"), ("L25", "IRMS 100% DHTI", "M25", "=SQRT((M20^2)*2)"),
+            ("L26", "Perda W Bobina 3F (fund.)", "M26", "=D3^2*M17*3"), ("L27", "VCAP", "M27", "=(M12^2/(M12^2-1))*M9"),
+            ("L28", "VCAP + 10% VN", "M28", "=M27*1.1")]
+    for lc, lt, vc, f in form:
+        ws[lc] = lt
+        ws[vc] = f
+    ws["N14"] = "RESULTADO"
+    ws["B30"] = (f"Gerado pela plataforma FSEN – {e['codigo']} – corrente de projeto do reator adotada {e['requisitos']['In']:.1f} A "
+                 f"(maior entre k·I60 = {e['requisitos']['I_electric']:.1f} A e o espectro = {e['requisitos']['I_fisica']:.1f} A).")
+    for col, w in zip("BCDEFGHIJKLMN", (10, 26, 10, 22, 10, 9, 9, 9, 12, 8, 24, 10, 10)):
+        ws.column_dimensions[col].width = w
+    wb.save(arq)
+    return arq
+
+
+# ------------------------------------------------------------------------------------------------------------- DOCX
+def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="Diadema – SP – Brasil", n_banco=1, mono=False):
+    """Especificação do reator no formato das cartas da Electric à Cootrans (2015–2022) + o que a plataforma acrescenta."""
+    from docx import Document
+    from docx.shared import Pt, Cm
     from .documentos import _tabela, _bullets
     e = res["estagios"][grp[0]]
     r = e["requisitos"]
-    qtd = len(grp) * n_banco
-    dess = ped.tipo == "dessintonizado"
-    tit = f"Especificação técnica – Reator {'dessintonizado' if dess else 'de filtro sintonizado'} {e['L_uH']:.0f} µH / {r['In']:.0f} A"
-    doc = _novo(tit, f"{titulo_tipo(ped)} – estágio de {e['Q_kvar']:g} kvar em {ped.tensao_v:g} V / {ped.freq_hz:g} Hz", cod, cat)
-    doc.add_heading("1. Objeto e quantidade", 1)
-    doc.add_paragraph(f"{qtd} reator(es) trifásico(s) com núcleo de ferro, a seco, para ligação em série com capacitor trifásico de "
-                      f"{e['Q_cap_nom_kvar']:.1f} kvar / {e['U_cap_nom']:g} V (estágio de {e['Q_kvar']:g} kvar efetivos). Normas: IEC 60076-6 "
-                      "(reatores), IEC 60289 (complementar), NBR 5356 (ensaios), IEC 60831-1 (capacitor associado).")
-    doc.add_heading("2. Características elétricas", 1)
-    lin = [("Tensão do sistema / frequência", f"{ped.tensao_v:g} V / {ped.freq_hz:g} Hz (Um 1,1 kV)"),
-           ("Fator de dessintonia p / sintonia", f"{e['p_pct']:.2f} % / {e['f_sintonia']:.1f} Hz ({e['h_sintonia']:.2f}ª)"),
-           ("Indutância por fase", f"{e['L_uH']:.1f} µH  (tolerância ±{r['tol_L_pct']:g} %; desequilíbrio entre fases ≤ 2 %)"),
-           ("Corrente fundamental (com sobretensão e tolerância)", f"{r['I1']:.1f} A"),
-           ("Corrente térmica (fundamental + harmônicas, valor eficaz)", f"{r['In']:.1f} A – ensaio de aquecimento nesta corrente"),
-           ("Linearidade", f"L ≥ 95 % do nominal até {r['linearidade']:g} × I1 eficaz ({r['Isat']:.0f} A pico)"),
-           ("Corrente de pico de projeto", f"{r['Ipk']:.0f} A"),
-           ("Perdas máximas a I_th e 75 °C/115 °C ref.", f"≤ {r['P_max']:.0f} W (todas as fases)"),
-           ("Classe de isolação / ambiente", f"H (180 °C) ou F com elevação ≤ 100 K; ambiente {ped.amb_c:g} °C (painel)"),
-           ("Tensão aplicada (60 s)", "3 kV entre enrolamento e massa"),
-           ("Proteção térmica", "Termostato NF na bobina central (abre a 140 °C ± 5 °C), cabos até a régua de bornes"),
-           ("Grau de proteção / instalação", "IP00, interna ao painel, ventilação natural (ou forçada conforme o painel)")]
-    _tabela(doc, ["Grandeza", "Valor"], lin, [6.5, 10.5])
-    doc.add_heading("3. Espectro de corrente de projeto", 1)
-    hs = sorted(e["Ih"])
-    _tabela(doc, ["Harmônica"] + [f"{h}ª" for h in hs], [["Corrente (A)"] + [f"{e['Ih'][h]:.1f}" for h in hs],
-                                                         ["Tensão de rede (%)"] + [f"{ped.harm_tensao_pct.get(h, 0):g}" for h in hs]])
-    doc.add_paragraph("Distorção de tensão de projeto conforme guias de aplicação de reatores dessintonizados (dentro da IEC 61000-2-4 "
-                      "classe 2). O reator deve suportar este espectro em regime contínuo.")
-    doc.add_heading("4. Construção", 1)
-    itens = ["Núcleo trifásico de 3 colunas em chapa de aço silício NOVA, de grão orientado ou não orientado, com certificado do "
-             "fabricante da chapa (Aperam ou equivalente) – não aceito material reaproveitado; espessura ≤ 0,35 mm.",
-             "Entreferros distribuídos (2 por coluna, nas juntas coluna–culatra, ou mais), com espaçadores rígidos classe H "
-             "(NOMEX/epóxi) colados; ajuste fino da indutância pela espessura dos espaçadores.",
-             "Enrolamento em barra ou fio retangular de cobre esmaltado classe H, com isolação entre camadas e canal de ventilação.",
-             "Impregnação a vácuo (VPI) ou imersão com resina classe H, cura em estufa.",
-             "Quadros em U de chapa dobrada zincada e tirantes nos vãos entre fases, fora das bobinas; a alma do quadro termina 20 mm "
-             "antes das juntas (não encostar aço magnético no entreferro).",
-             "Saídas pela própria barra da bobina, horizontais para a frente, terminadas em barra de cobre estanhada com furação NEMA.",
-             "Placa de identificação com L, I1, I_th, p %, frequência de sintonia, classe, massa, nº de série e data."]
-    _bullets(doc, itens)
+    sint = ped.tipo == "sintonizado"
+    qtd = len(grp) * n_banco * (3 if mono else 1)
+    doc = Document()
+    sec = doc.sections[0]
+    sec.page_height, sec.page_width = Cm(29.7), Cm(21.0)
+    sec.left_margin = sec.right_margin = Cm(2.2)
+    st = doc.styles["Normal"]
+    st.font.name = "Calibri"
+    st.font.size = Pt(11)
+    doc.add_paragraph(f"Porto Alegre, {_data_ext()}.").alignment = 2
+    doc.add_paragraph(f"À\n{fornecedor}\n{local}")
+    if mono:
+        titulo = "INDUTOR MONOFÁSICO, NÚCLEO DE FERRO ENVOLVIDO, PARA FILTRO DE HARMÔNICA SINTONIZADO"
+    elif sint:
+        titulo = "INDUTOR TRIFÁSICO PARA FILTRO DE HARMÔNICA SINTONIZADO"
+    else:
+        titulo = "INDUTOR TRIFÁSICO PARA BANCO DE CAPACITORES DESSINTONIZADO"
+    p = doc.add_paragraph()
+    p.add_run(titulo).bold = True
+    p = doc.add_paragraph()
+    p.add_run(f"{_f(e['Q_alvo'], 0)}kVAr/{ped.tensao_v:g}V/" + (f"{e['ordem']:g}ª harmônica (Nr {_f(e['nr'], 2)})" if sint else
+                                                              f"FD{_f(e['p_pct'], 2)}%") + f" – {cod}").bold = True
+    p = doc.add_paragraph()
+    p.add_run("EQUIPAMENTO:").bold = True
+    vsai = e["Uc1"]
+    itens = [f"Corrente RMS de Projeto [A]: {r['In']:.0f}A.",
+             f"Frequência Rede [Hz]: {ped.freq_hz:g}Hz.",
+             "Regime de Funcionamento: Contínuo.",
+             f"Núcleo: {'Monofásico – “Duas Colunas”' if mono else 'Trifásico'}.",
+             f"Tensão Nominal Entrada F-F: {ped.tensao_v:g}V + 10%.",
+             f"Tensão Nominal Saída F-F (lado capacitor): {vsai:.0f}V + 10%.",
+             "Nível Isolamento: 1kV",
+             f"Classe de Temperatura: {'F(155°C)' if ped.classe == 'F' else 'H(180°C)'}",
+             "Grau de proteção: IP00",
+             f"Fator de Qualidade: O FQ deverá ser >{e['fq']:g} por fase em 60Hz.",
+             f"Quantidade: {qtd} unidades",
+             f"Capacitor Associado: {_cap_txt(e)}.",
+             f"Indutância [uH]: {e['L_uH']:.0f}uH com variação -{_f(ped.tol_l_pct, 0)}%/+{_f(ped.tol_l_pct, 0)}%"
+             + (" (desequilíbrio entre fases ≤ 2 %)." if not mono else "."),
+             "Ajuste da Indutância: A indutância deverá ser ajustada pelo gap (entreferro) por tensão e corrente trifásicas.",
+             "Gap (entreferro): o gap (entreferro) deverá ser separado por material isolante, mantendo as condições de variação de "
+             "indutância, para circulação de corrente do projeto e elevação de temperatura.",
+             f"Linearidade (sobrecarga 50 %): o indutor não deverá saturar e deverá manter a indutância dentro da variação até "
+             f"1,5 × a corrente de projeto ({1.5*r['In']:.0f} A rms; pico de operação {r['Ipk']:.0f} A).",
+             f"Enrolamento: chapa ou barra de {'alumínio' if ped.condutor == 'AL' else 'cobre'}.",
+             "Núcleo: chapa de aço silício NOVA, com certificado do fabricante da chapa (não aceito material reaproveitado).",
+             "Proteção térmica: termostato NF na bobina central (abre a 130 °C ± 5 °C para classe F), cabos até a régua de bornes."]
+    for t in itens:
+        doc.add_paragraph(t, style="List Bullet")
+    doc.add_paragraph("Correntes harmônicas previstas pelo indutor (regime contínuo):")
+    hs = sorted(e["Ih_projeto"])
+    _tabela(doc, ["Harmônica", "60 Hz"] + [f"{h}ª ({h*ped.freq_hz:g} Hz)" for h in hs],
+            [["Corrente [A]", _f(r['I1'])] + [_f(e['Ih_projeto'][h]) for h in hs],
+             ["Tensão no indutor [V]", _f(r['I1'] * e['Xl'])] + [_f(e['Ih_projeto'][h] * h * e['Xl']) for h in hs]])
+    doc.add_paragraph(f"Valor eficaz do espectro: {_f(r['I_fisica'], 0)} A. Corrente RMS de projeto adotada: {_f(r['In'], 0)} A "
+                      f"(maior entre o padrão Electric {_f(r['k_corrente'], 2)} × I60 = {_f(r['I_electric'], 0)} A e o espectro).")
+    if sint or mono:
+        doc.add_paragraph("Para a condição de corrente máxima da tabela acima, a temperatura no núcleo do indutor não deverá passar de "
+                          "100 graus, bem como nos enrolamentos se possível. A Electric garante que esses limites de corrente não serão "
+                          "ultrapassados por meio de proteção de sobrecorrente externa.")
+    p = doc.add_paragraph()
+    p.add_run("Ensaios Elétricos Indutores: ").bold = True
+    p.add_run("Deverá ser enviado um relatório, contendo no mínimo os ensaios elétricos trifásicos com os resultados médios para as "
+              "correntes de:")
+    for nome, I in ((f"Corrente de Projeto: {r['In']:.0f}A", r["In"]), (f"Corrente de Ajuste: {e['I60']:.0f}A", e["I60"])):
+        doc.add_paragraph().add_run(nome).bold = True
+        for t in ("Resistência dos enrolamentos a 28°C:", "Resistência corrigida a 115 °C:", "Reatância por fase a 28°C:",
+                  f"Tensão esperada por fase (I × X_L): {_f(I * e['Xl'])} V  (X_L = {_f(e['Xl'] * 1e3)} mΩ)",
+                  "Resistência do Isolamento Megômetro escala 1000Vcc:", "Tensão Aplicada [60Hz – 1 minuto ENR/M]: 2,5 kV"):
+            doc.add_paragraph(t, style="List Bullet")
     if d:
         from .ind_projeto import descr_condutor
-        doc.add_heading("5. Projeto de referência (Electric Service)", 1)
-        doc.add_paragraph(f"Calculado por elementos finitos: {d['chapa_dados']['nome']}, coluna {d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm, "
-                          f"{d['N']} espiras de {descr_condutor(d, curto=True)}, {d['ng']} entreferros por coluna, perdas ≈ "
-                          f"{d['perdas']['total']:.0f} W, elevação ≈ {d['termico']['elev_bobina_K']:.0f} K, massa ≈ {d['massa_kg']['total']:.0f} kg. "
-                          "Seguem desenhos, CAD (STEP/DXF) e memorial. O fabricante pode adaptar ao seu padrão – declarar as diferenças.")
-    doc.add_heading("6. Ensaios", 1)
-    _bullets(doc, ["Rotina (todas as unidades): indutância de cada fase em 60 Hz na I1 (método tensão × corrente trifásico), resistência "
-                   "CC das fases a 20 °C, tensão aplicada 3 kV/60 s, inspeção visual e dimensional.",
-                   f"Tipo (1ª unidade): linearidade (L em {r['linearidade']:g}×I1), perdas, aquecimento na I_th = {r['In']:.0f} A até "
-                   "estabilização (resistência a quente), atuação do termostato.",
-                   "Relatório com os valores medidos, a temperatura e o instrumento (com calibração) – enviar antes do faturamento."])
-    doc.add_heading("7. Dados a informar na proposta", 1)
-    _bullets(doc, ["Preço unitário e prazo; massa e dimensões (C × P × A); perdas garantidas a I_th; elevação de temperatura;",
-                   "origem e espessura da chapa (certificado); software/método de cálculo; desenho dimensional.",
-                   "Validade da proposta, condições de pagamento e garantia."])
-    arq = os.path.join(pasta, f"ET_Reator_{e['L_uH']:.0f}uH_{r['In']:.0f}A_{cod}.docx")
+        p = doc.add_paragraph()
+        p.add_run("Projeto de referência Electric (anexo): ").bold = True
+        p.add_run(f"calculado por elementos finitos – {d['chapa_dados']['nome']}, coluna {d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm, {d['N']} "
+                  f"espiras de {descr_condutor(d, curto=True)}, {d['ng']} entreferros por coluna, perdas ≈ {d['perdas']['total']:.0f} W, "
+                  f"elevação ≈ {d['termico']['elev_bobina_K']:.0f} K, massa ≈ {d['massa_kg']['total']:.0f} kg. Seguem desenhos, CAD "
+                  "(STEP/DXF) e memorial. O fabricante pode adaptar ao seu padrão – favor declarar as diferenças.")
+    doc.add_paragraph("Favor informar: preço unitário, prazo, massa e dimensões (C × P × A), perdas garantidas na corrente de projeto, "
+                      "origem e espessura da chapa e desenho dimensional.")
+    doc.add_paragraph("\nAtenciosamente,\n\nEngº Guilherme Schallenberger\nElectric Service")
+    tipo = "Monofasico" if mono else "Trifasico"
+    arq = os.path.join(pasta, f"Indutor_{tipo}_{e['L_uH']:.0f}uH-{r['In']:.0f}A_{e['codigo']}_{fornecedor.split()[0].title()}.docx")
     doc.save(arq)
     return arq
 
 
-def et_capacitores(ped, res, pasta, cod, cat, n_banco=1):
+def et_painel(ped, res, pasta, cod, cat, n_banco=1):
+    """ET para o montador do painel (IFG) – mesmo formato das ET Electric (por estágio + componentes gerais + layout)."""
+    from . import banco as B
     from .documentos import _tabela, _bullets
-    doc = _novo("Especificação técnica – Capacitores de potência", f"{titulo_tipo(ped)} – {ped.tensao_v:g} V / {ped.freq_hz:g} Hz", cod, cat)
-    doc.add_paragraph("Capacitores trifásicos de baixa tensão, autorregenerativos (filme de polipropileno metalizado), com dispositivo de "
-                      "interrupção por sobrepressão e resistores de descarga (≤ 50 V em 1 min). Norma IEC 60831-1/-2 (NBR IEC 60831). "
-                      "Operação em série com reator: tensão nominal ACIMA da rede.")
-    agg = {}
-    for e in res["estagios"]:
-        k = (e["U_cap_nom"], round(e["Q_cap_nom_kvar"], 1))
-        a = agg.setdefault(k, dict(n=0, e=e))
-        a["n"] += n_banco
-    lin = []
-    for (U, Q), a in agg.items():
-        e = a["e"]
-        lin.append((a["n"], f"{Q:.1f} kvar", f"{U:g} V", f"{e['C_delta_uF']:.1f} µF (Δ)", f"{e['Uc_rms']:.0f} V", f"{e['I_cap_rms']*1.3:.0f} A",
-                    f"{e['Q_kvar']:g} kvar em {ped.tensao_v:g} V"))
-    _tabela(doc, ["Qtd", "Potência nominal", "Tensão nominal", "Capacitância/fase", "Tensão de operação", "Corrente máx. (≥1,3 I)",
-                  "Potência efetiva com reator"], lin)
-    _bullets(doc, [f"Tolerância de capacitância ±{ped.tol_c_pct:g} % (preferência −5/+5 %; para filtro sintonizado pedir ±3 % ou casar as fases).",
-                   f"Categoria de temperatura −25/D ou melhor (ambiente {ped.amb_c:g} °C).",
-                   "Corrente de inrush ≥ 200 × In; vida útil ≥ 100 000 h; terminais com proteção IP20.",
-                   "Informar marca, modelo, preço e prazo."])
-    arq = os.path.join(pasta, f"ET_Capacitores_{cod}.docx")
+    sint = ped.tipo == "sintonizado"
+    E = res["estagios"]
+    tit = ("ESPECIFICAÇÃO PARA FORNECIMENTO – FILTRO HARMÔNICA SINTONIZADO" if sint else
+           "ESPECIFICAÇÃO PARA FORNECIMENTO – BANCO DE CAP DESSINTONIZADO")
+    comp = " + ".join(f"{len(g)}X{_f(E[g[0]]['Q_alvo'], 0)}KVAR" for g in B.reatores_distintos(res))
+    doc = _novo(tit, f"{_f(sum(ped.estagios_kvar), 0)}KVAR ({comp}) {ped.tensao_v:g}V – {len(E)} estágios", cod, cat)
+    pn = B.painel(ped, res)
+    for g in B.reatores_distintos(res):
+        e = E[g[0]]
+        pr = B.protecao_estagio(ped, e)
+        doc.add_heading(f"FORNECIMENTO MONTADORA: ESTÁGIO {_f(e['Q_alvo'], 0)}KVAR/{ped.tensao_v:g}V", 2)
+        lin = [("Estágios", f"{len(g) * n_banco} X {_f(e['Q_alvo'], 0)}KVAR/{ped.tensao_v:g}V"),
+               ("Tensão Rede", f"{ped.tensao_v:g}V"),
+               ("Potência Nominal dos Capacitores “por Estágio”", _cap_txt(e) + (" – especial para filtro" if sint else "")),
+               ("Potência efetiva de rede 60 Hz “por Estágio”", f"{_f(e['Q_kvar'], 1)}kVAr/{ped.tensao_v:g}V"),
+               ("Corrente Nominal de Rede 60 Hz “por Estágio”", f"{e['I60']:.0f}A/{ped.tensao_v:g}V"),
+               ("Corrente RMS com harmônicas “por Estágio”", f"{e['requisitos']['In']:.0f}A"),
+               ("Seccionador-fusível “por estágio”", f"Chave {pr['chave_A']}A {pr['base']} – Fusíveis {pr['fusivel_A']}A"),
+               ("Contatora “por estágio”", f"{pr['contator']} – IN {pr['contator_In']:.0f} A (manobra de capacitor)"),
+               ("Cabo de força barramento → reator", f"{pr['cabo_mm2']} mm² 90 °C"),
+               ("Cabo reator → capacitores", f"{pr['cabo_ind_cap_mm2']} mm² 90 °C"),
+               ("Reator", f"{e['L_uH']:.0f} µH / {e['requisitos']['In']:.0f} A – FORNECIMENTO ELECTRIC")]
+        _tabela(doc, ["Item", "Especificação"], lin, [6.5, 10.5])
+    doc.add_heading("FORNECIMENTO MONTADORA: COMPONENTES GERAIS", 2)
+    _tabela(doc, ["Item", "Descrição", "Quant.", "Unid."], [(i + 1, a, q * (n_banco if "Painel" in a else 1), u)
+                                                            for i, (a, q, u) in enumerate(pn["itens"])], [1, 11, 2, 2])
+    _bullets(doc, ["Demais materiais: barramento de cobre, isoladores, cabos de comando 1,5 mm², secundários de TC 2,5 mm², bornes, "
+                   "canaletas, trilhos, base dos capacitores e base dos reatores, etiquetas.",
+                   "Reatores sobre base própria na parte inferior do painel, capacitores acima, ventilação de baixo para cima."])
+    doc.add_heading("FORNECIMENTO ELECTRIC", 2)
+    _bullets(doc, pn["eletric"])
+    doc.add_heading("FUNCIONAMENTO", 2)
+    doc.add_paragraph("Modo automático: o controlador de fator de potência comanda os estágios. "
+                      + ("Cada estágio tem multimedidor de proteção: se a corrente passar do ajuste, o CLP desarma o estágio; o retorno "
+                         "é pelo botão de reset. " if sint else "")
+                      + "A correção por banco com reatores de dessintonia evita a ressonância com o sistema, aumenta a vida útil dos "
+                        "capacitores e reduz a amplificação das harmônicas.")
+    arq = os.path.join(pasta, f"ET_Painel_{cod}.docx")
+    doc.save(arq)
+    # lista de materiais em planilha (mesmo modelo das ET .xlsx)
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Planilha1"
+    ws["A1"] = f"{tit} – {_f(sum(ped.estagios_kvar), 0)} kVAr ({comp}) em {ped.tensao_v:g} V"
+    ws["A1"].font = Font(bold=True, size=12)
+    ws.append([])
+    ws.append(["Item", "Descritivo", "Quant.", "Unid.", "Obs."])
+    k = 1
+    for a, q, u in pn["itens"]:
+        ws.append([k, a, q, u, ""])
+        k += 1
+    for g in B.reatores_distintos(res):
+        e = E[g[0]]
+        pr = B.protecao_estagio(ped, e)
+        nst = len(g) * n_banco
+        ws.append([k, f"Chave Fusível Seccionadora Tripolar {pr['chave_A']}A {pr['base']}", nst, "pç", f"estágio {_f(e['Q_alvo'], 0)} kvar"]); k += 1
+        ws.append([k, f"Fusível {pr['base']} {pr['fusivel_A']}A", 3 * nst, "pç", ""]); k += 1
+        ws.append([k, f"Contatora {pr['contator']} – IN {pr['contator_In']:.0f}A", nst, "pç", ""]); k += 1
+        ws.append([k, f"Capacitor trifásico {_f(e['cap'][1], 1)}kVAr/{e['cap'][2]}V" + (" especial filtro" if sint else ""), e["cap"][0] * nst,
+                   "pç", f"{e['cap'][0]} caps por estágio"]); k += 1
+        ws.append([k, f"Indutor Trif. {_fd_txt(e)} - {ped.tensao_v:g}V-{_f(e['Q_alvo'], 0)}kVAr-60Hz - "
+                      f"{'Alumínio' if ped.condutor == 'AL' else 'Cobre'} - {'155' if ped.classe == 'F' else '180'}ºC - 1000V - Q>{e['fq']:g} - "
+                      f"{e['L_uH']:.0f}uH {e['requisitos']['In']:.0f}A", nst, "pç", "Fornecimento Electric"]); k += 1
+    for col, w in zip("ABCDE", (6, 90, 8, 6, 22)):
+        ws.column_dimensions[col].width = w
+    arq2 = os.path.join(pasta, f"ET_Painel_{cod}.xlsx")
+    wb.save(arq2)
+    return arq, arq2
+
+
+def proposta(ped, res, pasta, cod, cat, inds=None, n_banco=1):
+    """Proposta técnica e comercial no formato Electric (módulos com código, ou filtro FHSBT em painel). Preços em branco."""
+    from .documentos import _tabela, _bullets
+    from . import banco as B
+    sint = ped.tipo == "sintonizado"
+    E = res["estagios"]
+    tit = ("PROPOSTA TÉCNICA E COMERCIAL – FILTRO DE HARMÔNICAS SINTONIZADO" if sint else
+           "PROPOSTA TÉCNICA E COMERCIAL – FILTRO DE HARMÔNICA DESSINTONIZADO")
+    doc = _novo(tit, f"{ped.cliente or 'Cliente'} – {_f(res['Q_total_kvar'], 0)} kVAr / {ped.tensao_v:g} V", cod, cat)
+    doc.add_paragraph(f"Porto Alegre, {_data_ext()}.")
+    doc.add_paragraph(f"À\n{ped.cliente or '________'}")
+    doc.add_heading("APRESENTAÇÃO", 1)
+    doc.add_paragraph("Presente no mercado desde 1985, a Electric presta consultoria para diferentes áreas do setor elétrico: medições e "
+                      "diagnóstico de qualidade de energia, estudos para geração, transmissão, distribuição e indústria, e fornece "
+                      "soluções de correção de fator de potência e de harmônicas.")
+    if sint:
+        doc.add_heading("1. DESCRIÇÃO DO FUNCIONAMENTO DE FILTROS SINTONIZADOS", 1)
+        doc.add_paragraph("Filtros de harmônicas passivos sintonizados têm a frequência de ressonância próxima da harmônica perturbadora, "
+                          "absorvendo um percentual muito grande da harmônica à qual estão sintonizados. Cada filtro também faz a "
+                          "correção do fator de potência, simultaneamente à correção de harmônicos.")
+        doc.add_heading("2. DESCRIÇÃO DA SOLUÇÃO", 1)
+        hs = "/".join(f"{h:g}ª" for h in sorted(set(ped.ordens)))
+        _tabela(doc, ["Item", "Valor"], [
+            ("Empreendimento", ped.cliente or "–"), ("Local de instalação", ped.projeto or "Secundário do transformador"),
+            ("TAG", "FHSBT#1"), ("Potência efetiva fornecida [kVAr]", f"{_f(res['Q_total_kvar'], 0)} kVAr"),
+            ("Tensão de operação [V]", f"{ped.tensao_v:g} V"), ("Harmônica(s) sintonizada(s)", hs),
+            ("Distorção harmônica de corrente drenada da rede [DHTi]", f"{_f(ped.dhti_carga_pct, 0)} %"),
+            ("Equipamento", "Filtro sintonizado com indutores de núcleo de ferro"),
+            ("Número total de estágios", " + ".join(f"{len(g)} x {_f(E[g[0]]['Q_alvo'], 0)} kVAr" for g in B.reatores_distintos(res))),
+            ("Proteção geral do painel", "Chave seccionadora-fusível geral"),
+            ("Dimensional A x L x P [mm] orientativo", "A={} x L={} x P={}".format(*B.painel(ped, res)["dim"]))], [7, 10])
+        if res.get("thd"):
+            doc.add_paragraph(f"Estudo: DHTv na barra de {_f(res['thd']['sem'], 2)} % sem filtro para {_f(res['thd']['com'], 2)} % com filtro "
+                              "(corrente harmônica da carga informada).")
+        doc.add_heading("Componentes básicos do filtro", 2)
+        _bullets(doc, [("Reatores monofásicos" if ped.monofasico else "Reatores trifásicos") + ", com núcleo de ferro;",
+                       f"Capacitores trifásicos conectados em delta, especiais para filtros, tensão de {E[0]['U_cap_nom']} V;",
+                       "Contatoras de manobra dimensionadas para a corrente efetiva e a distorção harmônica prevista;",
+                       "Chave desconectora tripolar com base NH e fusíveis para proteção individual de cada estágio;",
+                       "Chave seccionadora-fusível geral; botoeira 3 posições; controlador automático;",
+                       "Multimedidores por estágio para medição e proteção; CLP; comando; ventilação."])
+        doc.add_heading("Serviços", 2)
+        _bullets(doc, ["Medições comprobatórias de qualidade de energia após a entrada em operação, com relatório;",
+                       "Termografia do filtro;", "Garantia de 12 meses (equipamentos e funcionamento)."])
+    else:
+        doc.add_heading("MÓDULO DE FILTRO DE HARMÔNICA DESSINTONIZADO", 1)
+        doc.add_paragraph("A correção de fator de potência por filtros de harmônicas dessintonizados é feita para evitar a ressonância do "
+                          "banco com o sistema, evitando a queima, aumentando a vida útil e reduzindo a amplificação dos níveis de "
+                          "harmônicos. Dependendo do FD (fator de dessintonia) e da impedância do sistema, mais harmônicas serão "
+                          "absorvidas pelo conjunto.")
+        _bullets(doc, ["Evita ressonância com o sistema;", "Reduz a DHT do sistema;", "Aumenta a vida útil do capacitor;",
+                       "Diminui o desgaste de componentes de manobra;", "Suporta o sistema de controle automático existente."])
+    doc.add_heading("MÓDULOS E CONDIÇÕES COMERCIAIS", 1)
+    for k, g in enumerate(B.reatores_distintos(res)):
+        e = E[g[0]]
+        _tabela(doc, ["Item", "Descritivo técnico", "Valor", "Qtd", "Unitário", "Total"], [
+            (k + 1, "Código produto", e["codigo"], f"{len(g) * n_banco} pç", "R$ ______", "R$ ______"),
+            ("", "Potência efetiva fornecida ao sistema", f"{_f(e['Q_alvo'], 0)} kVAr/{ped.tensao_v:g} V ({_f(e['Q_kvar'], 1)} kVAr calc.)", "", "", ""),
+            ("", "Tensão nominal e frequência da rede", f"{ped.tensao_v:g} V/{ped.freq_hz:g} Hz", "", "", ""),
+            ("", "Potência e tensão do capacitor", _cap_txt(e), "", "", ""),
+            ("", "Fator de dessintonia / ordem" if not sint else "Sintonia", f"{_f(e['p_pct'], 2)} % / Nr {_f(e['nr'], 2)} ({e['f_sintonia']:.0f} Hz)", "", "", ""),
+            ("", "Reator", f"{e['L_uH']:.0f} µH / {e['requisitos']['In']:.0f} A, classe {ped.classe}", "", "", "")], [1, 5, 6, 1.5, 2, 2])
+    doc.add_heading("CONDIÇÕES", 1)
+    _bullets(doc, ["Prazo de entrega: a definir (referência: 45–60 dias para módulos; 120–150 dias para painéis);",
+                   "Pagamento, frete e instalação: a definir;", "Garantia: 12 meses;", "Validade da proposta: 15 dias."])
+    doc.add_paragraph("\nEngº Guilherme Schallenberger – Engenheiro de Aplicação\nEngº Jeremias Wolff – Diretor de Engenharia")
+    arq = os.path.join(pasta, f"Proposta_Tecnica_Comercial_{cod}.docx")
     doc.save(arq)
     return arq
 
@@ -312,17 +582,20 @@ def et_capacitores(ped, res, pasta, cod, cat, n_banco=1):
 def email_fornecedor(nome, ped, res, grupos, arqs, cod, tipo="reator"):
     linhas = [f"Prezados, {nome},", ""]
     if tipo == "reator":
-        linhas.append(f"Solicito cotação de reatores para {titulo_tipo(ped).lower()} ({ped.tensao_v:g} V / {ped.freq_hz:g} Hz, ref. {cod}):")
+        linhas.append(f"Solicito cotação de indutores para {titulo_tipo(ped).lower()} ({ped.tensao_v:g} V / {ped.freq_hz:g} Hz, ref. {cod}):")
         for gi, grp in enumerate(grupos):
             e = res["estagios"][grp[0]]
             r = e["requisitos"]
-            linhas.append(f"  {gi+1}) {len(grp)} pç – {e['L_uH']:.0f} µH/fase ±{_f(r['tol_L_pct'], 0)} %, I1 {r['I1']:.0f} A, I_th {r['In']:.0f} A, "
-                          f"p = {_f(e['p_pct'], 2)} % ({e['f_sintonia']:.0f} Hz), linear até {_f(r['linearidade'])}×I1, perdas ≤ {r['P_max']:.0f} W, "
-                          "classe H, termostato NF")
-        linhas += ["", "Seguem a especificação técnica de cada reator e o projeto de referência (desenhos, CAD STEP/DXF e memorial de "
-                   "cálculo por elementos finitos). Podem adaptar ao padrão de fabricação de vocês, declarando as diferenças.",
+            linhas.append(f"  {gi+1}) {len(grp) * (3 if ped.monofasico else 1)} pç – {e['L_uH']:.0f} µH ±{_f(ped.tol_l_pct, 0)} %, corrente de "
+                          f"projeto {r['In']:.0f} A (ajuste {e['I60']:.0f} A), {_fd_txt(e)}, capacitor associado {_cap_txt(e)}, "
+                          f"classe {ped.classe}, FQ > {e['fq']:g}, isolação 1 kV")
+        linhas += ["", "Segue a especificação de cada indutor (mesmo formato das anteriores) e o projeto de referência da Electric "
+                   "(desenhos, CAD STEP/DXF e memorial de cálculo por elementos finitos). Podem adaptar ao padrão de fabricação de vocês, "
+                   "declarando as diferenças.",
                    "Exigência: chapa de aço silício NOVA com certificado (não aceitamos chapa reaproveitada).",
-                   "Peço preço, prazo, massa/dimensões, perdas garantidas e o relatório de ensaio de rotina de cada unidade."]
+                   "Peço preço, prazo, massa/dimensões, perdas garantidas e o relatório de ensaio (corrente de projeto e de ajuste) de cada unidade."]
+    elif tipo == "painel":
+        linhas.append(f"Solicito cotação da montagem do painel conforme a especificação anexa (ref. {cod}). Os reatores são fornecimento Electric.")
     else:
         linhas.append(f"Solicito cotação dos capacitores conforme a especificação anexa (ref. {cod}).")
     linhas += ["", "Anexos: " + ", ".join(os.path.basename(a) for a in arqs if a), "", "Atenciosamente,", "Electric Service – Engenharia"]

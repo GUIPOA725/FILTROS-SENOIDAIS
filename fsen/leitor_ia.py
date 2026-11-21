@@ -61,6 +61,8 @@ def _blocos_anexos(anexos: List[str]):
         elif ext in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
             mt = "image/jpeg" if ext in (".jpg", ".jpeg") else f"image/{ext[1:]}"
             blocos.append({"type": "image", "source": {"type": "base64", "media_type": mt, "data": base64.b64encode(dados).decode()}})
+        elif ext in (".xlsx", ".xlsm", ".xls", ".csv", ".txt") and ext != ".txt" or _parece_medicao(cam):
+            blocos.append({"type": "text", "text": f"[Anexo {os.path.basename(cam)}]\n{texto_planilha(cam)}"})
         elif ext == ".docx":
             from docx import Document
             txt = "\n".join(p.text for p in Document(cam).paragraphs)
@@ -156,10 +158,57 @@ def testar_ia(provedor=None):
         return False, f"{type(e).__name__}: {e}"
 
 
+def _parece_medicao(cam):
+    return os.path.splitext(cam)[1].lower() in (".xlsx", ".xlsm", ".xls", ".csv")
+
+
+def texto_planilha(cam, max_linhas=60, max_cols=70):
+    """v1.14.0: planilhas e exportações de medição (Dranview, Fluke, PQ Analyzer, CSV) em texto para a IA.
+    Tabelas curtas vão inteiras; séries longas (medição no tempo) viram ESTATÍSTICAS por coluna (média, P95, máximo) –
+    é o que o dimensionamento usa (harmônicas P95/máximo, DHT, kW, kvar, FP)."""
+    import numpy as np
+    out = []
+    try:
+        import pandas as pd
+        if cam.lower().endswith(".csv"):
+            folhas = {"csv": pd.read_csv(cam, sep=None, engine="python", header=None, nrows=200000, encoding_errors="ignore")}
+        else:
+            folhas = pd.read_excel(cam, sheet_name=None, header=None, nrows=200000)
+    except Exception as e:
+        return f"(planilha não lida: {type(e).__name__}: {e})"
+    for nome, df in list(folhas.items())[:12]:
+        df = df.dropna(how="all").dropna(axis=1, how="all")
+        if df.empty:
+            continue
+        df = df.iloc[:, :max_cols]
+        out.append(f"--- aba '{nome}' ({df.shape[0]} linhas × {df.shape[1]} colunas)")
+        if df.shape[0] <= max_linhas:
+            for _, r in df.iterrows():
+                out.append(" | ".join("" if (isinstance(v, float) and np.isnan(v)) else str(v)[:30] for v in r.values))
+            continue
+        # série longa: cabeçalho (primeiras linhas não numéricas) + estatística por coluna
+        hdr_rows = []
+        for i in range(min(8, df.shape[0])):
+            r = df.iloc[i]
+            if pd.to_numeric(r, errors="coerce").notna().mean() < 0.5:
+                hdr_rows.append(i)
+        cab = [" / ".join(str(df.iloc[i, j]) for i in hdr_rows if str(df.iloc[i, j]) != "nan")[:60] or f"col{j}" for j in range(df.shape[1])]
+        num = df.drop(index=df.index[hdr_rows]).apply(pd.to_numeric, errors="coerce")
+        out.append("coluna | n | média | P95 | máximo | mínimo")
+        for j, c in enumerate(num.columns):
+            v = num[c].dropna().values
+            if len(v) < 3:
+                continue
+            out.append(f"{cab[j]} | {len(v)} | {np.mean(v):.4g} | {np.percentile(v, 95):.4g} | {np.max(v):.4g} | {np.min(v):.4g}")
+    return "\n".join(out)[:60000]
+
+
 def _texto_anexos(anexos):
     txt = ""
     for a in anexos or []:
-        if a.lower().endswith(".pdf"):
+        if _parece_medicao(a):
+            txt += f"\n[Anexo {os.path.basename(a)}]\n" + texto_planilha(a)
+        elif a.lower().endswith(".pdf"):
             try:
                 import pypdf
                 txt += f"\n[Anexo {os.path.basename(a)}]\n" + "\n".join(pg.extract_text() or "" for pg in pypdf.PdfReader(a).pages)
@@ -188,17 +237,18 @@ def _claude_cli():
     return c
 
 
-def _ler_via_claude_code(pc, texto_email, anexos, historico_txt):
+def _ler_via_claude_code(pc, texto_email, anexos, historico_txt, instrucao=None, ferramenta=None):
     """Usa o Claude Code instalado no computador, logado na ASSINATURA do Claude (Pro/Max/Team) – sem chave de API.
     Equivale a: claude -p --model <m> --effort <e> --output-format json --json-schema <esquema>."""
     import subprocess, tempfile
     exe = _claude_cli()
     if not exe:
         raise RuntimeError("Claude Code não encontrado. Instale (claude.com/claude-code) e faça login com sua conta Claude.")
-    esquema = _ferramenta()["input_schema"]
+    instrucao = instrucao or INSTRUCAO
+    esquema = (ferramenta or _ferramenta())["input_schema"]
     pastas = sorted({os.path.dirname(os.path.abspath(a)) for a in anexos or []})
     lista = "\n".join(f"- {os.path.abspath(a)}" for a in anexos or [])
-    prompt = (f"{INSTRUCAO}\nResponda SOMENTE com o JSON do pedido (esquema fornecido).\n\n"
+    prompt = (f"{instrucao}\nResponda SOMENTE com o JSON do pedido (esquema fornecido).\n\n"
               f"Arquivos anexos (leia PDF/imagens com a ferramenta Read; o texto do Word/PDF já vai abaixo):\n{lista or '(nenhum)'}\n\n"
               f"TEXTO DOS ANEXOS:\n{_texto_anexos(anexos)}\n\nE-MAIL:\n{texto_email}\n\n{historico_txt}")
     # o esquema vai no PROMPT (não em --json-schema): no Windows o claude.cmd passa pelo cmd.exe, que estraga aspas/JSON na linha
@@ -223,20 +273,30 @@ def _ler_via_claude_code(pc, texto_email, anexos, historico_txt):
 
 
 def ler_com_ia(texto_email: str, anexos: Optional[List[str]] = None, historico_txt: str = "", provedor: str = None) -> Pedido:
+    dados, pc = extrair_dados(texto_email, anexos, INSTRUCAO, _ferramenta(), historico_txt, provedor)
+    ped = _completar(Pedido.from_dict(dados))
+    ped.observacoes = (ped.observacoes + f" [lido por IA: {pc['nome']} / {pc['modelo']}"
+                       + (f" / esforço {pc['esforco']}" if pc.get("esforco") else "") + "]").strip()
+    return ped
+
+
+def extrair_dados(texto_email, anexos, instrucao, ferramenta, historico_txt="", provedor=None):
+    """v1.14.0: MESMO caminho de IA do filtro senoidal (Claude Code pela assinatura, API Anthropic ou compatível OpenAI),
+    com instrução e esquema próprios – usado também por bancos dessintonizados e filtros sintonizados."""
     cfg = config_ia()
     provedor = provedor or cfg.get("provedor_padrao", "claude")
     pc = cfg["provedores"][provedor]
     if pc["tipo"] == "claude_code":
-        dados = _ler_via_claude_code(pc, texto_email, anexos, historico_txt)
+        dados = _ler_via_claude_code(pc, texto_email, anexos, historico_txt, instrucao, ferramenta)
     elif pc["tipo"] == "anthropic":
         import anthropic
         carregar_chaves()
         cli = anthropic.Anthropic(api_key=os.environ.get(pc.get("env_chave") or "ANTHROPIC_API_KEY"))
         conteudo = _blocos_anexos(anexos) + [{"type": "text", "text": f"E-MAIL:\n{texto_email}\n\n{historico_txt}\n\n"
-                                                                     "Chame a ferramenta registrar_pedido com os dados extraídos."}]
+                                                                     f"Chame a ferramenta {ferramenta['name']} com os dados extraídos."}]
         extra = {"output_config": {"effort": pc["esforco"]}} if pc.get("esforco") else {}
         # modelos 5.x pensam (thinking adaptativo): tool_choice "auto" + instrução (forçar a ferramenta não combina com thinking)
-        resp = cli.messages.create(model=pc["modelo"], max_tokens=16000, system=INSTRUCAO, tools=[_ferramenta()],
+        resp = cli.messages.create(model=pc["modelo"], max_tokens=16000, system=instrucao, tools=[ferramenta],
                                    tool_choice={"type": "auto"}, messages=[{"role": "user", "content": conteudo}],
                                    extra_body=extra or None)
         dados = next((b.input for b in resp.content if b.type == "tool_use"), None)
@@ -248,8 +308,8 @@ def ler_com_ia(texto_email: str, anexos: Optional[List[str]] = None, historico_t
         from openai import OpenAI
         env = pc.get("env_chave") or ""
         cli = OpenAI(base_url=pc["base_url"], api_key=os.environ.get(env, "") if env else "ollama")
-        esquema = json.dumps(_ferramenta()["input_schema"]["properties"], ensure_ascii=False)
-        msg = (f"{INSTRUCAO}\nResponda SOMENTE com um objeto JSON com estes campos (omita os desconhecidos):\n{esquema}\n\n"
+        esquema = json.dumps(ferramenta["input_schema"]["properties"], ensure_ascii=False)
+        msg = (f"{instrucao}\nResponda SOMENTE com um objeto JSON com estes campos (omita os desconhecidos):\n{esquema}\n\n"
                f"E-MAIL:\n{texto_email}\n{_texto_anexos(anexos)}\n{historico_txt}")
         resp = cli.chat.completions.create(model=pc["modelo"], temperature=0,
                                            response_format={"type": "json_object"},
@@ -257,10 +317,7 @@ def ler_com_ia(texto_email: str, anexos: Optional[List[str]] = None, historico_t
         conteudo = resp.choices[0].message.content
         conteudo = conteudo[conteudo.find("{"): conteudo.rfind("}") + 1]
         dados = json.loads(conteudo)
-    ped = _completar(Pedido.from_dict(dados))
-    ped.observacoes = (ped.observacoes + f" [lido por IA: {pc['nome']} / {pc['modelo']}"
-                       + (f" / esforço {pc['esforco']}" if pc.get("esforco") else "") + "]").strip()
-    return ped
+    return dados, pc
 
 
 # ---------------------------------------------------------------- extrator por regras (sem IA)

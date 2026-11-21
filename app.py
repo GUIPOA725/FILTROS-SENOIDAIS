@@ -154,7 +154,7 @@ def form_pedido(p: Pedido) -> Pedido:
 
 if pagina == "Nova solicitação" and tipo_filtro != "senoidal":
     from telas_banco import tela_banco
-    tela_banco(tipo_filtro, pasta_saida)
+    tela_banco(tipo_filtro, pasta_saida, provedor=_prov, nome_ia=_st_ia[_prov]["nome"])
 elif pagina == "Nova solicitação":
     st.title("Nova solicitação")
     painel_abrir_projeto(pasta_saida, "abrir_ns")

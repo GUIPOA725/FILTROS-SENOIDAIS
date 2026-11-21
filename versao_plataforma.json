@@ -1,5 +1,5 @@
 {
-  "versao": "1.13.0",
+  "versao": "1.14.0",
   "data": "2026-11-21",
-  "resumo": "Seletor de tipo de filtro: banco dessintonizado e filtro sintonizado 5ª/7ª/11ª com o mesmo motor de projeto do reator (FEM, 3D, térmico, desenhos, CAD, documentos)"
+  "resumo": "Dessintonizado e sintonizado no padrão Electric (planilhas ESTAGIO, cartas Cootrans, ET IFG, propostas) com leitura por IA igual ao filtro senoidal"
 }
