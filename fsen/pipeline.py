@@ -199,6 +199,8 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                               int(math.ceil(_dm["profundidade"] / 10) * 10)]
             proj.l1.massa_kg = round(float(ind_pre["massa_kg"]["total"]), 0)
             proj._ind_fem_termico = dict(elev=float(ind_pre["termico"]["elev_bobina_K"]), p=float(ind_pre["perdas"]["total"]))
+            proj._ind_chapa = dict(nome=ind_pre["chapa_dados"]["nome"], esp=float(ind_pre["chapa_dados"]["esp_mm"]),
+                                   massa_nucleo=float(ind_pre["massa_kg"]["nucleo"]))
             proj.avisos = list(getattr(proj, "avisos", []) or []) + [
                 f"Painel dimensionado com o indutor do projeto por elementos finitos: {proj.l1.dim_mm[0]}×{proj.l1.dim_mm[1]}×"
                 f"{proj.l1.dim_mm[2]} mm, {proj.l1.massa_kg:.0f} kg e perdas = limite contratual {proj.l1.perdas_w:.0f} W "
@@ -296,7 +298,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                             f"Seguem também o Projeto de Referência (desenhos com vistas, cortes, 3D e lista de materiais), os arquivos CAD "
                             f"editáveis (3D em STEP e 2D em DXF, escala 1:1) e o Memorial de "
                             f"cálculo por elementos finitos ({os.path.basename(arqs['indutor_desenhos'])}, {os.path.basename(arqs['indutor_memorial'])}). "
-                            f"Ele foi calculado com as correntes e tensões reais do filtro: {ind['N']} espiras de folha, {ind['ng']} entreferros por "
+                            f"Ele foi calculado com as correntes e tensões reais do filtro: {ind['N']} espiras de {IP.descr_condutor(ind, curto=True)}, {ind['ng']} entreferros por "
                             f"coluna, bobina a {ind['c']*1e3:.0f} mm do núcleo, chapa {ind['chapa_dados']['esp_mm']} mm, sistema de isolação classe "
                             f"{ind['requisitos']['classe']}. Vocês podem adaptar ao padrão de fabricação de vocês – peço só que declarem as "
                             "diferenças (chapa, espiras, entreferros, condutor, isolação) para conferirmos.\n")
@@ -310,6 +312,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
             arqs["indutor_protocolo"] = DIF.protocolo_prototipo(proj, cat, ind, sub["03_Fornecedores"], cod, D._novo, D._tabela, D._bullets)
             arqs["indutor_questionario"] = DIF.questionario_fabricante(proj, cat, sub["03_Fornecedores"], cod, D._novo, D._tabela, D._bullets)
             arqs["fornecedores_interno"] = DIF.fornecedores_interno(sub["01_Engenharia"], cod)
+            if ind:                                 # v1.11.7: anexo técnico (mercado, literatura, normas, fabricação)
+                try:
+                    from . import doc_referencias_indutor as DRI
+                    arqs["indutor_anexo_tecnico"] = DRI.gerar(ind, proj, os.path.join(
+                        sub["03_Fornecedores"], f"Anexo_Tecnico_Referencias_Indutor_{cod}.pdf"), eng_dir=sub["01_Engenharia"])
+                except Exception as _e:
+                    log(f"   (anexo técnico do indutor não gerado: {type(_e).__name__}: {_e})")
             _anexos = sorted(f for f in os.listdir(sub["03_Fornecedores"])
                              if re.search(r"Indutor", f, re.I) and not f.startswith("Email_") and not f.endswith(".json"))
             for _f in os.listdir(sub["03_Fornecedores"]):

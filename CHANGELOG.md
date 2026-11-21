@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.7 – 2026-11-20
+- Chapa do núcleo passa a ser EXIGÊNCIA (não orientação) na ET (item 4.1), no protocolo (itens 16 e 17), no questionário e no e-mail (item 11): chapa GO NOVA com certificado da usina do lote, espessura máx. 0,27 mm, proibida chapa reaproveitada/sucata; inspeção de recebimento (micrômetro 5 pontos, revestimento, rebarba ≤ 0,02 mm, fotos); preço do núcleo discriminado; ensaio com inversor como prova.
+- Novo anexo técnico `Anexo_Tecnico_Referencias_Indutor_<cód>.pdf` (doc_referencias_indutor.py): o que fabricantes (MTE, Mirus, BLOCK, Ergun, Trafox, chineses, nacionais), literatura (Severns, Dönük, Altayef, Belgrand) e normas (IEC 60076-6, EN 61558-2-20) dizem sobre a construção, verificação da regra bobina–entreferro (2–3×), recomendações de fabricação da bobina de barra, figuras e fontes. Listado como anexo no e-mail.
+- Fotos de referência de montagem (reatores dessintonizados nacionais) em dados/referencias_montagem.
+- Corrigido texto do e-mail que dizia "espiras de folha" para bobina de barra.
+
 ## v1.11.6 – 2026-11-20
 - Montagem do indutor no padrão dos reatores de banco dessintonizado nacionais (fotos Cootrans): novo módulo `ind_estrutura.py`, fonte única da geometria mecânica para a vista realista, desenhos 2D/3D, STEP e DXF.
   - Quadros de aperto em U de chapa dobrada zincada (frente/trás das culatras), isolados do núcleo; furo de içamento nas pontas do quadro superior; pés com 4 furos oblongos na aba inferior.

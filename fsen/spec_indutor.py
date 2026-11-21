@@ -369,9 +369,14 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
         "Núcleo prensado e impregnado. POR QUÊ: em alta frequência as forças magnéticas fazem chapas e espiras soltas vibrarem "
         "(ruído audível e desgaste da isolação)."])
 
+    d.add_heading("4.1 Chapa do núcleo – EXIGÊNCIA (não é orientação)", 2)
+    from .doc_indutor_fornecedor import exigencias_chapa
+    _bullets(d, exigencias_chapa(proj))
     d.add_heading("5. Dados que o fornecedor deve DECLARAR na proposta", 1)
     _tabela(d, ["Dado", "Unidade", "Por quê / valor declarado"], [
         ("Material e espessura da chapa; indução de trabalho (B pico)", "– / T", "Avaliar perdas de alta frequência e saturação"),
+        ("Origem da chapa (usina/distribuidor) e certificado do lote", "–", "Chapa nova obrigatória – reaproveitada é proibida"),
+        ("Preço do núcleo discriminado (chapa + corte + montagem)", "R$", "Comparação transparente"),
         ("Número e posição dos entreferros por coluna", "–", "Avaliar o aquecimento por fluxo espraiado"),
         ("Material do enrolamento (Cu/Al) e tipo de condutor", "–", "Avaliar perdas por efeito pelicular/proximidade"),
         ("Indutância por fase na In e a 50 % In", "µH", "Conferir valor e linearidade"),
@@ -414,6 +419,7 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
                  f"Elevação dentro da classe {cl} ({ce} K médio); nenhum ponto da termografia acima do limite da classe "
                  f"(ambiente corrigido para {amb:g} °C).",
                  "Ensaio dielétrico sem descarga.",
+                 "Chapa do núcleo nova, com certificado da usina e espessura conferida no recebimento (item 4.1).",
                  "Classe térmica, material do enrolamento e dados de placa conforme a proposta – divergência entre pedido e "
                  "desenho/placa é motivo de rejeição.",
                  "Não conformidade: substituição/correção por conta do fornecedor, sem custo, mantida a garantia."])

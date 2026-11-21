@@ -39,7 +39,8 @@ def _esc(s):
 
 
 class _Doc(BaseDocTemplate):
-    def __init__(self, arq, cab, **kw):
+    def __init__(self, arq, cab, rotulo="USO INTERNO – AUDITORIA TÉCNICA", **kw):
+        self.rotulo = rotulo
         super().__init__(arq, pagesize=A4, leftMargin=16 * mm, rightMargin=16 * mm, topMargin=18 * mm, bottomMargin=16 * mm, **kw)
         self.cab = cab
         fr = Frame(self.leftMargin, self.bottomMargin, self.width, self.height, id="n")
@@ -50,7 +51,7 @@ class _Doc(BaseDocTemplate):
         c.setFont("Helvetica", 7)
         c.setFillColor(colors.grey)
         c.drawString(16 * mm, A4[1] - 11 * mm, self.cab)
-        c.drawRightString(A4[0] - 16 * mm, A4[1] - 11 * mm, "USO INTERNO – AUDITORIA TÉCNICA")
+        c.drawRightString(A4[0] - 16 * mm, A4[1] - 11 * mm, self.rotulo)
         c.drawString(16 * mm, 9 * mm, "Electric Service – Plataforma FSEN")
         c.drawRightString(A4[0] - 16 * mm, 9 * mm, f"pág. {doc.page}")
         c.restoreState()
@@ -530,6 +531,6 @@ def memorial_indutor(d, arq, titulo):
     R.p("Projeto de referência calculado pela plataforma FSEN a partir das correntes e tensões reais simuladas do filtro. "
         "O fabricante emite o projeto de fabricação próprio e declara as diferenças; o protótipo com ensaio de aquecimento confirma.")
     _secao_indutor(R, d, os.path.dirname(os.path.dirname(arq)))
-    doc = _Doc(arq, titulo)
+    doc = _Doc(arq, titulo, rotulo="PROJETO DE REFERÊNCIA – ELECTRIC SERVICE")
     doc.multiBuild(R.f)
     return arq

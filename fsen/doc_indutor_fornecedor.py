@@ -30,6 +30,33 @@ def _fmt(x, n=0):
     return f"{x:,.{n}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def chapa_exigida(proj):
+    """v1.11.7: dados da chapa do projeto (nome, espessura, massa do núcleo)."""
+    c = getattr(proj, "_ind_chapa", None) or {}
+    return dict(nome=c.get("nome", "aço-silício de grão orientado 0,23 mm"), esp=float(c.get("esp", 0.23)),
+                massa=float(c.get("massa_nucleo", 0)))
+
+
+def exigencias_chapa(proj):
+    """Exigências OBRIGATÓRIAS da chapa do núcleo (ET, protocolo, e-mail). Chapa reaproveitada/sucata é proibida."""
+    c = chapa_exigida(proj)
+    e = c["esp"]
+    v = lambda x: f"{x:.2f}".replace(".", ",")
+    return [
+        f"Chapa NOVA de aço-silício de grão orientado, {c['nome']} ou equivalente de mesma espessura ({v(e)} mm; no máximo "
+        f"{v(max(e, 0.27))} mm) e perdas iguais ou menores, com CERTIFICADO DA USINA do lote (perdas W/kg a 1,7 T / 50 Hz, "
+        "espessura e revestimento) entregue com o protótipo e com cada lote da série. PROIBIDO usar chapa reaproveitada de "
+        "transformador desmontado, sucata, retalho de origem desconhecida ou chapa de grão não orientado.",
+        f"Inspeção de recebimento registrada com fotos: espessura medida com micrômetro em 5 pontos de uma amostra "
+        f"({v(e)} ± 0,02 mm), revestimento isolante íntegro (sem riscos, ferrugem ou descascado), rebarba de corte ≤ 0,02 mm "
+        "(rebarbar ou recozer se preciso); fotos das lâminas cortadas antes da montagem.",
+        "Proposta com o preço do NÚCLEO DISCRIMINADO (chapa nova certificada + corte + montagem), separado da bobina e da "
+        "estrutura, para comparação transparente.",
+        "Ensaio de aquecimento do protótipo COM INVERSOR na frequência de chaveamento especificada: chapa inadequada aparece como "
+        "núcleo quente e perdas acima do previsto – é critério de rejeição.",
+    ]
+
+
 def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
     """DOCX com os ensaios do protótipo e os critérios numéricos de aceitação."""
     r = ind["requisitos"] if ind else {}
@@ -79,6 +106,10 @@ def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
         ("14", "Declaração de materiais", "chapa, condutor, isolação, verniz",
          "classe do SISTEMA de isolação comprovada (IEC 61857/UL 1446) – não só do esmalte", "", ""),
         ("15", "Placa de identificação", "–", "L, In, fs, classe, perdas, massa, nº de série", "", ""),
+        ("16", "Chapa do núcleo – recebimento", f"{chapa_exigida(proj)['nome']} NOVA, {chapa_exigida(proj)['esp']:.2f} mm",
+         "certificado da usina do lote; espessura ±0,02 mm (5 pontos); revestimento íntegro; rebarba ≤ 0,02 mm; fotos", "", ""),
+        ("17", "Temperatura do núcleo no aquecimento", f"elev. {float(ind['termico'].get('elev_nucleo_K', 0)):.0f} K" if ind else "–",
+         "≤ previsto +15 K; sem ponto quente na culatra/junta (termografia)", "", ""),
     ]
     t = tabela(d, ["#", "Ensaio", "Previsto", "Critério de aceitação", "Medido", "Resultado"], lin, [0.8, 4.2, 2.6, 5.0, 2.2, 2.2], 8)
     d.add_heading("4. Base de corrente usada (para o ensaio)", 1)
@@ -91,6 +122,7 @@ def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
     d.add_heading("5. Critério de rejeição", 1)
     bullets(d, ["Qualquer item fora do critério reprova o protótipo; o fabricante corrige e repete os ensaios afetados.",
                 "Divergência entre desenho/placa e o declarado na proposta (classe, material, chapa) é rejeição.",
+                "Chapa sem certificado da usina, reaproveitada/sucata ou fora da espessura especificada: rejeição do núcleo.",
                 "Elevação dentro do limite mas perdas acima do previsto +15 %: alerta – a plataforma refaz o estudo térmico do painel "
                 "com o valor medido antes de liberar."])
     d.add_heading("6. Assinaturas", 1)
@@ -116,6 +148,7 @@ def questionario_fabricante(proj, cat, pasta, cod, novo, tabela, bullets):
         ("Espiras por bobina", ""), ("Seção da coluna (largura × empilhamento, mm) e fator de empilhamento", ""),
         ("Altura e largura da janela (mm)", ""), ("Chapa: fabricante, grau (ex.: M120-27S), espessura (mm)", ""),
         ("Corte das lâminas (E-I, step-lap, 45°) e montagem", ""),
+        ("Origem da chapa: nova (usina/distribuidor, com certificado) ou reaproveitada; como controlam espessura e rebarba", ""),
         ("Entreferros: quantidade por coluna, espessura de cada um (mm), material do espaçador", ""),
         ("Condutor: cobre/alumínio, folha/fio/retangular, dimensões, nº de camadas", ""),
         ("Distâncias bobina–núcleo, bobina–bobina e canais de ventilação (mm)", ""),
@@ -194,7 +227,7 @@ def _texto_montagem(ind):
             "- " + tp["tirante"] + ".",
             "- " + tp["saida"] + ".",
             "Diferenças OBRIGATÓRIAS por ser filtro senoidal (ondulação de 4–8 kHz permanente, não só harmônicas até ~700 Hz):",
-            "- Chapa de grão orientado FINA (0,23 mm, ou declarar equivalente com perdas em 4–8 kHz); não usar chapa de 0,5 mm.",
+            "- Chapa de grão orientado FINA e NOVA, com certificado da usina (ver item 11).",
             "- Sistema de isolação classe H completo (papel aramida na barra, entre camadas e no tubo) e impregnação VPI com resina "
             "classe H – não apenas imersão em verniz; declarar a classe da fita de enfaixamento e da resina.",
             "- Distância mínima de 25 mm entre a bobina e a junta do entreferro (espraiamento do campo aquece as barras das pontas).",
@@ -202,6 +235,16 @@ def _texto_montagem(ind):
             ("- Enrolamento com nº PAR de camadas: as duas saídas ficam em cima (a interna sai deitada pela cabeceira). Se preferirem "
              "início em cima e fim embaixo, como nos reatores de vocês, podem propor nº ímpar de camadas, mantendo espiras, seção e perdas."
              if not tp["impar"] else "- Início da bobina em cima e fim embaixo, como nos reatores de vocês.")]
+
+
+def _texto_chapa(proj):
+    c = chapa_exigida(proj)
+    ls = ["", "11) CHAPA DO NÚCLEO – EXIGÊNCIA (não é orientação)",
+          f"Em 4–8 kHz a perda por correntes parasitas cresce com o QUADRADO da espessura: chapa de 0,35 mm perde ≈ 2,3× e de 0,50 mm "
+          f"≈ 4,7× a de {c['esp']:.2f} mm".replace(".", ",") + f" na parcela de alta frequência; rebarba e revestimento danificado curto-circuitam lâminas e "
+          "criam pontos quentes. Com chapa diferente, o indutor passa do limite de perdas e de elevação."]
+    ls += ["- " + x for x in exigencias_chapa(proj)]
+    return ls
 
 
 def texto_email_extra(proj, ind, arqs_nomes):
@@ -218,6 +261,6 @@ def texto_email_extra(proj, ind, arqs_nomes):
           "8) QUESTIONÁRIO – indutores que vocês já fabricaram para nós",
           "Pedimos, se possível, os dados internos dos indutores anteriores (espiras, núcleo, chapa, entreferros, condutor, perdas e "
           "temperatura medidas). Servem para calibrar o nosso cálculo ao padrão de fabricação de vocês.", "",
-          ] + (_texto_gap(ind) if ind else []) + (_texto_montagem(ind) if ind else []) + [
+          ] + (_texto_gap(ind) if ind else []) + (_texto_montagem(ind) if ind else []) + _texto_chapa(proj) + [
           "Anexos desta solicitação: " + ", ".join(arqs_nomes) + "."]
     return "\n".join(ls)
