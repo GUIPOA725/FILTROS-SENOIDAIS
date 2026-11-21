@@ -37,7 +37,12 @@ st.set_page_config(page_title=f"FSEN v{_vinfo().get('versao')} – Filtros Senoi
 
 st.sidebar.title(f"⚡ FSEN v{_vinfo().get('versao')}")
 st.sidebar.caption(f"{NOME} – versão {_vinfo().get('versao')} de {_vinfo().get('data', '')}")
-st.sidebar.caption("Dimensionamento, simulação e documentação de filtros senoidais LC/LCL")
+st.sidebar.caption("Dimensionamento, simulação e documentação de filtros senoidais LC/LCL, bancos dessintonizados e filtros sintonizados")
+TIPOS_FILTRO = {"senoidal": "Filtro senoidal (saída de inversor)", "dessintonizado": "Banco de capacitores dessintonizado",
+                "sintonizado": "Filtro harmônico sintonizado (5ª / 7ª / 11ª)"}
+tipo_filtro = st.sidebar.selectbox("Tipo de filtro", list(TIPOS_FILTRO), format_func=TIPOS_FILTRO.get, key="tipo_filtro",
+                                   help="v1.13.0: o mesmo motor de projeto do reator (elementos finitos, 3D, térmico, desenhos, CAD) "
+                                        "serve aos três tipos. O filtro senoidal continua exatamente como antes.")
 pagina = st.sidebar.radio("Menu", ["Nova solicitação", "Ajuste manual e ressimulação", "Conferir proposta de fornecedor",
                                    "Critérios de projeto", "Histórico e clientes",
                                    "Catálogo e preços", "Melhorias / atualizações"])
@@ -147,7 +152,10 @@ def form_pedido(p: Pedido) -> Pedido:
     return p
 
 
-if pagina == "Nova solicitação":
+if pagina == "Nova solicitação" and tipo_filtro != "senoidal":
+    from telas_banco import tela_banco
+    tela_banco(tipo_filtro, pasta_saida)
+elif pagina == "Nova solicitação":
     st.title("Nova solicitação")
     painel_abrir_projeto(pasta_saida, "abrir_ns")
     texto = st.text_area("Cole aqui o e-mail do cliente", height=180,

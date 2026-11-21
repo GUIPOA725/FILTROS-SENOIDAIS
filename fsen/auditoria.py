@@ -471,7 +471,8 @@ def _secao_indutor(R, d, pasta):
            "indutâncias e ajuste do entreferro (com correção 3D do espraiamento nas faces frontal/traseira); harmônico no tempo com "
            "correntes induzidas e corrente imposta por condutor para as perdas no enrolamento de folha (blindagem e efeito pelicular reais).",
            "Perdas no núcleo elemento a elemento: 60 Hz por separação de perdas (Steinmetz + clássica + excesso, calibrado no P1,7/50 do "
-           "aço); AF a partir do ESPECTRO REAL da tensão PWM sobre o indutor (simulação), correntes parasitas na lâmina com efeito "
+           "aço); AF a partir do " + ("ESPECTRO HARMÔNICO de projeto do banco (V_h = ω_h·L·I_h)" if d["requisitos"].get("aplicacao")
+                                      else "ESPECTRO REAL da tensão PWM sobre o indutor (simulação)") + ", correntes parasitas na lâmina com efeito "
            "pelicular (Lammeraner/Stafl) e laços menores de histerese com fator de polarização.",
            "Térmico: elevação média = perdas / (h·área efetiva), h = coeficiente global (convecção + radiação) do painel ventilado; "
            "ponto quente = ambiente do painel + elevação + 15 K (IEC 60076-11)."])
@@ -515,7 +516,7 @@ def _secao_indutor(R, d, pasta):
         R.h3("Sequência de fabricação, ajuste e ensaios")
         R.bul(fab["sequencia"])
         R.p(f"Força magnética por entreferro ≈ {fab['forca']:.0f} N (pico) – aperto mínimo {fab['aperto_N']:.0f} N por coluna; "
-            "calços colados e conjunto impregnado (VPI) para não vibrar a 4–8 kHz.")
+            "calços colados e conjunto impregnado (VPI) para não vibrar " + ("(100–1000 Hz)." if d["requisitos"].get("aplicacao") else "a 4–8 kHz."))
     except Exception as e:
         R.p(f"(ficha de fabricação não gerada: {e})")
     eng = os.path.join(pasta, "01_Engenharia")

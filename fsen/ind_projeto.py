@@ -672,20 +672,39 @@ def _projetar_tent(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao):
     return d
 
 
+_REQ_EXT = None     # v1.13.0: requisitos/espectro externos (bancos dessintonizados, filtros sintonizados – sem Projeto de filtro senoidal)
+
+
+def projetar_requisitos(req, espectro, cat=None, log=print, construcao="culatra_fio", condutor="barra_cu", **kw):
+    """Motor completo do indutor para QUALQUER aplicação: req = dict(L, In, I1, Ipk, Isat, Iovl, rpp, rrms, fs, f1, V, Vdc,
+    classe, P_max, aplicacao); espectro = (f_h, V_h pico) da tensão sobre o indutor (linhas acima da fundamental)."""
+    global _REQ_EXT
+    _REQ_EXT = (dict(req), espectro)
+    try:
+        return projetar(None, cat, log=log, construcao=construcao, condutor=condutor, **kw)
+    finally:
+        _REQ_EXT = None
+
+
 def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None, k_pmax=0.88, construcao="distribuido", sub_axial=1):
-    r = requisitos(proj, cat)
-    try:
-        esp = espectro_tensao_indutor(proj, cat)
-    except Exception as e:
-        log(f"   (espectro da tensão no indutor não obtido: {e}; usando ondulação triangular)")
-        esp = None
+    if _REQ_EXT is not None:
+        r = dict(_REQ_EXT[0])
+        esp = _REQ_EXT[1]
+    else:
+        r = requisitos(proj, cat)
+        try:
+            esp = espectro_tensao_indutor(proj, cat)
+        except Exception as e:
+            log(f"   (espectro da tensão no indutor não obtido: {e}; usando ondulação triangular)")
+            esp = None
     r["V_AF_rms"] = float(np.sqrt((esp[1] ** 2).sum() / 2)) if esp is not None else None
-    try:
-        from .spec_indutor import referencia_mercado
-        _fx = referencia_mercado(r["In"], cat or {})[2]
-        r["P_max"] = float(_fx["perdas_w"][1]) if _fx else None
-    except Exception:
-        r["P_max"] = None
+    if _REQ_EXT is None:
+        try:
+            from .spec_indutor import referencia_mercado
+            _fx = referencia_mercado(r["In"], cat or {})[2]
+            r["P_max"] = float(_fx["perdas_w"][1]) if _fx else None
+        except Exception:
+            r["P_max"] = None
     r["k_Pmax"] = k_pmax
     eh_fio = construcao == "culatra_fio"
     cands = None
@@ -835,7 +854,7 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     d["Lmat"] = Lm
     # ------------------------------------------------ 3) saturação: L aparente em Ipk, Isat e sobrecarga (não-linear)
     sat = []
-    for nome, I in (("Pico em operação", r["Ipk"]), ("Isat (exigido ≥ 90 %)", r["Isat"]), ("Sobrecarga 1,5×I inversor (exigido ≥ 70 %)", r["Iovl"])):
+    for nome, I in (("Pico em operação", r["Ipk"]), ("Isat (exigido ≥ 90 %)", r["Isat"]), (("Sobrecarga 2,2×I1 (exigido ≥ 70 %)" if r.get("aplicacao") else "Sobrecarga 1,5×I inversor (exigido ≥ 70 %)"), r["Iovl"])):
         Mn = modelo(d, gaps, ng)
         A = Mn.resolver([I, -I / 2, -I / 2])
         lam = Mn.lambda_fases(A) * d["b"]

@@ -1,5 +1,14 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.13.0 – 2026-11-21
+- **Seletor "Tipo de filtro"** na barra lateral: Filtro senoidal (fluxo original, sem mudanças) | Banco de capacitores dessintonizado | Filtro harmônico sintonizado (5ª / 7ª / 11ª).
+- Banco dessintonizado (`banco.py`): p = 5,67 / 7 / 14 %, estágios livres; X_C, X_L, sintonia, tensão elevada no capacitor (Un/(1−p) + harmônicas) e escolha da tensão nominal padrão (440/480/525/600/690 V) com a potência de placa; correntes harmônicas pela distorção de tensão de projeto (padrão de guias de fabricantes, editável); corrente harmônica da carga opcional; varredura de impedância na barra (rede + transformador) com as ressonâncias paralelas e avisos (ressonância perto de harmônica presente, 3ª harmônica com p = 7 %).
+- Filtro sintonizado: ramo por harmônica com sintonia abaixo da harmônica (fator 0,95 editável), Q do reator, distorção de FUNDO da rede como fonte de Thévenin atrás da reatância de curto-circuito, divisão das correntes da carga entre rede e ramos, THD de tensão sem/com filtro.
+- Requisitos do reator por estágio (corrente térmica com sobretensão, tolerância do capacitor e harmônicas; linearidade 1,8×I1 dessintonizado / 1,5×I1 sintonizado; perdas ≤ 6 W/kvar; tolerância de L ±3 % / ±2 %) → `ind_projeto.projetar_requisitos()`: o MESMO motor do filtro senoidal (triagem de chapas Aperam e fios/barras de cobre, FEM 2 entreferros/coluna, saturação, térmico) com o espectro harmônico no lugar da tensão PWM.
+- Por reator distinto: desenhos, CAD STEP/DXF, memorial FEM, verificação independente NGSolve (2D + 3D), análise avançada (formas de onda montadas do espectro, núcleo no tempo, 3D com estrutura, mapa térmico), planilha de calibração e script FEMM.
+- Documentos: memorial do banco/filtro (PDF com varredura de ressonância e espectros), ET do reator (IEC 60076-6, chapa nova certificada, ensaios de rotina e tipo, termostato), ET dos capacitores (IEC 60831), e-mails para Cootrans, IBT e Wise; pastas no mesmo padrão dos projetos de filtro senoidal.
+- Textos dos desenhos/memorial do reator ajustados por aplicação (tolerância de L, linearidade, sem "PWM/4–8 kHz" nos reatores de banco).
+
 ## v1.12.0 – 2026-11-21
 - Análise avançada do indutor (`ind_avancado.py`) – acoplamento direto com a simulação do circuito, como nos softwares comerciais:
   - correntes das 3 fases no pior ponto de operação (simulação conferida com o ATP), fundamental na corrente térmica de projeto;

@@ -579,7 +579,7 @@ def _lap1d(n, h):
 
 
 # ===================================================================================================== orquestrador
-def avaliar(d, proj, cat, log=print, fazer_3d=True, iter_termica=4):
+def avaliar(d, proj, cat, log=print, fazer_3d=True, iter_termica=4, wf=None):
     """Executa a avaliação avançada completa e devolve resultados + comparação com o método da plataforma."""
     from .ind_desenhos import geo_mm
     t0 = time.time()
@@ -588,7 +588,8 @@ def avaliar(d, proj, cat, log=print, fazer_3d=True, iter_termica=4):
     amb = float(d["termico"].get("amb_painel_C", 50.0))
     h_conv = float(d["termico"].get("h_conv", 12.0))
     out = dict(tempos={})
-    wf = formas_onda(proj, cat, r["I1"])
+    if wf is None:                     # v1.13.0: bancos/sintonizados passam as formas de onda do espectro harmônico
+        wf = formas_onda(proj, cat, r["I1"])
     out["formas_onda"] = dict(f1=wf["f1"], Ipk=wf["Ipk"], I_rip_rms=wf["I_rip_rms"], n=wf["n"])
     log(f"     Avançado: formas de onda do circuito – f1 {wf['f1']:g} Hz, pico {wf['Ipk']:.0f} A, ondulação {wf['I_rip_rms']:.1f} A rms")
     t = time.time()
@@ -731,9 +732,15 @@ def relatorio(d, av, arq, figs):
     R.f.append(Paragraph(_esc(tit), R.st["CAPA"]))
     r = d["requisitos"]
     fo = av["formas_onda"]
-    R.p(f"Indutor {r['L']*1e6:.0f} µH / {r['In']:.0f} A. As correntes das 3 fases vêm da simulação do filtro no pior ponto de operação "
-        f"(f1 = {fo['f1']:g} Hz, pico {fo['Ipk']:.0f} A, ondulação {fo['I_rip_rms']:.1f} A rms) e alimentam diretamente o cálculo do "
-        "indutor – o mesmo acoplamento circuito → campo que os softwares comerciais fazem.")
+    if r.get("aplicacao"):
+        R.p(f"Reator {r['L']*1e6:.0f} µH / {r['In']:.0f} A ({_esc(r['aplicacao'])}). As correntes das 3 fases são montadas a partir do "
+            f"espectro harmônico de projeto do banco (fundamental + harmônicas de tensão da rede, f1 = {fo['f1']:g} Hz, pico {fo['Ipk']:.0f} A, "
+            f"harmônicas {fo['I_rip_rms']:.1f} A rms, em fase com a fundamental – conservador para o pico) e alimentam diretamente o "
+            "cálculo do reator – o mesmo acoplamento circuito → campo que os softwares comerciais fazem.")
+    else:
+        R.p(f"Indutor {r['L']*1e6:.0f} µH / {r['In']:.0f} A. As correntes das 3 fases vêm da simulação do filtro no pior ponto de operação "
+            f"(f1 = {fo['f1']:g} Hz, pico {fo['Ipk']:.0f} A, ondulação {fo['I_rip_rms']:.1f} A rms) e alimentam diretamente o cálculo do "
+            "indutor – o mesmo acoplamento circuito → campo que os softwares comerciais fazem.")
     R.h1("Perdas – método avançado × método do projeto")
     P, Pp = av["perdas"], av["plataforma"]["perdas"]
     lin = [("Cobre – fundamental", f"{Pp.get('enrolamento_60Hz', 0):.0f} W", f"{P['enrolamento_60Hz']:.0f} W",

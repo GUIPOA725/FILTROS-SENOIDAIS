@@ -25,6 +25,15 @@ ESCALAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]
 LW_G, LW_M, LW_F = 0.7, 0.45, 0.25          # linhas grossa / média / fina (mm na folha → pontos aproximados)
 
 
+
+def _banco(d):
+    return bool((d.get("requisitos") or {}).get("aplicacao"))
+
+
+def _tol(d):
+    """v1.13.0: tolerância de L (±5 % filtro senoidal; ±3 % dessintonizado; ±2 % sintonizado)."""
+    return f"{float((d.get('requisitos') or {}).get('tol_L_pct', 5)):g}".replace(".", ",")
+
 def _esc(dim_mm, area_mm):
     for e in ESCALAS:
         if dim_mm / e <= area_mm:
@@ -321,9 +330,10 @@ def fabricacao(d):
             + ("(junta de topo sobre os calços)." if d.get("pos_gap") == "culatra" else "(step-lap)."),
             f"Prensar o conjunto: força de aperto ≥ {max(2.5 * forca, 2000):.0f} N por coluna nos entreferros (quadros em U + tirantes "
             f"{g['est']['perfil']['rosca']} 8.8 nas buchas, torque {80 if g['est']['perfil']['d_tir'] <= 12 else 160} N·m), quadros isolados do núcleo por EP GC 203 2 mm.",
-            "Medir L por fase na corrente nominal (ou fonte CA + ponte LCR em 60 Hz com correção) e ajustar o calço: L ±5 %, desequilíbrio ≤ 3 %.",
+            f"Medir L por fase na corrente nominal (ou fonte CA + ponte LCR em 60 Hz com correção) e ajustar o calço: L ±{_tol(d)} %, desequilíbrio ≤ 3 %.",
             "Impregnar por VPI com resina classe H; curar na estufa conforme fabricante da resina; retocar pintura da estrutura.",
-            "Ensaios de rotina (resistência, L, tensão aplicada 3 kV/1 min, isolamento) e de tipo no protótipo (perdas, aquecimento com inversor, L × I).",
+            "Ensaios de rotina (resistência, L, tensão aplicada 3 kV/1 min, isolamento) e de tipo no protótipo (perdas, aquecimento "
+            + ("com a corrente térmica (fundamental + harmônicas), linearidade L × I)." if d["requisitos"].get("aplicacao") else "com inversor, L × I)."),
         ])
 
 
@@ -465,9 +475,12 @@ def folha_conjunto(F, g, d):
     F.info["escala_folha"] = f"1:{e:g}"
     # quadro de dados à direita
     r = d["requisitos"]
-    dados = [("L por fase", f"{r['L']*1e6:.0f} µH ±5 %"), ("In", f"{r['In']:.0f} A  (pico {r['Ipk']:.0f} A)"),
-             ("Isat", f"≥ {r['Isat']:.0f} A com L ≥ 90 %"), ("Sobrecarga", f"{r['Iovl']:.0f} A com L ≥ 70 %"),
-             ("fs", f"{r['fs']/1e3:.0f} kHz – tensão PWM"), ("Isolação", f"sistema classe {r['classe']}, 1,1 kV"),
+    dados = [("L por fase", f"{r['L']*1e6:.0f} µH ±{_tol(d)} %"), ("In" if not r.get("aplicacao") else "I térmica", f"{r['In']:.0f} A  (pico {r['Ipk']:.0f} A)"),
+             ("Isat", f"≥ {r['Isat']:.0f} A com L ≥ 90 %") if not r.get("aplicacao") else
+             ("Linearidade", f"L ≥ 95 % até {r.get('linearidade', 1.8):g}×I1 ({r['Isat']:.0f} A pico)".replace(".", ",")),
+             ("Sobrecarga", f"{r['Iovl']:.0f} A com L ≥ 70 %"),
+             ("fs", f"{r['fs']/1e3:.0f} kHz – tensão PWM") if not r.get("aplicacao") else
+             ("Aplicação", f"{r['aplicacao'][:34]}"), ("Isolação", f"sistema classe {r['classe']}, 1,1 kV"),
              ("Elevação", f"≤ {d['termico']['meta_elev_K']:.0f} K (calc. {d['termico']['elev_bobina_K']:.0f} K)"),
              ("Perdas", f"{d['perdas']['total']:.0f} W (calc.)"), ("Massa", f"{d['massa_kg']['total']:.0f} kg (calc.)"),
              ("Montagem", "padrão reator nacional: quadros U,"), ("", "tirantes nas buchas, saídas horizontais")]
@@ -543,7 +556,7 @@ def folha_nucleo(F, g, d, fab):
     F.texto(272, yt2 - 4, "Calço: EP GC 203 retificado ±0,05 mm, colado com epóxi classe H. Valor final AJUSTADO no ensaio", fontsize=5.6)
     F.texto(272, yt2 - 8, "para L = 180 µH ±5 % e desequilíbrio ≤ 3 % (o central é ligeiramente maior para equalizar as fases).",
             fontsize=5.6) if abs(d["requisitos"]["L"] * 1e6 - 180) < 1 else \
-        F.texto(272, yt2 - 8, f"para L = {d['requisitos']['L']*1e6:.0f} µH ±5 % e desequilíbrio ≤ 3 %.", fontsize=5.6)
+        F.texto(272, yt2 - 8, f"para L = {d['requisitos']['L']*1e6:.0f} µH ±{_tol(d)} % e desequilíbrio ≤ 3 %.", fontsize=5.6)
     F.texto(272, yt2 - 13, f"Força magnética por entreferro ≈ {fab['forca']:.0f} N (pico) → aperto ≥ {fab['aperto_N']:.0f} N por coluna.",
             fontsize=5.6)
     F.info["escala_folha"] = f"1:{e:g}"
@@ -764,9 +777,10 @@ def folha_3d(F, g, d):
     m = d["massa_kg"]
     r = d["requisitos"]
     resumo = [
-        ("L por fase", f"{r['L']*1e6:.0f} µH ±5 %"), ("Corrente nominal", f"{r['In']:.0f} A (pico {r['Ipk']:.0f} A)"),
+        ("L por fase", f"{r['L']*1e6:.0f} µH ±{_tol(d)} %"), ("Corrente nominal" if not r.get("aplicacao") else "Corrente térmica", f"{r['In']:.0f} A (pico {r['Ipk']:.0f} A)"),
         ("Isat / sobrecarga", f"≥ {r['Isat']:.0f} A (L ≥ 90 %) / {r['Iovl']:.0f} A (L ≥ 70 %)"),
-        ("Chaveamento", f"{r['fs']/1e3:.0f} kHz (tensão PWM, barramento ≈ {r['Vdc']:.0f} V)"),
+        ("Chaveamento", f"{r['fs']/1e3:.0f} kHz (tensão PWM, barramento ≈ {r['Vdc']:.0f} V)") if not r.get("aplicacao") else
+        ("Aplicação", f"{r['aplicacao']} – I1 {r['I1']:.0f} A + harmônicas"),
         ("Isolação", f"Sistema classe {r['classe']} – elevação média ≤ {d['termico']['meta_elev_K']:.0f} K"),
         ("Perdas (calc.)", f"{d['perdas']['total']:.0f} W"), ("Elevação (calc.)", f"{d['termico']['elev_bobina_K']:.0f} K"),
         ("Massa (calc.)", f"{m['total']:.0f} kg (núcleo {m['nucleo']:.0f} / condutor {m['condutor']:.0f})"),
@@ -786,8 +800,8 @@ def folha_bom(F, d, fab):
         y -= 4.1
     notas = ("NOTAS:  1) A classe térmica é do SISTEMA de isolação (IEC 60085 / IEC 61857): todos os materiais com índice térmico ≥ classe; "
              "proibido DMD, GPO-3 e cabo PVC em classe H.   2) Núcleo aterrado em UM ponto; nenhum parafuso atravessa as chapas.   "
-             "3) Calços colados + VPI: evitam ruído/vibração a 4–8 kHz.   4) Separação ≥ 10 mm e escoamento ≥ 16 mm entre partes vivas e massa "
-             "(IEC 60664-1, cat. III, PD3, 1000 V).   5) Protótipo obrigatório com ensaio de aquecimento em inversor.")
+             "3) Calços colados + VPI: evitam ruído/vibração " + ("(harmônicas 100–1000 Hz)" if _banco(d) else "a 4–8 kHz") + ".   4) Separação ≥ 10 mm e escoamento ≥ 16 mm entre partes vivas e massa "
+             "(IEC 60664-1, cat. III, PD3, 1000 V).   5) Protótipo obrigatório com ensaio de aquecimento " + ("na corrente térmica." if _banco(d) else "em inversor."))
     import textwrap
     for k, l in enumerate(textwrap.wrap(notas, 190)):
         F.texto(25, y - 3 - 4 * k, l, fontsize=5.6)
@@ -799,7 +813,7 @@ VPI_PASSOS = [
     "Admitir a resina classe H (poliéster-imida ou silicone, índice térmico ≥ 180 °C, IEC 60464-3) sob vácuo, cobrindo a peça.",
     "Pressurizar com ar seco ou N₂ a 4–6 bar por ≥ 2 h: a resina penetra entre fios, camadas, calços e lâminas.",
     "Escorrer 30 min e curar em estufa conforme a ficha da resina (típico 150–160 °C por 8–12 h).",
-    "2ª impregnação por imersão + cura: superfície vitrificada (pó, umidade, ruído a 4–8 kHz).",
+    "2ª impregnação por imersão + cura: superfície vitrificada (pó, umidade, ruído/vibração).",
     "Controle: isolamento ≥ 100 MΩ após a cura, sem bolhas/regiões secas, lote da resina registrado.",
 ]
 
@@ -984,7 +998,7 @@ def folha_entreferro(F, d):
         ("    Linearidade (FEM): L ≥ 90 % na corrente de saturação e ≥ 70 % na sobrecarga do inversor.", False),
         ("5) Ajuste na fábrica:", True),
         (f"    Sensibilidade ≈ {100 / max(gcol[1], 1e-6):.0f} % de L por mm de entreferro total (L ∝ 1/g): calço mais grosso → L menor.", False),
-        ("    Medir L por fase (ponte LCR 60 Hz ou corrente nominal) e corrigir o calço até L ±5 % e desequilíbrio ≤ 3 %.", False),
+        (f"    Medir L por fase (ponte LCR 60 Hz ou corrente nominal) e corrigir o calço até L ±{_tol(d)} % e desequilíbrio ≤ 3 %.", False),
         ("    Registrar a espessura final de cada calço no relatório do protótipo.", False),
     ]
     yy = 280
