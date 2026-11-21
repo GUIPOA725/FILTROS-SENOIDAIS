@@ -614,7 +614,7 @@ def folha_bobina(F, g, d, fab):
             weight="bold")
     yt = F.tabela(212, 268, ["Camada", "Espessura", "r inicial", "r final"], linhas, [100, 18, 18, 18], fs=5.3)
     if fw:
-        F.texto(212, yt - 4.5, f"Fio retangular {('Al 1350-O' if d['cond'] == 'AL' else 'Cu ETP')} {fw['t']:.2f} × {fw['h']:.1f} mm, cantos "
+        F.texto(212, yt - 4.5, f"{'Barra' if (fw['t'] >= 5 or fw['h'] >= 16) else 'Fio'} retangular {('Al 1350-O' if d['cond'] == 'AL' else 'Cu ETP')} {fw['t']:.2f} × {fw['h']:.1f} mm, cantos "
                                f"arredondados, papel aramida enrolado (classe H); {fw['np']} em paralelo" + (" TRANSPOSTOS." if fw["np"] > 1 else "."),
                 fontsize=5.6)
         F.texto(212, yt - 8.5, f"Espiras: {g['N']} por bobina ({fw['n_cam']} camada(s) × {fw['n_ax']}) – sentido IGUAL nas 3 bobinas. "
@@ -836,7 +836,7 @@ def folha_realista(F, d, png_dir=None):
     from .ind_projeto import descr_condutor
     esp = {1: f"{d['chapa_dados']['nome']}, revestimento C-5; empilhamento em pacotes; cantos a 45° step-lap 3 degraus",
            2: ((lambda f: f"{descr_condutor(d, curto=True)} {('cobre' if d.get('cond') == 'CU' else 'alumínio')}, papel aramida "
-                f"enrolado; {d['N']} espiras ({f['n_cam']} camada(s)); paralelos TRANSPOSTOS")(d["fio"]) if d.get("fio")
+                f"enrolado; {d['N']} espiras ({f['n_cam']} camada(s))" + ("; paralelos TRANSPOSTOS" if f["np"] > 1 else "; condutor único"))(d["fio"]) if d.get("fio")
                else descr_condutor(d))[:150],
            3: (f"vidro-epóxi EP GC 203 retificado ±0,05 mm, colado com epóxi classe H – "
                + ("2 por coluna, nas juntas com as culatras" if d.get("pos_gap") == "culatra" else f"{d['ng']} por coluna, distribuídos"))}

@@ -263,6 +263,10 @@ if pagina == "Nova solicitação":
                          "2 entreferros por coluna + folha (não recomendado: indutor muito maior)"], horizontal=False, key="gap_ind",
                         help="Padrão dos fabricantes nacionais: 2 entreferros por coluna (1 em cima e 1 embaixo) com fio retangular. Com folha, "
                              "o espraiamento nas juntas atinge a borda da folha e o indutor fica muito maior.")
+        _cond_ind = st.radio("Condutor do enrolamento (construção com 2 entreferros)",
+                             ["Barra retangular de COBRE, única por espira (mais fácil de fabricar – recomendado)",
+                              "Busca livre: fio ou barra, cobre ou alumínio, até 6 fios em paralelo transpostos (mais leve)"],
+                             key="cond_ind", help="Barra única não precisa de transposição de fios em paralelo; o indutor fica um pouco maior.")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
@@ -272,7 +276,8 @@ if pagina == "Nova solicitação":
                                           "min_caps" if st.session_state.get("prioridade_proj", "").startswith("MÍNIMO") else "custo"),
                               queda_max=_qmax, corrente_base=("cliente" if _usar_cli else "carga"),
                               construcao_gap=("distribuido" if st.session_state.get("gap_ind", "").startswith("Entreferros distribuídos")
-                                              else "culatra" if "+ folha" in st.session_state.get("gap_ind", "") else "culatra_fio"))
+                                              else "culatra" if "+ folha" in st.session_state.get("gap_ind", "") else "culatra_fio"),
+                              condutor_ind=("livre" if st.session_state.get("cond_ind", "").startswith("Busca livre") else "barra_cu"))
             st.session_state["resultado"] = {"pasta": r["pasta"], "zip": r["zip"], "arquivos": r["arquivos"], "graficos": r["graficos"],
                                              "resumo": r["resumo"], "opcoes": r.get("opcoes"),
                                              "corrente": getattr(r["projeto"], "corrente_dimensionamento", None)}

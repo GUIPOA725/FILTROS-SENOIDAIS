@@ -53,7 +53,7 @@ def _slug(s):
 
 
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
-              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga", construcao_gap="culatra_fio"):
+              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga", construcao_gap="culatra_fio", condutor_ind="barra_cu"):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
@@ -182,10 +182,11 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     if proj.topologia == "LC" and not proj.l2 and (cat.get("indutor_fem") or {}).get("habilitado", True):
         try:                                        # v1.11.1: indutor por FEM ANTES do painel – o painel usa as dimensões reais
             from . import ind_projeto as IP
-            _nome_c = {"culatra_fio": "2 por coluna nas culatras + fio retangular (padrão nacional)",
+            _nome_c = {"culatra_fio": ("2 por coluna nas culatras + barra retangular de cobre única por espira" if condutor_ind == "barra_cu"
+                                       else "2 por coluna nas culatras + fio/barra retangular (busca livre)"),
                        "culatra": "2 por coluna nas culatras + folha (não recomendado)"}.get(construcao_gap, "distribuídos (multigap) + folha")
             log(f"   Indutor: projeto de referência por elementos finitos – entreferros {_nome_c} (alguns minutos)...")
-            ind_pre = IP.projetar(proj, cat, log=log, construcao=construcao_gap)
+            ind_pre = IP.projetar(proj, cat, log=log, construcao=construcao_gap, condutor=condutor_ind)
             _p_est = float(proj.l1.perdas_w or 0)
             _r = ind_pre["requisitos"]
             _p_lim = float(ind_pre["perdas"]["total"]) * 1.15

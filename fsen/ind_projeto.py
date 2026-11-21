@@ -208,10 +208,11 @@ def descr_condutor(d, curto=False):
         return (f"folha {d['tf'] * 1e3:.1f} × {d['hf'] * 1e3:.0f} mm" if curto else
                 f"Folha de {mat} {d['tf'] * 1e3:.1f} × {d['hf'] * 1e3:.0f} mm, {d['N']} espiras (1 espira por camada)")
     t, h = f["t"] * 1e3, f["h"] * 1e3
-    par = f"{f['np']} fios em paralelo transpostos" if f["np"] > 1 else "1 fio"
+    tipo = "barra retangular" if (t >= 5.0 or h >= 16.0) else "fio retangular"
+    par = f"{f['np']} em paralelo transpostos" if f["np"] > 1 else "condutor ÚNICO (sem paralelos, sem transposição)"
     if curto:
-        return f"fio retangular {t:.2f} × {h:.1f} mm × {f['np']}"
-    return (f"Fio retangular de {mat} {t:.2f} × {h:.1f} mm (IEC 60317-0-2 / NBR), isolado com papel aramida enrolado "
+        return f"{tipo} {t:.2f} × {h:.1f} mm" + (f" × {f['np']}" if f["np"] > 1 else " (única)")
+    return (f"{tipo[0].upper() + tipo[1:]} de {mat} {t:.2f} × {h:.1f} mm (IEC 60317-0-2 / NBR), isolada com papel aramida enrolado "
             f"(classe H, +{f['iso'] * 1e3:.1f} mm), {par} por espira; {f['n_cam']} camada(s) × {f['n_ax']} espiras = {d['N']} espiras; "
             f"aramida {f['t_cam'] * 1e3:.2f} mm entre camadas")
 
@@ -247,7 +248,7 @@ def pre_dimensionar(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev
     elevação média ≤ alvo e B(Isat) ≤ 1,45 T (garante L ≥ 90 % em Isat e ≥ 70 % na sobrecarga – conferido depois no FEM)."""
     ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
     cl = CLASSE[r["classe"]]
-    alvo = alvo_elev or min(cl["elev_media"], 100.0)     # meta: elevação de classe F mesmo com materiais classe H (margem)
+    alvo = alvo_elev or min(cl["elev_media"], META_ELEV_MAX)   # meta: elevação de classe F mesmo com materiais classe H (margem)
     T = 40 + alvo
     rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
@@ -387,6 +388,8 @@ CAMADAS_FIO = (1, 2, 3, 4, 6, 8)
 FIO_ISO_MM = 0.40       # isolação total por fio (papel aramida enrolado 2 × 0,10 mm por lado – classe H)
 FIO_T_CAM_MM = 0.25     # isolação entre camadas (aramida 0,25 mm)
 FIO_K_ESPRAIO = 1.65   # entreferro real / ideal com 2 entreferros nas culatras (FEM A&W: 16,9 / 11,0 mm × 1,10 ≈ 1,7)
+META_ELEV_MAX = 100.0     # meta de elevação média do enrolamento (K) – 100 K = elevação de classe F com materiais classe H
+SELECAO_FIO = "custo"     # "custo" (menor custo total) ou "massa" (indutor mais leve que passa)
 MAO_OBRA_R_KG = 10.0      # mão de obra/estrutura do fabricante proporcional à massa (estimativa – fabricantes cotam por kg)
 FOLGA_PERDAS_FIO = 0.92   # o candidato precisa ficar ≥ 8 % abaixo do limite de perdas (margem de fabricação)
 FOLGA_ELEV_FIO = 0.90     # e ≥ 10 % abaixo da meta de elevação
@@ -399,7 +402,7 @@ def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=Non
     dimensão do fio, nº de fios em paralelo e de camadas) que passam na estimativa térmica; o FEM escolhe entre eles."""
     ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
     cl = CLASSE[r["classe"]]
-    alvo = alvo_elev or min(cl["elev_media"], 100.0)
+    alvo = alvo_elev or min(cl["elev_media"], META_ELEV_MAX)
     T = 40 + alvo
     rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
@@ -471,11 +474,12 @@ def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=Non
                     if not val.any():
                         continue
                     custo_ = m_fe_ * ch["preco_kg"] + m_cond_ * cond["preco_kg"] * 1.15 + CAPITALIZACAO_R_W * (P_cu_ + p1_ + ps_)
-                    i = int(np.argmin(np.where(val, custo_, np.inf)))
+                    _met = custo_ if SELECAO_FIO == "custo" else (m_fe_ + m_cond_) + 1e-4 * custo_
+                    i = int(np.argmin(np.where(val, _met, np.inf)))
                     fio = dict(t=float(T_[i]), h=float(H_[i]), np=int(NP_[i]), n_cam=n_cam, n_ax=n_ax, iso=iso, t_cam=tcam)
                     g = _geo(r, N, a, b, fio["np"] * fio["t"], float(hf_[i]), int(ND_[i]), c, cond, ch, fio=fio)
                     cands.append(dict(kae=kae, N=N, a=a, b=b, tf=fio["np"] * fio["t"], hf=float(hf_[i]), nd=int(ND_[i]), c=c, Bpk=Bpk,
-                                      dBpp=dB, custo=float(custo_[i]), P_cu=float(P_cu_[i]), P_fe1=float(p1_[i]), P_fes=float(ps_[i]),
+                                      dBpp=dB, custo=float(custo_[i]) if SELECAO_FIO == "custo" else float(m_fe_[i] + m_cond_[i]), P_cu=float(P_cu_[i]), P_fe1=float(p1_[i]), P_fes=float(ps_[i]),
                                       dT_w=float(dT_w_[i]), dT_fe=float(dT_fe_[i]), Fr=float(Fr_[i]), delta=delta, R=float(R_[i]),
                                       rhoT=rhoT, fio=fio, **g))
     cands.sort(key=lambda x: x["custo"])
@@ -603,7 +607,23 @@ def correcao_3d(d, Lp2d, M, mu_r=4000):
     return (L0 + extra2d * (d["a"] + d["b"]) / d["b"]) * fator_ferro
 
 
-def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print, construcao="distribuido"):
+def projetar(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print, construcao="distribuido",
+             condutor="barra_cu"):
+    """condutor (só para 2 entreferros + fio): "barra_cu" = barra retangular de COBRE única por espira (mais fácil de fabricar –
+    padrão); "livre" = fio ou barra, Cu ou Al, até 6 em paralelo transpostos (mais leve)."""
+    global PARALELOS_FIO, CONDS_FIO
+    _p0, _c0 = PARALELOS_FIO, CONDS_FIO
+    if construcao == "culatra_fio" and condutor == "barra_cu":
+        PARALELOS_FIO, CONDS_FIO = (1,), ("CU",)
+    try:
+        d = _projetar_construcao(proj, cat, chapa, cond_id, h_conv, amb_c, log, construcao)
+    finally:
+        PARALELOS_FIO, CONDS_FIO = _p0, _c0
+    d["opcao_condutor"] = condutor if construcao == "culatra_fio" else None
+    return d
+
+
+def _projetar_construcao(proj, cat=None, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, amb_c=50.0, log=print, construcao="distribuido"):
     """Projeto completo. Com 2 entreferros nas culatras + fio retangular, calcula alumínio E cobre e fica com o de menor custo
     total (material + perdas capitalizadas) que passa em todas as verificações (v1.11.2)."""
     if construcao != "culatra_fio":
@@ -748,7 +768,7 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
                 f"{cd['a']*1e3:.0f}×{cd['b']*1e3:.0f}: enrol. {Pw:.0f} W, total {Ptot:.0f} W, ΔT≈{dTw:.0f} K, entreferro "
                 f"{g_need*1e3:.1f} mm/col {'✓' if ok_c else '✗'}")
             cd["_m_tot"] = m_tot
-            avals.append((not ok_c, custo if ok_c else Ptot, cd, Pw, Ptot))
+            avals.append((not ok_c, (custo if SELECAO_FIO == "custo" else m_tot) if ok_c else Ptot, cd, Pw, Ptot))
         avals.sort(key=lambda x: (x[0], x[1]))
         d = avals[0][2]
         chapa, cond_id = d["chapa"], d["cond"]

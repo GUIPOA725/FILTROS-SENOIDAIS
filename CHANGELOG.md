@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.5 – 20/11/2026 – Barra retangular de cobre única por espira (padrão)
+- Nova opção "Condutor do enrolamento" (2 entreferros): BARRA RETANGULAR DE COBRE ÚNICA por espira (padrão – sem fios em
+  paralelo, sem transposição, mais fácil de fabricar) ou busca livre (fio/barra, Cu/Al, até 6 em paralelo – mais leve).
+- A&W: barra Cu 7,1 × 18 mm, 10 espiras (2 camadas × 5), chapa Aperam M125-27, coluna 90 × 165 mm – 197 kg, 640 W, 90 K,
+  sem avisos (a busca livre dava 132 kg com 6 fios de 2 × 10 mm transpostos).
+- Textos: "barra retangular" quando espessura ≥ 5 mm ou largura ≥ 16 mm; condutor único indicado nos desenhos e tabelas.
+
 ## v1.11.4 – 20/11/2026 – Desenho realista do indutor + folha do entreferro
 - Projeto de referência do indutor ganhou 2 folhas:
   - Folha 6 – VISTA REALISTA: render 3D com materiais (aço-silício laminado, calços vermelhos de vidro-epóxi, tubo, fios de
