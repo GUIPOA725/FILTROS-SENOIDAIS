@@ -80,7 +80,7 @@ def _estudo_camadas(proj, cat, ind_pre, construcao_gap, condutor_ind, log):
     return out
 
 
-def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs):
+def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs, cat=None):
     """v1.11.8: planilha de resultados medidos, script FEMM e (se o NGSolve estiver instalado) a comparação com outro software."""
     try:
         from . import calibracao as CAL, ind_verificacao as V
@@ -102,6 +102,19 @@ def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs):
                     f"Verificação independente do indutor (NGSolve): {nok} grandeza(s) fora do critério – ver Verificacao_Independente_Indutor."]
         elif verificar:
             log("   (verificação independente: NGSolve não instalado – pip install ngsolve)")
+        if verificar and cat is not None:                  # v1.12.0: análise avançada (formas de onda do circuito, 3D, térmico)
+            try:
+                from . import ind_avancado as AV
+                log("   Indutor: análise avançada – formas de onda do circuito, núcleo no tempo, 3D, mapa térmico...")
+                av = AV.avaliar(ind, proj, cat, log=log, fazer_3d=V.disponivel())
+                figs = AV.figuras(av, pasta_eng, cod)
+                AV.salvar(av, os.path.join(pasta_eng, "avancado_indutor.json"))
+                arqs["indutor_avancado"] = AV.relatorio(ind, av, os.path.join(pasta_eng, f"Analise_Avancada_Indutor_{cod}.pdf"), figs)
+                ind["avancado"] = dict(perdas=av["perdas"], termico={k: v for k, v in av["termico"].items() if k != "iteracoes"})
+                for a_ in av.get("avisos", []):
+                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [f"Indutor (análise avançada): {a_}"]
+            except Exception as e:
+                log(f"   (análise avançada do indutor não concluída: {type(e).__name__}: {e})")
     except Exception as e:
         log(f"   (verificação do indutor não concluída: {type(e).__name__}: {e})")
 
@@ -347,7 +360,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                                                             _inf["titulo"])
             with open(os.path.join(sub["01_Engenharia"], "indutor_projeto.json"), "w", encoding="utf-8") as f:
                 json.dump({k: v for k, v in ind.items() if k not in ("campo_pico",)}, f, ensure_ascii=False, indent=1, default=_json_default)
-            _verificacao_indutor(ind, proj, sub["01_Engenharia"], cod, verificar_ind, log, arqs)
+            _verificacao_indutor(ind, proj, sub["01_Engenharia"], cod, verificar_ind, log, arqs, cat=cat)
             for _f in os.listdir(sub["03_Fornecedores"]):
                 if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
                     with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:

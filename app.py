@@ -268,9 +268,11 @@ if pagina == "Nova solicitação":
                               "Busca livre: fio ou barra, cobre ou alumínio, até 6 fios em paralelo transpostos (mais leve)"],
                              key="cond_ind", help="Barra única não precisa de transposição de fios em paralelo; o indutor fica um pouco maior.")
         _cv1, _cv2 = st.columns(2)
-        _verif = _cv1.checkbox("Verificação independente do indutor (NGSolve 2D + 3D, +3 a 6 min)", value=True, key="verif_ind",
-                               help="Recalcula indutância (2D e 3D completo) e resistência CA num segundo software de elementos finitos e "
-                                    "gera o relatório de comparação. Requer o pacote ngsolve.")
+        _verif = _cv1.checkbox("Verificação independente + análise avançada do indutor (NGSolve 2D/3D, térmico; +4 a 8 min)",
+                               value=True, key="verif_ind",
+                               help="Recalcula o indutor num segundo software (NGSolve) e faz a análise avançada: formas de onda do circuito → "
+                                    "perdas no núcleo no tempo, campo espraiado em 3D (lâminas e quadros), cobre com espectro completo e "
+                                    "temperatura, mapa térmico com ponto quente. Requer o pacote ngsolve.")
         _camadas = _cv2.checkbox("Estudo 1 / 2 / 3 camadas da bobina (+2 a 4 min)", value=False, key="camadas_ind",
                                  help="Refaz o indutor com 1, 2 e 3 camadas para comparar massa, perdas e posição das saídas.")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):

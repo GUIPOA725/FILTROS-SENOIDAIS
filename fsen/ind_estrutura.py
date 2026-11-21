@@ -14,6 +14,8 @@ import math
 EXT_X = 40.0            # quadro passa 40 mm além do núcleo em cada ponta (furo de içamento / pés)
 ISO_QUADRO = 2.0        # EP GC 203 entre quadro e núcleo
 DESCE_PE = 10.0         # quadro de baixo 10 mm abaixo da culatra (núcleo não encosta no piso)
+FOLGA_JUNTA = 20.0      # v1.12.0: alma do quadro termina 20 mm antes da junta coluna–culatra (entreferro) – o 3D mostrou que
+                        # aço magnético rente ao entreferro desvia fluxo e aquece (correntes parasitas pelo campo espraiado)
 FURO_NEMA = 44.5
 
 
@@ -59,7 +61,8 @@ def estrutura(g, d=None):
     t = pq["t"]
     x0, x1 = -EXT_X, W + EXT_X
     cx, cil, furos, notas = [], [], [], []
-    quadros = dict(inf=(-DESCE_PE, a), sup=(H - a, H + DESCE_PE))
+    fj = min(FOLGA_JUNTA, a * 0.4)
+    quadros = dict(inf=(-DESCE_PE, a - fj), sup=(H - a + fj, H + DESCE_PE))
     for nome, (z0, z1) in quadros.items():
         for s, lado in ((-1, "frente"), (1, "tras")):
             ya, yb_ = s * y_w, s * (y_w + t)
@@ -77,8 +80,8 @@ def estrutura(g, d=None):
     rb = pq["r_bucha"]
     hb = 35.0
     xw = [a + g["ww"] / 2 + k * (a + g["ww"]) for k in range(2)]
-    z_b0, z_b1 = a - hb, a                     # bucha do quadro de baixo (na aba superior)
-    z_t0, z_t1 = H - a, H - a + hb             # bucha do quadro de cima (na aba inferior)
+    z_b0, z_b1 = a - fj - hb, a - fj           # bucha do quadro de baixo (na aba superior)
+    z_t0, z_t1 = H - a + fj, H - a + fj + hb   # bucha do quadro de cima (na aba inferior)
     hp = 0.9 * pq["d_tir"]                      # altura da porca
     tirantes = []
     for xr in xw:
@@ -155,7 +158,8 @@ def texto_padrao(g, d):
     wt, tt = barra_terminal(float(d["requisitos"]["In"]))
     return dict(
         quadro=(f"Quadros de aperto em U de chapa dobrada {pq['t']:.2f}".replace(".", ",") + " mm, aço carbono zincado (frente e trás de cada culatra), "
-                f"isolados do núcleo por EP GC 203 {ISO_QUADRO:.0f} mm; quadro superior com furo de içamento Ø22 nas pontas; "
+                f"isolados do núcleo por EP GC 203 {ISO_QUADRO:.0f} mm; a alma termina {FOLGA_JUNTA:.0f} mm ANTES da junta coluna–culatra "
+                "(não encostar aço magnético no entreferro); quadro superior com furo de içamento Ø22 nas pontas; "
                 "aba inferior do quadro de baixo com 4 furos oblongos 14×25 (pés)"),
         tirante=(f"4 tirantes {pq['rosca']} classe 8.8 zincados, nos vãos entre fases, FORA das bobinas, passando por buchas "
                  "soldadas na ponta das abas; porca + arruela de pressão"),

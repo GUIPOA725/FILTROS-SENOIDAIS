@@ -1,5 +1,16 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.12.0 – 2026-11-21
+- Análise avançada do indutor (`ind_avancado.py`) – acoplamento direto com a simulação do circuito, como nos softwares comerciais:
+  - correntes das 3 fases no pior ponto de operação (simulação conferida com o ATP), fundamental na corrente térmica de projeto;
+  - núcleo no TEMPO: B(t) de cada elemento → parasitas exatas por linha do espectro (com pelicular na lâmina), excesso de Bertotti e histerese por contagem rainflow dos laços com fator de polarização CC;
+  - campo espraiado em 3D (NGSolve, meio modelo com simetria, núcleo laminado anisotrópico, quadros e tirantes de aço magnético): fluxo normal às lâminas por modos espaciais com blindagem exata por correntes parasitas (substitui a fórmula empírica de Lee) e perdas na estrutura por impedância de superfície;
+  - cobre: R CA em 8 frequências (malha refinada) aplicada a todas as linhas do espectro; resistividade iterada na temperatura calculada (eletrotérmico);
+  - mapa térmico por diferenças finitas: corte da bobina (barras, isolação, canal, tubo) e plano das lâminas; ponto quente e média;
+  - relatório `Analise_Avancada_Indutor_<cód>.pdf`, figuras e `avancado_indutor.json`; avisos se as perdas avançadas passarem as do projeto ou o ponto quente se aproximar do limite.
+- Estrutura: a alma dos quadros em U termina 20 mm ANTES da junta coluna–culatra (o 3D mostrou que aço magnético rente ao entreferro desvia fluxo e aquece); texto da BOM/e-mail atualizado.
+- O valor oficial de perdas do projeto continua o do método de projeto (conservador); o avançado é mostrado lado a lado.
+
 ## v1.11.9 – 2026-11-21
 - IBT (São Bernardo do Campo/SP) e Wise Transformadores (Jaraguá do Sul/SC) incluídas na lista interna de fornecedores do indutor (já forneceram reatores de filtro de 5ª harmônica e de banco dessintonizado), com contatos e cuidados.
 - E-mail ao fabricante: item 10 (montagem mecânica) com texto neutro – serve para Cootrans, IBT e Wise; o fabricante pode propor o seu padrão mecânico mantendo os itens elétricos, as distâncias e as exigências.
