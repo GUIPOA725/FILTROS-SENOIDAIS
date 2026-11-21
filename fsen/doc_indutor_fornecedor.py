@@ -159,11 +159,12 @@ def _texto_gap(ind):
     if ind.get("pos_gap") == "culatra" and ind.get("fio"):
         from .ind_projeto import descr_condutor
         f = ind["fio"]
-        return ["9) CONSTRUÇÃO – padrão de vocês: 2 entreferros por coluna + fio retangular",
+        return ["9) CONSTRUÇÃO – padrão de vocês: 2 entreferros por coluna + " + ("barra retangular de cobre" if f["np"] == 1 else "fio retangular"),
                 f"O projeto de referência usa 2 entreferros por coluna, nas juntas com as culatras ({g / 2:.1f} mm cada, calço de fibra "
-                f"EP GC 203), e enrolamento em fio retangular: {descr_condutor(ind)}.",
+                f"EP GC 203), e enrolamento: {descr_condutor(ind)}.",
                 "Pontos que pedimos manter: distância bobina–culatra do desenho (o espraiamento das juntas não pode atingir as espiras "
-                "das pontas) e, havendo fios em paralelo, a TRANSPOSIÇÃO deles (sem ela aparecem correntes de circulação e as perdas sobem).",
+                "das pontas)" + (" e a TRANSPOSIÇÃO dos fios em paralelo (sem ela aparecem correntes de circulação e as perdas sobem)." if f["np"] > 1
+                 else "; barra única por espira – não há fios em paralelo nem transposição."),
                 "Se preferirem outra bitola de fio ou outro arranjo de camadas, mandem a proposta: conferimos no nosso modelo antes de fechar.",
                 ""]
     if ind.get("pos_gap") == "culatra":
