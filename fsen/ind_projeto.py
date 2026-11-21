@@ -581,12 +581,19 @@ def _condutores(d, gaps_xl, a, ng_lado=None):
     return out
 
 
-def modelo(d, gaps, ng):
+def modelo(d, gaps, ng, hcond=None):
     a = d["a"]
     xl = [i * (a + d["ww"]) for i in range(3)]
     cond = _condutores(d, xl, a)
     return ModeloIndutor(dict(a=a, b=d["b"], hw=d["hw"], ww=d["ww"], ng=ng, gaps=list(gaps), condutores=cond,
-                              pos_gap=d.get("pos_gap", "distribuido")))
+                              pos_gap=d.get("pos_gap", "distribuido")), hcond=hcond)
+
+
+def h_condutor_final(d, f_max):
+    """v1.11.8: malha dentro das barras para a avaliação FINAL das perdas de AF – resolve a profundidade de penetração na maior
+    frequência usada (a malha de triagem é grossa; a verificação independente com o NGSolve mostrou ~25 % a menos em 2·fs)."""
+    delta = math.sqrt(d["rhoT"] / (math.pi * f_max * MU0))
+    return max(min(delta / 1.5, 1.0e-3), 0.3e-3)
 
 
 def L_fases(M, b, mu_r=4000, extra_3d=None):
@@ -703,8 +710,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     r["I_AF_rms_espectro"] = float(np.sqrt((Ih ** 2).sum() / 2))
     g_tot0 = MU0 * d["N"] ** 2 * d["a"] * d["b"] * 1.10 / r["L"]
 
-    def perdas_enrolamento(dd, gaps, ng, freqs=None):
-        M = modelo(dd, gaps, ng)
+    def perdas_enrolamento(dd, gaps, ng, freqs=None, hcond=None):
+        M = modelo(dd, gaps, ng, hcond=hcond)
         ell = [dd["MLT"] / 2] * len(M.g["condutores"])
         fr = freqs or [r["fs"], 2 * r["fs"], 4 * r["fs"]]
         Rac = {}
@@ -881,7 +888,9 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
                K_EXC_AF * dlam ** 2 / (12 * ch["rho"] * ch["dens"]) * (2 * dB_ref * r["fs"]) ** 2)
     P_fes = float((m_el * (1.3 * kh * r["fs"] * (dBpp_el / 2) ** 2 + p_ref_e * (dBpp_el / dB_ref) ** 2)).sum())
     d["m_fe_fem"] = float(m_el.sum())
-    pe = perdas_enrolamento(d, gaps, ng)
+    _hc = h_condutor_final(d, 4 * r["fs"]) if d.get("fio") else None
+    pe = perdas_enrolamento(d, gaps, ng, hcond=_hc)
+    d["malha_final_condutor_mm"] = (_hc * 1e3) if _hc else None
     d["Rac_ohm"] = {f"{k:.0f} Hz": v for k, v in pe["Rac"].items()}
     d["Rdc_ohm"] = d["R"]
     P_gap = perda_entreferro_lee(d, r, gaps, ch)

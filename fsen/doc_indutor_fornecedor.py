@@ -57,6 +57,63 @@ def exigencias_chapa(proj):
     ]
 
 
+def _secoes_verificacao(d, ind, tabela, bullets):
+    """v1.11.8: ensaio 60 Hz em degraus, R CA × frequência, ajuste do entreferro e inspeções com fotos."""
+    from . import ind_verificacao as V
+    v = lambda x, n=1: f"{x:.{n}f}".replace(".", ",")
+    d.add_heading("3.1 Indutância e linearidade – ensaio trifásico em 60 Hz, tensão e corrente em degraus", 2)
+    d.add_paragraph("Fonte trifásica de baixa tensão (transformador abaixador + variac), alimentação EQUILIBRADA nas 3 fases ao mesmo tempo "
+                    "(num núcleo de 3 colunas a medição de uma bobina sozinha dá valor diferente). Medir V e I de cada fase e calcular "
+                    "L = √((V/I)² − R²) / (2π·60). Registrar também a potência ativa (perdas em 60 Hz).")
+    lin = [(e["nome"], v(e["I_rms"], 0), v(e["I_pk"], 0), v(e["V_fn"], 1), v(e["V_ff"], 1), v(e["kVA"], 1),
+            (e["L_min_pct"] if isinstance(e["L_min_pct"], str) else f"≥ {e['L_min_pct']:.0f} %" if e["L_min_pct"] else "registrar"),
+            "", "") for e in V.ensaio_60hz(ind)]
+    tabela(d, ["Degrau", "I rms (A)", "I pico (A)", "V fase-neutro esperada (V)", "V fase-fase (V)", "kVA", "L mínima", "V/I medido",
+               "L medida"], lin, [2.6, 1.3, 1.3, 1.9, 1.6, 1.0, 1.4, 1.6, 1.6], 7)
+    d.add_paragraph("Os degraus de saturação e sobrecarga podem ser curtos (≤ 10 s) para não aquecer. Tensões calculadas com a L nominal; "
+                    "se a L cair, a tensão cai na mesma proporção.")
+    d.add_heading("3.2 Resistência série × frequência (ponte LCR / analisador de impedância)", 2)
+    d.add_paragraph("Com a bobina montada no núcleo (antes e depois do VPI), medir em cada fase, com as outras abertas, a resistência série "
+                    "em 60 Hz e nas frequências abaixo (nível de sinal baixo, 1 V). Confere diretamente o cálculo das perdas de alta "
+                    "frequência (correntes parasitas na barra perto dos entreferros + núcleo) sem precisar de inversor.")
+    lin = [(f"{x['f']:g} Hz", v(x["R_enr"] * 1e3, 2), v(x["R_fe"] * 1e3, 1), v(x["R_tot"] * 1e3, 1),
+            (f"{v(x['R_tot'] * 0.9e3, 2)}–{v(x['R_tot'] * 1.1e3, 2)}" if x["R_fe"] == 0 else f"{v(x['R_tot'] * 0.7e3, 0)}–{v(x['R_tot'] * 1.3e3, 0)}"),
+            "", "", "") for x in V.rac_previsto(ind) if x["f"] <= 2.01 * float(ind["requisitos"]["fs"])]
+    tabela(d, ["Frequência", "Enrolamento (mΩ)", "Núcleo/entreferro equiv. (mΩ)", "R série prevista (mΩ)", "Faixa esperada (mΩ)",
+               "Fase U", "Fase V", "Fase W"], lin, [1.5, 1.8, 2.2, 1.9, 2.0, 1.4, 1.4, 1.4], 7.5)
+    d.add_paragraph("Em 60 Hz a R série é praticamente só o enrolamento (faixa ±10 %). Em alta frequência a ponte mede também a perda do "
+                    "núcleo e do entreferro, estimada aqui pelas perdas de alta frequência do projeto – por isso a faixa é ±30 %. Valores "
+                    "muito acima indicam chapa inadequada, rebarba ou barra perto demais do entreferro.")
+    d.add_heading("3.3 Ajuste fino da indutância pelo entreferro (na montagem)", 2)
+    sens = V.sensibilidade_gap(ind, 0.1)
+    lin = [(s["coluna"], v(s["gap_peca_mm"], 2), *(v(x, 2) for x in s["dL_pct"])) for s in sens]
+    tabela(d, ["Coluna alterada (+0,1 mm em CADA uma das 2 peças)", "Entreferro por peça (mm)", "ΔL fase U (%)", "ΔL fase V (%)",
+               "ΔL fase W (%)"], lin, [5, 2.4, 2, 2, 2], 8)
+    s_med = sum(abs(s["dL_pct"][k]) for k, s in enumerate(sens)) / 3
+    s_cruz = sum(abs(s["dL_pct"][j]) for k, s in enumerate(sens) for j in range(3) if j != k) / 6
+    tol_mm = 5.0 / max(s_med, 1e-6) * 0.1
+    tol_3 = 5.0 / max(s_med + 2 * s_cruz, 1e-6) * 0.1
+    bullets(d, [
+        "Montar o núcleo com o calço nominal + lâminas finas de ajuste (vidro-epóxi ou papelão prensado de aramida 0,10 / 0,25 / 0,50 mm), "
+        "SEM colar; fechar a culatra e apertar os tirantes no TORQUE FINAL (o aperto altera o entreferro).",
+        f"Medir L das 3 fases (60 Hz trifásico, 25–50 % In basta). +0,1 mm em cada peça de UMA coluna reduz a L da própria fase "
+        f"≈ {v(s_med, 1)} % e a das outras ≈ {v(s_cruz, 1)} % (no núcleo de 3 colunas as fases dividem o caminho do fluxo).",
+        f"Para subir/baixar as três fases juntas, alterar as TRÊS colunas (≈ {v(s_med + 2 * s_cruz, 1)} % por 0,1 mm em cada peça; "
+        f"±5 % ≈ ±{v(tol_3, 2)} mm). Para corrigir desequilíbrio, alterar só a coluna da fase fora (±5 % ≈ ±{v(tol_mm, 2)} mm).",
+        "L acima do alvo → aumentar o calço; abaixo → diminuir. Repetir até L ±2 % e desequilíbrio ≤ 2 % (margem para o VPI).",
+        "Medir a espessura final de cada calço com micrômetro e registrar; colar com epóxi classe H; impregnar (VPI); medir L de novo "
+        "(item 19)."])
+    d.add_heading("3.4 Pontos de inspeção com fotos (enviar junto com o relatório)", 2)
+    tabela(d, ["#", "Etapa", "Registro"], [
+        ("F1", "Chapa recebida", "certificado do lote + micrômetro na amostra + foto do revestimento e da rebarba"),
+        ("F2", "Lâminas cortadas e núcleo empilhado (antes das bobinas)", "fotos das juntas coluna–culatra e das faces de topo"),
+        ("F3", "Bobinas prontas antes da montagem", "fotos da isolação da barra, canal, calços de cunha; medida R CC"),
+        ("F4", "Ajuste do entreferro", "espessura de cada calço (U, V, W – em cima e embaixo) e L medida a cada rodada"),
+        ("F5", "Após VPI", "fotos da impregnação; L, R e isolamento"),
+        ("F6", "Ensaio de aquecimento com inversor", "fotos da montagem do ensaio, posição dos termopares, termografia final")],
+        [1, 6, 10], 8)
+
+
 def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
     """DOCX com os ensaios do protótipo e os critérios numéricos de aceitação."""
     r = ind["requisitos"] if ind else {}
@@ -91,8 +148,8 @@ def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
         ("2", "Desequilíbrio entre fases", "–", f"≤ {TOL['deseq_pct']:g} %", "", ""),
         ("3", "Resistência CC por fase (20 °C)", f"{rdc:.3f} mΩ".replace(".", ",") if rdc else "declarar",
          f"±{TOL['rdc_pct']:g} % do previsto" if rdc else "declarado ±10 %", "", ""),
-        ("4", "Curva L × I (CC sobreposta ou pulso)", f"L ≥ 90 % até {isat:.0f} A pk", f"L({isat:.0f} A) ≥ {TOL['l_sat_pct']:g} %", "", ""),
-        ("5", "Linearidade na sobrecarga do inversor", f"{iovl:.0f} A pk", f"L({iovl:.0f} A) ≥ {TOL['l_ovl_pct']:g} %", "", ""),
+        ("4", "Linearidade – 60 Hz trifásico em degraus (tabela 3.1)", f"L ≥ 90 % até {isat:.0f} A pk", f"L({isat:.0f} A pk) ≥ {TOL['l_sat_pct']:g} %", "", ""),
+        ("5", "Linearidade na sobrecarga do inversor (tabela 3.1)", f"{iovl:.0f} A pk", f"L({iovl:.0f} A pk) ≥ {TOL['l_ovl_pct']:g} %", "", ""),
         ("6", "Perdas totais com inversor (ou 60 Hz + AF)", f"{p_pred:.0f} W",
          f"≤ previsto +{TOL['perdas_pct']:g} % ({p_pred * 1.15:.0f} W) e ≤ {p_max:.0f} W", "", ""),
         ("7", "Elevação média do enrolamento (resistência)", f"{el:.0f} K", f"≤ {TOL['elev_k']:g} K (sistema H, elevação F)", "", ""),
@@ -108,10 +165,15 @@ def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
         ("15", "Placa de identificação", "–", "L, In, fs, classe, perdas, massa, nº de série", "", ""),
         ("16", "Chapa do núcleo – recebimento", f"{chapa_exigida(proj)['nome']} NOVA, {chapa_exigida(proj)['esp']:.2f} mm",
          "certificado da usina do lote; espessura ±0,02 mm (5 pontos); revestimento íntegro; rebarba ≤ 0,02 mm; fotos", "", ""),
+        ("18", "R série × frequência (LCR, tabela 3.2)", "ver tabela 3.2", "dentro da faixa esperada; desequilíbrio entre fases ≤ 10 %", "", ""),
+        ("19", "Indutância após o VPI (ajuste final)", f"{L_uh:.0f} µH", "±5 % e variação ≤ 2 % em relação à medida antes do VPI", "", ""),
         ("17", "Temperatura do núcleo no aquecimento", f"elev. {float(ind['termico'].get('elev_nucleo_K', 0)):.0f} K" if ind else "–",
          "≤ previsto +15 K; sem ponto quente na culatra/junta (termografia)", "", ""),
     ]
+    lin.sort(key=lambda x: int(x[0]))
     t = tabela(d, ["#", "Ensaio", "Previsto", "Critério de aceitação", "Medido", "Resultado"], lin, [0.8, 4.2, 2.6, 5.0, 2.2, 2.2], 8)
+    if ind:
+        _secoes_verificacao(d, ind, tabela, bullets)
     d.add_heading("4. Base de corrente usada (para o ensaio)", 1)
     if cc.get("base") == "carga":
         d.add_paragraph(f"Corrente térmica de ensaio {In:.0f} A rms (definida pela carga: motor {cc['i_motor_placa_a']:g} A × FS, "

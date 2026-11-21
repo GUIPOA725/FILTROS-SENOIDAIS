@@ -105,7 +105,7 @@ class ModeloIndutor:
     """Geometria (m):  g = dict(a, b, hw, ww, gaps=[g_limb0, g_limb1, g_limb2] (comprimento TOTAL por coluna), ng,
     condutores=[dict(x0,x1,y0,y1, fase, lado(+1/-1))], margem)."""
 
-    def __init__(self, g, hmax=6e-3, hgap=None):
+    def __init__(self, g, hmax=6e-3, hgap=None, hcond=None):
         self.g = g
         a, hw, ww, ng = g["a"], g["hw"], g["ww"], g["ng"]
         W, H = 3 * a + 2 * ww, 2 * a + hw
@@ -140,7 +140,10 @@ class ModeloIndutor:
             ys += [c["y0"], c["y1"]]
             t = c["x1"] - c["x0"]
             for v in (c["x0"], c["x1"]):
-                hx[round(v, 7)] = min(hx.get(round(v, 7), 1), max(t / 2, 2e-4))
+                hx[round(v, 7)] = min(hx.get(round(v, 7), 1), max(t / 2, 2e-4) if hcond is None else hcond)
+            if hcond is not None:                           # v1.11.8: refino também na altura do condutor (verificação)
+                for v in (c["y0"], c["y1"]):
+                    hy[round(v, 7)] = min(hy.get(round(v, 7), 1), hcond)
         for v in (a, a + hw):
             hy[round(v, 7)] = min(hy.get(round(v, 7), 1), 2e-3)
         # ar distante: malha até 4× mais grossa (a borda das bobinas externas define a faixa fina)

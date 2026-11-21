@@ -267,6 +267,12 @@ if pagina == "Nova solicitação":
                              ["Barra retangular de COBRE, única por espira (mais fácil de fabricar – recomendado)",
                               "Busca livre: fio ou barra, cobre ou alumínio, até 6 fios em paralelo transpostos (mais leve)"],
                              key="cond_ind", help="Barra única não precisa de transposição de fios em paralelo; o indutor fica um pouco maior.")
+        _cv1, _cv2 = st.columns(2)
+        _verif = _cv1.checkbox("Verificação independente do indutor (NGSolve 2D + 3D, +3 a 6 min)", value=True, key="verif_ind",
+                               help="Recalcula indutância (2D e 3D completo) e resistência CA num segundo software de elementos finitos e "
+                                    "gera o relatório de comparação. Requer o pacote ngsolve.")
+        _camadas = _cv2.checkbox("Estudo 1 / 2 / 3 camadas da bobina (+2 a 4 min)", value=False, key="camadas_ind",
+                                 help="Refaz o indutor com 1, 2 e 3 camadas para comparar massa, perdas e posição das saídas.")
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
@@ -277,7 +283,8 @@ if pagina == "Nova solicitação":
                               queda_max=_qmax, corrente_base=("cliente" if _usar_cli else "carga"),
                               construcao_gap=("distribuido" if st.session_state.get("gap_ind", "").startswith("Entreferros distribuídos")
                                               else "culatra" if "+ folha" in st.session_state.get("gap_ind", "") else "culatra_fio"),
-                              condutor_ind=("livre" if st.session_state.get("cond_ind", "").startswith("Busca livre") else "barra_cu"))
+                              condutor_ind=("livre" if st.session_state.get("cond_ind", "").startswith("Busca livre") else "barra_cu"),
+                              verificar_ind=_verif, estudo_camadas=_camadas)
             st.session_state["resultado"] = {"pasta": r["pasta"], "zip": r["zip"], "arquivos": r["arquivos"], "graficos": r["graficos"],
                                              "resumo": r["resumo"], "opcoes": r.get("opcoes"),
                                              "corrente": getattr(r["projeto"], "corrente_dimensionamento", None)}

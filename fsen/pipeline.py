@@ -52,8 +52,63 @@ def _slug(s):
     return re.sub(r"\s+", "_", s)[:40] or "cliente"
 
 
+def _estudo_camadas(proj, cat, ind_pre, construcao_gap, condutor_ind, log):
+    """Refaz o projeto do indutor com 1, 2 e 3 camadas (mesmas regras) – compara massa, perdas, elevação e dimensões."""
+    from . import ind_projeto as IP
+    out = []
+    n0 = ind_pre["fio"]["n_cam"]
+    _c0 = IP.CAMADAS_FIO
+    for n in (1, 2, 3):
+        try:
+            if n == n0:
+                d = ind_pre
+            else:
+                IP.CAMADAS_FIO = (n,)
+                d = IP.projetar(proj, cat, log=lambda m: None, construcao=construcao_gap, condutor=condutor_ind)
+            f = d["fio"]
+            out.append(dict(n_cam=n, escolhido=(n == n0), N=d["N"], n_ax=f["n_ax"], barra=f"{f['t']*1e3:.1f}×{f['h']*1e3:.1f}",
+                            coluna=f"{d['a']*1e3:.0f}×{d['b']*1e3:.0f}", janela=f"{d['ww']*1e3:.0f}×{d['hw']*1e3:.0f}",
+                            massa_kg=round(d["massa_kg"]["total"], 1), perdas_w=round(d["perdas"]["total"], 0),
+                            elev_k=round(d["termico"]["elev_bobina_K"], 0), dims_mm=d["dims_mm"], avisos=len(d.get("avisos") or []),
+                            saidas="em cima e embaixo" if n % 2 else "as duas em cima", custo=round(float(d.get("custo") or 0), 0)))
+            log(f"   Estudo de camadas: {n} camada(s) → {out[-1]['massa_kg']} kg, {out[-1]['perdas_w']} W, {out[-1]['elev_k']} K")
+        except Exception as e:
+            out.append(dict(n_cam=n, erro=f"{type(e).__name__}: {e}"))
+            log(f"   Estudo de camadas: {n} camada(s) sem solução ({type(e).__name__})")
+        finally:
+            IP.CAMADAS_FIO = _c0
+    return out
+
+
+def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs):
+    """v1.11.8: planilha de resultados medidos, script FEMM e (se o NGSolve estiver instalado) a comparação com outro software."""
+    try:
+        from . import calibracao as CAL, ind_verificacao as V
+        arqs["indutor_planilha_medidos"] = CAL.planilha(ind, os.path.join(pasta_eng, f"Resultados_Medidos_Indutor_{cod}.xlsx"), cod)
+        arqs["indutor_femm"] = V.femm_lua(ind, os.path.join(pasta_eng, f"Verificacao_FEMM_{cod}.lua"))
+        est = getattr(proj, "_estudo_camadas", None)
+        if est:
+            json.dump(est, open(os.path.join(pasta_eng, "estudo_camadas_indutor.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        if verificar and V.disponivel():
+            log("   Indutor: verificação independente no NGSolve (2D + 3D, alguns minutos)...")
+            cmp = V.comparar(ind, log=log)
+            cmp["estudo_camadas"] = est
+            V.salvar_cmp(cmp, os.path.join(pasta_eng, "verificacao_indutor.json"))
+            arqs["indutor_verificacao"] = V.relatorio(ind, cmp, os.path.join(pasta_eng, f"Verificacao_Independente_Indutor_{cod}.pdf"))
+            nok = sum(1 for l in V.linhas_comparacao(cmp) if l[-1] != "OK")
+            log(f"   Indutor: verificação independente concluída – {('todas as grandezas dentro do critério' if nok == 0 else f'{nok} fora do critério')}")
+            if nok:
+                proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                    f"Verificação independente do indutor (NGSolve): {nok} grandeza(s) fora do critério – ver Verificacao_Independente_Indutor."]
+        elif verificar:
+            log("   (verificação independente: NGSolve não instalado – pip install ngsolve)")
+    except Exception as e:
+        log(f"   (verificação do indutor não concluída: {type(e).__name__}: {e})")
+
+
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
-              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga", construcao_gap="culatra_fio", condutor_ind="barra_cu"):
+              ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga", construcao_gap="culatra_fio", condutor_ind="barra_cu",
+              verificar_ind=True, estudo_camadas=False):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
@@ -206,6 +261,8 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                 f"{proj.l1.dim_mm[2]} mm, {proj.l1.massa_kg:.0f} kg e perdas = limite contratual {proj.l1.perdas_w:.0f} W "
                 f"(FEM {ind_pre['perdas']['total']:.0f} W + 15 %, teto de mercado); a estimativa simplificada era {_p_est:.0f} W."]
             log(f"   Painel usará o indutor FEM: {proj.l1.dim_mm} mm, {proj.l1.massa_kg:.0f} kg, perdas (limite) {proj.l1.perdas_w:.0f} W")
+            if estudo_camadas and ind_pre.get("fio"):           # v1.11.8: variações de nº de camadas (saídas em cima/embaixo)
+                proj._estudo_camadas = _estudo_camadas(proj, cat, ind_pre, construcao_gap, condutor_ind, log)
         except Exception as e:
             log(f"   (projeto do indutor por elementos finitos não concluído: {type(e).__name__}: {e})")
     log("2/7 Arranjo mecânico, térmica e cabos...")
@@ -275,7 +332,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
             ind["corrente_dimensionamento"] = getattr(proj, "corrente_dimensionamento", None) or {}
             IDS.imagens_campo(ind, os.path.join(sub["01_Engenharia"], "Indutor_campo_FEM.png"))
             _inf = dict(titulo=f"Indutor trifásico p/ filtro senoidal – {proj.l1.l_uh:.0f} µH / {proj.l1.i_nom_a:.0f} A – {cod}",
-                        linha2=f"Classe {ind['requisitos']['classe']} (sistema) | {ind['chapa_dados']['nome'][:48]} | folha {ind['cond']}",
+                        linha2=f"Classe {ind['requisitos']['classe']} (sistema) | {ind['chapa_dados']['nome'][:48]} | {IP.descr_condutor(ind, curto=True)}",
                         cod=cod, data=f"{t0:%d/%m/%Y}", versao=f"FSEN v{_vi().get('versao')}")
             arqs["indutor_desenhos"] = IDS.gerar_pdf(ind, os.path.join(sub["03_Fornecedores"], f"Projeto_Referencia_Indutor_{cod}.pdf"),
                                                      _inf, png_dir=sub["01_Engenharia"])
@@ -290,6 +347,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                                                             _inf["titulo"])
             with open(os.path.join(sub["01_Engenharia"], "indutor_projeto.json"), "w", encoding="utf-8") as f:
                 json.dump({k: v for k, v in ind.items() if k not in ("campo_pico",)}, f, ensure_ascii=False, indent=1, default=_json_default)
+            _verificacao_indutor(ind, proj, sub["01_Engenharia"], cod, verificar_ind, log, arqs)
             for _f in os.listdir(sub["03_Fornecedores"]):
                 if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
                     with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:

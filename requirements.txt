@@ -12,3 +12,4 @@ openai>=1.40
 reportlab>=4.0
 ezdxf>=1.3
 pyvista>=0.44   # vista realista 3D do indutor (opcional: sem ela a folha 6 não é gerada)
+ngsolve>=6.2   # verificação independente do indutor (opcional: sem ela o relatório de comparação não é gerado)

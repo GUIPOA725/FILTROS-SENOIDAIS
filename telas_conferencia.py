@@ -80,3 +80,60 @@ def tela_conferencia(pasta_saida):
             with st.expander("E-mail de resposta ao fornecedor (pendências com o motivo)", expanded=True):
                 st.code(open(txt, encoding="utf-8").read(), language=None)
         st.caption(f"Arquivos salvos em {os.path.dirname(docx)}")
+    if comp == "Indutor":
+        _secao_ensaios_indutor(pasta)
+
+
+def _secao_ensaios_indutor(pasta):
+    """v1.11.8: resultados medidos (calibração) e conferência no FEMM."""
+    import glob
+    import json
+    st.divider()
+    st.subheader("Ensaios medidos e verificação independente do indutor")
+    eng = os.path.join(pasta, "01_Engenharia")
+    js = glob.glob(os.path.join(eng, "**", "indutor_projeto.json"), recursive=True)
+    if not js:
+        st.info("Este projeto não tem o projeto do indutor por elementos finitos.")
+        return
+    ind = json.load(open(js[0], encoding="utf-8"))
+    planilhas = glob.glob(os.path.join(eng, "**", "Resultados_Medidos_Indutor_*.xlsx"), recursive=True)
+    luas = glob.glob(os.path.join(eng, "**", "Verificacao_FEMM_*.lua"), recursive=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**1) Resultados medidos (protótipo ou indutor antigo)**")
+        if planilhas:
+            st.download_button("⬇️ Planilha em branco (previsto preenchido)", open(planilhas[0], "rb"),
+                               file_name=os.path.basename(planilhas[0]))
+        up = st.file_uploader("Carregar a planilha preenchida (.xlsx)", type=["xlsx"], key="cal_xlsx")
+        if up is not None:
+            from fsen import calibracao as CAL
+            tmp = os.path.join(eng, "_medido_" + up.name)
+            open(tmp, "wb").write(up.getbuffer())
+            res = CAL.avaliar(tmp, cod=os.path.basename(pasta))
+            df = pd.DataFrame(res["linhas"])
+            st.dataframe(df, width="stretch", hide_index=True)
+            fs = CAL.fatores_sugeridos()
+            if fs:
+                st.caption("Histórico de calibração (mediana medido/previsto) – não aplicado automaticamente: "
+                           + "; ".join(f"{k} {v['fator']:.3f} (n={v['n']})" for k, v in fs.items()))
+    with c2:
+        st.markdown("**2) Conferência no FEMM (Windows)**")
+        if luas:
+            st.download_button("⬇️ Script FEMM (.lua)", open(luas[0], "rb"), file_name=os.path.basename(luas[0]))
+        st.caption("Abra o script no FEMM 4.2 (File › Open Lua Script). Ele grava resultado_femm_FSEN.csv – carregue abaixo.")
+        upc = st.file_uploader("Carregar resultado_femm_FSEN.csv", type=["csv"], key="femm_csv")
+        if upc is not None:
+            from fsen import ind_verificacao as V
+            tmp = os.path.join(eng, "resultado_femm_FSEN.csv")
+            open(tmp, "wb").write(upc.getbuffer())
+            fem = V.ler_femm_csv(tmp, ind)
+            vj = glob.glob(os.path.join(eng, "**", "verificacao_indutor.json"), recursive=True)
+            if vj:
+                cmp = V.carregar_cmp(vj[0])
+                pdf = os.path.join(os.path.dirname(vj[0]), os.path.basename(vj[0]).replace(".json", "_com_FEMM.pdf"))
+                V.relatorio(ind, cmp, pdf, femm=fem)
+                st.success("Comparação com o FEMM incluída no relatório de verificação.")
+                st.download_button("📄 Relatório de verificação (com FEMM)", open(pdf, "rb"), file_name=os.path.basename(pdf))
+            P = {"L2d (µH)": [x * 1e6 for x in ind.get("L2d", [])]}
+            st.write({"FEMM L 2D (µH)": [round(x * 1e6, 1) for x in fem.get("L2d", [])], "Plataforma L 2D (µH)":
+                      [round(x, 1) for x in P["L2d (µH)"]], "FEMM R CA (mΩ)": {f"{k:g} Hz": round(v * 1e3, 2) for k, v in fem["Rac"].items()}})

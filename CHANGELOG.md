@@ -1,5 +1,18 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.8 – 2026-11-21
+- Verificação independente do indutor (`ind_verificacao.py`): o mesmo indutor é recalculado no NGSolve/Netgen (outro software de elementos finitos, malha não estruturada, elementos P2 em 2D e H(curl) em 3D):
+  - L 2D no mesmo corte, L 3D COMPLETA (núcleo, 2 entreferros por coluna, 3 bobinas de cantos arredondados – confere a correção 3D da plataforma) e R CA da fase em 60 Hz, fs e 2·fs;
+  - casos de resultado conhecido (ferro ideal → μ0N²A/g; R CC pelo FEM harmônico) e sensibilidade à malha;
+  - relatório `Verificacao_Independente_Indutor_<cód>.pdf` + `verificacao_indutor.json`; aviso no projeto se alguma grandeza sair do critério.
+- Script FEMM (`Verificacao_FEMM_<cód>.lua`) gerado em cada projeto: o engenheiro roda no FEMM 4.2 (Windows) e carrega o CSV na tela de conferência – a comparação FEMM entra no relatório.
+- CORREÇÃO encontrada pela verificação: a malha de triagem subestimava a R CA da barra em 2·fs (~25 %). A avaliação FINAL das perdas agora usa malha refinada dentro das barras (≤ δ/1,5 na maior frequência) – concorda com o NGSolve convergido.
+- Calibração (`calibracao.py`): planilha `Resultados_Medidos_Indutor_<cód>.xlsx` (previsto preenchido); a tela de conferência lê a planilha preenchida, compara com as tolerâncias e guarda o histórico de fatores medido/previsto (não aplicados automaticamente).
+- Protocolo do protótipo: tabela 3.1 (ensaio trifásico 60 Hz em degraus até a sobrecarga, com tensões esperadas – substitui CC sobreposta/pulso), 3.2 (R série × frequência na ponte LCR, enrolamento + núcleo), 3.3 (ajuste fino da indutância pelo entreferro com a sensibilidade por coluna) e 3.4 (pontos de inspeção com fotos); novos itens 18 e 19.
+- Estudo opcional de 1 / 2 / 3 camadas da bobina (massa, perdas, elevação, posição das saídas) – opção na tela principal e tabela no relatório de verificação.
+- Opções na tela principal: verificação independente (padrão ligado) e estudo de camadas. `requirements.txt`: ngsolve (opcional).
+- Corrigido rótulo "folha CU" no título dos desenhos para bobina de barra.
+
 ## v1.11.7 – 2026-11-20
 - Chapa do núcleo passa a ser EXIGÊNCIA (não orientação) na ET (item 4.1), no protocolo (itens 16 e 17), no questionário e no e-mail (item 11): chapa GO NOVA com certificado da usina do lote, espessura máx. 0,27 mm, proibida chapa reaproveitada/sucata; inspeção de recebimento (micrômetro 5 pontos, revestimento, rebarba ≤ 0,02 mm, fotos); preço do núcleo discriminado; ensaio com inversor como prova.
 - Novo anexo técnico `Anexo_Tecnico_Referencias_Indutor_<cód>.pdf` (doc_referencias_indutor.py): o que fabricantes (MTE, Mirus, BLOCK, Ergun, Trafox, chineses, nacionais), literatura (Severns, Dönük, Altayef, Belgrand) e normas (IEC 60076-6, EN 61558-2-20) dizem sobre a construção, verificação da regra bobina–entreferro (2–3×), recomendações de fabricação da bobina de barra, figuras e fontes. Listado como anexo no e-mail.
