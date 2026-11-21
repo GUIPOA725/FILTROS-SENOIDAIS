@@ -197,26 +197,12 @@ def pecas_3d(d):
         rb1 = g["c"] + g["build"]
         P.append((f"Bobina {'UVW'[i]}", tubo_arred(xc, 0, a + 2 * rb1, b + 2 * rb1, rb1, a + 2 * rb0, b + 2 * rb0, rb0,
                                                    g["yc0"], g["yc0"] + g["hc"]), BO))
-        for s, lab in ((-1, "1"), (1, "2")):
-            xt = xc + s * g["Dc"] * 0.28
-            z0 = g["yc0"] + g["hc"]
-            P.append((f"Terminal {'UVW'[i]}{lab}", caixa(xt - 20, -b / 2 - g["c"] - 6, z0, 40, 6, H + g["fr"] + g["term_h"] - z0), CU))
-    xr0, xr1 = g["xr"]
-    for zz, nome in ((-g["fr"], "inferior"), (H, "superior")):
-        for yy, lado in ((-b / 2 - g["fe"], "frente"), (b / 2, "tras")):
-            P.append((f"Cantoneira {nome} {lado}", caixa(xr0 - 18, yy, zz, xr1 - xr0 + 36, g["fe"], g["fr"]), ACO))
-            yab = yy - 44 if lado == "frente" else yy + g["fe"]
-            P.append((f"Cantoneira {nome} {lado} aba", caixa(xr0 - 18, yab, zz if nome == "inferior" else zz + g["fr"] - g["fe"],
-                                                              xr1 - xr0 + 36, 44, g["fe"]), ACO))
-    for x in (xr0, xr1):
-        for yy in (-b / 2 - 25, b / 2 + 25):
-            P.append(("Tirante M12", caixa(x - 6, yy - 6, -g["fr"] - 12, 12, 12, H + 2 * g["fr"] + 24), (0.8, 0.8, 0.8)))
-    yb = -g["fr"] - g["base_h"]
-    xb0 = xr0 - 40
-    for s in (-1, 1):
-        y0 = -g["Bb"] / 2 if s < 0 else g["Bb"] / 2 - 50
-        P.append((f"Base perfil U {'frente' if s < 0 else 'tras'}", caixa(xb0, y0, yb, g["Lb"], 50, g["base_h"]), (0.55, 0.55, 0.55)))
-    P.append(("Caixa de bornes PTC", caixa(xr1 - 70, -b / 2 - g["fe"] - 30, H + g["fr"], 50, 30, 28), (0.9, 0.9, 0.9)))
+    est = g["est"]
+    for nome, mat, (x0, x1, y0, y1, z0, z1) in est["caixas"]:
+        cor = CU if mat == "cobre_bar" else ((0.88, 0.88, 0.84) if mat in ("estanho", "placa", "ptc") else ACO)
+        P.append((nome, caixa(x0, y0, z0, x1 - x0, y1 - y0, z1 - z0), cor))
+    for nome, mat, (xc_, yc_, z0, z1), r, _ in est["cilindros"]:
+        P.append((nome, caixa(xc_ - r, yc_ - r, z0, 2 * r, 2 * r, z1 - z0), (0.8, 0.8, 0.8)))
     return P
 
 
@@ -266,63 +252,76 @@ def gerar_dxf(d, arq, info=None):
         msp.add_text(t, height=h, dxfattribs={"layer": "TEXTO"}).set_placement((x, y))
 
     a, b, W, H, hw, ww = g["a"], g["b"], g["W"], g["H"], g["hw"], g["ww"]
-    xr0, xr1 = g["xr"]
-    yb = -g["fr"] - g["base_h"]
-    ytop = H + g["fr"] + g["term_h"]
+    est = g["est"]
+    ex0, ex1, ey0, ey1, ez0, ez1 = est["env"]
+    yb, ytop = ez0, ez1
+    xr0, xr1 = ex0, ex1
+
+    def caixas_proj(vista, ox=0, oy=0):
+        for nome, mat, (x0, x1, y0, y1, z0, z1) in est["caixas"]:
+            lay = "TERMINAIS" if mat in ("cobre_bar", "estanho") else "ESTRUTURA"
+            if vista == "frente":
+                ret(x0, z0, x1 - x0, z1 - z0, lay, ox, oy)
+            elif vista == "lado":
+                ret(-y1, z0, y1 - y0, z1 - z0, lay, ox, oy)
+            else:
+                ret(x0, y0, x1 - x0, y1 - y0, lay, ox, oy)
+        for nome, mat, (xc_, yc_, z0, z1), r, _ in est["cilindros"]:
+            if vista == "frente":
+                ret(xc_ - r, z0, 2 * r, z1 - z0, "ESTRUTURA", ox, oy)
+            elif vista == "lado":
+                ret(-yc_ - r, z0, 2 * r, z1 - z0, "ESTRUTURA", ox, oy)
+            else:
+                msp.add_circle((ox + xc_, oy + yc_), r, dxfattribs={"layer": "ESTRUTURA"})
+        for (hx, hy, hz), eixo, r, _ in est["furos"]:
+            if vista == "frente" and eixo == "y":
+                msp.add_circle((ox + hx, oy + hz), r, dxfattribs={"layer": "ESTRUTURA"})
+            elif vista == "topo" and eixo == "z":
+                msp.add_circle((ox + hx, oy + hy), r, dxfattribs={"layer": "TERMINAIS" if r < 7 else "ESTRUTURA"})
     # ---- VISTA FRONTAL (origem 0,0) ----
-    ret(xr0 - 40, yb, g["Lb"], g["base_h"], "ESTRUTURA")
-    ret(xr0 - 18, -g["fr"], xr1 - xr0 + 36, g["fr"], "ESTRUTURA")
-    ret(xr0 - 18, H, xr1 - xr0 + 36, g["fr"], "ESTRUTURA")
     ret(0, 0, W, H, "NUCLEO")
     for i in range(2):
         ret(a + i * g["pitch"], a, ww, hw, "NUCLEO")
     for i, xc in enumerate(g["xc"]):
         ret(xc - g["Dc"] / 2, g["yc0"], g["Dc"], g["hc"], "BOBINA")
         msp.add_line((xc, yb - 10), (xc, ytop + 10), dxfattribs={"layer": "EIXOS"})
-        for s, lab in ((-1, "1"), (1, "2")):
-            xt = xc + s * g["Dc"] * 0.28
-            ret(xt - 20, g["yc0"] + g["hc"], 40, ytop - g["yc0"] - g["hc"], "TERMINAIS")
-            msp.add_circle((xt, ytop - 14), 6.5, dxfattribs={"layer": "TERMINAIS"})
-            txt(xt - 6, ytop + 6, "UVW"[i] + lab)
-    for x in (xr0, xr1):
-        ret(x - 6, -g["fr"] - 12, 12, H + 2 * g["fr"] + 24, "ESTRUTURA")
-    cota((xr0 - 40, yb), (xr0 - 40 + g["Lb"], yb), (0, yb - 40))
+    caixas_proj("frente")
+    for tr in est["terminais"]:
+        txt(tr["x"] - 6, tr["chapa"][5] + 6 if tr["pos"] == "sup" else tr["chapa"][4] - 14, tr["nome"])
+    cota((ex0, yb), (ex1, yb), (0, yb - 40))
     cota((0, yb), (W, yb), (0, yb - 70))
     xs = [0, a, a + ww, 2 * a + ww, 2 * a + 2 * ww, W]
     for p, q in zip(xs[:-1], xs[1:]):
         cota((p, 0), (q, 0), (0, yb - 100))
     cota((g["xc"][0], ytop), (g["xc"][1], ytop), (0, ytop + 30))
     cota((g["xc"][1], ytop), (g["xc"][2], ytop), (0, ytop + 30))
-    cota((xr1 + 60, yb), (xr1 + 60, ytop), (xr1 + 120, 0), ang=90)
-    cota((W, 0), (W, H), (xr1 + 90, 0), ang=90)
+    cota((ex1 + 60, yb), (ex1 + 60, ytop), (ex1 + 120, 0), ang=90)
+    cota((W, 0), (W, H), (ex1 + 90, 0), ang=90)
     txt(0, ytop + 70, "VISTA FRONTAL (1:1, mm)", 10)
-    # ---- VISTA LATERAL (deslocada em x) ----
-    ox = xr1 + 400
-    ret(-g["Bb"] / 2, yb, g["Bb"], g["base_h"], "ESTRUTURA", ox)
+    # ---- VISTA LATERAL ESQUERDA (deslocada em x; frente/saidas a direita) ----
+    ox = ex1 + 400 + ey1
     ret(-b / 2, 0, b, H, "NUCLEO", ox)
     ret(-g["Ec"] / 2, g["yc0"], g["Ec"], g["hc"], "BOBINA", ox)
-    for s in (-1, 1):
-        x0 = b / 2 if s > 0 else -b / 2 - g["fe"]
-        ret(x0, -g["fr"], g["fe"], g["fr"], "ESTRUTURA", ox)
-        ret(x0, H, g["fe"], g["fr"], "ESTRUTURA", ox)
-    cota((ox - g["Bb"] / 2, yb), (ox + g["Bb"] / 2, yb), (ox, yb - 40))
+    caixas_proj("lado", ox)
+    cota((ox - ey1, yb), (ox - ey0, yb), (ox, yb - 40))
     cota((ox - g["Ec"] / 2, yb), (ox + g["Ec"] / 2, yb), (ox, yb - 70))
-    txt(ox - g["Bb"] / 2, ytop + 70, "VISTA LATERAL ESQUERDA", 10)
+    txt(ox - ey1, ytop + 70, "VISTA LATERAL ESQUERDA", 10)
     # ---- VISTA SUPERIOR (abaixo) ----
-    oy = yb - 250 - g["Bb"] / 2
-    ret(xr0 - 40, -g["Bb"] / 2, g["Lb"], g["Bb"], "ESTRUTURA", 0, oy)
+    oy = yb - 250 - ey1
     ret(0, -b / 2, W, b, "NUCLEO", 0, oy)
     for xc in g["xc"]:
         rret(xc, 0, g["Dc"], g["Ec"], g["rc"], "BOBINA", 0, oy)
         ret(xc - a / 2, -b / 2, a, b, "NUCLEO", 0, oy)
-    xf0, xf1 = xr0 - 15, xr1 + 15
-    for x in (xf0, xf1):
-        for y in (-g["Bb"] / 2 + 20, g["Bb"] / 2 - 20):
-            rret(x, y, 25, 14, 7, "ESTRUTURA", 0, oy)
-    cota((xf0, oy), (xf1, oy), (0, oy - g["Bb"] / 2 - 40))
-    txt(0, oy + g["Bb"] / 2 + 20, "VISTA SUPERIOR / FURACAO DA BASE (4x oblongo 14x25)", 10)
+    caixas_proj("topo", 0, oy)
+    pes = [f[0] for f in est["furos"] if f[3].startswith("oblongo")]
+    for (hx, hy, hz) in pes:
+        rret(hx, hy, 25, 14, 7, "ESTRUTURA", 0, oy)
+    xf0, xf1 = min(p_[0] for p_ in pes), max(p_[0] for p_ in pes)
+    cota((xf0, oy), (xf1, oy), (0, oy + ey0 - 40))
+    txt(0, oy + ey1 + 20, "VISTA SUPERIOR / FURACAO DOS PES (4x oblongo 14x25 na aba inferior do quadro)", 10)
+    ox2_base = ex1 + 400 + ey1 - ey0
     # ---- PLANTA DO NÚCLEO com calços ----
-    ox2, oy2 = xr1 + 400 + g["Bb"] + 300, 0
+    ox2, oy2 = ox2_base + 300, 0
     ret(0, 0, W, H, "NUCLEO", ox2, oy2)
     for i in range(2):
         ret(a + i * g["pitch"], a, ww, hw, "NUCLEO", ox2, oy2)

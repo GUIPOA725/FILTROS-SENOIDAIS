@@ -8,6 +8,7 @@ O fabricante emite o desenho de fabricação próprio a partir deste e declara a
 """
 import math
 from .ind_projeto import descr_condutor
+from .ind_estrutura import texto_padrao
 import os
 import numpy as np
 import matplotlib
@@ -222,11 +223,18 @@ def geo_mm(d):
     g["xr"] = (g["xc"][0] - g["Dc"] / 2 - 22, g["xc"][2] + g["Dc"] / 2 + 22)   # tirantes fora das bobinas
     g["Lb"] = g["xr"][1] - g["xr"][0] + 80                  # comprimento da base
     g["Bb"] = g["Ec"] + 2 * 40                             # largura da base (profundidade)
+    from .ind_estrutura import estrutura                   # v1.11.6: estrutura padrão nacional (quadros U, saídas horizontais)
+    e = estrutura(g, d)
+    g["est"] = e
+    g["Lb"] = e["env"][1] - e["env"][0]
+    g["Bb"] = e["env"][3] - e["env"][2]
+    g["Ht"] = e["env"][5] - e["env"][4]
     return g
 
 
 def fabricacao(d):
     """Dados de fabricação derivados do projeto (tabelas usadas nos desenhos e no memorial)."""
+    from .ind_estrutura import texto_padrao
     g = geo_mm(d)
     ch, cond = d["chapa_dados"], d["cond_dados"]
     t = ch["esp_mm"]
@@ -304,13 +312,15 @@ def fabricacao(d):
                (f"TRANSPOR os {fw['np']} fios em paralelo: permutar a posição radial dos fios a cada 1/{fw['np']} do comprimento da bobina "
                 "(ou usar cabo transposto); sem transposição, aparecem correntes de circulação e as perdas sobem."
                 if fw["np"] > 1 else "Fio único por espira: sem necessidade de transposição."),
-               "Saídas: unir os fios em paralelo em terminal de barra (solda TIG em Al ou brasagem em Cu) fora da região das juntas "
-               "coluna–culatra; instalar PTC entre as 2 últimas camadas."] if fw else
+               ("Saídas: " + texto_padrao(g, d)["saida"] + "; todas as saídas para o MESMO lado (frente), fora da região das juntas "
+                "coluna–culatra (≥ 25 mm); " + ("unir os fios em paralelo na barra de saída; " if fw["np"] > 1 else "")
+                + "instalar PTC entre as 2 últimas camadas.")] if fw else
               [f"Bobinar as 3 bobinas sobre mandril com o tubo EP GC 203 (folha {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras, aramida entre espiras, reforço nas 2 primeiras/últimas).",
                "Soldar as barras de saída (TIG, largura total da folha) antes de bobinar a espira inicial e depois da final; instalar PTC entre as últimas camadas."]),
             "Encaixar as bobinas nas colunas com calços de extremidade; fechar a culatra superior "
             + ("(junta de topo sobre os calços)." if d.get("pos_gap") == "culatra" else "(step-lap)."),
-            f"Prensar o conjunto: força de aperto ≥ {max(2.5 * forca, 2000):.0f} N por coluna nos entreferros (cantoneiras + tirantes M12 8.8, torque 80 N·m).",
+            f"Prensar o conjunto: força de aperto ≥ {max(2.5 * forca, 2000):.0f} N por coluna nos entreferros (quadros em U + tirantes "
+            f"{g['est']['perfil']['rosca']} 8.8 nas buchas, torque {80 if g['est']['perfil']['d_tir'] <= 12 else 160} N·m), quadros isolados do núcleo por EP GC 203 2 mm.",
             "Medir L por fase na corrente nominal (ou fonte CA + ponte LCR em 60 Hz com correção) e ajustar o calço: L ±5 %, desequilíbrio ≤ 3 %.",
             "Impregnar por VPI com resina classe H; curar na estufa conforme fabricante da resina; retocar pintura da estrutura.",
             "Ensaios de rotina (resistência, L, tensão aplicada 3 kV/1 min, isolamento) e de tipo no protótipo (perdas, aquecimento com inversor, L × I).",
@@ -330,105 +340,128 @@ def _rret_pts(cx, cy, w, h, r, n=8):
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+COR_EST = dict(estrutura="#c3c7cb", zinco="#d6d6d6", estanho="#e4e4dc", cobre_bar="#c8763c", placa="#f6f6f6", ptc="#e9e9e9")
+
+
+def _elems_est(g, vista):
+    """Projeção das peças da estrutura (v1.11.6). vista: 'frente' (x,z), 'lado' (u=-y, z – vista lateral esquerda), 'topo' (x,y).
+    Devolve lista (prof, tipo, args, cor) ordenada do mais distante para o mais próximo do observador."""
+    e = g["est"]
+    out = []
+    for nome, mat, (x0, x1, y0, y1, z0, z1) in e["caixas"]:
+        if vista == "frente":
+            out.append((-(y0 + y1) / 2, "ret", (x0, z0, x1 - x0, z1 - z0), COR_EST.get(mat, "#ddd")))
+        elif vista == "lado":
+            out.append(((x0 + x1) / 2, "ret", (-y1, z0, y1 - y0, z1 - z0), COR_EST.get(mat, "#ddd")))
+        else:
+            out.append(((z0 + z1) / 2, "ret", (x0, y0, x1 - x0, y1 - y0), COR_EST.get(mat, "#ddd")))
+    for nome, mat, (xc, yc, z0, z1), r, _ in e["cilindros"]:
+        if vista == "frente":
+            out.append((-yc, "ret", (xc - r, z0, 2 * r, z1 - z0), COR_EST.get(mat, "#ddd")))
+        elif vista == "lado":
+            out.append((xc, "ret", (-yc - r, z0, 2 * r, z1 - z0), COR_EST.get(mat, "#ddd")))
+        else:
+            out.append((z1, "circ", (xc, yc, r), COR_EST.get(mat, "#ddd")))
+    for (hx, hy, hz), eixo, r, _ in e["furos"]:
+        if vista == "frente" and eixo == "y":
+            out.append((-hy + 0.1, "circ", (hx, hz, r), "white"))
+        elif vista == "topo" and eixo == "z":
+            out.append((hz + 0.1, "circ", (hx, hy, r), "white"))
+    out.sort(key=lambda q: q[0])
+    return out
+
+
+def _desenha_est(V, elems, filtro):
+    for prof, tipo, args, cor in elems:
+        if not filtro(prof):
+            continue
+        if tipo == "ret":
+            V.ret(*args, fc=cor, lw=LW_F)
+        else:
+            V.circ(*args, fc=cor, lw=LW_F)
+
+
 def folha_conjunto(F, g, d):
     a, W, H, hw, ww, b = g["a"], g["W"], g["H"], g["hw"], g["ww"], g["b"]
-    xr0, xr1 = g["xr"]
-    yb = -g["fr"] - g["base_h"]
-    ytop = H + g["fr"] + g["term_h"]
+    est = g["est"]
+    ex0, ex1, ey0, ey1, ez0, ez1 = est["env"]
+    yb, ytop = ez0, ez1
     Htot = ytop - yb
-    x_min, x_max = xr0 - 40, xr1 + 40
-    e = _esc(max((x_max - x_min) / 190, (Htot + g["Bb"]) / 200), 1)
+    x_min, x_max = ex0, ex1
+    D = ey1 - ey0
+    e = _esc(max((x_max - x_min + D + 90) / 270, (Htot + D + 60) / 215), 1)
     # ---- posições na folha (1º diedro: lateral esquerda à DIREITA da frontal; superior ABAIXO da frontal) ----
     ox = 32 - x_min / e
     oy = 262 - ytop / e
     V = F.vista(ox, oy, e, "VISTA FRONTAL", 32, 278)
-    # base, cantoneiras, núcleo
-    V.ret(x_min, yb, x_max - x_min, g["base_h"], fc=C["aco_cl"], lw=LW_M)
-    V.lin([x_min, x_max], [yb + 8, yb + 8], lw=LW_F)
-    V.ret(xr0 - 18, -g["fr"], xr1 - xr0 + 36, g["fr"], fc=C["aco"], alpha=0.9)
-    V.ret(xr0 - 18, H, xr1 - xr0 + 36, g["fr"], fc=C["aco"], alpha=0.9)
+    el = _elems_est(g, "frente")
+    _desenha_est(V, el, lambda p: p < 0)                         # peças de trás (atrás do núcleo)
     V.ret(0, 0, W, H, fc=C["ferro"], lw=LW_G)
     for i in range(2):
         V.ret(a + i * g["pitch"], a, ww, hw, fc="white", lw=LW_M)
     for i, xc in enumerate(g["xc"]):
         V.rret(xc - g["Dc"] / 2, g["yc0"], g["Dc"], g["hc"], 6, fc=C["bob"], lw=LW_G)
-        V.txt(xc, g["yc0"] + g["hc"] / 2, "UVW"[i], ha="center", va="center", fontsize=10, weight="bold", color="white")
+        V.txt(xc, g["yc0"] + g["hc"] * 0.42, "UVW"[i], ha="center", va="center", fontsize=10, weight="bold", color="white")
         V.eixo(xc, yb - 4, xc, ytop + 4)
-        for s, lab in ((-1, "1"), (1, "2")):
-            xt = xc + s * g["Dc"] * 0.28
-            y0 = g["yc0"] + g["hc"]
-            V.ret(xt - 20, y0, 40, ytop - y0, fc=C["cu"], lw=LW_M, alpha=0.9)
-            V.circ(xt, ytop - 14, 6.5)
-            V.txt(xt, ytop + 5, "UVW"[i] + lab, ha="center", fontsize=6.3, weight="bold")
-    for x in (xr0, xr1):                                                     # tirantes M12 FORA das bobinas
-        V.ret(x - 6, -g["fr"] - 12, 12, H + 2 * g["fr"] + 24, fc=C["aco_cl"], lw=LW_F)
-        for y in (-g["fr"] - 12, H + g["fr"] + 4):
-            V.ret(x - 10, y, 20, 8, fc=C["aco"], lw=LW_F)
-    for x in (W * 0.3, W * 0.7):                                             # olhais DIN 580
-        V.circ(x, H + g["fr"] + 20, 12, fc="white", lw=LW_M)
-    V.ret(xr1 - 70, H + g["fr"] + 2, 50, 28, fc="#e9e9e9", lw=LW_M)          # caixa de bornes PTC
-    V.txt(xr1 - 45, H + g["fr"] + 14, "PTC", ha="center", fontsize=5.8)
-    V.ret(W * 0.5 - 45, yb + 13, 90, 26, fc="#f7f7f7", lw=LW_F)              # placa
-    V.txt(W * 0.5, yb + 26, "PLACA", ha="center", va="center", fontsize=5.5)
-    V.circ(x_min + 18, yb + g["base_h"] / 2, 6, fc="#7cb342")                # PE
+    _desenha_est(V, el, lambda p: p >= 0)                        # peças da frente
+    for tr in est["terminais"]:
+        ch = tr["chapa"]
+        V.txt(tr["x"], (ch[5] + 4) if tr["pos"] == "sup" else (ch[4] - 12), tr["nome"], ha="center", fontsize=6.0, weight="bold")
     # cotas
-    V.cota_h(x_min, x_max, yb, -6, f"{x_max - x_min:.0f} (base)")
+    V.cota_h(x_min, x_max, yb, -6, f"{x_max - x_min:.0f} (quadros)")
     V.cota_h(0, W, yb, -12, f"{W:.0f} (núcleo)")
     xs = [0, a, a + ww, 2 * a + ww, 2 * a + 2 * ww, W]
-    for p, q in zip(xs[:-1], xs[1:]):
-        V.cota_h(p, q, yb, -18, f"{q - p:.0f}")
+    for p_, q in zip(xs[:-1], xs[1:]):
+        V.cota_h(p_, q, yb, -18, f"{q - p_:.0f}")
     V.cota_h(g["xc"][0], g["xc"][1], ytop, 8, f"passo {g['pitch']:.0f}")
     V.cota_h(g["xc"][1], g["xc"][2], ytop, 8, f"{g['pitch']:.0f}")
-    gap_bob = ww - 2 * (g["c"] + g["build"])
-    V.cota_h(g["xc"][0] + g["Dc"] / 2, g["xc"][1] - g["Dc"] / 2, g["yc0"] + 18, 0, f"{gap_bob:.0f}")
     V.cota_v(yb, ytop, x_max, 14, f"{Htot:.0f} (total)")
     V.cota_v(0, H, x_max, 7, f"{H:.0f}")
     V.cota_v(g["yc0"], g["yc0"] + g["hc"], x_min, -6, f"bobina {g['hc']:.0f}")
     # balões (itens da lista de materiais)
+    tr0 = est["terminais"][-1]
+    xr, _ = est["tirantes"][0]
+    zq0, zq1 = est["quadros"]["sup"]
     V.balao(a * 0.5, H - a * 0.5, 1, -8, 10)
     V.balao(g["xc"][0] - g["Dc"] * 0.3, g["yc0"] + g["hc"] * 0.3, 2, -10, -8)
-    V.balao(W * 0.45, H + g["fr"] * 0.5, 14, 4, 13)
-    V.balao(xr0, H * 0.5, 15, -9, 6)
-    V.balao(x_max - 20, yb + 4, 16, 8, -7)
-    V.balao(g["xc"][2] + g["Dc"] * 0.28, ytop - 40, 17, 14, -4)
-    V.balao(x_min + 18, yb + g["base_h"] / 2, 18, -7, 9)
-    V.balao(W * 0.3, H + g["fr"] + 20, 19, -6, 11)
-    V.balao(xr1 - 45, H + g["fr"] + 28, 20, 9, 9)
-    V.balao(W * 0.5 + 30, yb + 20, 21, 10, -10)
-    # ---- vista lateral esquerda ----
-    oxl = ox + (x_max + 70) / e + (g["Bb"] / 2) / e
-    VL = F.vista(oxl, oy, e, "VISTA LATERAL ESQUERDA", oxl - g["Bb"] / 2 / e, 278)
-    VL.ret(-g["Bb"] / 2, yb, g["Bb"], g["base_h"], fc=C["aco_cl"])
-    for s in (-1, 1):
-        x0 = b / 2 if s > 0 else -b / 2 - g["fe"]
-        VL.ret(x0, -g["fr"], g["fe"], g["fr"], fc=C["aco"])
-        VL.ret(x0, H, g["fe"], g["fr"], fc=C["aco"])
-        VL.ret(s * (b / 2 + 22) - 6, -g["fr"] - 12, 12, H + 2 * g["fr"] + 24, fc=C["aco_cl"], lw=LW_F)
-        VL.lin([s * (b / 2 + g["fe"]), s * (b / 2 + 50)], [-g["fr"] + 6, -g["fr"] + 6], lw=LW_M)
-        VL.lin([s * (b / 2 + g["fe"]), s * (b / 2 + 50)], [H + g["fr"] - 6, H + g["fr"] - 6], lw=LW_M)
+    V.balao(W * 0.45, (zq0 + zq1) / 2, 14, 4, 13)
+    V.balao(xr, (a + H - a) / 2, 15, -9, 6)
+    V.balao(x_max - est["ext"] / 2, yb + 2, 16, 8, -7)
+    V.balao(tr0["x"], tr0["chapa"][5], 17, 14, 6)
+    V.balao(x_min + est["ext"] / 2, (zq0 + zq1) / 2, 19, -6, 11)
+    V.balao(x_max - 47, ytop - 6, 20, 9, 6)
+    # ---- vista lateral esquerda (u = -y: frente/terminais à direita) ----
+    oxl = ox + (x_max + 25) / e - (-ey1) / e
+    VL = F.vista(oxl, oy, e, "VISTA LATERAL ESQUERDA", oxl + (-ey1) / e, 278)
+    ell = _elems_est(g, "lado")
+    _desenha_est(VL, ell, lambda p: p > W / 2)
     VL.ret(-b / 2, 0, b, H, fc=C["ferro"], lw=LW_G)
     VL.rret(-g["Ec"] / 2, g["yc0"], g["Ec"], g["hc"], 6, fc=C["bob"], lw=LW_G)
-    VL.ret(-b / 2 - g["c"] - 6, g["yc0"] + g["hc"], 6, ytop - g["yc0"] - g["hc"], fc=C["cu"])
+    _desenha_est(VL, ell, lambda p: p <= W / 2)
     VL.eixo(0, yb - 4, 0, ytop + 4)
-    VL.cota_h(-g["Bb"] / 2, g["Bb"] / 2, yb, -6, f"{g['Bb']:.0f}")
+    VL.cota_h(-ey1, -ey0, yb, -6, f"{D:.0f}")
     VL.cota_h(-g["Ec"] / 2, g["Ec"] / 2, yb, -12, f"bobina {g['Ec']:.0f}")
     VL.cota_h(-b / 2, b / 2, ytop, 8, f"empilh. {b:.0f}")
-    # ---- vista superior / furação da base ----
-    oys = oy + (yb / e) - 30 - (g["Bb"] / 2) / e
-    VS = F.vista(ox, oys, e, "VISTA SUPERIOR / FURAÇÃO DA BASE", 32, oys + (g["Bb"] / 2) / e + 4)
-    VS.ret(x_min, -g["Bb"] / 2, x_max - x_min, g["Bb"], fc="#ececec")
-    VS.ret(0, -b / 2, W, b, fc=C["ferro"], lw=LW_G)
+    VL.txt(-ey0 - 2, yb - 22, "frente\n(saídas)", ha="right", fontsize=5.4)
+    # ---- vista superior / furação ----
+    oys = oy + (yb / e) - 26 - ey1 / e
+    VS = F.vista(ox, oys, e, "VISTA SUPERIOR / FURAÇÃO DOS PÉS", 32, oys + ey1 / e + 4)
+    els = _elems_est(g, "topo")
     for xc in g["xc"]:
         VS.rret(xc - g["Dc"] / 2, -g["Ec"] / 2, g["Dc"], g["Ec"], g["rc"], fc=C["bob"], lw=LW_G)
-        VS.ret(xc - a / 2, -b / 2, a, b, fc=C["ferro_esc"], lw=LW_M)
-        VS.eixo(xc, -g["Bb"] / 2 - 3, xc, g["Bb"] / 2 + 3)
-    xf0, xf1 = x_min + 25, x_max - 25
-    for x in (xf0, xf1):
-        for y in (-g["Bb"] / 2 + 20, g["Bb"] / 2 - 20):
-            VS.rret(x - 12.5, y - 7, 25, 14, 7, fc="white", lw=LW_M)
-    VS.cota_h(xf0, xf1, -g["Bb"] / 2, -6, f"{xf1 - xf0:.0f} (furos)")
-    VS.cota_v(-g["Bb"] / 2 + 20, g["Bb"] / 2 - 20, x_max, 7, f"{g['Bb'] - 40:.0f}")
-    VS.txt(x_max + 40, 0, "4× furo oblongo\nØ14 × 25", fontsize=5.6, va="center")
+    VS.ret(0, -b / 2, W, b, fc=C["ferro"], lw=LW_G)                 # culatra superior cobre as bobinas
+    for xc in g["xc"]:
+        VS.eixo(xc, ey0 - 3, xc, ey1 + 3)
+    _desenha_est(VS, els, lambda p: True)
+    VS.txt(W / 2, 0, "placa", ha="center", va="center", fontsize=5.2)
+    pes = [f[0] for f in est["furos"] if f[3].startswith("oblongo")]
+    for (hx, hy, hz) in pes:
+        VS.rret(hx - 12.5, hy - 7, 25, 14, 7, fc="white", lw=LW_M, ls="--")
+    xf0, xf1 = min(p[0] for p in pes), max(p[0] for p in pes)
+    yf0, yf1 = min(p[1] for p in pes), max(p[1] for p in pes)
+    VS.cota_h(xf0, xf1, ey0, -6, f"{xf1 - xf0:.0f} (furos dos pés)")
+    VS.cota_v(yf0, yf1, x_max, 7, f"{yf1 - yf0:.0f}")
+    VS.txt(x_max + 34, 0, "4× furo oblongo\n14 × 25 na aba\ninferior do quadro", fontsize=5.4, va="center")
     F.info["escala_folha"] = f"1:{e:g}"
     # quadro de dados à direita
     r = d["requisitos"]
@@ -436,8 +469,11 @@ def folha_conjunto(F, g, d):
              ("Isat", f"≥ {r['Isat']:.0f} A com L ≥ 90 %"), ("Sobrecarga", f"{r['Iovl']:.0f} A com L ≥ 70 %"),
              ("fs", f"{r['fs']/1e3:.0f} kHz – tensão PWM"), ("Isolação", f"sistema classe {r['classe']}, 1,1 kV"),
              ("Elevação", f"≤ {d['termico']['meta_elev_K']:.0f} K (calc. {d['termico']['elev_bobina_K']:.0f} K)"),
-             ("Perdas", f"{d['perdas']['total']:.0f} W (calc.)"), ("Massa", f"{d['massa_kg']['total']:.0f} kg (calc.)")]
+             ("Perdas", f"{d['perdas']['total']:.0f} W (calc.)"), ("Massa", f"{d['massa_kg']['total']:.0f} kg (calc.)"),
+             ("Montagem", "padrão reator nacional: quadros U,"), ("", "tirantes nas buchas, saídas horizontais")]
     F.tabela(300, 140, ["Característica", "Valor"], dados, [30, 72], fs=5.8, h=4.8)
+
+
 def folha_nucleo(F, g, d, fab):
     a, W, H, hw, ww, b = g["a"], g["W"], g["H"], g["hw"], g["ww"], g["b"]
     e = _esc(max(W / 200, H / 150), 1)
@@ -628,7 +664,7 @@ def folha_bobina(F, g, d, fab):
                             + ("PTC (item 21) sobre a camada externa, no meio da altura, sob o enfaixamento." if (fw and fw["n_cam"] == 1)
                              else "PTC (item 21) entre as 2 últimas camadas, no meio da altura."), fontsize=5.6)
     # Detalhe terminal
-    F.texto(212, 150, ("DETALHE D – SAÍDA DOS FIOS E TERMINAL (sem escala)" if fw else "DETALHE D – SAÍDA DA FOLHA E TERMINAL (sem escala)"),
+    F.texto(212, 150, (("DETALHE D – SAÍDA DOS FIOS E TERMINAL (sem escala)" if fw["np"] > 1 else "DETALHE D – SAÍDA DA BARRA E TERMINAL (sem escala)") if fw else "DETALHE D – SAÍDA DA FOLHA E TERMINAL (sem escala)"),
             fontsize=7.4, weight="bold")
     ax = F.ax
     ax.add_patch(Rectangle((215, 102), 3, 38, fc=C["bob"], ec="k", lw=0.4))
@@ -638,9 +674,12 @@ def folha_bobina(F, g, d, fab):
         ax.add_patch(Circle((xx, 117.5), 3.2, fc="white", ec="k", lw=0.4))
     ax.annotate("", (264, 128), (282, 128), arrowprops=dict(arrowstyle="<|-|>", lw=0.35, color=C["cota"], mutation_scale=4.5))
     ax.text(273, 129, "44,5", fontsize=5.6, ha="center", color=C["cota"])
-    ax.text(256, 106.5, "furos Ø13 (NEMA 2 furos)", fontsize=5.6)
-    ax.text(215, 143, ("fios em paralelo unidos" if fw else "folha (largura total)"), fontsize=5.6)
-    ax.text(219, 123, (("barra Al 40×6 – fios soldados TIG" if d["cond"] == "AL" else "barra Cu 40×6 – fios brasados") if fw else
+    ax.text(256, 106.5, "furos Ø13 (NEMA 2 furos) – terminal horizontal p/ frente", fontsize=5.6)
+    import textwrap as _tw
+    for _k, _l in enumerate(_tw.wrap(texto_padrao(g, d)["saida"] + ".", 120)[:3]):
+        ax.text(215, 97.5 - 3.5 * _k, _l, fontsize=5.0)
+    ax.text(215, 143, (("fios em paralelo unidos" if fw["np"] > 1 else "barra única da bobina") if fw else "folha (largura total)"), fontsize=5.6)
+    ax.text(219, 123, (("barra da bobina (Al) – solda TIG" if d["cond"] == "AL" else "barra da bobina brasada") if fw else
                        ("barra Al 40×6 soldada TIG em toda a largura" if d["cond"] == "AL" else "barra Cu 40×6 brasada em toda a largura")),
             fontsize=5.4)
     ax.text(256, 102.5, ("placa bimetálica Cu-Al ou Al estanhado" if d["cond"] == "AL" else "Cu estanhado"), fontsize=5.4)
@@ -699,35 +738,26 @@ def folha_3d(F, g, d):
         poli(lados + topo + base, cor, 1.0, 0.05)
 
     a, b, W, H, hw = g["a"], g["b"], g["W"], g["H"], g["hw"]
-    yb = -g["fr"] - g["base_h"]
-    xb0 = g["xr"][0] - 40
-    caixa(xb0, -g["Bb"] / 2, yb, g["Lb"], g["Bb"], 10, "#9a9a9a")
-    for s in (-1, 1):
-        caixa(xb0, s * (g["Bb"] / 2) - (0 if s < 0 else 50), yb + 10, g["Lb"], 50, g["base_h"] - 10, "#8d8d8d")
+    est = g["est"]
+    ex0, ex1, ey0, ey1, ez0, ez1 = est["env"]
     caixa(0, -b / 2, 0, W, b, a, C["ferro"])
     caixa(0, -b / 2, H - a, W, b, a, C["ferro"])
     for i in range(3):
         caixa(i * g["pitch"], -b / 2, a, a, b, hw, C["ferro_esc"])
     for i, xc in enumerate(g["xc"]):
-        prisma_arred(xc, 0, g["Dc"], g["Ec"], g["rc"], g["yc0"], g["yc0"] + g["hc"], C["bob"])
-        for s in (-1, 1):
-            xt = xc + s * g["Dc"] * 0.28
-            caixa(xt - 20, -b / 2 - g["c"] - 3, g["yc0"] + g["hc"], 40, 6, H + g["fr"] + g["term_h"] - g["yc0"] - g["hc"], C["cu"])
-    for z in (-g["fr"], H):
-        caixa(g["xr"][0] - 18, -b / 2 - g["fe"], z, g["xr"][1] - g["xr"][0] + 36, g["fe"], g["fr"], C["aco"])
-        caixa(g["xr"][0] - 18, b / 2, z, g["xr"][1] - g["xr"][0] + 36, g["fe"], g["fr"], C["aco"])
-    for x in g["xr"]:
-        for yy in (-b / 2 - 25, b / 2 + 25):
-            caixa(x - 6, yy - 6, -g["fr"] - 12, 12, 12, H + 2 * g["fr"] + 24, "#cfcfcf")
-    caixa(W - 75, -b / 2 - g["fe"] - 30, H + g["fr"], 55, 30, 30, "#e6e6e6")
+        prisma_arred(xc, 0, g["Dc"], g["Ec"], g["rc"], g["yc0"], g["yc0"] + g["hc"], "#d9c48f")
+    for nome, mat, (x0, x1, y0, y1, z0, z1) in est["caixas"]:
+        caixa(x0, y0, z0, x1 - x0, y1 - y0, z1 - z0, COR_EST.get(mat, "#ccc"))
+    for nome, mat, (xc_, yc_, z0, z1), r, _ in est["cilindros"]:
+        caixa(xc_ - r * 0.8, yc_ - r * 0.8, z0, 1.6 * r, 1.6 * r, z1 - z0, COR_EST.get(mat, "#ccc"))
     pc = Poly3DCollection(TODAS_F, facecolors=TODAS_C, edgecolors=TODAS_C, linewidths=0.4)   # sem costuras visíveis
     pc.set_sort_zpos(None)
     ax.set_autoscale_on(False)
     ax.add_collection3d(pc, autolim=False)
-    ax.set_box_aspect((g["Lb"], g["Bb"] + 40, H + 2 * g["fr"] + g["base_h"] + g["term_h"]))
-    ax.set_xlim(xb0, xb0 + g["Lb"])
-    ax.set_ylim(-g["Bb"] / 2 - 20, g["Bb"] / 2 + 20)
-    ax.set_zlim(yb, H + g["fr"] + g["term_h"])
+    ax.set_box_aspect((ex1 - ex0, ey1 - ey0 + 40, ez1 - ez0))
+    ax.set_xlim(ex0, ex1)
+    ax.set_ylim(ey0 - 20, ey1 + 20)
+    ax.set_zlim(ez0, ez1)
     ax.view_init(20, -58)
     ax.axis("off")
     F.texto(275, 262, "VISTA ISOMÉTRICA 3D (sombreada)", fontsize=8, weight="bold")
@@ -740,7 +770,7 @@ def folha_3d(F, g, d):
         ("Isolação", f"Sistema classe {r['classe']} – elevação média ≤ {d['termico']['meta_elev_K']:.0f} K"),
         ("Perdas (calc.)", f"{d['perdas']['total']:.0f} W"), ("Elevação (calc.)", f"{d['termico']['elev_bobina_K']:.0f} K"),
         ("Massa (calc.)", f"{m['total']:.0f} kg (núcleo {m['nucleo']:.0f} / condutor {m['condutor']:.0f})"),
-        ("Dimensões", f"{g['Lb']:.0f} × {g['Bb']:.0f} × {g['base_h'] + 2 * g['fr'] + H + g['term_h']:.0f} mm (C × L × A)"),
+        ("Dimensões", f"{g['Lb']:.0f} × {g['Bb']:.0f} × {g['Ht']:.0f} mm (C × P × A, com saídas)"),
     ]
     F.tabela(272, 255, ["Característica", "Valor"], resumo, [34, 100], fs=5.8, h=5)
 
@@ -834,7 +864,8 @@ def folha_realista(F, d, png_dir=None):
     F.texto(22, y0 - 6, f"CONSTRUÇÃO E SISTEMA DE ISOLAÇÃO CLASSE {d['requisitos'].get('classe', 'H')} (a classe é do SISTEMA – IEC 60085 / IEC 61857)",
             fontsize=7.2, weight="bold")
     from .ind_projeto import descr_condutor
-    esp = {1: f"{d['chapa_dados']['nome']}, revestimento C-5; empilhamento em pacotes; cantos a 45° step-lap 3 degraus",
+    esp = {1: (f"{d['chapa_dados']['nome']}, revestimento C-5; colunas inteiras com junta de TOPO nas culatras (onde ficam os calços)"
+               if d.get("pos_gap") == "culatra" else f"{d['chapa_dados']['nome']}, revestimento C-5; empilhamento em pacotes; cantos a 45° step-lap 3 degraus"),
            2: ((lambda f: f"{descr_condutor(d, curto=True)} {('cobre' if d.get('cond') == 'CU' else 'alumínio')}, papel aramida "
                 f"enrolado; {d['N']} espiras ({f['n_cam']} camada(s))" + ("; paralelos TRANSPOSTOS" if f["np"] > 1 else "; condutor único"))(d["fio"]) if d.get("fio")
                else descr_condutor(d))[:150],
@@ -969,7 +1000,7 @@ def lista_materiais(d):
     m = d["massa_kg"]
     ng = g["ng"]
     linhas = [
-        ("1", "Núcleo – chapas", f"{ch['nome']}; culatras a 45° step-lap 3 degraus; " + ("colunas inteiras, calços nas juntas com as culatras" if d.get("pos_gap") == "culatra" else f"colunas em {ng + 1} pacotes"), f"{m['nucleo']:.0f} kg", ch["norma"]),
+        ("1", "Núcleo – chapas", f"{ch['nome']}; " + ("colunas inteiras em junta de TOPO com as culatras, calços nas juntas" if d.get("pos_gap") == "culatra" else f"culatras a 45° step-lap 3 degraus; colunas em {ng + 1} pacotes"), f"{m['nucleo']:.0f} kg", ch["norma"]),
         ("2", "Enrolamento", (descr_condutor(d) + ", 3 bobinas") if d.get("fio") else f"{cond['nome']} {g['tf']:.1f} × {g['hf']:.0f} mm, {g['N']} espiras/bobina, 3 bobinas",
          f"{m['condutor']:.0f} kg", ("IEC 60317-0-2 / ABNT NBR (fio retangular); " + cond["norma"].split("/")[0]) if d.get("fio") else cond["norma"]),
         ("3", "Calços do entreferro", f"EP GC 203 retificado: laterais {g['gaps'][0]/ng:.2f} mm, central {g['gaps'][1]/ng:.2f} mm, {ng} por coluna",
@@ -978,15 +1009,17 @@ def lista_materiais(d):
     for k, it in enumerate(d["isolacao"], start=4):
         linhas.append((str(k), it["item"], it["mat"], "cj.", it["norma"]))
     k = len(linhas) + 1
+    from .ind_estrutura import texto_padrao
+    _tp = texto_padrao(g, d)
     linhas += [
-        (str(k), "Cantoneiras de aperto", "Aço carbono L 2½\" × ¼\", pintura epóxi; isoladas do núcleo por EP GC 203 2 mm", "4 pç", "ABNT NBR 6648"),
-        (str(k + 1), "Tirantes", "Barra roscada M12 classe 8.8 zincada, porca + arruela de pressão, FORA do núcleo", "4 pç", "ISO 898-1"),
-        (str(k + 2), "Base", "Perfil U 4\" (2 pç) com furos oblongos Ø14 × 25", "2 pç", "ABNT NBR 6355"),
-        (str(k + 3), "Terminais", "Barra Cu estanhada 40 × 6 mm, 2 furos Ø13 a 44,5 mm (Al: placa bimetálica Cu-Al)", "6 pç", "NEMA CC1 / IEC 60445"),
-        (str(k + 4), "Aterramento", "Cordoalha Cu 25 mm² núcleo → estrutura (1 ponto) + terminal PE M8 na base", "1 cj.", "IEC 60364-5-54"),
-        (str(k + 5), "Olhais de içamento", "Olhal M12 forjado nas cantoneiras superiores", "2 pç", "DIN 580"),
+        (str(k), "Quadros de aperto em U", _tp["quadro"], "4 pç", "ABNT NBR 7008 (zincado)"),
+        (str(k + 1), "Tirantes", _tp["tirante"], "4 pç", "ISO 898-1"),
+        (str(k + 2), "Pés de fixação", "Aba inferior dos quadros de baixo com 4 furos oblongos 14 × 25 (parafuso M12 no trilho/base do painel)", "4 furos", "–"),
+        (str(k + 3), "Saídas / terminais", _tp["saida"] + " (Al: placa bimetálica Cu-Al)", "6 pç", "NEMA CC1 / IEC 60445"),
+        (str(k + 4), "Aterramento", "Cordoalha Cu 25 mm² núcleo → quadro (1 ponto) + terminal PE M8 no quadro inferior", "1 cj.", "IEC 60364-5-54"),
+        (str(k + 5), "Içamento", "Furo Ø22 nas pontas dos quadros superiores (içar pelos 4 furos, cabo a ≤ 30° da vertical)", "4 furos", "–"),
         (str(k + 6), "Caixa de bornes do sensor", "Caixa com bornes 2,5 mm², cabo silicone 180 °C até o PTC", "1 cj.", "IEC 60947-7-1"),
-        (str(k + 7), "Placa de identificação", "Inox gravado: L, In, fs, classe, elevação, perdas, massa, nº de série, data", "1 pç", "IEC 60076-6"),
+        (str(k + 7), "Placa de identificação", "Colada na face de cima da culatra superior (como nos reatores nacionais) – inox/alumínio gravado: L, In, fs, classe, elevação, perdas, massa, nº de série, data", "1 pç", "IEC 60076-6"),
     ]
     return linhas
 

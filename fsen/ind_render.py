@@ -10,8 +10,10 @@ import numpy as np
 COR = dict(
     aco=(0.56, 0.58, 0.62), aco2=(0.47, 0.49, 0.53), cobre=(0.80, 0.45, 0.22), aluminio=(0.78, 0.79, 0.80),
     aramida=(0.93, 0.85, 0.60), vidro_epoxi=(0.42, 0.62, 0.40), calco=(0.70, 0.22, 0.16), espacador=(0.84, 0.74, 0.48),
-    resina=(0.50, 0.17, 0.07), estrutura=(0.20, 0.30, 0.45), zinco=(0.76, 0.77, 0.80), estanho=(0.86, 0.86, 0.82),
-    base=(0.30, 0.34, 0.40), cabo=(0.92, 0.92, 0.92), fita=(0.95, 0.93, 0.85))
+    resina=(0.86, 0.78, 0.58), estrutura=(0.74, 0.76, 0.78), zinco=(0.76, 0.77, 0.80), estanho=(0.86, 0.86, 0.82),
+    base=(0.30, 0.34, 0.40), cabo=(0.92, 0.92, 0.92), fita=(0.95, 0.93, 0.85),
+    cobre_bar=(0.80, 0.45, 0.22), placa=(0.93, 0.93, 0.95), ptc=(0.88, 0.88, 0.88), furo=(0.12, 0.12, 0.14),
+    tracador=(0.78, 0.12, 0.10))
 
 
 def disponivel():
@@ -169,51 +171,46 @@ def montar(d, g, fab):
             for (dx, dy) in ((0, -(b / 2 + c + g["build"] / 2)), (0, b / 2 + c + g["build"] / 2)):
                 pecas.append((_caixa(pv, xc - 14, xc + 14, dy - g["build"] / 2, dy + g["build"] / 2, zz, zz + (zc0 - a)),
                               "espacador", "bloco"))
-        # terminais (barra estanhada) saindo por cima
-        if i != 0:                                          # terminais (barra estanhada 40×6) saindo do topo da bobina
-            for sx in (-1, 1):
-                xt = xc + sx * (a / 2 + c + g["build"] * 0.5) * 0.45
-                yt = b / 2 + c + g["build"] * 0.5
-                pecas.append((_caixa(pv, xt - 20, xt + 20, yt - 3, yt + 3, zc0 + hc - 10, H + g["fr"] + 55), "estanho", "terminal"))
-                for zz in (H + g["fr"] + 18, H + g["fr"] + 40):
-                    furo = pv.Cylinder(center=(xt, yt - 3.2, zz), direction=(0, 1, 0), radius=6.5, height=0.8)
-                    pecas.append((furo, "base", "furo"))
         if i == 0:
             ancora[2] = (xc - (a / 2 + c + g["build"] / 2) * 0.95, -(b / 2) * 0.55, zb0 + hf * 0.55)     # condutor no corte
             ancora[4] = (xc - (a / 2 + c + g["tube"] / 2) * 0.98, -(b / 2) * 0.30, zc0 + hc * 0.85)       # tubo
             ancora[5] = (xc - (a / 2 + c + g["build"] * 0.55), -(b / 2) * 0.55, zb0 + hf * 0.25)          # isolação/papel
         if i == 1:
             ancora[6] = (xc, -(b / 2 + c + g["build"]), zc0 + hc * 0.45)                                # resina VPI
-        if i == 2:
-            ancora[11] = (xc + (a / 2 + c + g["build"] * 0.5) * 0.45, b / 2 + c + g["build"] * 0.5, H + g["fr"] + 50)
-    # ---------------- estrutura ----------------
-    fr, fe = g["fr"], g["fe"]
-    for (zb, cima) in ((0, False), (H, True)):
-        for sy in (-1, 1):
-            y_face = sy * (b / 2 + 2)
-            zz0, zz1 = ((zb - 0.0, zb + fr) if not cima else (zb - fr, zb))
-            pecas.append((_caixa(pv, -30, W + 30, y_face, y_face + sy * fe, zz0, zz1), "estrutura", "cantoneira"))
-            zt = (zz0 if not cima else zz1)
-            pecas.append((_caixa(pv, -30, W + 30, y_face, y_face + sy * fr, zt - (0 if not cima else fe), zt + (fe if not cima else 0)),
-                          "estrutura", "cantoneira"))
-    for xr in g["xr"]:
-        for sy in (-1, 1):
-            yr = sy * (b / 2 + 2 + fr * 0.55)
-            pecas.append((pv.Cylinder(center=(xr, yr, (H + fr - 60) / 2), direction=(0, 0, 1), radius=6, height=H + fr + 80),
-                          "zinco", "tirante"))
-            for zz in (-65, H + fr + 8):
-                pecas.append((pv.Cylinder(center=(xr, yr, zz), direction=(0, 0, 1), radius=10, height=10, resolution=6),
-                              "zinco", "porca"))
-    # base em perfil U
-    for sy in (-1, 1):
-        y0 = sy * (b / 2 + 2)
-        pecas.append((_caixa(pv, -40, W + 40, y0, y0 + sy * fr, -60, 0), "base", "base"))
-    ancora[1] = (W * 0.62, -b / 2 - 0.5, H - a * 0.5)            # núcleo (culatra superior)
+    # ---------------- estrutura (padrão nacional: quadros U, tirantes nas buchas, saídas horizontais) ----------------
+    est = g["est"]
+    for nome, mat, (x0, x1, y0, y1, z0, z1) in est["caixas"]:
+        pecas.append((_caixa(pv, x0, x1, y0, y1, z0, z1), mat, nome))
+    for nome, mat, (xc_, yc_, z0, z1), r, res in est["cilindros"]:
+        pecas.append((pv.Cylinder(center=(xc_, yc_, (z0 + z1) / 2), direction=(0, 0, 1), radius=r, height=z1 - z0,
+                                  resolution=res), mat, nome))
+    for (hx, hy, hz), eixo, r, lab in est["furos"]:
+        dirv = dict(x=(1, 0, 0), y=(0, 1, 0), z=(0, 0, 1))[eixo]
+        esp = (est["terminais"][0]["tt"] if lab == "Ø13" else est["t"]) + 1.2
+        pecas.append((pv.Cylinder(center=(hx, hy, hz), direction=dirv, radius=r, height=esp, resolution=24), "furo", "furo"))
+    # fio traçador vermelho do enfaixamento (como nos reatores nacionais)
+    r_ext = c + g["build"]
+    for i, xc in enumerate(g["xc"]):
+        corte = (0.56, 0.93) if i == 0 else None
+        z = zc0 + 6
+        while z < zc0 + hc - 4:
+            m = _anel(pv, xc, 0, a + 2 * r_ext, b + 2 * r_ext, r_ext, 0.35, z, z + 0.9, corte)
+            pecas.append((m, "tracador", "fita"))
+            z += 9.0
+    tr = est["terminais"]
+    t_last = tr[-1]
+    ch = t_last["chapa"]
+    ancora[1] = (g["xc"][0] + a * 0.15, -b / 2 - 0.5, a + hw * 0.62)  # núcleo (coluna U, visível pelo corte)
     ancora[3] = (g["xc"][2], -b / 2 - 0.5, a + gl * 0.5) if culatra else (g["xc"][2], -b / 2, a + fab["pac_l"][0] + gl / 2)
-    ancora[7] = (-20, -b / 2 - 2 - fe, H - fr * 0.5)              # cantoneira
-    ancora[8] = (g["xr"][1], -(b / 2 + 2 + fr * 0.55), H * 0.4)    # tirante
-    ancora[9] = (W * 0.3, -b / 2 - 2 - fr, -30)                   # base
-    ancora[10] = (g["xc"][1], -(b / 2 + c + g["build"] / 2), a + (zc0 - a) * 0.5)   # bloco de extremidade
+    zq0, zq1 = est["quadros"]["sup"]
+    ancora[7] = (W + est["ext"] * 0.6, -est["y_w"] - est["t"], (zq0 + zq1) / 2)          # quadro U
+    xr, yr = est["tirantes"][0]
+    ancora[8] = (xr, yr, (a + H - a) / 2)                                                   # tirante
+    zp0, _ = est["quadros"]["inf"]
+    ancora[9] = (-est["ext"] / 2, -(est["y_w"] + est["y_tip"]) / 2, zp0)                    # pé
+    ancora[10] = (g["xc"][1], -(b / 2 + c + g["build"] / 2), a + (zc0 - a) * 0.5)          # bloco de extremidade
+    ancora[11] = ((ch[0] + ch[1]) / 2, ch[2] + 12, ch[5])                                   # terminal
+    ancora[12] = (W / 2 + 40, 0, H + 1)                                                     # placa
     return pecas, ancora
 
 
@@ -229,7 +226,8 @@ def render(d, png, largura=2400, altura=1700, vista="geral"):
     MAT = dict(aco=dict(specular=0.35, specular_power=20), aco2=dict(specular=0.35, specular_power=20),
                cobre=dict(specular=0.8, specular_power=40), aluminio=dict(specular=0.6, specular_power=30),
                resina=dict(specular=0.9, specular_power=60), estanho=dict(specular=0.7, specular_power=30),
-               zinco=dict(specular=0.6, specular_power=30), estrutura=dict(specular=0.3, specular_power=15))
+               zinco=dict(specular=0.6, specular_power=30), estrutura=dict(specular=0.55, specular_power=25),
+               cobre_bar=dict(specular=0.8, specular_power=40))
     agrup = {}
     for m, mat, _ in pecas:
         if m is None:
@@ -259,7 +257,8 @@ def render(d, png, largura=2400, altura=1700, vista="geral"):
         p.camera.view_angle = 30
     else:
         p.camera_position = [(-W * 0.95, -W * 2.6, H * 1.25), (W * 0.48, 0, H * 0.40), (0, 0, 1)]
-        p.reset_camera(bounds=(-60, W + 60, -g["Ec"] / 2 - 80, g["Ec"] / 2 + 80, -70, H + g["fr"] + 60))
+        e = g["est"]["env"]
+        p.reset_camera(bounds=(e[0] - 10, e[1] + 10, e[2] - 10, e[3] + 10, e[4] - 10, e[5] + 10))
         p.camera.zoom(1.15)
     p.render()
     import vtk
@@ -276,15 +275,16 @@ def render(d, png, largura=2400, altura=1700, vista="geral"):
 
 
 ITENS_VISTA = [
-    (1, "Núcleo", "chapa de aço-silício GO, lâminas empilhadas, cantos a 45° step-lap"),
-    (2, "Enrolamento", "condutor retangular isolado com papel aramida (corte)"),
+    (1, "Núcleo", "chapa de aço-silício GO, lâminas empilhadas, colunas com junta de topo nas culatras"),
+    (2, "Enrolamento", "barra retangular de cobre isolada com papel aramida (corte)"),
     (3, "Calço do entreferro", "vidro-epóxi EP GC 203 retificado, colado com epóxi classe H"),
     (4, "Tubo da bobina", "vidro-epóxi EP GC 203, 3 mm – isolação bobina–núcleo"),
     (5, "Isolação espira/camada", "papel aramida (Nomex 410) – classe 220 °C"),
-    (6, "Impregnação VPI", "resina classe H (≥ 180 °C) – bobina e núcleo consolidados, superfície vitrificada"),
-    (7, "Cantoneiras de aperto", "aço L 2½\"×¼\" pintado, isoladas do núcleo (EP GC 203 2 mm)"),
-    (8, "Tirantes", "M12 classe 8.8 zincados, FORA do núcleo"),
-    (9, "Base", "perfil U 4\" com furos oblongos"),
+    (6, "Enfaixamento + VPI", "fita de poliéster-vidro com traçador, impregnada com resina classe H (VPI)"),
+    (7, "Quadros de aperto em U", "chapa dobrada zincada, frente e trás das culatras, isolados do núcleo (EP GC 203 2 mm)"),
+    (8, "Tirantes", "M12 8.8 zincados nas buchas soldadas – vãos entre fases, FORA das bobinas"),
+    (9, "Pés de fixação", "aba inferior do quadro de baixo, 4 furos oblongos 14×25"),
     (10, "Blocos de extremidade", "vidro-epóxi/pressboard aramídico – distância bobina–culatra"),
-    (11, "Terminais", "barra de cobre estanhada 40×6, 2 furos Ø13 (NEMA)"),
+    (11, "Saídas / terminais", "a própria barra da bobina, horizontal p/ frente; barra Cu estanhada 40×6, 2 furos Ø13"),
+    (12, "Placa de identificação", "colada na culatra superior (dados, nº de série, massa)"),
 ]

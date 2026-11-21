@@ -179,6 +179,31 @@ def _texto_gap(ind):
             "para não esquentar) e mandamos de novo.", ""]
 
 
+def _texto_montagem(ind):
+    """v1.11.6: montagem no padrão dos reatores de banco dessintonizado nacionais + diferenças obrigatórias do filtro senoidal."""
+    try:
+        from .ind_desenhos import geo_mm
+        from .ind_estrutura import texto_padrao
+        tp = texto_padrao(geo_mm(ind), ind)
+    except Exception:
+        return []
+    return ["", "10) MONTAGEM MECÂNICA – mesmo padrão dos reatores dessintonizados que vocês já fornecem",
+            "O projeto segue a montagem usual de vocês (núcleo trifásico de 3 colunas, quadros em U zincados, tirantes nas buchas "
+            "soldadas, bobina de barra de cobre enfaixada com fita com traçador, saídas em barra aparafusadas, placa na culatra):",
+            "- " + tp["quadro"] + ".",
+            "- " + tp["tirante"] + ".",
+            "- " + tp["saida"] + ".",
+            "Diferenças OBRIGATÓRIAS por ser filtro senoidal (ondulação de 4–8 kHz permanente, não só harmônicas até ~700 Hz):",
+            "- Chapa de grão orientado FINA (0,23 mm, ou declarar equivalente com perdas em 4–8 kHz); não usar chapa de 0,5 mm.",
+            "- Sistema de isolação classe H completo (papel aramida na barra, entre camadas e no tubo) e impregnação VPI com resina "
+            "classe H – não apenas imersão em verniz; declarar a classe da fita de enfaixamento e da resina.",
+            "- Distância mínima de 25 mm entre a bobina e a junta do entreferro (espraiamento do campo aquece as barras das pontas).",
+            "- Ensaio de aquecimento do protótipo COM INVERSOR (ou fonte com a ondulação de alta frequência), não só em 60 Hz senoidal.",
+            ("- Enrolamento com nº PAR de camadas: as duas saídas ficam em cima (a interna sai deitada pela cabeceira). Se preferirem "
+             "início em cima e fim embaixo, como nos reatores de vocês, podem propor nº ímpar de camadas, mantendo espiras, seção e perdas."
+             if not tp["impar"] else "- Início da bobina em cima e fim embaixo, como nos reatores de vocês.")]
+
+
 def texto_email_extra(proj, ind, arqs_nomes):
     """Parágrafos extras do e-mail ao fabricante: base de corrente, protótipo × série, protocolo e questionário."""
     from . import corrente_carga as CC
@@ -193,6 +218,6 @@ def texto_email_extra(proj, ind, arqs_nomes):
           "8) QUESTIONÁRIO – indutores que vocês já fabricaram para nós",
           "Pedimos, se possível, os dados internos dos indutores anteriores (espiras, núcleo, chapa, entreferros, condutor, perdas e "
           "temperatura medidas). Servem para calibrar o nosso cálculo ao padrão de fabricação de vocês.", "",
-          ] + (_texto_gap(ind) if ind else []) + [
+          ] + (_texto_gap(ind) if ind else []) + (_texto_montagem(ind) if ind else []) + [
           "Anexos desta solicitação: " + ", ".join(arqs_nomes) + "."]
     return "\n".join(ls)

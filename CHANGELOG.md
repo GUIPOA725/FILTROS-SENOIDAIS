@@ -1,5 +1,14 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.11.6 – 2026-11-20
+- Montagem do indutor no padrão dos reatores de banco dessintonizado nacionais (fotos Cootrans): novo módulo `ind_estrutura.py`, fonte única da geometria mecânica para a vista realista, desenhos 2D/3D, STEP e DXF.
+  - Quadros de aperto em U de chapa dobrada zincada (frente/trás das culatras), isolados do núcleo; furo de içamento nas pontas do quadro superior; pés com 4 furos oblongos na aba inferior.
+  - Tirantes nos vãos entre fases, fora das bobinas, passando por buchas soldadas na ponta das abas.
+  - Saídas corrigidas: a própria barra da bobina sai horizontal para a frente (lado dos cabos) e é brasada em barra Cu estanhada 40×6 com 2 furos NEMA; nº ímpar de camadas → início em cima/fim embaixo; nº par → as duas em cima (interna pela cabeceira). Os terminais da fase U (que faltavam) foram incluídos.
+  - Placa de identificação na culatra superior; enfaixamento creme com fio traçador vermelho na vista realista.
+- Dimensões externas do indutor (arranjo do painel) passam a incluir quadros e saídas.
+- Lista de materiais, sequência de fabricação e detalhe D atualizados; e-mail ao fabricante ganha o item 10 "Montagem mecânica" com as diferenças obrigatórias do filtro senoidal (GO 0,23 mm, classe H com VPI, 25 mm bobina–junta, ensaio com inversor).
+
 ## v1.11.5 – 20/11/2026 – Barra retangular de cobre única por espira (padrão)
 - Nova opção "Condutor do enrolamento" (2 entreferros): BARRA RETANGULAR DE COBRE ÚNICA por espira (padrão – sem fios em
   paralelo, sem transposição, mais fácil de fabricar) ou busca livre (fio/barra, Cu/Al, até 6 em paralelo – mais leve).

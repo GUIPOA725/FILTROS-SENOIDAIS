@@ -910,7 +910,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     W = 3 * a + 2 * d["ww"]
     H = 2 * a + d["hw"]
     D = b + 2 * (c + d["build"]) + 2 * 0.03
-    d["dims_mm"] = dict(largura=W * 1e3 + 2 * 15, altura=H * 1e3 + 60, profundidade=max(D, b + 0.12) * 1e3)
+    from .ind_estrutura import envelope_mm          # v1.11.6: quadros U + saídas horizontais (padrão reator nacional)
+    d["dims_mm"] = envelope_mm(a * 1e3, b * 1e3, c * 1e3, d["build"] * 1e3, W * 1e3, H * 1e3)
     d["massa_kg"] = dict(nucleo=d["m_fe"], condutor=d["m_cond"], isolacao_ferragens=0.12 * (d["m_fe"] + d["m_cond"]))
     d["massa_kg"]["total"] = sum(d["massa_kg"].values())
     d["requisitos"] = r
