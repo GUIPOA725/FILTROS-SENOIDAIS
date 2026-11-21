@@ -1,5 +1,5 @@
 {
-  "versao": "1.11.8",
+  "versao": "1.11.9",
   "data": "2026-11-21",
-  "resumo": "Verificação independente do indutor (NGSolve 2D/3D + script FEMM), calibração medido×previsto, protocolo com ajuste do entreferro e ensaio 60 Hz em degraus"
+  "resumo": "IBT e Wise na lista de fornecedores; e-mail do indutor neutro para qualquer fabricante"
 }

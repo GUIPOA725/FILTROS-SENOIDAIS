@@ -154,7 +154,7 @@ def texto_padrao(g, d):
     impar = bool(fio and fio["n_cam"] % 2 == 1)
     wt, tt = barra_terminal(float(d["requisitos"]["In"]))
     return dict(
-        quadro=(f"Quadros de aperto em U de chapa dobrada {pq['t']:.2f} mm, aço carbono zincado (frente e trás de cada culatra), "
+        quadro=(f"Quadros de aperto em U de chapa dobrada {pq['t']:.2f}".replace(".", ",") + " mm, aço carbono zincado (frente e trás de cada culatra), "
                 f"isolados do núcleo por EP GC 203 {ISO_QUADRO:.0f} mm; quadro superior com furo de içamento Ø22 nas pontas; "
                 "aba inferior do quadro de baixo com 4 furos oblongos 14×25 (pés)"),
         tirante=(f"4 tirantes {pq['rosca']} classe 8.8 zincados, nos vãos entre fases, FORA das bobinas, passando por buchas "

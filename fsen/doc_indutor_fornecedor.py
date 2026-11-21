@@ -15,6 +15,15 @@ FORNECEDORES = [
     dict(nome="Cootrans", status="fornecedor atual", obs="Fabricou os indutores dos filtros anteriores (RTUC17 1586 µH/28 A, 958 µH/38 A, "
          "0,588 mH/135 A, 0,336 mH/217 A). Projeta para custo (núcleo menor, mais quente). Pouca experiência declarada em perdas de "
          "alta frequência, por isso vão o projeto de referência, o protocolo e o questionário."),
+    dict(nome="IBT – Indústria Brasileira de Transformadores (São Bernardo do Campo/SP)", status="cotar – já fornece",
+         obs="Já forneceu à Electric reatores de filtro sintonizado de 5ª harmônica e de banco dessintonizado (núcleo de ferro). "
+             "Fabrica transformadores a seco trifásicos e 'série especial'. Contato: (11) 4398-6634, WhatsApp (11) 97188-1033, "
+             "ibt@ibt.com.br. Nunca fez indutor de filtro senoidal: mandar o pacote completo e conferir no questionário chapa GO fina, "
+             "VPI classe H e ensaio com inversor."),
+    dict(nome="Wise Transformadores (Jaraguá do Sul/SC)", status="cotar – já fornece",
+         obs="Já forneceu à Electric reatores de filtro sintonizado de 5ª harmônica e de banco dessintonizado. Catálogo com reatores "
+             "trifásicos 380–480 V de 7 a 171 A (268 A seria projeto especial). Contato: (47) 3276-8660, wisetransformadores.com.br. "
+             "Nunca fez indutor de filtro senoidal: mesmo cuidado (pacote completo + questionário)."),
     dict(nome="Pólux (Pólux Transformadores)", status="cotar – CONCORRENTE", obs="Fabrica reatores e também vende filtro senoidal "
          "próprio: é concorrente. Mandar só a ET de desempenho (sem o projeto de referência completo) ou assinar NDA antes."),
     dict(nome="Cosmo Transformadores", status="cotar – CONCORRENTE", obs="Também oferece filtros senoidais/dV/dt de linha própria: "
@@ -218,7 +227,9 @@ def questionario_fabricante(proj, cat, pasta, cod, novo, tabela, bullets):
         ("Indução de trabalho de projeto (T)", ""), ("Resistência CC medida (mΩ, a °C)", ""), ("Indutância medida por fase", ""),
         ("Perdas medidas (W) – em 60 Hz e, se houver, com inversor", ""),
         ("Elevação de temperatura medida (K) e método (resistência/termopar)", ""), ("Massa (kg) e dimensões finais", ""),
-        ("Software de projeto usado e método para perdas de alta frequência", ""),
+        ("Software de projeto usado (planilha, analítico, elementos finitos – qual?) e método para perdas de alta frequência", ""),
+        ("Se tiverem simulação: enviar o cálculo de vocês para ESTE projeto (L por fase, Isat, perdas por parcela – cobre 60 Hz, "
+         "cobre AF, núcleo, entreferro – e elevação). Comparamos com o nosso e discutimos as diferenças antes do protótipo.", ""),
         ("Ocorrências em campo (aquecimento, ruído, falha)", ""),
     ]
     tabela(d, ["Dado", "Resposta"], perg, [9, 8], 9)
@@ -239,7 +250,7 @@ def fornecedores_interno(pasta_eng, cod):
     for f in FORNECEDORES:
         ls += [f"• {f['nome']} [{f['status']}]", f"  {f['obs']}", ""]
     ls += ["O que mandar:",
-           "  – Fornecedor de confiança (Cootrans): pasta 03_Fornecedores/1_Indutor inteira (ET, projeto de referência, CAD, memorial,",
+           "  – Fornecedores de confiança (Cootrans, IBT, Wise): pasta 03_Fornecedores/1_Indutor inteira (ET, projeto de referência, CAD, memorial,",
            "    protocolo, questionário e e-mail).",
            "  – Concorrente (Pólux, Cosmo): só a ET de desempenho e o protocolo; projeto de referência/CAD/memorial só com NDA.",
            "", "Pedir sempre: preço do PROTÓTIPO separado do preço da SÉRIE, prazo de cada um e os dados declarados da ET."]
@@ -282,9 +293,11 @@ def _texto_montagem(ind):
         tp = texto_padrao(geo_mm(ind), ind)
     except Exception:
         return []
-    return ["", "10) MONTAGEM MECÂNICA – mesmo padrão dos reatores dessintonizados que vocês já fornecem",
-            "O projeto segue a montagem usual de vocês (núcleo trifásico de 3 colunas, quadros em U zincados, tirantes nas buchas "
-            "soldadas, bobina de barra de cobre enfaixada com fita com traçador, saídas em barra aparafusadas, placa na culatra):",
+    return ["", "10) MONTAGEM MECÂNICA – mesmo padrão dos reatores de banco dessintonizado e de filtro de harmônicas",
+            "O projeto segue a montagem usual dos reatores trifásicos nacionais que vocês já fabricam (núcleo de 3 colunas com "
+            "entreferro nas juntas, quadros em U zincados, tirantes nas buchas soldadas, bobina de barra de cobre enfaixada, saídas "
+            "em barra aparafusadas, placa na culatra). Se o padrão mecânico de vocês for diferente, podem propor, mantendo os itens "
+            "elétricos, as distâncias e as exigências abaixo:",
             "- " + tp["quadro"] + ".",
             "- " + tp["tirante"] + ".",
             "- " + tp["saida"] + ".",
@@ -295,8 +308,8 @@ def _texto_montagem(ind):
             "- Distância mínima de 25 mm entre a bobina e a junta do entreferro (espraiamento do campo aquece as barras das pontas).",
             "- Ensaio de aquecimento do protótipo COM INVERSOR (ou fonte com a ondulação de alta frequência), não só em 60 Hz senoidal.",
             ("- Enrolamento com nº PAR de camadas: as duas saídas ficam em cima (a interna sai deitada pela cabeceira). Se preferirem "
-             "início em cima e fim embaixo, como nos reatores de vocês, podem propor nº ímpar de camadas, mantendo espiras, seção e perdas."
-             if not tp["impar"] else "- Início da bobina em cima e fim embaixo, como nos reatores de vocês.")]
+             "início em cima e fim embaixo (comum nos reatores de banco), podem propor nº ímpar de camadas, mantendo espiras, seção e perdas."
+             if not tp["impar"] else "- Início da bobina em cima e fim embaixo.")]
 
 
 def _texto_chapa(proj):
