@@ -3,6 +3,8 @@
 ## v1.11.9 – 2026-11-21
 - IBT (São Bernardo do Campo/SP) e Wise Transformadores (Jaraguá do Sul/SC) incluídas na lista interna de fornecedores do indutor (já forneceram reatores de filtro de 5ª harmônica e de banco dessintonizado), com contatos e cuidados.
 - E-mail ao fabricante: item 10 (montagem mecânica) com texto neutro – serve para Cootrans, IBT e Wise; o fabricante pode propor o seu padrão mecânico mantendo os itens elétricos, as distâncias e as exigências.
+- Questionário: pede o software de projeto do fabricante e, se houver simulação, o cálculo dele para este projeto (L, Isat, perdas por parcela, elevação) para comparar antes do protótipo.
+- Espessura do quadro com vírgula decimal no texto.
 
 ## v1.11.8 – 2026-11-21
 - Verificação independente do indutor (`ind_verificacao.py`): o mesmo indutor é recalculado no NGSolve/Netgen (outro software de elementos finitos, malha não estruturada, elementos P2 em 2D e H(curl) em 3D):
