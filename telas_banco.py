@@ -131,9 +131,15 @@ def _leitura(tipo, provedor, nome_ia):
 
 
 def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
-    with st.expander("Critério de folga do banco (padrão Electric)", expanded=False):
+    with st.expander("Montante do banco – reativo medido ou com folga Electric", expanded=False):
+        _modo = st.radio("Como dimensionar o montante (kvar)",
+                         ["Reativo das medições (sem folga)", "Com folga Electric (crescimento + perdas do trafo + N-k)"],
+                         key="bc_modo", horizontal=True,
+                         help="A plataforma sempre calcula os dois e mostra o outro como referência na justificativa. "
+                              "Vale para banco dessintonizado e filtro sintonizado.")
         _c1, _c2, _c3 = st.columns(3)
         st.session_state["bc_folga"] = dict(
+            criterio_montante="folga" if _modo.startswith("Com folga") else "medido",
             crescimento_pct=_c1.number_input("Folga p/ crescimento (%)", 0.0, 100.0, 15.0, 5.0, key="bc_cresc"),
             n_reserva={"automático": None, "0": 0, "1": 1, "2": 2, "3": 3}[_c2.selectbox(
                 "Estágios de reserva (N-k)", ["automático", "0", "1", "2", "3"], key="bc_nres",

@@ -1,5 +1,5 @@
 {
-  "versao": "1.17.2",
+  "versao": "1.17.3",
   "data": "2026-11-22",
-  "resumo": "Critério Electric de folga do banco: crescimento, perdas reativas do trafo e N-1/N-2 com módulos de 50 kvar"
+  "resumo": "Montante do banco: o engenheiro escolhe reativo medido ou folga Electric; a plataforma mostra os dois"
 }

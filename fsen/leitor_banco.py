@@ -200,7 +200,19 @@ def decidir(dados, tipo_forcado=None):
         kvar -= kex
     est = [float(x) for x in (dados.get("estagios_kvar") or []) if x]
     if not est and kvar >= 100:
-        kvar, est = folga_electric(kvar, dados, j, lac)
+        # v1.17.3: o engenheiro escolhe – "medido" (reativo das medições, como Panatlântica 300 kvar) ou "folga"
+        # (crescimento + perdas do trafo + N-k). A plataforma sempre calcula as duas e mostra a outra como referência.
+        modo = (dados.get("criterio_montante") or "medido").lower()
+        jj, ll = [], []
+        kf, ef = folga_electric(kvar, dados, jj, ll)
+        if modo == "folga":
+            kvar, est = kf, ef
+            j += jj
+            lac += ll
+        else:
+            j.append(f"Montante pelo REATIVO DAS MEDIÇÕES: {kvar:g} kvar (sem folga). Referência – com o critério de folga "
+                     f"Electric (crescimento + perdas do trafo + N-k) seria {kf:g} kvar ({len(ef)} × {ef[0]:g}); para usar, "
+                     "marque 'Com folga Electric'.")
     if not est:
         est = estagios_padrao(kvar or 50, V)
         j.append(f"Estágios em módulos padrão: {' + '.join(f'{x:g}' for x in est)} = {sum(est):g} kvar"

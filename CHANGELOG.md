@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.17.3 – 2026-11-22 (montante: reativo medido × folga Electric – escolha do engenheiro)
+- Novo seletor na tela do banco/filtro sintonizado: "Reativo das medições (sem folga)" (padrão) ou "Com folga Electric (crescimento + perdas do trafo + N-k)". A plataforma calcula sempre os dois e escreve o outro como referência na justificativa (ex.: Panatlântica – medido 300 kvar; com folga seria 400 kvar = 8 × 50). Vale para dessintonizado e sintonizado (no sintonizado os módulos são repartidos entre as ordens).
+
 ## v1.17.2 – 2026-11-22 (critério Electric de folga do banco)
 - Montante do banco = maior entre (a) necessário × (1 + folga de crescimento, padrão 15 %) + perdas reativas do trafo quando a medição foi na BT (magnetização ~1 % + Z % × carregamento²) e (b) critério N-k: perdendo k estágios ainda sobra o necessário (N-2 a partir de 250 kvar, N-1 abaixo). Arredondado em módulos IGUAIS de 50 kvar (qualquer estágio perdido vale o mesmo).
 - Validado no caso real Panatlântica TR 1500 kVA 415 V: necessário 300 kvar → 300 × 1,15 + 19 = 364; N-2 = 400 → 8 × 50 = 400 kvar, igual ao projeto da Electric (2024). Estágio: 3 × 25 kvar 525 V, Nr 3,5 (210 Hz), 796 µH, I60 71 A – iguais à planilha ESTAGIO 50KVAR 415V.
