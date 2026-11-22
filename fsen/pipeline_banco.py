@@ -101,6 +101,12 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             f"{math.ceil(e_['t_religar_s'] / 10) * 10:.0f} s | {e_['contatora']['texto'][:90]}…")
     except Exception as ex:
         log(f"   (transitórios não calculados: {type(ex).__name__}: {ex})")
+    try:                                            # v1.24.0: gabinete com as medidas reais do reator (FEM)
+        _dims = [d.get("dims_mm") for d in inds if d and d.get("dims_mm")]
+        if _dims:
+            res["reator_mm"] = max(_dims, key=lambda x: x.get("largura", 0) * x.get("altura", 0))
+    except Exception:
+        pass
     log("4/5 Especificações e e-mails aos fornecedores...")
     for gi, (grp, d) in enumerate(zip(grupos, inds)):
         e = res["estagios"][grp[0]]
@@ -153,6 +159,16 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             anexos_pnl.append(os.path.join(pnl, os.path.basename(lay[k_])))
     except Exception as ex:
         log(f"   (layout do painel não gerado: {type(ex).__name__}: {ex})")
+    try:                                            # v1.24.0: painel 3D com medidas reais (catálogo + reator FEM) e check
+        from . import painel3d as P3
+        from . import painel_gabinete as PG
+        p3 = P3.gerar(ped, res, PG.gabinete(ped, res), B.protecao_estagio(ped, res["estagios"][0]), inds,
+                      os.path.join(sub["05_Desenhos"], "4_Painel_3D"), cod, versao, log=log)
+        arqs["painel3d"] = p3["pdf"]
+        shutil.copy(p3["pdf"], pnl)
+        anexos_pnl.append(os.path.join(pnl, os.path.basename(p3["pdf"])))
+    except Exception as ex:
+        log(f"   (painel 3D não gerado: {type(ex).__name__}: {ex})")
     with open(os.path.join(pnl, "Email_Montadora.txt"), "w", encoding="utf-8") as fh:
         fh.write(DB.email_fornecedor("IFG", ped, res, grupos, anexos_pnl, cod, tipo="painel"))
     arqs["proposta"] = DB.proposta(ped, res, sub["02_Cliente"], cod, cat, inds, n_bancos)

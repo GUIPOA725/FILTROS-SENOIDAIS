@@ -96,6 +96,23 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
     w_col = [bw] * n_col
     for i in range((larg - bw * n_col) // 200):
         w_col[i] += 200
+    nota_reator = ""
+    rm = res.get("reator_mm")                     # v1.24.0: medidas REAIS do reator Electric (FEM) → cabe na coluna?
+    if rm and rm.get("largura") and acesso != "frontal":
+        rL, rA = float(rm["largura"]), float(rm["altura"])
+        niveis = max(1, int((H - 100 - 300) // (rA + 80)))           # base 100, topo/exaustor 300, prateleira+ar 80
+        def cap(wc):
+            return max(1, int((wc - 2 * 30 + 30) // (rL + 30))) * niveis
+        if sum(cap(w) for w in w_col) < n:                            # não cabe: escolhe colunas que caibam (menor largura total)
+            melhor = None
+            for wc in (800, 1000, 1200):
+                nc = int(math.ceil(n / cap(wc)))
+                if melhor is None or nc * wc < melhor[0] * melhor[1] or (nc * wc == melhor[0] * melhor[1] and nc < melhor[0]):
+                    melhor = (nc, wc)
+            n_col, w_col = melhor[0], [melhor[1]] * melhor[0]
+            larg = sum(w_col)
+            nota_reator = (f"Largura ajustada às medidas reais do reator ({rL:.0f} × {rm.get('profundidade', 0):.0f} × {rA:.0f} mm): "
+                           f"{cap(w_col[0])} reator(es) por coluna de {w_col[0]} mm ({niveis} níveis) → {n_col} coluna(s).")
     perd = perdas(res)
     vent = ventilacao(perd["total"], ped.amb_c)
     colunas = []
@@ -122,6 +139,8 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
         avisos.append(f"Temperatura interna {vent['t_interna_c']} °C acima de amb+{DT_MAX:.0f} K – rever ventilação.")
     if ped.amb_c + vent["dt_k"] > 55:
         avisos.append("Ar interno > 55 °C (máximo dos capacitores IEC 60831 classe D) – aumentar ventilação.")
+    if nota_reator:
+        avisos.append(nota_reator)
     return dict(dimensoes_mm=dict(altura=H, largura=larg, profundidade=prof), colunas=colunas, arranjo="frente/trás",
                 perdas_w=perd, ventilacao=vent, avisos=avisos,
                 folgas_mm=dict(entre_capacitores=30, capacitor_parede=30, entre_fases=30, exaustor_componentes=100,

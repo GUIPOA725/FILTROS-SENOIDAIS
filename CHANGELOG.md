@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.24.0 – 2026-11-22 (painel 3D com medidas reais e gabinete pelo tamanho do reator)
+- **Gabinete dimensionado pelo reator real**: a largura das colunas agora sai das medidas do reator Electric calculado por elementos finitos (largura × profundidade × altura). Se os reatores não cabem em colunas de 800 mm, a plataforma escolhe a menor largura total entre colunas de 800/1000/1200 mm e avisa. No teste Panatlântica (reator 412 × 284 × 357 mm) o painel passou de 1600 para 2000 mm (2 × 1000) – antes os reatores não cabiam.
+- **Painel 3D (novo, 05_Desenhos/4_Painel_3D)**: 2 folhas A3 com carimbo Electric e 8 vistas – fechado frente e fundo, portas abertas, sem chapas (estrutura), placa de montagem com componentes e reatores atrás, vistas frontal, lateral e traseira – e as dimensões gerais. Componentes só com medida de catálogo (dados/dimensoes_componentes.yaml) ou do FEM do reator; o que não tem medida confirmada sai em vermelho e listado como "a confirmar", nunca chutado.
+- Tabela de **verificação do arranjo físico com Check** na folha: fileira de seccionadoras/contatoras cabe na placa, altura dos reatores por coluna, profundidade placa + reator + folga de ar.
+- O painel 3D vai para a montadora (03_Fornecedores) e entra inteiro no relatório consolidado (teste: 179 páginas, nenhum "NÃO INCLUÍDO").
+
 ## v1.23.4 – 2026-11-22 (teste de fogo: harmônicas que só existem em gráfico)
 - No teste de fogo a IA avisou que os espectros de harmônicas do relatório RTM só existem como FIGURA (sem tabela) e ficaram de fora. Agora a plataforma extrai as figuras dos PDFs anexados e manda a IA abrir e ler os valores pela escala do gráfico (THD e cada ordem), registrando nas observações que foram lidos da figura.
 - Início do catálogo de dimensões reais dos componentes (dados/dimensoes_componentes.yaml), cada medida com a fonte do catálogo – base do novo desenho 2D/3D do painel.
