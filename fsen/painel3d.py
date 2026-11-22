@@ -149,6 +149,21 @@ def _reator(p, x, y, z, L, P, A):
     _cx(p, "tras", x + L * 0.72, yn - 40, z + A - hy - 20, 50, 34, 40, "#e0e0e0")              # caixa do termostato
 
 
+def _reator_real(p, x, y, z, d):
+    """Reator Electric REAL: as mesmas peças do STEP enviado ao fabricante (ind_cad.pecas_3d – núcleo com pacotes e calços,
+    tubos, bobinas, quadros, tirantes, porcas, saídas, placa e caixa do PTC). Saídas viradas para a placa (frente)."""
+    from . import ind_cad as IC
+    pc = IC.pecas_3d(d)
+    pts = [q for _, fs, _ in pc for f, _h in fs for q in f]
+    mn = [min(q[k] for q in pts) for k in range(3)]
+    dx, dy, dz = x - mn[0], y - mn[1], z - mn[2]
+    for nome, faces, cor in pc:
+        fs = []
+        for f, holes in faces:
+            fs.append(([(a + dx, b + dy, c + dz) for a, b, c in f], [[(a + dx, b + dy, c + dz) for a, b, c in h] for h in holes]))
+        p.append(dict(t="malha", g="tras", faces=fs, cor="#%02x%02x%02x" % tuple(int(255 * v) for v in cor), nome=nome))
+
+
 def _prateleira(p, x, y, z, L, P):
     for yy in (y, y + P - PERFIL):
         _cx(p, "tras", x, yy, z, L, PERFIL, PERFIL, C_PRAT)
@@ -363,7 +378,13 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             esp = sobra / (usado + 1)                                   # reatores afastados por igual (ar entre eles)
             xr = xa + esp + pos * (rL + esp)
             zr = zs_r[nv] + PERFIL
-            _reator(p, xr, yr, zr, rL, rP, rA)
+            if d0.get("dims_mm"):
+                try:
+                    _reator_real(p, xr, yr, zr, d0)
+                except Exception:
+                    _reator(p, xr, yr, zr, rL, rP, rA)
+            else:
+                _reator(p, xr, yr, zr, rL, rP, rA)
             xm = xu0 + passo * (j % n_est + 0.5)
             zpass = z_dut[0] + dut / 2
             zt_r = zr + rA + 45
@@ -413,6 +434,24 @@ TITULOS = {
 def _add(pl, pc):
     import numpy as np
     import pyvista as pv
+    if pc["t"] == "malha":
+        pts, cel = [], []
+        for f, holes in pc["faces"]:
+            if holes:                                                    # anel (topo/base da bobina): faixa entre contornos
+                h = list(reversed(holes[0]))
+                n = min(len(f), len(h))
+                for i in range(n):
+                    j = (i + 1) % n
+                    b0 = len(pts)
+                    pts += [f[i], f[j], h[j], h[i]]
+                    cel += [4, b0, b0 + 1, b0 + 2, b0 + 3]
+            else:
+                b0 = len(pts)
+                pts += list(f)
+                cel += [len(f)] + list(range(b0, b0 + len(f)))
+        mesh = pv.PolyData(np.array(pts, dtype=float), np.array(cel))
+        pl.add_mesh(mesh, color=pc["cor"], show_edges=False, smooth_shading=False)
+        return
     if pc["t"] == "tubo":
         ln = pv.lines_from_points(np.array(pc["pts"]))
         pl.add_mesh(ln.tube(radius=pc["D"] / 2, n_sides=12), color=pc["cor"], smooth_shading=True)
@@ -477,6 +516,7 @@ def _cena(m, vista, tam=(1700, 1250)):
     import pyvista as pv
     pv.OFF_SCREEN = True
     pl = pv.Plotter(off_screen=True, window_size=tam, lighting="three lights")
+    pl.enable_eye_dome_lighting() if False else None
     pl.set_background("white")
     pl.enable_anti_aliasing("ssaa")
     g = GRUPOS[vista]
