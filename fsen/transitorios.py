@@ -562,9 +562,12 @@ def sim_de_pl4(pl4, rede):
     return dict(t=pl4["t"], V=V, I=I)
 
 
-GRANDEZAS = [("ipk", "Pico de corrente no estágio", "A", 5.0), ("i2t", "I²t nos 10 ms", "A²s", 8.0),
-             ("vcap_pk", "Pico de tensão no capacitor", "V", 3.0), ("vbus_pu", "Pico de tensão na barra", "pu", 3.0),
-             ("trv", "Tensão entre contatos", "V", 5.0)]
+# Regra Electric (22/11/2026): o ATP é a referência de transitórios dos 3 filtros – a plataforma e o ATP, com os MESMOS dados,
+# têm que bater; só então o estudo está APROVADO. Mesmo método numérico e mesmo passo → tolerância de 1 %.
+TOL_ATP = 1.0
+GRANDEZAS = [("ipk", "Pico de corrente no estágio", "A", TOL_ATP), ("i2t", "I²t nos 10 ms", "A²s", TOL_ATP),
+             ("vcap_pk", "Pico de tensão no capacitor", "V", TOL_ATP), ("vbus_pu", "Pico de tensão na barra", "pu", TOL_ATP),
+             ("trv", "Tensão entre contatos", "V", TOL_ATP)]
 
 
 def dupla_checagem(est, pasta, log=print):
@@ -658,16 +661,31 @@ def resumo_md(est, chk=None):
              ("ℹ️ caso proibido – exige bloqueio de religamento" if inf else ("⚠️ " + "; ".join(f"{x[0]}: {x[2]} ({x[3]})" for x in av)) if av else "✅")
         L.append(f"| {c['codigo']} | {c['nome']} | {m.get('ipk', m.get('i_rms', 0)):.0f} | {m.get('i2t', 0):.0f} | "
                  f"{m.get('vcap_pk', 0):.0f} | {m.get('vbus_pu', 0):.2f} | {st} |")
-    if chk:
-        L.append("")
-        if chk["atp"]:
-            rod = [x for x in chk["casos"] if x["rodou"]]
-            conv = sum(1 for x in rod for y in x["comparacao"] if y["convergiu"])
-            tot = sum(len(x["comparacao"]) for x in rod)
-            L.append(f"- **Dupla checagem no ATP:** {len(rod)} caso(s) rodado(s); {conv}/{tot} grandezas dentro da tolerância (±3–8 %).")
-        else:
-            L.append("- Dupla checagem no ATP: ATP não encontrado neste computador – decks .atp gerados em 4_Transitorios/ATP.")
+    L.append("")
+    L.append("**Status do estudo de transitórios: " + status(est, chk) + "**")
     return "\n".join(L) + "\n"
+
+
+def status(est, chk):
+    """APROVADO só quando o ATP (referência) rodou todos os casos de manobra e bateu com a plataforma (±1 %) e nenhum
+    critério crítico falhou."""
+    crit = [(c["codigo"], x) for c in est["casos"] for x in c["criterios"] if not x[4] and x[5] == "crit"]
+    if not chk or not chk.get("atp"):
+        base = "PENDENTE – falta a confirmação no ATP (referência): rodar neste projeto num computador com o ATP"
+    else:
+        casos = [x for x in chk["casos"] if x["caso"] != "S1"]
+        nao_rodou = [x["caso"] for x in casos if not x["rodou"]]
+        div = [f"{x['caso']}: {y['grandeza']} {y['dif_pct']:+.2f} %" for x in casos for y in x["comparacao"] if not y["convergiu"]]
+        if nao_rodou:
+            base = "PENDENTE – ATP não rodou o(s) caso(s) " + ", ".join(nao_rodou)
+        elif div:
+            base = "REPROVADO na dupla checagem – plataforma e ATP não bateram: " + "; ".join(div)
+        else:
+            tot = sum(len(x["comparacao"]) for x in casos)
+            base = f"Plataforma = ATP em {tot}/{tot} grandezas (±{TOL_ATP:g} %)"
+    if crit:
+        return "REPROVADO – " + "; ".join(f"{c}: {x[0]} – {x[1]} {x[2]} ({x[3]})" for c, x in crit) + " | " + base
+    return ("APROVADO – " + base) if base.startswith("Plataforma = ATP") else base
 
 
 def planilha(est, chk, arq):
@@ -716,6 +734,7 @@ def gerar(ped, res, pasta, cod, log=print, pasta_atp_trabalho=None):
                 shutil.copy(os.path.join(trab, f_), dst)
     xl = planilha(est, chk, os.path.join(pasta, f"Transitorios_{cod}.xlsx"))
     md = resumo_md(est, chk)
+    est["status"] = status(est, chk)
     for c in est["casos"]:                                # libera memória (séries grandes) depois das figuras
         c.pop("sim", None)
     return dict(estudo=est, checagem=chk, arquivos=figs + [xl], resumo=md)
