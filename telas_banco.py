@@ -112,6 +112,8 @@ def _leitura(tipo, provedor, nome_ia):
         ped.cenarios_rede = dados.get("_cenarios_rede") or []
         ped.origem_dados = {k: v for k, v in origem.items() if not k.startswith("_") and k not in ("evidencias", "lacunas")}
         ped.barra_ligacao = dados.get("_barra") or ""
+        ped.leitura = dict(fonte=str(dados.get("_fonte") or ""), justificativa=list(just), lacunas=list(lac),
+                           observacoes=str(dados.get("observacoes") or ""), evidencias=list(evid))   # v1.19.0: p/ o consolidado
         cen = IN.verificar_cenarios(ped, dados.get("_cenarios_rede")) if dados.get("_cenarios_rede") else []
         if ped.tipo == "dessintonizado" and ped.nr > 3 and any("3ª" in x for c in cen for x in c.get("avisos") or []):
             just.append("Em algum cenário do estudo de proteção a ressonância cai perto da 3ª harmônica: avaliar FD 14 % (Nr 2,67), "
@@ -288,10 +290,13 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
         msgs = st.status("Processando...", expanded=True)
         r = processar_banco(p, pasta_saida, log=lambda m: msgs.write(m), verificar_ind=verif, n_bancos=int(n_bancos))
         msgs.update(label="Concluído", state="complete")
-        st.session_state["resultado_banco"] = dict(pasta=r["pasta"], zip=r["zip"], figuras=r["figuras"])
+        st.session_state["resultado_banco"] = dict(pasta=r["pasta"], zip=r["zip"], figuras=r["figuras"],
+                                                   consolidado=r["arquivos"].get("consolidado"))
     rb = st.session_state.get("resultado_banco")
     if rb and os.path.isdir(rb["pasta"]):
         st.success(f"Projeto gerado em {rb['pasta']}")
+        if rb.get("consolidado"):
+            st.info(f"📘 **Relatório consolidado (tudo num PDF só para ler):** {rb['consolidado']}")
         for k, f in rb["figuras"].items():
             if os.path.exists(f):
                 st.image(f)

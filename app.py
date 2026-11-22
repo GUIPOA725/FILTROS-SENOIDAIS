@@ -294,7 +294,7 @@ elif pagina == "Nova solicitação":
         if st.button("⚙️ Dimensionar, simular e gerar todos os documentos", type="primary", disabled=bool(_falta)):
             msgs = st.empty()
             with st.spinner("Processando..."):
-                r = processar(p, pasta_saida, log=lambda m: msgs.write(m), topologias=topos or None,
+                r = processar(p, pasta_saida, log=lambda m: msgs.write(m), leitura_fonte=(st.session_state.get("leitura_info") or {}).get("fonte"), topologias=topos or None,
                               capacitores=_caps_sel or None, ligacoes=_ligs or None,
                               prioridade=("mercado" if st.session_state.get("prioridade_proj", "").startswith("Indutor") else
                                           "min_caps" if st.session_state.get("prioridade_proj", "").startswith("MÍNIMO") else "custo"),
@@ -314,6 +314,8 @@ elif pagina == "Nova solicitação":
     if "resultado" in st.session_state:
         r = st.session_state["resultado"]
         st.success(f"Projeto gerado em {r['pasta']}")
+        if (r.get("arquivos") or {}).get("consolidado"):
+            st.info(f"📘 **Relatório consolidado (tudo num PDF só para ler):** {r['arquivos']['consolidado']}")
         st.info("Quer mudar algo (uk, fr, capacitores, fechamento, amortecimento, fs)? Abra **Ajuste manual e ressimulação** no menu.")
         painel_atp(r["pasta"])
         if r.get("opcoes"):

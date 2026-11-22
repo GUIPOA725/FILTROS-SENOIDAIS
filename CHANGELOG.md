@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.19.0 – 2026-11-22 (relatório consolidado – tudo num PDF só)
+- Cada projeto (filtro senoidal, banco dessintonizado e filtro sintonizado) passa a ter, na raiz da pasta, o **00_RELATORIO_CONSOLIDADO_<código>.pdf**, para ler tudo de uma vez: capa e sumário com a página de cada parte; resumo do projeto; **como o projeto foi decidido** (critério aplicado, observações da leitura da IA, premissas e dados faltantes a confirmar, de onde saiu cada número); painel (dimensões, perdas, ventilação, termostatos); figuras principais (espectro, varredura, reator/indutor 3D, campo FEM, mapa térmico); índice de todos os arquivos gerados por pasta; e, em anexo, todos os PDFs do projeto (relatório técnico, memorial, auditoria, reator/indutor, desenhos, layout, esquema elétrico, etiquetas), com marcadores no PDF para navegar.
+- A tela mostra o caminho do relatório consolidado logo abaixo de "Projeto gerado em …".
+
 ## v1.18.7 – 2026-11-22 (teste de fogo: campos da tela atualizam após a leitura)
 - Banco dessintonizado / filtro sintonizado: depois de "Ler solicitação e medições", os campos de "2. Dados" (cliente, tensão, estágios…) continuavam mostrando os valores anteriores (380 V, 25 + 50 + 50), embora a prévia já estivesse certa (400 kvar, 415 V). Ao mexer em qualquer campo, os valores antigos voltavam por cima da leitura. Agora os campos são recriados a cada leitura e mostram o que foi lido.
 

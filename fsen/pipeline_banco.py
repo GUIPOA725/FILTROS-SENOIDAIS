@@ -154,6 +154,18 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as fh:
         fh.write(resumo(ped, res, grupos, inds, cod))
     carimbar_pasta(pasta, log)
+    try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
+        from . import consolidado as CONS
+        from . import painel_gabinete as PG
+        try:
+            gab = PG.gabinete(ped, res)
+        except Exception:
+            gab = None
+        arqs["consolidado"] = CONS.gerar(pasta, cod, DB.titulo_tipo(ped) + f" – {sum(ped.estagios_kvar):g} kvar / {ped.tensao_v:g} V",
+                                         versao, cliente=ped.cliente, projeto=ped.projeto, tipo=DB.titulo_tipo(ped),
+                                         leitura=getattr(ped, "leitura", None) or {}, painel=gab, log=log)
+    except Exception as ex:
+        log(f"   (relatório consolidado não gerado: {type(ex).__name__}: {ex})")
     z = shutil.make_archive(pasta, "zip", pasta) if zipar else None
     log(f"Concluído em {(_dt.datetime.now() - t0).total_seconds():.0f} s → {pasta}")
     return dict(pasta=pasta, zip=z, arquivos=arqs, resultado=res, reatores=inds, grupos=grupos, figuras=figs, codigo=cod)

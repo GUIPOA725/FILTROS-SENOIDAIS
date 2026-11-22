@@ -121,7 +121,7 @@ def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs, cat=No
 
 def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zipar=True, log=print, projeto=None, topologias=None, capacitores=None,
               ligacoes=None, prioridade="custo", queda_max=None, corrente_base="carga", construcao_gap="culatra_fio", condutor_ind="barra_cu",
-              verificar_ind=True, estudo_camadas=False):
+              verificar_ind=True, estudo_camadas=False, leitura_fonte=None):
     """projeto: um Projeto já pronto (ex.: ajuste manual). Se None, roda a otimização global."""
     cat = cat or carregar_catalogo()
     pasta_base = pasta_base or os.path.join(RAIZ, "saidas")
@@ -461,6 +461,17 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         log(f"   (organização em subpastas não aplicada: {e})")
     from .versao import carimbar_pasta
     carimbar_pasta(pasta, log)
+    try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
+        from . import consolidado as CONS
+        from .versao import info as _vic
+        _lt = dict(fonte=leitura_fonte or "", observacoes=getattr(ped, "observacoes", "") or "",
+                   lacunas=list(getattr(ped, "lacunas", []) or []))
+        arqs["consolidado"] = CONS.gerar(pasta, cod, f"Filtro senoidal – {proj.topologia if hasattr(proj, 'topologia') else ''} "
+                                         f"{ped.corrente_a:g} A / {ped.tensao_v:g} V", f"FSEN v{_vic().get('versao')}",
+                                         cliente=ped.cliente, projeto=getattr(ped, "projeto", "") or "", tipo="Filtro senoidal (saída de inversor)",
+                                         leitura=_lt, log=log)
+    except Exception as e:
+        log(f"   (relatório consolidado não gerado: {type(e).__name__}: {e})")
     log("7/7 Registrando no histórico...")
     if registrar:
         H.registrar_projeto(proj, arr, orc, pasta)

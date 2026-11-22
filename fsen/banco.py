@@ -79,6 +79,7 @@ class PedidoBanco:
     origem_dados: Dict[str, str] = field(default_factory=dict)
     barra_ligacao: str = ""
     acesso_painel: str = "frontal/traseiro"   # v1.17.4: "frontal/traseiro" (prof. 800, padrão) | "frontal" (prof. 400, mais largo)
+    leitura: Dict[str, object] = field(default_factory=dict)   # v1.19.0: leitura da IA (critério, premissas) p/ o relatório consolidado
 
     @property
     def p_pct(self):
