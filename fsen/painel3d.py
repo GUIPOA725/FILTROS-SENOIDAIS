@@ -182,13 +182,18 @@ def _canaleta(p, g, x, y_face, z, L, A, P=60, vertical=False):
         _cx(p, g, x, y_face - P - 3, z + 4, L, 3, A - 8, "#b4b8bc")
 
 
-def _barramento(p, x0, x1, y_face, z, n=3, esp=45):
-    """Barramento de cobre (L1/L2/L3) sobre isoladores."""
+def _barramento(p, x0, x1, y_face, z, n=3, esp=45, lado="frente"):
+    """Barramento de cobre (L1/L2/L3) sobre isoladores. lado="tras": no verso da placa (y_face = verso)."""
     for f in range(n):
         zz = z + f * esp
-        _cx(p, "frente", x0, y_face - 95, zz, x1 - x0, 10, 30, C_BARRA)
-        for xx in (x0 + 40, (x0 + x1) / 2, x1 - 40):
-            _cl(p, "frente", xx, y_face - 45, zz + 15, 26, 85, "#7a1d1d", eixo="y")
+        if lado == "tras":
+            _cx(p, "tras", x0, y_face + 85, zz, x1 - x0, 10, 30, C_BARRA)
+            for xx in (x0 + 40, (x0 + x1) / 2, x1 - 40):
+                _cl(p, "tras", xx, y_face + 85, zz + 15, 26, 85, "#7a1d1d", eixo="y")
+        else:
+            _cx(p, "frente", x0, y_face - 95, zz, x1 - x0, 10, 30, C_BARRA)
+            for xx in (x0 + 40, (x0 + x1) / 2, x1 - 40):
+                _cl(p, "frente", xx, y_face - 45, zz + 15, 26, 85, "#7a1d1d", eixo="y")
 
 
 def _rotulo(p, x, y, z, txt):
@@ -352,12 +357,12 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         # níveis de capacitores empilhados (só a prateleira entre eles); canaleta acima dos capacitores, entre contatoras e
         # chaves e abaixo do barramento; folgas iguais distribuídas no que sobra (sem vazio concentrado)
         H_TOPO = 340                                                   # zona superior: disjuntor geral / comando / bornes
-        blocos_c = [niveis_c * h_cap + (niveis_c - 1) * 40, dut, kd["A"], dut, sd["A"], dut, 3 * 45 + 30, dut, H_TOPO]
+        blocos_c = [niveis_c * h_cap + (niveis_c - 1) * 40, dut, kd["A"], dut, sd["A"], dut, H_TOPO]   # barramento: ATRÁS (REQ-PNL-023)
         zs, gap, livre = _dist_vertical(zp0 + 40, zp1 - 30, blocos_c, prm["folga_vertical_min_mm"])
         z_caps = [zs[0] + k * (h_cap + 40) for k in range(niveis_c)]
         z_dut = [zs[1], zs[3], zs[5]]
-        z_km, z_sc, z_bb, z_topo = zs[2], zs[4], zs[6], zs[8]
-        z_dut.append(zs[7])
+        z_km, z_sc, z_topo = zs[2], zs[4], zs[6]
+        z_bb = zp1 - 3 * 45 - 70                                       # barramento no alto, atrás da placa
         zbb_glob, yf_glob = z_bb, yf
         zv0 = z_dut[0]
         _canaleta(p, "frente", xa + 10, yf, zv0, cv, zp1 - 20 - zv0, vertical=True)   # canaletas verticais laterais (acima dos capacitores)
@@ -390,12 +395,17 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             for f in range(3):
                 dx = (f - 1) * sd["L"] * 0.28
                 ycab = yf - 35
-                _tubo(p, "frente", [(xm + dx, yf - 70, z_bb + f * 45 + 15), (xm + dx, yf - 70, z_sc + sd["A"] + 10)], 10, "#b87333")
+                yb = yp + CHAPA / 2 + 85                                    # derivação: barra (atrás) → passa-barra → topo da chave NH
+                _tubo(p, "tras", [(xm + dx, yb, z_bb + f * 45 + 15), (xm + dx, yb - 40, z_bb + f * 45 + 15),
+                                  (xm + dx, yb - 40, z_sc + sd["A"] + 60), (xm + dx, yp, z_sc + sd["A"] + 60)], 10, "#b87333")
+                _tubo(p, "frente", [(xm + dx, yp, z_sc + sd["A"] + 60), (xm + dx, yf - 60, z_sc + sd["A"] + 60),
+                                    (xm + dx, yf - 60, z_sc + sd["A"] + 8)], 10, "#b87333")
                 _tubo(p, "frente", [(xm + dx, ycab, z_sc), (xm + dx, ycab, z_dut[1] + dut / 2),
                                     (xm + dx * 0.8, ycab, z_km + kd["A"])], 12, "#1e1e1e")
                 _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[0] + dut / 2),
                                     (xm + dx * 0.8, yp, z_dut[0] + dut / 2)], 12, "#1e1e1e")
             _cl(p, "placa", xm, yp, z_dut[0] + dut / 2, 50, 8, "#f2f2f2", eixo="y")   # passa-cabos (prensa) na placa
+            _cx(p, "placa", xm - 45, yp - 5, z_sc + sd["A"] + 45, 90, 10, 30, "#f2f2f2")   # passa-barra isolado (derivação do barramento)
         # zona superior: col. 1 = disjuntor geral -Q0 + comando; demais = régua de bornes X1/X2
         if i == 0:
             _disjuntor_geral(p, xu0, yf, z_topo, faltam)
@@ -484,14 +494,16 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                     f"≥ {FOLGA} mm (ar)", CK.texto(CK.check(esp_r >= FOLGA, CK.utilizacao(FOLGA, max(esp_r, 1))))])
     # barramento geral ÚNICO atravessando as colunas (REQ-PNL-018) + compartimento do barramento (forma 2b, REQ-SEG-009)
     if zbb_glob is not None:
-        _barramento(p, xs[0] + 60, xs[-1] - 60, yf_glob, zbb_glob + 15)
-        zc0, zc1 = zbb_glob - 20, zbb_glob + 3 * 45 + 40
-        _cx(p, "frente", xs[0] + 40, yf_glob - 160, zc0, xs[-1] - xs[0] - 80, 160, 4, "#9aa3ab")          # chapa inferior
-        _cx(p, "frente", xs[0] + 40, yf_glob - 164, zc0, xs[-1] - xs[0] - 80, 4, zc1 - zc0, "#cfe6ff", 0.35)  # policarbonato frontal
-        p.append(dict(t="rotulo", g="frente", x=xs[0] + 120, y=yf_glob - 170, z=zc1 + 10,
-                      txt="COMPARTIMENTO DO BARRAMENTO – POLICARBONATO (IPXXB)"))
-        ver.append(["Barramento", "Barramento geral único atravessando as colunas, em compartimento separado (forma 2b)",
-                    f"{(xs[-1] - xs[0] - 120) / 1000:.2f} m", "único (sem emenda entre colunas)", CK.texto(CK.check(True, 60))])
+        yv = yp + CHAPA / 2                                             # verso da placa
+        _barramento(p, xs[0] + 60, xs[-1] - 60, yv, zbb_glob + 15, lado="tras")
+        zc0, zc1 = zbb_glob - 30, zbb_glob + 3 * 45 + 40
+        _cx(p, "tras", xs[0] + 40, yv, zc0, xs[-1] - xs[0] - 80, 200, 4, "#9aa3ab")             # chapa: separa dos reatores (calor)
+        _cx(p, "tras", xs[0] + 40, yv + 200, zc0, xs[-1] - xs[0] - 80, 4, zc1 - zc0, "#cfe6ff", 0.35)   # policarbonato (porta traseira)
+        p.append(dict(t="rotulo", g="tras", x=xs[0] + 120, y=yv + 210, z=zc1 + 10,
+                      txt="BARRAMENTO GERAL – COMPARTIMENTO TRASEIRO (forma 2b, IPXXB)"))
+        ver.append(["Barramento", "Barramento geral único no alto, ATRÁS da placa, em compartimento próprio separado dos reatores "
+                    "(forma 2b) – a porta da frente abre sem expor o barramento", f"{(xs[-1] - xs[0] - 120) / 1000:.2f} m",
+                    "único, compartimento próprio", CK.texto(CK.check(True, 60))])
     # manopla externa do disjuntor geral na porta (intertravamento + cadeado – NR-10 10.4.1 / 10.6.5)
     _cl(p, "porta_f", 150, -30, H * 0.80, 90, 14, "#f2c200", eixo="y")
     _cx(p, "porta_f", 105, -60, H * 0.80 - 12, 90, 30, 24, "#c62828")

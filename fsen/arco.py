@@ -86,7 +86,7 @@ def etiqueta_pdf(arq, ped, cod, res_arco, versao=""):
     pior = max(res_arco["cenarios"][:2], key=lambda x: x["E"])
     c.setFillColor("#f39c12"); c.rect(0, H - 22 * mm, W, 22 * mm, fill=1, stroke=0)
     c.setFillColor("black"); c.setFont("Helvetica-Bold", 20); c.drawCentredString(W / 2, H - 14 * mm, "ADVERTÊNCIA")
-    c.setFont("Helvetica-Bold", 11); c.drawCentredString(W / 2, H - 20 * mm, "RISCO DE ARCO ELÉTRICO E CHOQUE – NR-10")
+    c.setFont("Helvetica-Bold", 11); c.drawCentredString(W / 2, H - 20 * mm, "RISCO DE ARCO ELÉTRICO E CHOQUE – NR-10 – ETIQUETA PRELIMINAR")
     y = H - 32 * mm
     for t, v in (("Tensão nominal", f"{ped.tensao_v:g} V CA"), ("Energia incidente (455 mm)", f"{pior['E']:.1f} cal/cm²"),
                  ("Fronteira de arco", f"{pior['AFB_mm'] / 1000:.2f} m"), ("Vestimenta mínima", pior["categoria"][:40]),
@@ -95,7 +95,8 @@ def etiqueta_pdf(arq, ped, cod, res_arco, versao=""):
         y -= 7 * mm
     c.setFont("Helvetica-Bold", 9)
     c.drawCentredString(W / 2, 8 * mm, "DESLIGAR O DISJUNTOR GERAL E BLOQUEAR ANTES DE ABRIR – ACESSO SOMENTE A AUTORIZADOS")
-    c.setFont("Helvetica", 6); c.drawCentredString(W / 2, 3 * mm, f"Electric Service – Plataforma FSEN {versao}")
+    c.setFont("Helvetica", 6); c.drawCentredString(W / 2, 3 * mm, f"PRELIMINAR – confirmar pelo estudo de energia incidente da instalação "
+                                                                     f"(Icc e proteção a montante reais) · Electric Service – Plataforma FSEN {versao}")
     c.save()
     return arq
 
@@ -123,6 +124,8 @@ def relatorio_pdf(arq, ped, cod, res_arco, versao=""):
                             title=f"Energia incidente {cod}")
     P = lambda t, s="BodyText": Paragraph(t, st[s])
     el = [P(f"Estudo de energia incidente do painel – {cod} – {getattr(ped, 'cliente', '')}", "Title"),
+          P("<b>Estudo SIMPLIFICADO de projeto</b> – orienta as medidas do painel; o estudo definitivo e a etiqueta final são "
+            "da instalação (software de proteção), com a Icc e a proteção a montante reais."),
           P(f"IEEE 1584-2018 (módulo arcflash da Plataforma de Estudos) · {ped.tensao_v:g} V · Icc presumida {res_arco['Ibf_kA']:.1f} kA · "
             f"distância de trabalho 455 mm (NR-10 Anexo IV) · gap 25 mm · eletrodos verticais em caixa (VCB) · "
             f"tempo da proteção a montante adotado {res_arco['t_montante_ms']:.0f} ms (confirmar com o estudo de seletividade do cliente)."),
