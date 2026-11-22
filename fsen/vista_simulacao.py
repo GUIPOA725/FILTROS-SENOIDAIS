@@ -221,6 +221,17 @@ def espectro_comparado_png(caso, pl4_path, arquivo, n_ciclos=2):
             Ha = np.sqrt(2) * np.abs(_harm(at[k], n_ciclos))
             pa = 100 * Ha[2:kmax] / Ha[1]
             a.vlines(hs * f1 + 0.15 * f1, 0, pa[:len(hs)], color=AT, lw=1.4, label=f"ATP – DHTv {np.sqrt(np.sum(pa ** 2)):.2f} %")
+        # coluna THD sempre presente (padrão Electric) – à esquerda das harmônicas
+        X = kmax * f1
+        thd_p = float(np.sqrt(np.sum(pp ** 2)))
+        a.bar(-0.045 * X, thd_p, width=0.025 * X, color=PY)
+        a.text(-0.045 * X, thd_p, f"{thd_p:.2f}", ha="center", va="bottom", fontsize=7)
+        if k in at:
+            thd_a = float(np.sqrt(np.sum(pa ** 2)))
+            a.bar(-0.018 * X, thd_a, width=0.025 * X, color=AT)
+            a.text(-0.018 * X, thd_a, f"{thd_a:.2f}", ha="center", va="bottom", fontsize=7)
+        a.text(-0.032 * X, 0, "THD", ha="center", va="top", fontsize=8, weight="bold", transform=a.transData)
+        a.set_xlim(-0.065 * X, X * 1.01)
         for m in (1, 2, 3):
             a.axvline(m * fs, color="#eda100", ls="--", lw=0.8)
         a.set_ylabel("% da fundamental")

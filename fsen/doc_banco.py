@@ -62,21 +62,37 @@ def figuras(ped, res, pasta, cod):
     out["varredura"] = os.path.join(pasta, f"Banco_varredura_{cod}.png")
     fig.savefig(out["varredura"], dpi=150)
     plt.close(fig)
-    # espectro de corrente e tensão do capacitor por estágio distinto
+    # espectro de corrente e tensão do capacitor por estágio distinto – SEMPRE com a coluna THD (padrão Electric)
     fig, axs = plt.subplots(1, 2, figsize=(10, 3.8))
-    hs = sorted(e0["Ih"])
-    w = 0.8 / max(len(res["estagios"]), 1)
-    for k, e in enumerate(res["estagios"]):
-        axs[0].bar([h + (k - len(res["estagios"]) / 2) * w for h in hs], [e["Ih"].get(h, 0) / e["I1"] * 100 for h in hs], width=w,
-                   label=f"Estágio {k+1} ({e['Q_kvar']:.0f} kvar)")
-        axs[1].bar([h + (k - len(res["estagios"]) / 2) * w for h in hs], [e["Uch"].get(h, 0) / e["Uc1"] * 100 for h in hs], width=w)
+    hs = [h for h in sorted(e0["Ih"]) if h != 1]
+    pos = list(range(len(hs) + 1))                    # 0 = THD, depois as ordens
+    rot = ["THD"] + [str(h) for h in hs]
+    grupos_e = {}                                     # estágios iguais (mesmo módulo) aparecem uma vez só
+    for i_, e in enumerate(res["estagios"]):
+        grupos_e.setdefault((e.get("codigo"), round(e["Q_kvar"], 1)), []).append((i_ + 1, e))
+    lista_e = [(g[0][1], ", ".join(str(n) for n, _ in g)) for g in grupos_e.values()]
+    n_e = max(len(lista_e), 1)
+    w = 0.8 / n_e
+    for k, (e, nums) in enumerate(lista_e):
+        ih = [e["Ih"].get(h, 0) / e["I1"] * 100 for h in hs]
+        uh = [e["Uch"].get(h, 0) / e["Uc1"] * 100 for h in hs]
+        thd_i = float(np.sqrt(sum(x * x for x in ih)))
+        thd_u = float(np.sqrt(sum(x * x for x in uh)))
+        xs = [x + (k - (n_e - 1) / 2) * w for x in pos]
+        b0 = axs[0].bar(xs, [thd_i] + ih, width=w, label=f"Estágio(s) {nums} ({e['Q_kvar']:.0f} kvar) – THDi {thd_i:.1f} %")
+        b1 = axs[1].bar(xs, [thd_u] + uh, width=w, label=f"Estágio(s) {nums} – THDu {thd_u:.1f} %")
+        if k == 0:
+            axs[0].bar_label(b0, labels=[f"{thd_i:.1f}"] + [""] * len(hs), fontsize=7, padding=1)
+            axs[1].bar_label(b1, labels=[f"{thd_u:.1f}"] + [""] * len(hs), fontsize=7, padding=1)
     axs[0].set_title("Corrente harmônica no estágio (% de I1)")
     axs[1].set_title("Tensão harmônica no capacitor (% de U_C1)")
     for a in axs:
-        a.set_xlabel("h")
-        a.set_xticks(hs)
+        a.set_xlabel("THD e ordem harmônica h")
+        a.set_xticks(pos, rot)
+        a.axvline(0.5, color="#999999", lw=0.8, ls=":")
         a.grid(True, axis="y", alpha=0.3)
     axs[0].legend(fontsize=7)
+    axs[1].legend(fontsize=7)
     fig.tight_layout()
     out["espectro"] = os.path.join(pasta, f"Banco_espectro_{cod}.png")
     fig.savefig(out["espectro"], dpi=150)

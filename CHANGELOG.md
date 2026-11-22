@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.21.2 – 2026-11-22 (espectros sempre com a coluna THD)
+- Padrão Electric: **todo espectro de harmônicas tem a coluna THD** (distorção harmônica total) antes das ordens. Banco/filtro: corrente no estágio e tensão no capacitor com THD em barra e valor; estágios iguais aparecem uma vez só ("Estágio(s) 1–8"). Filtro senoidal – comparação Python × ATP: barra THD de cada um à esquerda do espectro (o espectro principal já tinha a tabela de DHTv por ponto).
+
 ## v1.21.1 – 2026-11-22 (consolidado: TUDO dentro + conferência arquivo a arquivo)
 - Entram também **todas** as figuras e folhas de desenho (folhas do reator, corte 3D, folhas do esquema elétrico), os **decks ATP** de cada caso de transitório (texto completo) e todos os dados de entrada/resultados (JSON).
 - O índice virou **conferência**: cada arquivo da pasta aparece com "onde está neste relatório" (página do conteúdo, página do anexo, ou o PDF que tem o mesmo desenho do DXF/QET, a vista 3D do STEP e a tabela Plataforma × ATP dos .pl4). Se algum arquivo ficar de fora aparece **NÃO INCLUÍDO** e o log avisa.
