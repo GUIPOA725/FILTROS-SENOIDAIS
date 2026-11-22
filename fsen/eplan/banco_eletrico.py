@@ -45,8 +45,15 @@ def construir(ped, res, cod, versao, n_banco=1):
     P.dispositivo("-F01", "Disjuntor tripolar 10 A curva C (relé falta de fase / medição)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-F02", "Disjuntor bipolar 10 A curva C (primário do trafo de comando)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-F03", "Disjuntor bipolar 10 A curva C (secundário 220 V)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
-    kva = 500 if n <= 6 else 1000
-    P.dispositivo("-T1", f"Transformador de comando {V:g}/220 V {kva} VA", "Trafo nacional (equiv.)", "", 1, grupo="Comando")
+    try:                                                   # v1.25.1: trafo de comando pela CARGA (mesmo cálculo da lista – fonte única)
+        from .. import painel_gabinete as _PGB
+        _nv = int(_PGB.gabinete(ped, res)["ventilacao"]["n_exaustores"])
+        _trc = B.trafo_comando(ped, res, n_exaust=_nv)
+        kva = _trc["Sn"]
+    except Exception:
+        kva = 500 if n <= 6 else 1000
+    P.dispositivo("-T1", f"Transformador de comando {V:g}/220 V {kva} VA", "ELECTRIC", f"Trafo de comando monofásico {V:g}/220 V {kva} VA", 1,
+                  grupo="Comando")
     P.dispositivo("-K0", f"Relé de falta e sequência de fase {V:g} V, 1 contato reversível", "WEG/Coel (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-S0", "Botão de emergência cogumelo Ø40 com trava, 1NF + 1NA, Ø22 mm", "WEG/Schneider (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-S1", "Chave seletora 2 posições (0 – desligado / 1 – automático) Ø22 mm 1NA", "WEG/Schneider (equiv.)", "", 1, grupo="Comando")
@@ -55,7 +62,11 @@ def construir(ped, res, cod, versao, n_banco=1):
     P.dispositivo("-B0", "Termostato de painel NA ajustável 0–60 °C (liga ventilação a 35 °C)", "Rittal/Finder (equiv.)", "", 1, grupo="Ventilação")
     P.dispositivo("-BT2", "Termostato de painel NF ajustável 0–60 °C (sobretemperatura: abre a 55 °C e desliga o banco)",
                   "Rittal/Finder (equiv.)", "", 1, grupo="Ventilação", dados="55 °C")
-    nvent = 2 if n <= 4 else 4
+    try:                                                   # FONTE ÚNICA = cálculo térmico do gabinete (igual 3D e lista – REQ-PNL-028)
+        from .. import painel_gabinete as _PGB
+        nvent = int(_PGB.gabinete(ped, res)["ventilacao"]["n_exaustores"])
+    except Exception:
+        nvent = 2 if n <= 4 else 4
     for k in range(1, nvent + 1):
         P.dispositivo(f"-M{k}", "Ventilador com filtro 220 V 50/60 Hz, ≥ 230 m³/h (ver cálculo térmico)", "Rittal/Mundial (equiv.)", "", 1,
                       grupo="Ventilação")
@@ -261,7 +272,7 @@ def construir(ped, res, cod, versao, n_banco=1):
             y = S.contato(f, x, y - 8, f"-B{i}", nf=True, b=("1", "2"), atuador="termo", sub=f"termostato -L{i}")
             P.registra(f"-B{i}", "contato", f, x)
             P.dispositivo(f"-B{i}", f"Termostato NF do reator -L{i} (integrado ao reator, abre a "
-                                    f"{130 if ped.classe == 'F' else 140} °C)", "Electric Service (no reator)", "", 1, grupo=f"Estágio {i}")
+                                    f"{130 if ped.classe == 'F' else 140} °C)", "Electric Service (no reator)", f"no reator {e['codigo']}", 1, grupo=f"Estágio {i}")
             S.borne(f, x, y - 1.5, "X1", 10 + 2 * i - 1)
             if sint:
                 y = S.contato(f, x, y - 8, f"-P{i}", nf=True, b=("R1", "R2"), sub="proteção", ref=None)

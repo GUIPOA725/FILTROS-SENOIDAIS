@@ -254,6 +254,10 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
         nrs = list(B.NR_DESSINT)
         p.nr = st.radio("Fator de dessintonia", nrs, index=nrs.index(base.nr) if base.nr in nrs else 0, horizontal=True, key=f"bcf_nr_{_R}",
                         format_func=lambda x: B.NR_DESSINT[x])
+    _ent = ["baixo", "cima"]                                                    # v1.25.1 (REQ-PNL-025)
+    p.entrada_cabos = st.radio("Entrada dos cabos do cliente no disjuntor geral", _ent,
+                               index=_ent.index(getattr(base, "entrada_cabos", "baixo")) if getattr(base, "entrada_cabos", "baixo") in _ent else 0,
+                               horizontal=True, key=f"bcf_ent_{_R}", format_func=lambda x: "Por baixo (flange na base)" if x == "baixo" else "Por cima (flange no teto)")
     with st.expander("Reator e capacitores (padrão Electric – altere só se precisar)"):
         c1, c2, c3, c4, c5 = st.columns(5)
         p.k_corrente = c1.number_input("k = I_projeto / I60", 1.0, 3.0, float(base.k_()), 0.01, key=f"bcf_k_{_R}",

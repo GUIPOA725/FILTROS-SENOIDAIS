@@ -75,7 +75,8 @@ class PedidoBanco:
     classe: str = "F"                     # especificação Electric: classe F (155 °C), isolação 1 kV, IP00
     condutor: str = "AL"                  # "AL" (padrão Electric: chapa/barra de alumínio) | "CU"
     monofasico: bool = False              # sintonizado: 3 reatores monofásicos de 2 colunas em vez de 1 trifásico
-    capacitor_dieletrico: str = "seco"    # v1.23.0 sintonizado: "seco" (PPM metalizado, ex. TDK série F) | "oleo" (impregnado em óleo – construção robusta, ex. Pirelli)
+    capacitor_dieletrico: str = "seco"
+    entrada_cabos: str = "baixo"          # v1.25.1 (REQ-PNL-025): entrada dos cabos do cliente no disjuntor geral – "baixo" ou "cima"    # v1.23.0 sintonizado: "seco" (PPM metalizado, ex. TDK série F) | "oleo" (impregnado em óleo – construção robusta, ex. Pirelli)
     # v1.16.0 – Plataforma de Estudos: cenários de curto da barra (estudo de proteção) e origem de cada dado
     cenarios_rede: List[dict] = field(default_factory=list)
     origem_dados: Dict[str, str] = field(default_factory=dict)
@@ -483,6 +484,25 @@ def trafo_comando(ped, res, prot=None, n_exaust=2):
                 dj_pri=f"Disjuntor bipolar {next(x for x in (2, 4, 6, 10, 16) if x >= 2.0 * Sn / ped.tensao_v)} A curva D (primário – 2·In p/ o inrush do trafo)")
 
 
+def cabos_entrada(ped, In):
+    """REQ-PNL-025: cabos do cliente até o disjuntor geral – NBR 5410, cabos em paralelo (≤ 240 mm²), ar ambiente do local."""
+    T = max(getattr(ped, "amb_c", 40) or 40, 30)
+    melhor = None
+    for k in (1, 2, 3, 4, 5, 6):
+        for sec, i0 in CABO_90C:
+            iz = i0 * _fator(FCT_90C, T) * (_fator(FCA_FEIXE, k) if k > 1 else 1.0)
+            if k * iz >= In:
+                melhor = dict(paralelos=k, secao=sec, Iz_total=round(k * iz), I=In, T=T)
+                break
+        if melhor and melhor["secao"] <= 240:
+            break
+        melhor = None
+    melhor = melhor or dict(paralelos=6, secao=240, Iz_total=None, I=In, T=T)
+    melhor["texto"] = (f"{melhor['paralelos']} × {melhor['secao']} mm² por fase + PE (cabo 0,6/1 kV 90 °C) – entrada por "
+                       f"{getattr(ped, 'entrada_cabos', 'baixo')}")
+    return melhor
+
+
 def disjuntor_geral(ped, res):
     """REQ-PNL-020 / IEC 61921 / IEC 60831: corrente do geral ≥ 1,30 × ΣI dos capacitores (rms com harmônicas);
     Icu ≥ Icc trifásica na barra; disparador eletrônico LSI – Ir ajustado em 1,30·ΣI, Isd/Ii acima do pico de energização."""
@@ -512,10 +532,15 @@ def painel(ped, res):
     trc = trafo_comando(ped, res, n_exaust=gab["ventilacao"]["n_exaustores"])
     Dg = gab["dimensoes_mm"]
     larg = Dg["largura"]
-    itens = [(f"Painel metálico {Dg['altura']}(A) × {larg}(L) × {Dg['profundidade']}(P) mm – capacitores na frente, reatores "
-              f"atrás com chapa divisória ({len(gab['colunas'])} coluna(s) de 800 mm; ver Layout_Painel)", 1, "pç"),
-             (f"Controlador de fator de potência Epcos BR6000 {6 if n <= 6 else 12} estágios", 1, "pç"),
-             (f"Relé falta de fase trifásico {ped.tensao_v:.0f} V", 1, "pç"),
+    from . import fabricantes as _FB                                # v1.25.1: mesma marca/código do esquema (fonte única)
+    _mc = getattr(ped, "marca", "") or _FB.PADRAO
+    _ctl = (_FB._m(_mc).get("controlador") or {}).get(6 if n <= 6 else 12) or f"Epcos BR6000-R{6 if n <= 6 else 12}"
+    _rff = _FB.item(_mc, "rele_falta_fase") or f"Relé falta de fase trifásico {ped.tensao_v:.0f} V"
+    itens = [(f"Painel metálico {Dg['altura']}(A) × {larg}(L) × {Dg['profundidade']}(P) mm – placa de montagem dupla face: capacitores, "
+              f"contatoras e chaves NH na frente; reatores atrás; barramento geral no alto atrás em compartimento próprio (forma 2b) – "
+              f"{len(gab['colunas'])} coluna(s); ver Painel 2D/3D de montagem", 1, "pç"),
+             (f"Controlador de fator de potência {6 if n <= 6 else 12} estágios – {_ctl}", 1, "pç"),
+             (f"Relé falta de fase trifásico {ped.tensao_v:.0f} V – {_rff}", 1, "pç"),
              (trc["dj_pri"], 1, "pç"), (trc["dj_sec"], 1, "pç"), ("Disjuntor tripolar 2 A DIN curva C (relé falta de fase)", 1, "pç"),
              (f"Transformador de comando {ped.tensao_v:.0f}/220 V – {trc['Sn']} VA (carga calculada: retenção {trc['S_ret']} VA, "
               f"pior manobra {trc['S_inst']} VA)", 1, "pç"),

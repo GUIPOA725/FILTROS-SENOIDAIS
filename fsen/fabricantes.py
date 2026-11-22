@@ -81,6 +81,24 @@ def item(marca, chave, **fmt):
     return x
 
 
+def disjuntor_geral(marca, A):
+    """Disjuntor GERAL caixa moldada pela faixa de corrente da linha atual de cada marca (v1.25.1). Linhas/carcaças a conferir no site."""
+    m = (marca or "").lower()
+    if "abb" in m:
+        f = "XT4" if A <= 250 else ("XT5" if A <= 630 else "XT7")
+        return f"ABB Tmax {f} {A} A 3P, Ekip LSI, manopla rotativa RHE (conferir código)"
+    if "schneider" in m:
+        if A <= 630:
+            return f"Schneider ComPacT NSX{A} 3P, MicroLogic LSI, manopla rotativa estendida (conferir código)"
+        return (f"Schneider – carcaça ≥ {A} A (ComPacT NS{A} DESCONTINUADO em 2025: usar a sucessora atual da linha "
+                f"ComPacT/MasterPacT), 3P, LSI, manopla rotativa estendida (conferir código)")
+    if "siemens" in m:
+        return f"Siemens 3VA {A} A 3P (até 630 A) / 3WA acima, ETU LSI, manopla rotativa (conferir código)"
+    if "weg" in m:
+        return f"WEG DWB {A} A 3P, LSI, manopla rotativa (conferir código)"
+    return f"Disjuntor caixa moldada {A} A 3P, LSI, manopla rotativa externa (marca do projeto – conferir código)"
+
+
 def _nh(A):
     return "00" if A <= 160 else "1" if A <= 250 else "2" if A <= 400 else "3"
 
@@ -101,7 +119,7 @@ def aplicar_projeto(P, ped, res):
             if descr_extra:
                 D[tag]["descr"] = D[tag]["descr"] + descr_extra
     pn = B.painel(ped, res)
-    put("-Q0", item(marca, "seccionadora_fusivel", A=pn["geral_A"]) or "", f" – fusíveis {item(marca, 'fusivel_gG', A=pn['geral_A'], tam=_nh(pn['geral_A'])) or ''}")
+    put("-Q0", disjuntor_geral(marca, pn["geral_A"]) + " + intertravamento de porta e cadeado")   # v1.25.1: DJ geral (NR-10)
     for t in ("-F01", "-F02", "-F03"):
         put(t, item(marca, "disjuntor_comando"))
     put("-K0", item(marca, "rele_falta_fase"))

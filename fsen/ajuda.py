@@ -109,6 +109,9 @@ DICAS = {
     "Apagar as cópias locais (liberar espaço)": "Apaga a pasta %LOCALAPPDATA%\\FSEN\\referencias inteira (o Drive não é tocado).",
     "Observação da aprovação (o que ficou bom / o que corrigir)": "Fica gravada junto do painel aprovado na biblioteca – o próximo projeto "
                                                                     "mostra de qual painel partiu e esta observação.",
+    "Entrada dos cabos do cliente no disjuntor geral": "Por onde chegam os cabos de alimentação do cliente: por baixo (flange com prensa-cabos na "
+                                                         "base) ou por cima (flange no teto). Muda o 3D, o 2D e a lista; os cabos são "
+                                                         "calculados pela NBR 5410 (cabos em paralelo) pela corrente do disjuntor geral.",
     "Aprovar painel": "Salva o arranjo deste painel (afastamentos, fileiras, canaletas, reatores) na BIBLIOTECA_PAINEIS do Drive como "
                       "APROVADO; os próximos projetos do mesmo tipo partem do último aprovado (motor de experiência).",
     "Construção do filtro sintonizado": "Padrão: reator trifásico + capacitor trifásico seco PPM (ex. TDK série F). Robusta "

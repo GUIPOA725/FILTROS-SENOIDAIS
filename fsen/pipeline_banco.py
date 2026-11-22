@@ -181,6 +181,20 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         anexos_pnl.append(os.path.join(pnl, os.path.basename(p3["pdf"])))
     except Exception as ex:
         log(f"   (painel 3D não gerado: {type(ex).__name__}: {ex})")
+        import traceback as _tb
+        log("      " + _tb.format_exc().strip().splitlines()[-3])
+    try:                                            # v1.25.1: conferência cruzada esquema × 2D/3D × lista (REQ-PNL-028)
+        from . import conferencia_projeto as CPJ
+        _dc = os.path.join(sub["01_Engenharia"], "6_Conferencia_Projeto")
+        os.makedirs(_dc, exist_ok=True)
+        _Lc = CPJ.conferir(pasta)
+        arqs["conferencia"] = CPJ.planilha(_Lc, os.path.join(_dc, f"Conferencia_Esquema_x_Painel_x_Lista_{cod}.xlsx"))
+        shutil.copy(arqs["conferencia"], pnl)
+        res["conferencia"] = _Lc
+        _nrep = sum(1 for r in _Lc if "REPROVADO" in str(r[3]))
+        log(f"   Conferência esquema × 2D/3D × lista: {len(_Lc)} verificações, {_nrep} reprovada(s)")
+    except Exception as ex:
+        log(f"   (conferência cruzada não gerada: {type(ex).__name__}: {ex})")
     with open(os.path.join(pnl, "Email_Montadora.txt"), "w", encoding="utf-8") as fh:
         fh.write(DB.email_fornecedor("IFG", ped, res, grupos, anexos_pnl, cod, tipo="painel"))
     arqs["proposta"] = DB.proposta(ped, res, sub["02_Cliente"], cod, cat, inds, n_bancos)
@@ -222,6 +236,10 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             fh.write("\n" + trans["resumo"])
         if ver_iec:
             fh.write("\n".join(NB.verificacao_md(ver_iec)) + "\n")
+        if res.get("conferencia"):
+            fh.write("\n## Conferência esquema elétrico × painel 2D/3D × lista de material (REQ-PNL-028)\n\n| Item | Esquema | Painel/Lista | Check | Obs. |\n|---|---|---|---|---|\n")
+            for r in res["conferencia"]:
+                fh.write("| " + " | ".join(str(x).replace("|", "/")[:160] for x in r) + " |\n")
     carimbar_pasta(pasta, log)
     try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
         from . import consolidado as CONS

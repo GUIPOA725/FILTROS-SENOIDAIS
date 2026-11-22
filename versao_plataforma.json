@@ -1,5 +1,5 @@
 {
-  "versao": "1.25.0",
+  "versao": "1.25.1",
   "data": "2026-11-22",
-  "resumo": "2D de montagem cotado do mesmo modelo do 3D, barramento atrás (forma 2b), lista de material completa por marca, banco de componentes, etiqueta de arco preliminar"
+  "resumo": "Conferência cruzada esquema × 2D/3D × lista (zero diferença), entrada dos cabos por cima/baixo calculada, cabos barramento→seccionadoras, 1 terminal por fase de cada capacitor, fonte única de exaustores/trafo de comando/códigos"
 }

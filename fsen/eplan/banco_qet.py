@@ -147,7 +147,7 @@ def construir(ped, res, cod, versao, P_lista=None):
             pr = B.protecao_estagio(ped, e)
             x = xs[j]
             tg = i + 1
-            ff = fs.el("sectionneur_3_fusibles", x, 160, f"-FF{tg}", inf(f"-Q{tg}", f"{pr['base']}/{pr['fusivel_A']}A"))
+            ff = fs.el("sectionneur_3_fusibles", x, 160, f"-Q{tg}", inf(f"-Q{tg}", f"{pr['base']}/{pr['fusivel_A']}A"))
             km = fs.el("com_puiss4", x, 270, f"-K{tg}", inf(f"-K{tg}", pr["contator"].split("(")[0].strip()))
             contatos_pot[tg] = km
             ln = fs.el("reator3", x, 390, f"-L{tg}", inf(f"-L{tg}", f"{e['L_uH']:.0f}uH-{e['requisitos']['In']:.0f}A"))
@@ -209,7 +209,7 @@ def construir(ped, res, cod, versao, P_lista=None):
     nh = fc.no(60, 360)
     fc.fio(s1.term("s"), nh.term("n"), marca="VM", secao="1,5")
     fc.texto(70, 372, "L-HAB", 7, "#c62828")
-    ctrl = fc.el(f"ctrl{6 if n <= 6 else 12}", 300, 150, "-U1", inf("-A1"))
+    ctrl = fc.el(f"ctrl{6 if n <= 6 else 12}", 300, 150, "-A1", inf("-A1"))
     fc.fio(railL[260].term("n"), ctrl.term("n", 0), marca="VM", secao="1,5")
     fc.texto(ctrl.term("n", 1)[1] - 38, 92, "-X1", 9, "#1f4e8c")
     xk1 = fc.el("borne_continuite", ctrl.term("n", 1)[1], 100, "-X1:1")
@@ -241,13 +241,13 @@ def construir(ped, res, cod, versao, P_lista=None):
             fx.fio(out, b.term("n"), marca="VM", secao="1,5", num=f"{tg}0", ym=out[2] + 14 + 12 * i)
         else:
             fx, x, rN_ = fc2, 150 + 120 * (i - 6), railN2
-            pot_ = f"U1:{tg}"
+            pot_ = f"A1:{tg}"
             n_a = fc.no(out[1], out[2] + 8, pot=pot_)     # continua na folha seguinte (acima do roteamento das saídas 1–6)
             fc.fio(out, n_a.term("n"), marca="VM", secao="1,5", num="")
             if i == n - 1:
                 fc.texto(out[1] + 6, out[2] + 10, (f"saídas 7…{n} → /{fc2.n}" if n > 7 else f"saída 7 → /{fc2.n}"), 6, "#00a000")
             n_b = fc2.no(x, 120, pot=pot_)
-            fc2.texto(x + 4, 116, f"saída {tg} do -U1 (/{fc.n})", 6, "#00a000")
+            fc2.texto(x + 4, 116, f"saída {tg} do -A1 (/{fc.n})", 6, "#00a000")
             b = fx.el("thermostat_nc", x, 330, f"-B{tg}", inf(f"-B{tg}"))
             fx.fio(n_b.term("n"), b.term("n"), marca="VM", secao="1,5", num=f"{tg}0")
         bo = fx.el("bobine3", x, 460, f"-K{tg}", dict(designation=f"Contator estágio {tg}", contato=""))
@@ -343,7 +343,7 @@ def gerar(ped, res, pasta, cod, versao, n_banco=1, log=print):
     from .. import banco as B
     pn = B.painel(ped, res)
     funcoes = {f"-H{i + 1}": f"ESTÁGIO {i + 1} LIGADO" for i in range(n_est)}
-    funcoes.update({"-S0": "EMERGÊNCIA", "-S1": "MANUAL – 0 – AUTOMÁTICO", "-U1": "CONTROLADOR DE FATOR DE POTÊNCIA",
+    funcoes.update({"-S0": "EMERGÊNCIA", "-S1": "MANUAL – 0 – AUTOMÁTICO", "-A1": "CONTROLADOR DE FATOR DE POTÊNCIA",
                     "-Q0": "CHAVE GERAL", "-B0": "TERMOSTATO DO PAINEL", "-BT2": "SOBRETEMPERATURA DO PAINEL"})
     for i in range(n_est):
         funcoes[f"-FF{i + 1}"] = f"PROTEÇÃO ESTÁGIO {i + 1}"

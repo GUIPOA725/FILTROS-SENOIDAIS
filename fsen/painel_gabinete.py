@@ -127,7 +127,8 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
                             tras=[f"REATOR {k + 1}" for k in lote] + ["EXAUSTOR (teto)"],
                             zonas=["EXAUSTOR"]))
     prof = 400 if acesso == "frontal" else 800
-    vent["n_exaustores"] = max(vent["n_exaustores"], n_col)        # pelo menos 1 exaustor por coluna, sobre os reatores
+    vent["n_exaustores"] = max(vent["n_exaustores"], 2 * n_col)    # ≥ 2 exaustores por coluna, sobre os reatores (padrão Electric)
+    vent["n_exaustores"] = -(-vent["n_exaustores"] // n_col) * n_col    # mesmo nº em cada coluna (FONTE ÚNICA: esquema, 3D e lista)
     vent["vazao_instalada_m3h"] = round(vent["n_exaustores"] * vent["exaustor_m3h"] * K_FILTRO)
     vent["dt_k"] = round(3.1 * perd["total"] / vent["vazao_instalada_m3h"], 1)
     vent["t_interna_c"] = round(ped.amb_c + vent["dt_k"], 1)

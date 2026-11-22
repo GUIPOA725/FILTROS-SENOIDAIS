@@ -221,12 +221,16 @@ def _comando(p, x0, x1, y_face, z, faltam):
     _cx(p, "frente", x0, y_face - 8, z + 200, x1 - x0, 8, 35, "#c0c4c8")                     # trilho DIN 35 mm
     dj = achar_dim("Schneider Acti9 iC60N 1P", "disjuntores_modulares")
     l_, a_, p_ = (dj["L"], dj["A"], dj["P"]) if dj else (18, 85, 78.5)
-    for k in range(4):                                                                          # -F02..-F05
-        xx = x0 + 10 + k * (l_ * 2 + 4)
-        _cx(p, "frente", xx, y_face - p_, z + 175, l_ * 2, p_, a_, "#f4f4f4")
+    for k, tg in enumerate(("-F01", "-F02", "-F03")):                                          # tags = esquema elétrico
+        xx = x0 + 10 + k * (l_ * 3 + 4)
+        _cx(p, "frente", xx, y_face - p_, z + 175, l_ * (3 if k == 0 else 2), p_, a_, "#f4f4f4")
         _cx(p, "frente", xx + l_ * 0.5, y_face - p_ - 10, z + 210, l_, 10, 14, "#222222")
-        _rotulo(p, xx + l_, y_face - p_ - 2, z + 150, f"-F0{k + 2}")
-    xr = x0 + 10 + 4 * (l_ * 2 + 4) + 10                                                         # relé falta de fase
+        _rotulo(p, xx + l_, y_face - p_ - 2, z + 150, tg)
+    for k, tg in enumerate(("-B0", "-BT2")):                                                    # termostatos do painel
+        xt = x0 + 10 + 3 * (l_ * 3 + 4) + 45 + k * 40
+        _cx(p, "frente", xt, y_face - 40, z + 175, 33, 40, 67, "#e8e8e8")
+        _rotulo(p, xt + 16, y_face - 42, z + 150, tg)
+    xr = x0 + 10 + 3 * (l_ * 3 + 4) + 10                                                         # relé falta de fase
     _cx(p, "frente", xr, y_face - 90, z + 172, 22.5, 90, 90, C_VERM, 0.55)
     _rotulo(p, xr + 11, y_face - 92, z + 150, "-K0")
     if "relé falta de fase / trafo de comando (modelo a definir)" not in faltam:
@@ -241,7 +245,7 @@ def _bornes(p, x0, x1, y_face, z, faltam):
     n = int((x1 - x0 - 40) // 8)
     for k in range(min(n, 40)):
         _cx(p, "frente", x0 + 20 + k * 8, y_face - 47, z - 25, 6.2, 47, 85, "#7d8a96" if k % 10 else "#d9b300")
-    _rotulo(p, (x0 + x1) / 2, y_face - 50, z - 50, "-X1 / -X2")
+    _rotulo(p, (x0 + x1) / 2, y_face - 50, z - 50, "-X1")
 
 
 # ---- arranjo
@@ -307,8 +311,9 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         _cx(p, "lateral", xl, 0, BASE, 3, D, H - BASE, C_PORTA)
     for i, c in enumerate(cols):
         x0, Lc = xs[i], c["largura"]
-        for k in range(2):                                           # exaustores no teto (2 por coluna, sobre os reatores)
-            xf = x0 + Lc * (0.3 + 0.4 * k) - 90
+        n_ex_c = max(1, int((gab.get("ventilacao") or {}).get("n_exaustores", 2 * len(cols))) // len(cols))
+        for k in range(n_ex_c):                                      # exaustores no teto (nº do cálculo térmico, sobre os reatores)
+            xf = x0 + Lc * (k + 0.5) / n_ex_c - 90
             _cx(p, "teto", xf, D * 0.62, H + 3, 180, 120, 55, "#e8e8e8")
             _cx(p, "teto", xf + 20, D * 0.62 + 120, H + 3, 140, 10, 40, "#9e9e9e")
         for lado, y_p in (("porta_f", -18), ("porta_t", D)):         # portas frontal e traseira (uma por coluna)
@@ -325,9 +330,21 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
     _cx(p, "porta_f", x0c, -24, H * 0.62, 144, 6, 144, "#20384e")
     _cx(p, "porta_f", x0c + 14, -27, H * 0.62 + 50, 116, 3, 70, "#3fa7d6")
     n_est_tot = len(res["estagios"])
+    p.append(dict(t="rotulo", g="porta_f", x=x0c + 72, y=-40, z=H * 0.62 - 15, txt="-A1"))
     for k in range(n_est_tot):
         _cl(p, "porta_f", x0c - 120 + k * 50, -30, H * 0.55, 22, 12, "#2e7d32", eixo="y")
+        p.append(dict(t="rotulo", g="porta_f", x=x0c - 120 + k * 50, y=-40, z=H * 0.55 - 30, txt=f"-H{k + 1}"))
+    _cl(p, "porta_f", x0c - 170, -30, H * 0.55, 22, 12, "#fbc02d", eixo="y")
+    p.append(dict(t="rotulo", g="porta_f", x=x0c - 170, y=-40, z=H * 0.55 - 30, txt="-H0"))
     _cl(p, "porta_f", x0c + 230, -32, H * 0.62 + 30, 40, 16, "#d32f2f", eixo="y")
+    p.append(dict(t="rotulo", g="porta_f", x=x0c + 230, y=-40, z=H * 0.62 - 10, txt="-S0"))
+    _cl(p, "porta_f", x0c + 230, -32, H * 0.55, 30, 18, "#333333", eixo="y")
+    p.append(dict(t="rotulo", g="porta_f", x=x0c + 230, y=-40, z=H * 0.55 - 30, txt="-S1"))
+    _nm = 0
+    for pc in list(p):                                                   # exaustores do teto: -M1..-Mn (mesmas tags do esquema)
+        if pc.get("g") == "teto" and pc.get("t") == "caixa" and pc.get("A") == 55:
+            _nm += 1
+            p.append(dict(t="rotulo", g="teto", x=pc["x"] + 90, y=pc["y"], z=pc["z"] + 70, txt=f"-M{_nm}"))
     # ---------- por coluna: placa dupla face; frente distribuída sem vazio; trás reatores; cabos e barras montáveis
     _n_est_acum = 0
     zbb_glob = yf_glob = None
@@ -397,18 +414,43 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 ycab = yf - 35
                 yb = yp + CHAPA / 2 + 85                                    # derivação: barra (atrás) → passa-barra → topo da chave NH
                 _tubo(p, "tras", [(xm + dx, yb, z_bb + f * 45 + 15), (xm + dx, yb - 40, z_bb + f * 45 + 15),
-                                  (xm + dx, yb - 40, z_sc + sd["A"] + 60), (xm + dx, yp, z_sc + sd["A"] + 60)], 10, "#b87333")
+                                  (xm + dx, yb - 40, z_sc + sd["A"] + 60), (xm + dx, yp, z_sc + sd["A"] + 60)], 14, "#1e1e1e")
                 _tubo(p, "frente", [(xm + dx, yp, z_sc + sd["A"] + 60), (xm + dx, yf - 60, z_sc + sd["A"] + 60),
-                                    (xm + dx, yf - 60, z_sc + sd["A"] + 8)], 10, "#b87333")
+                                    (xm + dx, yf - 60, z_sc + sd["A"] + 8)], 14, "#1e1e1e")
                 _tubo(p, "frente", [(xm + dx, ycab, z_sc), (xm + dx, ycab, z_dut[1] + dut / 2),
                                     (xm + dx * 0.8, ycab, z_km + kd["A"])], 12, "#1e1e1e")
                 _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[0] + dut / 2),
                                     (xm + dx * 0.8, yp, z_dut[0] + dut / 2)], 12, "#1e1e1e")
             _cl(p, "placa", xm, yp, z_dut[0] + dut / 2, 50, 8, "#f2f2f2", eixo="y")   # passa-cabos (prensa) na placa
-            _cx(p, "placa", xm - 45, yp - 5, z_sc + sd["A"] + 45, 90, 10, 30, "#f2f2f2")   # passa-barra isolado (derivação do barramento)
+            _cx(p, "placa", xm - 45, yp - 5, z_sc + sd["A"] + 45, 90, 10, 30, "#f2f2f2")   # passa-cabo (cabo barramento → chave NH)
         # zona superior: col. 1 = disjuntor geral -Q0 + comando; demais = régua de bornes X1/X2
         if i == 0:
             _disjuntor_geral(p, xu0, yf, z_topo, faltam)
+            # cabos do cliente até o -Q0 (REQ-PNL-025): por cima (flange no teto) ou por baixo (flange na base)
+            try:
+                from . import banco as _Bk
+                ce = _Bk.cabos_entrada(ped, _Bk.disjuntor_geral(ped, res)["In"])
+            except Exception:
+                ce = dict(paralelos=2, secao=240)
+            dc = 1.15 * 1.128 * math.sqrt(ce["secao"]) + 2 * 2.2 + 4
+            cima = str(getattr(ped, "entrada_cabos", "baixo")).lower().startswith("c")
+            for f in range(3):
+                for kk in range(ce["paralelos"]):
+                    xc = xu0 + 40 + f * 60 + kk * (dc + 4) * 0.5
+                    yc = yf - 110 - kk * (dc + 4)
+                    if cima:
+                        _tubo(p, "frente", [(xc, yc, z_topo + 330), (xc, yc, H - 10), (xc, yc, H + 80)], dc, "#1e1e1e")
+                    else:
+                        _tubo(p, "frente", [(xc, yc, z_topo), (xc, yc, z_topo - 40), (xa + 25 + f * 12, yc, z_topo - 40),
+                                            (xa + 25 + f * 12, yc, BASE - 60)], dc, "#1e1e1e")
+            zfl = H + 3 if cima else BASE - 4
+            _cx(p, "teto" if cima else "base", xu0 + 10, yf - 110 - ce["paralelos"] * (dc + 4) - 20, zfl, 260,
+                ce["paralelos"] * (dc + 4) + 60, 6, "#b0b4b8")                                  # flange de entrada com prensa-cabos
+            p.append(dict(t="rotulo", g="frente", x=xu0 + 120, y=yf - 200, z=(H - 60) if cima else (BASE + 60),
+                          txt=f"-X0 entrada {ce['paralelos']}×{ce['secao']} mm²/fase por {'CIMA' if cima else 'BAIXO'}"))
+            ver.append(["Entrada de cabos", f"Cabos do cliente até o -Q0 por {'cima (flange no teto)' if cima else 'baixo (flange na base)'}: "
+                        f"{ce['paralelos']} × {ce['secao']} mm² por fase", f"{ce.get('Iz_total') or 0} A", f"≥ {ce.get('I', 0):.0f} A",
+                        CK.texto(CK.check((ce.get("Iz_total") or 0) >= ce.get("I", 1), CK.utilizacao(ce.get("I", 1), ce.get("Iz_total") or 1)))])
             _comando(p, xu0 + 260, xu1, yf, z_topo, faltam)
         else:
             _bornes(p, xu0, xu1, yf, z_topo + H_TOPO * 0.4, faltam)
@@ -417,6 +459,9 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         for j in range(n_est):
             xm = xu0 + passo * (j + 0.5)
             _cl(p, "placa", xm + 45, yp, zpass2, 44, 8, "#f2f2f2", eixo="y")
+            if caps_pos[j * n_cap:(j + 1) * n_cap]:
+                q0 = caps_pos[j * n_cap]
+                p.append(dict(t="rotulo", g="frente", x=q0[0], y=q0[1] - 70, z=q0[2] - 120, txt=f"-C{_n_est_acum + j + 1}"))
             for q in caps_pos[j * n_cap:(j + 1) * n_cap]:
                 _tubo(p, "frente", [(xm + 45, yp, zpass2), (xm + 45, yf - 30, zpass2), (q[0], yf - 30, zpass2),
                                     (q[0], q[1], zpass2), (q[0], q[1], q[2] + 4)], 9, "#1e1e1e")
@@ -424,6 +469,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             _rotulo(p, xm, yf - sd["P"] - 3, z_sc - 22, f"-Q{_n_est_acum + j + 1}")
         # PE: barra de terra na base da placa + cabos verde-amarelo (porta, placa, estrutura) – NR-10 10.4.4
         _cx(p, "frente", xa + 60, yf - 40, zp0 + 15, xb - xa - 120, 6, 25, "#c87533")
+        if i == 0:
+            p.append(dict(t="rotulo", g="frente", x=xa + 90, y=yf - 50, z=zp0 + 50, txt="-PE2"))
         for xx in (xa + 60, xb - 60):
             _cl(p, "frente", xx, yf - 20, zp0 + 27, 22, 40, "#2e7d32", eixo="y")
         for alvo in ((xa + 15, 30, zp0 + 300), (xb - 15, 30, zp0 + 300), ((xa + xb) / 2, yf, zp0 + 40)):
@@ -447,6 +494,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         ver.append(["Placa – frente", f"Ocupação da altura útil da placa ({c['funcao']})", f"{ocup * 100:.0f} %",
                     "50–90 % (nem vazia, nem apertada)",
                     CK.texto(CK.check(0.5 <= ocup <= 0.9, ocup * 100 / 90 * 100 if ocup > 0.5 else 95))])
+        _est_base = _n_est_acum - n_est                               # numeração global dos estágios desta coluna
         # trás: reatores em prateleiras, cabos pela passagem da placa
         yr = yp + CHAPA / 2 + prm["folga_reator_placa_mm"]
         por_niv = max(1, int((xb - xa - FOLGA) // (rL + FOLGA)))
@@ -473,6 +521,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                     _reator(p, xr, yr, zr, rL, rP, rA)
             else:
                 _reator(p, xr, yr, zr, rL, rP, rA)
+            p.append(dict(t="rotulo", g="tras", x=xr + rL / 2, y=yr + rP + 10, z=zr + rA * 0.5, txt=f"-L{_est_base + j + 1}"))
+            p.append(dict(t="rotulo", g="tras", x=xr + rL * 0.8, y=yr - 20, z=zr + rA + 5, txt=f"-B{_est_base + j + 1}"))
             xm = xu0 + passo * (j % n_est + 0.5)
             zpass = z_dut[0] + dut / 2
             zt_r = zr + rA + 45
@@ -501,6 +551,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         _cx(p, "tras", xs[0] + 40, yv + 200, zc0, xs[-1] - xs[0] - 80, 4, zc1 - zc0, "#cfe6ff", 0.35)   # policarbonato (porta traseira)
         p.append(dict(t="rotulo", g="tras", x=xs[0] + 120, y=yv + 210, z=zc1 + 10,
                       txt="BARRAMENTO GERAL – COMPARTIMENTO TRASEIRO (forma 2b, IPXXB)"))
+        for k_, tg in enumerate(("-R2", "-S2", "-T2")):                     # tags das barras = esquema (L1/L2/L3)
+            p.append(dict(t="rotulo", g="tras", x=xs[-1] - 140, y=yv + 120, z=zbb_glob + 15 + k_ * 45, txt=tg))
         ver.append(["Barramento", "Barramento geral único no alto, ATRÁS da placa, em compartimento próprio separado dos reatores "
                     "(forma 2b) – a porta da frente abre sem expor o barramento", f"{(xs[-1] - xs[0] - 120) / 1000:.2f} m",
                     "único, compartimento próprio", CK.texto(CK.check(True, 60))])
@@ -630,7 +682,7 @@ def _cena(m, vista, tam=(1700, 1250)):
     g = GRUPOS[vista]
     for pc in m["pecas"]:
         gg = pc.get("g")
-        if gg in g or (gg == "teto" and "teto_exaustor" in g and pc["A"] > 10):
+        if gg in g or (gg == "teto" and "teto_exaustor" in g and pc.get("A", 0) > 10):
             if vista == "lateral" and gg == "lateral":
                 continue
             _add(pl, pc)

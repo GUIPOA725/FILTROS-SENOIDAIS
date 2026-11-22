@@ -251,6 +251,22 @@ def t_painel_montagem(projs):
     return ok, "; ".join(ev)
 
 
+def t_conferencia_cruzada(projs):
+    """REQ-PNL-028: esquema elétrico × painel 2D/3D × lista de material – zero diferença (nenhum REPROVADO)."""
+    if not projs:
+        return None, "sem projeto para conferir"
+    import sys as _s
+    _s.path.insert(0, RAIZ)
+    from fsen import conferencia_projeto as CPJ
+    ok, ev = True, []
+    for p in projs:
+        L = CPJ.conferir(p)
+        rep = [f"{r[0]}: {str(r[4])[:70]}" for r in L if "REPROVADO" in str(r[3])]
+        ok &= not rep
+        ev.append(f"{os.path.basename(p)}: {len(L)} verificações, reprovadas {len(rep)}" + (f" ({'; '.join(rep[:3])})" if rep else ""))
+    return ok, "; ".join(ev)
+
+
 def t_biblioteca_paineis(projs):
     s = _ler("fsen/biblioteca_paineis.py")
     itens = {"aprovar": "def aprovar" in s, "partir do aprovado": "def ultimo_aprovado" in s and "ultimo_aprovado" in _ler("fsen/painel3d.py"),

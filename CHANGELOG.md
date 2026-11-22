@@ -1,5 +1,25 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.25.1 – 2026-11-22 (conferência cruzada esquema × painel × lista, entrada de cabos, cabos de força do padrão Electric)
+- **Conferência cruzada obrigatória (REQ-PNL-028)**: a cada projeto a plataforma confere o esquema elétrico (lista de material e de cabos), o DE/PARA, o painel 2D/3D e a lista de material completa:
+  - toda tag do esquema tem que estar no 3D e na lista, e vice-versa;
+  - código e modelo iguais;
+  - quantidade de capacitores;
+  - seções de cabo;
+  - ligações do DE/PARA.
+  O resultado sai em 01_Engenharia/6_Conferencia_Projeto, vai no RESUMO e segue para a montadora. O verificador de requisitos bloqueia a publicação se houver REPROVADO. Panatlântica ABB e Schneider: 0 reprovado.
+- **Fonte única** (as divergências que a conferência achou foram corrigidas na origem):
+  - nº de exaustores pelo cálculo térmico (≥ 2 por coluna, o mesmo nº em cada coluna) no esquema, no 3D e na lista;
+  - trafo de comando calculado pela carga também no esquema (antes o esquema dizia 500 VA e a lista 630 VA);
+  - códigos de botoeiras, sinaleiros, termostatos e reator iguais no esquema e na lista;
+  - tags iguais ao esquema no 3D e na lista: barras -R2/-S2/-T2, barra PE -PE2, controlador -A1 e seccionadoras -Qn no DE/PARA, termostatos -B1…-Bn, capacitores -C1…-Cn, sinaleiros -H0…-Hn, exaustores -M1…-Mn.
+- **Entrada dos cabos do cliente no disjuntor geral (REQ-PNL-025)**: opção por cima ou por baixo na tela. Quantidade e seção calculadas pela NBR 5410 (cabos em paralelo ≤ 240 mm²); flange, cabos e etiqueta -X0 no 3D e na lista. Panatlântica: 3 × 240 mm² por fase.
+- **Padrão Electric (REQ-PNL-026/027)**:
+  - cabo (não barra) do barramento geral até cada seccionadora;
+  - um cabo por fase de cada capacitor até a saída do reator, com um terminal para os n cabos por fase no borne do reator;
+  - cabos de força afastados dos bornes.
+- Painel 3D: correção de falha na vista com etiquetas no teto.
+
 ## v1.25.0 – 2026-11-22 (2D de montagem cotado, barramento atrás, lista de material completa, banco de componentes)
 - **Painel 2D de montagem (novo)**: vistas frontal e traseira sem portas, lateral em corte e topo, vetoriais e COTADAS (largura, altura, profundidade, colunas e altura de montagem de cada fileira), geradas do MESMO modelo do 3D – 2D e 3D nunca divergem. PDF A3 + DXF por camadas (estrutura, placa, componentes, cabos, cotas). Vai para a montadora.
 - **Barramento geral atrás da placa**, no alto, em compartimento próprio (chapa separando dos reatores + policarbonato): a porta da frente abre sem expor o barramento – forma de separação 2b (NBR IEC 61439-2). Derivações por barra flexível isolada através de passa-barras.
