@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.4 – 2026-11-22 (termostato de sobretemperatura no esquema)
+- **-BT2 55 °C no esquema elétrico** do banco dessintonizado e do filtro sintonizado: termostato NF do painel em série na cadeia de habilitação (-S0 emergência → -K0 falta de fase → **-BT2** → -S1 manual/auto). Se o ar interno passar de 55 °C (limite dos capacitores), o banco inteiro desliga; religa sozinho ao esfriar. O -B0 35 °C continua ligando os exaustores.
+- -BT2 entra na lista de material, na lista DE/PARA de fios (-K0:14 → -BT2:1, -BT2:2 → -S1:13), nas etiquetas e na lista de plaquetas ("SOBRETEMPERATURA DO PAINEL").
+- Desenho da folha do controlador: o fio do comum das saídas do controlador agora passa abaixo do L-HAB, sem parecer ligado antes da chave -S1.
+
 ## v1.18.3 – 2026-11-22 (fundo branco padrão; versões dos programas)
 - **Fundo branco por padrão**; no topo da tela, ao lado da 🛟 Ajuda, a chave **🌙 Fundo escuro** (a escolha fica lembrada no computador).
 - **ℹ️ Sobre / versões dos programas** no fim da barra lateral: versão da plataforma, Python, sistema, bibliotecas (Streamlit, NumPy, SciPy, Matplotlib, ezdxf, NGSolve, CadQuery, pywebview…), Claude Code e ATP encontrados neste computador.

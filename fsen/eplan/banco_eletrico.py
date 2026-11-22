@@ -53,6 +53,8 @@ def construir(ped, res, cod, versao, n_banco=1):
     nr = 6 if n <= 6 else 12
     P.dispositivo("-A1", f"Controlador automático de fator de potência {BR6000[nr][0]}", "Epcos (TDK)", BR6000[nr][1], 1, grupo="Controle")
     P.dispositivo("-B0", "Termostato de painel NA ajustável 0–60 °C (liga ventilação a 35 °C)", "Rittal/Finder (equiv.)", "", 1, grupo="Ventilação")
+    P.dispositivo("-BT2", "Termostato de painel NF ajustável 0–60 °C (sobretemperatura: abre a 55 °C e desliga o banco)",
+                  "Rittal/Finder (equiv.)", "", 1, grupo="Ventilação", dados="55 °C")
     nvent = 2 if n <= 4 else 4
     for k in range(1, nvent + 1):
         P.dispositivo(f"-M{k}", "Ventilador com filtro 220 V 50/60 Hz, ≥ 230 m³/h (ver cálculo térmico)", "Rittal/Mundial (equiv.)", "", 1,

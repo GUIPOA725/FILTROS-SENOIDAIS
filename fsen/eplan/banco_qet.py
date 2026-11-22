@@ -195,13 +195,17 @@ def construir(ped, res, cod, versao, P_lista=None):
                 fc.fio(prev.term("n"), nd.term("n"), marca="VM" if rail is railL else "AZ", secao="1,5")
             prev = nd
         fc.texto(8, y - 4, nm, 8, "#c62828")
-    s0 = fc.el("arret_urgence_verrou", 60, 110, "-S0", inf("-S0"))
+    s0 = fc.el("arret_urgence_verrou", 60, 100, "-S0", inf("-S0"))
     fc.fio(railL[60].term("n"), s0.term("n"), marca="VM", secao="1,5")
-    k0c = fc.el("con_simple", 60, 210, "-K0", dict(contato="11-14"))
+    k0c = fc.el("con_simple", 60, 170, "-K0", dict(contato="11-14"))
     Q.ligar(k0c, k0)
     fc.fio(s0.term("s"), k0c.term("n"), marca="VM", secao="1,5")
-    s1 = fc.el("commut_2_position_fixe", 60, 300, "-S1", inf("-S1"))
-    fc.fio(k0c.term("s"), s1.term("n"), marca="VM", secao="1,5")
+    # v1.18.4: termostato de sobretemperatura do painel (NF, 55 °C) em série na cadeia de habilitação – desliga o banco todo
+    bt2 = fc.el("thermostat_nc", 60, 240, "-BT2", inf("-BT2", "55 °C"))
+    fc.fio(k0c.term("s"), bt2.term("n"), marca="VM", secao="1,5")
+    fc.texto(78, 236, "sobretemp. painel 55 °C", 6, "#555555")
+    s1 = fc.el("commut_2_position_fixe", 60, 310, "-S1", inf("-S1"))
+    fc.fio(bt2.term("s"), s1.term("n"), marca="VM", secao="1,5")
     nh = fc.no(60, 360)
     fc.fio(s1.term("s"), nh.term("n"), marca="VM", secao="1,5")
     fc.texto(70, 372, "L-HAB", 7, "#c62828")
@@ -214,7 +218,7 @@ def construir(ped, res, cod, versao, P_lista=None):
     fc.fio(xk2.term("s"), ctrl.term("n", 2), marca="PT", secao="2,5")
     fc.texto(ctrl.term("n", 1)[1] - 10, 70, "TC externo …/5 A (cliente)", 7, "#555555")
     fc.fio(ctrl.term("s", 0), railN[260].term("n") if 260 in railN else railN[200].term("n"), marca="AZ", secao="1,5")
-    fc.fio(nh.term("n"), ctrl.term("s", 1), marca="VM", secao="1,5")
+    fc.fio(nh.term("n"), ctrl.term("s", 1), marca="VM", secao="1,5", ym=nh.y + 25)   # v1.18.4: corre abaixo do L-HAB (não cruza -S1)
     lampadas = []
     fc2, railN2 = None, {}
     if n > 6:       # saídas 7–12 numa segunda folha (como o EPLAN: não espreme 12 bobinas numa folha)
@@ -241,7 +245,7 @@ def construir(ped, res, cod, versao, P_lista=None):
             n_a = fc.no(out[1], out[2] + 8, pot=pot_)     # continua na folha seguinte (acima do roteamento das saídas 1–6)
             fc.fio(out, n_a.term("n"), marca="VM", secao="1,5", num="")
             if i == n - 1:
-                fc.texto(out[1] + 6, out[2] + 10, f"saídas 7…{n} → /{fc2.n}", 6, "#00a000")
+                fc.texto(out[1] + 6, out[2] + 10, (f"saídas 7…{n} → /{fc2.n}" if n > 7 else f"saída 7 → /{fc2.n}"), 6, "#00a000")
             n_b = fc2.no(x, 120, pot=pot_)
             fc2.texto(x + 4, 116, f"saída {tg} do -U1 (/{fc.n})", 6, "#00a000")
             b = fx.el("thermostat_nc", x, 330, f"-B{tg}", inf(f"-B{tg}"))
@@ -340,7 +344,7 @@ def gerar(ped, res, pasta, cod, versao, n_banco=1, log=print):
     pn = B.painel(ped, res)
     funcoes = {f"-H{i + 1}": f"ESTÁGIO {i + 1} LIGADO" for i in range(n_est)}
     funcoes.update({"-S0": "EMERGÊNCIA", "-S1": "MANUAL – 0 – AUTOMÁTICO", "-U1": "CONTROLADOR DE FATOR DE POTÊNCIA",
-                    "-Q0": "CHAVE GERAL", "-B0": "TERMOSTATO DO PAINEL"})
+                    "-Q0": "CHAVE GERAL", "-B0": "TERMOSTATO DO PAINEL", "-BT2": "SOBRETEMPERATURA DO PAINEL"})
     for i in range(n_est):
         funcoes[f"-FF{i + 1}"] = f"PROTEÇÃO ESTÁGIO {i + 1}"
         funcoes[f"-K{i + 1}"] = f"CONTATOR ESTÁGIO {i + 1}"
