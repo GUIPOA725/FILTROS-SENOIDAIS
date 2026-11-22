@@ -23,7 +23,7 @@ PADRAO = {
     "folga_componentes_mm": 30,          # entre componente e canaleta/parede
     "folga_capacitores_mm": 20,          # entre latas (ar + aperto do terminal)
     "capacitores_fileiras_prof_max": 2,  # fileiras na profundidade (3ª fileira não dá acesso ao terminal)
-    "folga_vertical_min_mm": 70,         # mínimo entre fileiras (cabos + ar)
+    "folga_vertical_min_mm": 40,         # mínimo componente ↔ canaleta (as canaletas já dão o espaço dos cabos)
     "afastamento_lateral_min_mm": 30,    # entre chaves/contatoras vizinhas (ar e ferramenta)
     "canaleta_horizontal_mm": 60,
     "canaleta_vertical_mm": 60,

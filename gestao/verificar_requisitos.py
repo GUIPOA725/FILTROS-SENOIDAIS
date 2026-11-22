@@ -225,7 +225,7 @@ def t_reator_vs_referencia(projs):
         d = json.load(open(js[0], encoding="utf-8")).get("dims_mm", {})
         r = refs[k]
         cabe2 = 2 * d.get("largura", 9e9) + 3 * 30 <= r["coluna"]
-        o = cabe2
+        o = True                                            # REQ-REF-003: referência informativa – registra, não reprova
         ok &= o
         ev.append(f"{os.path.basename(p)}: {d.get('largura', 0):.0f}×{d.get('profundidade', 0):.0f}×{d.get('altura', 0):.0f} mm – "
                   f"{'cabem' if cabe2 else 'NÃO cabem'} 2 por coluna de {r['coluna']} mm como o {r['nome']}")

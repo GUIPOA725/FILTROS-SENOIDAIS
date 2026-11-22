@@ -475,13 +475,21 @@ def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=Non
                         continue
                     custo_ = m_fe_ * ch["preco_kg"] + m_cond_ * cond["preco_kg"] * 1.15 + CAPITALIZACAO_R_W * (P_cu_ + p1_ + ps_)
                     _met = custo_ if SELECAO_FIO == "custo" else (m_fe_ + m_cond_) + 1e-4 * custo_
-                    i = int(np.argmin(np.where(val, _met, np.inf)))
-                    fio = dict(t=float(T_[i]), h=float(H_[i]), np=int(NP_[i]), n_cam=n_cam, n_ax=n_ax, iso=iso, t_cam=tcam)
-                    g = _geo(r, N, a, b, fio["np"] * fio["t"], float(hf_[i]), int(ND_[i]), c, cond, ch, fio=fio)
-                    cands.append(dict(kae=kae, N=N, a=a, b=b, tf=fio["np"] * fio["t"], hf=float(hf_[i]), nd=int(ND_[i]), c=c, Bpk=Bpk,
-                                      dBpp=dB, custo=float(custo_[i]) if SELECAO_FIO == "custo" else float(m_fe_[i] + m_cond_[i]), P_cu=float(P_cu_[i]), P_fe1=float(p1_[i]), P_fes=float(ps_[i]),
-                                      dT_w=float(dT_w_[i]), dT_fe=float(dT_fe_[i]), Fr=float(Fr_[i]), delta=delta, R=float(R_[i]),
-                                      rhoT=rhoT, fio=fio, **g))
+                    idx = [int(np.argmin(np.where(val, _met, np.inf)))]
+                    if r.get("L_env_max_mm"):                    # v1.24.3: também o melhor que CABE na coluna (largura externa)
+                        from .ind_estrutura import EXT_X as _EXT
+                        cabe_ = (3 * a + 2 * ww_) * 1e3 + 2 * _EXT <= r["L_env_max_mm"]
+                        if (val & cabe_).any():
+                            j = int(np.argmin(np.where(val & cabe_, _met, np.inf)))
+                            if j != idx[0]:
+                                idx.append(j)
+                    for i in idx:
+                        fio = dict(t=float(T_[i]), h=float(H_[i]), np=int(NP_[i]), n_cam=n_cam, n_ax=n_ax, iso=iso, t_cam=tcam)
+                        g = _geo(r, N, a, b, fio["np"] * fio["t"], float(hf_[i]), int(ND_[i]), c, cond, ch, fio=fio)
+                        cands.append(dict(kae=kae, N=N, a=a, b=b, tf=fio["np"] * fio["t"], hf=float(hf_[i]), nd=int(ND_[i]), c=c, Bpk=Bpk,
+                                          dBpp=dB, custo=float(custo_[i]) if SELECAO_FIO == "custo" else float(m_fe_[i] + m_cond_[i]), P_cu=float(P_cu_[i]), P_fe1=float(p1_[i]), P_fes=float(ps_[i]),
+                                          dT_w=float(dT_w_[i]), dT_fe=float(dT_fe_[i]), Fr=float(Fr_[i]), delta=delta, R=float(R_[i]),
+                                          rhoT=rhoT, fio=fio, cabe_coluna=len(idx) > 1 and i == idx[-1], **g))
     cands.sort(key=lambda x: x["custo"])
     out, vistos = [], set()
     for cd in cands:                                   # candidatos distintos (núcleo/espiras/fio)
@@ -493,6 +501,10 @@ def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=Non
         out.append(cd)
         if len(out) >= n_cand:
             break
+    fit = [c_ for c_ in cands if c_.get("cabe_coluna") and c_ not in out]
+    for cd in fit[:4]:                                   # v1.24.3: garante candidatos que cabem 2 por coluna no FEM
+        cd.update(chapa=chapa, cond=cond_id, h_conv=h_conv, alvo=alvo, amb_c=amb_c)
+        out.append(cd)
     return out
 
 
@@ -525,6 +537,10 @@ def pre_dimensionar_fio(r, chapas=None, conds=None, h_conv=12.0, alvo_elev=None,
                     vistos.add(chave(x))
                     escolhidos.append(x)
     for x in sorted(todos, key=lambda x: x["custo"])[:n_global]:
+        if chave(x) not in vistos:
+            vistos.add(chave(x))
+            escolhidos.append(x)
+    for x in sorted([x for x in todos if x.get("cabe_coluna")], key=lambda x: x["custo"])[:6]:   # v1.24.3: os que cabem na coluna
         if chave(x) not in vistos:
             vistos.add(chave(x))
             escolhidos.append(x)
@@ -791,14 +807,27 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
             ok_gap = g_need <= GAP_MAX_FRAC_A * cd["a"] * 0.90 and g_need / 2 <= GAP_MAX_PECA_CULATRA_MM * 1e-3 * 0.90   # folga p/ o ajuste final (+7 %)
             cd["_g_need"] = g_need
             ok_c = Ptot <= FOLGA_PERDAS_FIO * pmx and dTw <= FOLGA_ELEV_FIO * cd["alvo"] and ok_gap
+            from .ind_estrutura import EXT_X as _EXT
+            larg_env = (3 * cd["a"] + 2 * cd["ww"]) * 1e3 + 2 * _EXT       # largura externa (quadros + saídas)
+            cd["_larg_env"] = larg_env
+            cabe = larg_env <= (r.get("L_env_max_mm") or 1e9)
             f = cd["fio"]
             log(f"     {cd['cond']} {cd['chapa'].replace('GO_APERAM_', '')} | fio {f['t']*1e3:.2f}×{f['h']*1e3:.1f} mm ×{f['np']} | {cd['N']} esp ({f['n_cam']} cam × {f['n_ax']}) | coluna "
                 f"{cd['a']*1e3:.0f}×{cd['b']*1e3:.0f}: enrol. {Pw:.0f} W, total {Ptot:.0f} W, ΔT≈{dTw:.0f} K, entreferro "
-                f"{g_need*1e3:.1f} mm/col {'✓' if ok_c else '✗'}")
+                f"{g_need*1e3:.1f} mm/col, largura {larg_env:.0f} mm {'✓' if ok_c else '✗'}{'' if cabe else ' (não cabe na coluna)'}")
             cd["_m_tot"] = m_tot
-            avals.append((not ok_c, (custo if SELECAO_FIO == "custo" else m_tot) if ok_c else Ptot, cd, Pw, Ptot))
-        avals.sort(key=lambda x: (x[0], x[1]))
+            avals.append((not ok_c, (custo if SELECAO_FIO == "custo" else m_tot) if ok_c else Ptot, cd, Pw, Ptot, cabe))
+        # v1.24.3 (REQ-REA-002): 1º passa em tudo E cabe na coluna; 2º passa em tudo; 3º cabe (perda acima do teto – AVISA);
+        # nunca mais escolher em silêncio o de menor perda (o maior)
+        avals.sort(key=lambda x: ((0 if x[5] else 1) if not x[0] else (2 if x[5] else 3), x[1]))
         d = avals[0][2]
+        if avals[0][0]:
+            d.setdefault("avisos_selecao", []).append(
+                f"Nenhum candidato passou em perdas/elevação/entreferro; escolhido o de menor perda que cabe na coluna "
+                f"(largura {d['_larg_env']:.0f} mm ≤ {r.get('L_env_max_mm') or 0:.0f} mm) – conferir teto de perdas com o fabricante.")
+        elif not avals[0][5]:
+            d.setdefault("avisos_selecao", []).append(
+                f"O melhor candidato não cabe 2 por coluna de 800 mm (largura {d['_larg_env']:.0f} mm) – painel com colunas maiores.")
         chapa, cond_id = d["chapa"], d["cond"]
         ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
         d["triagem_fio"] = [dict(cond=x[2]["cond"], chapa=x[2]["chapa"].replace("GO_APERAM_", ""), custo=round(x[1]) if not x[0] else None,
@@ -843,7 +872,7 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         gaps = [g * (L3[k] / r["L"]) ** 1.0 for k, g in enumerate(gaps)]
     d["gaps"] = gaps
     d["ng"] = ng
-    d["avisos"] = []
+    d["avisos"] = list(d.get("avisos_selecao", []))
     _gmax = max(gaps)
     _lim_p = GAP_MAX_PECA_CULATRA_MM if d.get("pos_gap") == "culatra" else GAP_MAX_PECA_MM
     if _gmax > GAP_MAX_FRAC_A * d["a"] or _gmax / ng * 1e3 > _lim_p * 1.15:

@@ -42,3 +42,8 @@ reatores_referencia:          # reatores de terceiros usados em projetos antigos
 
 gabinete_padrao_electric:     # padrão dos projetos Electric (CVI, AGCO): autoportante, placa laranja, base preta
   modulo: {L: 800, A: 2000, P: 800, base: 100, cor: "RAL 7035", placa: "RAL 2004 (laranja)", fonte: "projetos CVI 2021 e AGCO Ibirubá 2022"}
+
+disjuntores_modulares:
+  "Schneider Acti9 iC60N 1P":       {tipo: caixa, L: 18, A: 85, P: 78.5, fixacao: "trilho DIN 35",
+                                     fonte: "Schneider Acti9 iC60N – folha de dados (18 mm por polo × 85 × 78,5 mm)", conferir: true}
+disjuntores: {}

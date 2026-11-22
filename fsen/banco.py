@@ -41,6 +41,7 @@ K_CORRENTE_DESSINT = 1.30          # planilha ESTAGIO: "Corrente Indutor = I60 �
 K_CORRENTE_SINT = 1.80             # planilha do indutor monofásico: 1,1·I60·√(1+1,1²+0,55²+0,44²) = 1,81·I60 (140 A / 77,5 A)
 K_HIST_SINT = "histórico Electric: 1,615 (DHTi 50 %), 2,0 (DHTi 150 %), 2,5 (52 kvar/400 V)"
 FQ_DESSINT, FQ_SINT = 60.0, 100.0
+LARGURA_REATOR_MAX_MM = 315.0      # (800 − 80 placa − 3 × 30 folgas) / 2 – reator real Cootrans 796 µH/95 A (Panatlântica 2024) cabe
 P_W_POR_KVAR = 6.0                 # teto de perdas do reator (W/kvar efetivo) – catálogos de reatores dessintonizados
 P_W_POR_KVAR_SINT = 10.0           # sintonizado: corrente ≈ 1,8–2,5 × I60 com a harmônica sintonizada a 300 Hz (FQ ≥ 60 na fundamental)
 R_POR_KVAR_CAP = 45.0              # R$/kvar (ESTIMATIVA – confirmar com fornecedor)
@@ -278,7 +279,8 @@ def requisitos_reator(ped, e):
                P_max=(P_W_POR_KVAR_SINT if ped.tipo == "sintonizado" else P_W_POR_KVAR) * e["Q_kvar"], k_Pmax=0.88,
                aplicacao=("reator de banco dessintonizado" if ped.tipo == "dessintonizado" else f"reator de filtro sintonizado ({e['ordem']:g}ª)"),
                linearidade=lin, tol_L_pct=ped.tol_l_pct, I_electric=I_el, I_fisica=I_fis, k_corrente=k, I_ajuste=e["I60"],
-               V_ajuste_fase=e["V_ajuste_fase"], fq=e["fq"])
+               V_ajuste_fase=e["V_ajuste_fase"], fq=e["fq"],
+               L_env_max_mm=LARGURA_REATOR_MAX_MM)       # v1.24.3: 2 reatores lado a lado na coluna de 800 mm (Cootrans Panatlântica)
     return req, (fh, Vh), Ih
 
 

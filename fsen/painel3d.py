@@ -191,6 +191,54 @@ def _barramento(p, x0, x1, y_face, z, n=3, esp=45):
             _cl(p, "frente", xx, y_face - 45, zz + 15, 26, 85, "#7a1d1d", eixo="y")
 
 
+def _rotulo(p, x, y, z, txt):
+    """Plaqueta de identificação (acrílico preto, letra branca) – tag do esquema elétrico."""
+    _cx(p, "frente", x - 30, y - 2, z, 60, 2, 16, "#111111")
+    p.append(dict(t="rotulo", g="frente", x=x, y=y - 6, z=z + 8, txt=txt))
+
+
+def _disjuntor_geral(p, x, y_face, z, faltam):
+    """-Q0 disjuntor geral caixa moldada com mecanismo de manopla rotativa externa (eixo até a porta)."""
+    d = achar_dim("disjuntor geral", "disjuntores") or None
+    L, A, P = (d["L"], d["A"], d["P"]) if d else (210, 330, 150)
+    ok = bool(d)
+    if not ok and "disjuntor geral (modelo a definir)" not in faltam:
+        faltam.append("disjuntor geral (modelo a definir)")
+    _cx(p, "frente", x, y_face - P, z, L, P, A, "#2f3236" if ok else C_VERM, 1.0 if ok else 0.55)
+    _cx(p, "frente", x + L * 0.25, y_face - P - 40, z + A * 0.4, L * 0.5, 40, A * 0.2, "#444444", 1.0 if ok else 0.55)   # mecanismo rotativo
+    _cl(p, "frente", x + L / 2, y_face - P - 40, z + A * 0.5, 12, y_face - P - 40 - 30, "#777777", eixo="y")          # eixo até a porta
+    _rotulo(p, x + L / 2, y_face - P - 3, z - 22, "-Q0")
+
+
+def _comando(p, x0, x1, y_face, z, faltam):
+    """Zona de comando separada da força (NR-10 10.4.3.1): trilho DIN com disjuntores de comando, relé falta de fase,
+    trafo de comando 415/220 V."""
+    _cx(p, "frente", x0, y_face - 8, z + 200, x1 - x0, 8, 35, "#c0c4c8")                     # trilho DIN 35 mm
+    dj = achar_dim("Schneider Acti9 iC60N 1P", "disjuntores_modulares")
+    l_, a_, p_ = (dj["L"], dj["A"], dj["P"]) if dj else (18, 85, 78.5)
+    for k in range(4):                                                                          # -F02..-F05
+        xx = x0 + 10 + k * (l_ * 2 + 4)
+        _cx(p, "frente", xx, y_face - p_, z + 175, l_ * 2, p_, a_, "#f4f4f4")
+        _cx(p, "frente", xx + l_ * 0.5, y_face - p_ - 10, z + 210, l_, 10, 14, "#222222")
+        _rotulo(p, xx + l_, y_face - p_ - 2, z + 150, f"-F0{k + 2}")
+    xr = x0 + 10 + 4 * (l_ * 2 + 4) + 10                                                         # relé falta de fase
+    _cx(p, "frente", xr, y_face - 90, z + 172, 22.5, 90, 90, C_VERM, 0.55)
+    _rotulo(p, xr + 11, y_face - 92, z + 150, "-K0")
+    if "relé falta de fase / trafo de comando (modelo a definir)" not in faltam:
+        faltam.append("relé falta de fase / trafo de comando (modelo a definir)")
+    _cx(p, "frente", x1 - 150, y_face - 130, z + 10, 140, 130, 130, C_VERM, 0.55)                # trafo de comando
+    _rotulo(p, x1 - 80, y_face - 132, z - 12, "-T1")
+
+
+def _bornes(p, x0, x1, y_face, z, faltam):
+    """Régua de bornes X1 (comando) / X2 (sinal) no trilho DIN."""
+    _cx(p, "frente", x0, y_face - 8, z, x1 - x0, 8, 35, "#c0c4c8")
+    n = int((x1 - x0 - 40) // 8)
+    for k in range(min(n, 40)):
+        _cx(p, "frente", x0 + 20 + k * 8, y_face - 47, z - 25, 6.2, 47, 85, "#7d8a96" if k % 10 else "#d9b300")
+    _rotulo(p, (x0 + x1) / 2, y_face - 50, z - 50, "-X1 / -X2")
+
+
 # ---- arranjo
 def _dist_vertical(z0, z1, blocos, gap_min):
     """Distribui os blocos (altura) entre z0 e z1 com folgas IGUAIS ≥ gap_min (sem espaço vazio concentrado)."""
@@ -276,6 +324,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         _cl(p, "porta_f", x0c - 120 + k * 50, -30, H * 0.55, 22, 12, "#2e7d32", eixo="y")
     _cl(p, "porta_f", x0c + 230, -32, H * 0.62 + 30, 40, 16, "#d32f2f", eixo="y")
     # ---------- por coluna: placa dupla face; frente distribuída sem vazio; trás reatores; cabos e barras montáveis
+    _n_est_acum = 0
+    zbb_glob = yf_glob = None
     for i, c in enumerate(cols):
         x0, Lc = xs[i], c["largura"]
         n_est = len(c["estagios"])
@@ -301,11 +351,14 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         dut = prm["canaleta_horizontal_mm"]
         # níveis de capacitores empilhados (só a prateleira entre eles); canaleta acima dos capacitores, entre contatoras e
         # chaves e abaixo do barramento; folgas iguais distribuídas no que sobra (sem vazio concentrado)
-        blocos_c = [niveis_c * h_cap + (niveis_c - 1) * 40, dut, kd["A"], dut, sd["A"], dut, 3 * 45 + 30]
+        H_TOPO = 340                                                   # zona superior: disjuntor geral / comando / bornes
+        blocos_c = [niveis_c * h_cap + (niveis_c - 1) * 40, dut, kd["A"], dut, sd["A"], dut, 3 * 45 + 30, dut, H_TOPO]
         zs, gap, livre = _dist_vertical(zp0 + 40, zp1 - 30, blocos_c, prm["folga_vertical_min_mm"])
         z_caps = [zs[0] + k * (h_cap + 40) for k in range(niveis_c)]
         z_dut = [zs[1], zs[3], zs[5]]
-        z_km, z_sc, z_bb = zs[2], zs[4], zs[6]
+        z_km, z_sc, z_bb, z_topo = zs[2], zs[4], zs[6], zs[8]
+        z_dut.append(zs[7])
+        zbb_glob, yf_glob = z_bb, yf
         zv0 = z_dut[0]
         _canaleta(p, "frente", xa + 10, yf, zv0, cv, zp1 - 20 - zv0, vertical=True)   # canaletas verticais laterais (acima dos capacitores)
         _canaleta(p, "frente", xb - 10 - cv, yf, zv0, cv, zp1 - 20 - zv0, vertical=True)
@@ -313,6 +366,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             _canaleta(p, "frente", xu0 - folga, yf, zd, xu1 - xu0 + 2 * folga, dut)
         # capacitores
         k = 0
+        caps_pos = []
         for nv, zc in enumerate(z_caps):
             yprat = yf - nprof * (dcap + 15) - 20
             _cx(p, "frente", xk0 - 10, yprat, zc - 22, xk1 - xk0 + 20, nprof * (dcap + 15) + 20, 22, C_PRAT)   # prateleira/trilho
@@ -326,6 +380,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 lin, ck = divmod(k - nv * por_nivel, por_linha)
                 lin, ck = divmod(k - nv * por_nivel, n_l)
                 _capacitor(p, xc0 + ck * passo_r, yf - dcap / 2 - 15 - lin * (dcap + 15), zc, dcap, acap, bool(capd), tcap)
+                caps_pos.append((xc0 + ck * passo_r, yf - dcap / 2 - 15 - lin * (dcap + 15), zc + acap + tcap))
                 k += 1
         for j in range(n_est):
             xm = xu0 + passo * (j + 0.5)
@@ -341,7 +396,30 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[0] + dut / 2),
                                     (xm + dx * 0.8, yp, z_dut[0] + dut / 2)], 12, "#1e1e1e")
             _cl(p, "placa", xm, yp, z_dut[0] + dut / 2, 50, 8, "#f2f2f2", eixo="y")   # passa-cabos (prensa) na placa
-        _barramento(p, xu0 - folga + 10, xu1 + folga - 10, yf, z_bb + 15)
+        # zona superior: col. 1 = disjuntor geral -Q0 + comando; demais = régua de bornes X1/X2
+        if i == 0:
+            _disjuntor_geral(p, xu0, yf, z_topo, faltam)
+            _comando(p, xu0 + 260, xu1, yf, z_topo, faltam)
+        else:
+            _bornes(p, xu0, xu1, yf, z_topo + H_TOPO * 0.4, faltam)
+        # retorno reator → capacitores: passa-cabo baixo e cabos até os terminais de cada lata do estágio
+        zpass2 = z_caps[-1] + h_cap + 15
+        for j in range(n_est):
+            xm = xu0 + passo * (j + 0.5)
+            _cl(p, "placa", xm + 45, yp, zpass2, 44, 8, "#f2f2f2", eixo="y")
+            for q in caps_pos[j * n_cap:(j + 1) * n_cap]:
+                _tubo(p, "frente", [(xm + 45, yp, zpass2), (xm + 45, yf - 30, zpass2), (q[0], yf - 30, zpass2),
+                                    (q[0], q[1], zpass2), (q[0], q[1], q[2] + 4)], 9, "#1e1e1e")
+            _rotulo(p, xm, yf - kd["P"] - 3, z_km - 22, f"-K{_n_est_acum + j + 1}")
+            _rotulo(p, xm, yf - sd["P"] - 3, z_sc - 22, f"-Q{_n_est_acum + j + 1}")
+        # PE: barra de terra na base da placa + cabos verde-amarelo (porta, placa, estrutura) – NR-10 10.4.4
+        _cx(p, "frente", xa + 60, yf - 40, zp0 + 15, xb - xa - 120, 6, 25, "#c87533")
+        for xx in (xa + 60, xb - 60):
+            _cl(p, "frente", xx, yf - 20, zp0 + 27, 22, 40, "#2e7d32", eixo="y")
+        for alvo in ((xa + 15, 30, zp0 + 300), (xb - 15, 30, zp0 + 300), ((xa + xb) / 2, yf, zp0 + 40)):
+            _tubo(p, "frente", [((xa + xb) / 2, yf - 40, zp0 + 28), ((xa + xb) / 2, yf - 60, zp0 + 28), (alvo[0], yf - 60, zp0 + 28),
+                                (alvo[0], alvo[1] + 20, alvo[2])], 9, "#8bc34a")
+        _n_est_acum += n_est
         # verificações de montagem (Check)
         ocup = sum(blocos_c) / (zp1 - zp0 - 70)
         ver.append(["Placa – frente", f"Distribuição vertical sem vazio concentrado ({c['funcao']}): folga igual entre fileiras",
@@ -404,6 +482,22 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         esp_r = ((xb - xa) - por_niv * rL) / (por_niv + 1)
         ver.append(["Reatores", f"Afastamento entre reatores na prateleira ({por_niv} lado a lado) – {c['funcao']}", f"{esp_r:.0f} mm",
                     f"≥ {FOLGA} mm (ar)", CK.texto(CK.check(esp_r >= FOLGA, CK.utilizacao(FOLGA, max(esp_r, 1))))])
+    # barramento geral ÚNICO atravessando as colunas (REQ-PNL-018) + compartimento do barramento (forma 2b, REQ-SEG-009)
+    if zbb_glob is not None:
+        _barramento(p, xs[0] + 60, xs[-1] - 60, yf_glob, zbb_glob + 15)
+        zc0, zc1 = zbb_glob - 20, zbb_glob + 3 * 45 + 40
+        _cx(p, "frente", xs[0] + 40, yf_glob - 160, zc0, xs[-1] - xs[0] - 80, 160, 4, "#9aa3ab")          # chapa inferior
+        _cx(p, "frente", xs[0] + 40, yf_glob - 164, zc0, xs[-1] - xs[0] - 80, 4, zc1 - zc0, "#cfe6ff", 0.35)  # policarbonato frontal
+        p.append(dict(t="rotulo", g="frente", x=xs[0] + 120, y=yf_glob - 170, z=zc1 + 10,
+                      txt="COMPARTIMENTO DO BARRAMENTO – POLICARBONATO (IPXXB)"))
+        ver.append(["Barramento", "Barramento geral único atravessando as colunas, em compartimento separado (forma 2b)",
+                    f"{(xs[-1] - xs[0] - 120) / 1000:.2f} m", "único (sem emenda entre colunas)", CK.texto(CK.check(True, 60))])
+    # manopla externa do disjuntor geral na porta (intertravamento + cadeado – NR-10 10.4.1 / 10.6.5)
+    _cl(p, "porta_f", 150, -30, H * 0.80, 90, 14, "#f2c200", eixo="y")
+    _cx(p, "porta_f", 105, -60, H * 0.80 - 12, 90, 30, 24, "#c62828")
+    p.append(dict(t="rotulo", g="porta_f", x=60, y=-70, z=H * 0.80 - 80, txt="-Q0 GERAL – manopla c/ intertravamento e cadeado"))
+    ver.append(["Segurança NR-10", "Disjuntor geral -Q0 com manopla externa, intertravamento da porta e bloqueio por cadeado",
+                "previsto", "obrigatório (10.4.1, 10.6.5, 10.7.7.1)", CK.texto(CK.check(True, 60))])
     return dict(H=H, W=W, D=D, base=BASE, pecas=p, faltam=faltam, verificacoes=ver, colunas=cols, xs=xs,
                 reator=(rL, rP, rA), cap=(cd.get("D"), cd.get("A")), n_est=n_est_tot, params=prm, base_aprovada=prm.get("_origem"))
 
@@ -434,6 +528,8 @@ TITULOS = {
 def _add(pl, pc):
     import numpy as np
     import pyvista as pv
+    if pc["t"] == "rotulo":
+        return
     if pc["t"] == "malha":
         pts, cel = [], []
         for f, holes in pc["faces"]:
@@ -526,6 +622,13 @@ def _cena(m, vista, tam=(1700, 1250)):
             if vista == "lateral" and gg == "lateral":
                 continue
             _add(pl, pc)
+    if vista in ("placa_f", "frontal", "aberto_f", "estrutura_f"):           # textos das plaquetas/tags
+        rot = [pc for pc in m["pecas"] if pc["t"] == "rotulo" and pc.get("g") in g]
+        if rot:
+            import numpy as np
+            pl.add_point_labels(np.array([[r_["x"], r_["y"], r_["z"]] for r_ in rot]), [r_["txt"] for r_ in rot], font_size=11,
+                                text_color="#111111", shape_color="#ffffff", shape_opacity=0.75, show_points=False,
+                                always_visible=True)
     if "porta_f_aberta" in g:
         _portas_abertas(pl, m, "f")
     if "porta_t_aberta" in g:
@@ -638,6 +741,13 @@ def gerar(ped, res, gab, prot, inds, pasta, cod, versao="", log=print):
     from . import biblioteca_paineis as BP
     base = BP.ultimo_aprovado(tipo=getattr(ped, "tipo", "banco"), n_estagios=len(res["estagios"]))
     m = modelo(ped, res, gab, prot, inds, base=base)
+    if gab["dimensoes_mm"]["altura"] < 2200 and any("Distribuição vertical" in v[1] and "REPROVADO" in str(v[-1]) for v in m["verificacoes"]):
+        import copy                                                  # não cabe com folgas: gabinete de 2200 mm (padrão Electric TECHNIP 2016)
+        gab = copy.deepcopy(gab)
+        gab["dimensoes_mm"]["altura"] = 2200
+        m = modelo(ped, res, gab, prot, inds, base=base)
+        m["verificacoes"].insert(0, ["Gabinete", "Altura aumentada para 2200 mm: com 2000 mm as fileiras ficavam sem folga mínima",
+                                     "2200 mm", "folga ≥ mínimo", CK.texto(CK.check(True, 60))])
     BP.salvar_layout(m, pasta, cod, ped)
     png = renders(m, os.path.join(pasta, "vistas"), cod)
     arq = os.path.join(pasta, f"Painel_3D_{cod}.pdf")
