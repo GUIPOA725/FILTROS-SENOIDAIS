@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.7 – 2026-11-22 (teste de fogo: campos da tela atualizam após a leitura)
+- Banco dessintonizado / filtro sintonizado: depois de "Ler solicitação e medições", os campos de "2. Dados" (cliente, tensão, estágios…) continuavam mostrando os valores anteriores (380 V, 25 + 50 + 50), embora a prévia já estivesse certa (400 kvar, 415 V). Ao mexer em qualquer campo, os valores antigos voltavam por cima da leitura. Agora os campos são recriados a cada leitura e mostram o que foi lido.
+
 ## v1.18.6 – 2026-11-22 (teste de fogo Panatlântica: substituição no mesmo porte)
 - Quando já existe banco e o reativo calculado pelo FP cabe nele, o projeto é de **substituição no mesmo porte do banco existente** (antes usava o kvar calculado pelo FP com a potência P95). Em carga pulsante, como o gerador de solda da Panatlântica, o cálculo pelo FP deu 174 kvar, mas o banco de 300 kvar em operação é o reativo real da carga (257–292 kvar indutivos na entrada). Agora: reativo medido = 300 kvar; com folga Electric = 8 × 50 = 400 kvar, igual ao projeto real.
 

@@ -128,6 +128,9 @@ def _leitura(tipo, provedor, nome_ia):
         for k in list(st.session_state):
             if k.startswith("bcf_"):
                 del st.session_state[k]
+        # v1.18.7 (teste de fogo): chaves novas a cada leitura – senão a tela continuava mostrando os valores antigos
+        # (380 V, 25 + 50 + 50) e, ao mexer em qualquer campo, eles voltavam por cima da leitura
+        st.session_state["bc_rev"] = st.session_state.get("bc_rev", 0) + 1
         st.rerun()
 
 
@@ -192,49 +195,50 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
     base.tipo = tipo
     sint = sint_menu
     st.markdown("#### 2. Dados – confira e ajuste")
+    _R = st.session_state.get("bc_rev", 0)
     p = B.PedidoBanco(**{k: getattr(base, k) for k in B.PedidoBanco.__dataclass_fields__})
     c1, c2, c3, c4 = st.columns(4)
-    p.cliente = c1.text_input("Cliente", base.cliente, key="bcf_cli")
-    p.projeto = c2.text_input("Projeto / local", base.projeto, key="bcf_proj")
-    p.tensao_v = c3.number_input("Tensão da rede (V)", 200.0, 1000.0, float(base.tensao_v), key="bcf_v")
-    p.freq_hz = c4.selectbox("Frequência (Hz)", [60.0, 50.0], index=0 if base.freq_hz == 60 else 1, key="bcf_f")
+    p.cliente = c1.text_input("Cliente", base.cliente, key=f"bcf_cli_{_R}")
+    p.projeto = c2.text_input("Projeto / local", base.projeto, key=f"bcf_proj_{_R}")
+    p.tensao_v = c3.number_input("Tensão da rede (V)", 200.0, 1000.0, float(base.tensao_v), key=f"bcf_v_{_R}")
+    p.freq_hz = c4.selectbox("Frequência (Hz)", [60.0, 50.0], index=0 if base.freq_hz == 60 else 1, key=f"bcf_f_{_R}")
     c1, c2, c3 = st.columns([2, 1, 1])
-    est = c1.text_input("Estágios (kvar efetivos na rede, separados por +)", " + ".join(f"{x:g}" for x in base.estagios_kvar), key="bcf_est")
+    est = c1.text_input("Estágios (kvar efetivos na rede, separados por +)", " + ".join(f"{x:g}" for x in base.estagios_kvar), key=f"bcf_est_{_R}")
     try:
         p.estagios_kvar = [float(x.replace(",", ".")) for x in est.replace(";", "+").split("+") if x.strip()]
     except ValueError:
         st.error("Estágios: números separados por + (ex.: 25 + 50 + 50)")
         return
-    n_bancos = c2.number_input("Quantidade de bancos/filtros", 1, 100, 1, key="bcf_n")
-    p.amb_c = c3.number_input("Ambiente (°C)", 20.0, 55.0, float(base.amb_c), key="bcf_amb")
+    n_bancos = c2.number_input("Quantidade de bancos/filtros", 1, 100, 1, key=f"bcf_n_{_R}")
+    p.amb_c = c3.number_input("Ambiente (°C)", 20.0, 55.0, float(base.amb_c), key=f"bcf_amb_{_R}")
     if sint:
         c1, c2, c3, c4 = st.columns(4)
-        ords = c1.text_input("Harmônica de cada ramo (na ordem dos estágios)", " + ".join(f"{h:g}" for h in base.ordens), key="bcf_ord")
+        ords = c1.text_input("Harmônica de cada ramo (na ordem dos estágios)", " + ".join(f"{h:g}" for h in base.ordens), key=f"bcf_ord_{_R}")
         try:
             p.ordens = [float(x.replace(",", ".")) for x in ords.replace(";", "+").split("+") if x.strip()]
         except ValueError:
             st.error("Harmônicas: ex. 5 + 5 + 7")
             return
-        p.fator_sintonia = c2.number_input("Nr = fator × h", 0.85, 0.99, float(base.fator_sintonia), 0.01, key="bcf_fs",
+        p.fator_sintonia = c2.number_input("Nr = fator × h", 0.85, 0.99, float(base.fator_sintonia), 0.01, key=f"bcf_fs_{_R}",
                                            help="Electric: Nr 4,4–4,8 na 5ª (fator 0,88–0,96).")
-        p.dhti_carga_pct = c3.number_input("DHTi drenada da rede (%)", 0.0, 400.0, float(base.dhti_carga_pct), key="bcf_dhti")
-        p.monofasico = c4.checkbox("3 reatores monofásicos de 2 colunas por ramo", base.monofasico, key="bcf_mono")
+        p.dhti_carga_pct = c3.number_input("DHTi drenada da rede (%)", 0.0, 400.0, float(base.dhti_carga_pct), key=f"bcf_dhti_{_R}")
+        p.monofasico = c4.checkbox("3 reatores monofásicos de 2 colunas por ramo", base.monofasico, key=f"bcf_mono_{_R}")
     else:
         nrs = list(B.NR_DESSINT)
-        p.nr = st.radio("Fator de dessintonia", nrs, index=nrs.index(base.nr) if base.nr in nrs else 0, horizontal=True, key="bcf_nr",
+        p.nr = st.radio("Fator de dessintonia", nrs, index=nrs.index(base.nr) if base.nr in nrs else 0, horizontal=True, key=f"bcf_nr_{_R}",
                         format_func=lambda x: B.NR_DESSINT[x])
     with st.expander("Reator e capacitores (padrão Electric – altere só se precisar)"):
         c1, c2, c3, c4, c5 = st.columns(5)
-        p.k_corrente = c1.number_input("k = I_projeto / I60", 1.0, 3.0, float(base.k_()), 0.01, key="bcf_k",
+        p.k_corrente = c1.number_input("k = I_projeto / I60", 1.0, 3.0, float(base.k_()), 0.01, key=f"bcf_k_{_R}",
                                        help="Planilha ESTAGIO: 1,3 dessintonizado. Sintonizado: " + B.K_HIST_SINT)
-        p.fq = c2.number_input("Fator de qualidade FQ", 20.0, 200.0, float(base.fq_()), key="bcf_fq")
-        p.tol_l_pct = c3.number_input("Tolerância de L (±%)", 1.0, 5.0, float(base.tol_l_pct), key="bcf_tl")
-        p.classe = c4.selectbox("Classe térmica", ["F", "H"], index=0 if base.classe == "F" else 1, key="bcf_cl")
-        p.condutor = c5.selectbox("Enrolamento", ["AL", "CU"], index=0 if base.condutor == "AL" else 1, key="bcf_cd",
+        p.fq = c2.number_input("Fator de qualidade FQ", 20.0, 200.0, float(base.fq_()), key=f"bcf_fq_{_R}")
+        p.tol_l_pct = c3.number_input("Tolerância de L (±%)", 1.0, 5.0, float(base.tol_l_pct), key=f"bcf_tl_{_R}")
+        p.classe = c4.selectbox("Classe térmica", ["F", "H"], index=0 if base.classe == "F" else 1, key=f"bcf_cl_{_R}")
+        p.condutor = c5.selectbox("Enrolamento", ["AL", "CU"], index=0 if base.condutor == "AL" else 1, key=f"bcf_cd_{_R}",
                                   format_func=lambda x: "Alumínio (padrão Electric)" if x == "AL" else "Cobre")
         st.caption("Capacitores: deixe em branco para a escolha automática (unidades usuais: 4×18 kvar/480 V, 4×20 kvar/600 V, "
                    "4×40 kvar/690 V…). Para fixar: 'n×kvar/V' por estágio, separados por ';' – ex.: 4x18/480; 2x18/480")
-        capt = st.text_input("Capacitores por estágio (opcional)", "", key="bcf_caps")
+        capt = st.text_input("Capacitores por estágio (opcional)", "", key=f"bcf_caps_{_R}")
         caps = []
         for tok in [t.strip() for t in capt.split(";")]:
             try:
@@ -246,17 +250,17 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
         p.caps = caps if any(caps) else []
     st.markdown("**Rede**")
     c1, c2, c3 = st.columns(3)
-    p.trafo_kva = c1.number_input("Transformador (kVA)", 50.0, 20000.0, float(base.trafo_kva), key="bcf_tr")
-    p.trafo_z_pct = c2.number_input("Impedância do transformador (%)", 2.0, 15.0, float(base.trafo_z_pct), key="bcf_z")
-    p.scc_rede_mva = c3.number_input("Scc da rede em MT (MVA)", 10.0, 5000.0, float(base.scc_rede_mva), key="bcf_scc")
+    p.trafo_kva = c1.number_input("Transformador (kVA)", 50.0, 20000.0, float(base.trafo_kva), key=f"bcf_tr_{_R}")
+    p.trafo_z_pct = c2.number_input("Impedância do transformador (%)", 2.0, 15.0, float(base.trafo_z_pct), key=f"bcf_z_{_R}")
+    p.scc_rede_mva = c3.number_input("Scc da rede em MT (MVA)", 10.0, 5000.0, float(base.scc_rede_mva), key=f"bcf_scc_{_R}")
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("**Distorção de tensão (% de Un)** – " + ("fundo da rede (Thévenin)" if sint else "de projeto nos terminais"))
-        p.harm_tensao_pct = _harm_editor("bcf_hv" + ("s" if sint else ""), base.harm_tensao_pct or
+        p.harm_tensao_pct = _harm_editor(f"bcf_hv{'s' if sint else ''}_{_R}", base.harm_tensao_pct or
                                          (B.HARM_PADRAO_SINT if sint else B.HARM_PADRAO), "Tensão", "%")
     with c2:
         st.markdown("**Corrente harmônica da carga (A)**" + (" – define a absorção e o DHTv" if sint else " – opcional"))
-        p.harm_carga_a = _harm_editor("bcf_hi", base.harm_carga_a or ({5: 50.0, 7: 30.0} if sint else {}), "Corrente", "A")
+        p.harm_carga_a = _harm_editor(f"bcf_hi_{_R}", base.harm_carga_a or ({5: 50.0, 7: 30.0} if sint else {}), "Corrente", "A")
     st.divider()
     try:
         res = B.dimensionar(p)
@@ -277,7 +281,7 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
         st.info(f"DHTv na barra pela carga: sem filtro {res['thd']['sem']:.2f} % → com filtro {res['thd']['com']:.2f} %")
     for a in res["avisos"]:
         st.warning(a)
-    verif = st.checkbox("Verificação independente + análise avançada dos reatores (NGSolve, ~2–3 min por reator)", True, key="bcf_verif")
+    verif = st.checkbox("Verificação independente + análise avançada dos reatores (NGSolve, ~2–3 min por reator)", True, key=f"bcf_verif_{_R}")
     if st.button("Gerar projeto completo (reatores, desenhos, CAD, memorial, planilhas ESTAGIO, especificações, ET painel, proposta)",
                  type="primary"):
         from fsen.pipeline_banco import processar_banco
