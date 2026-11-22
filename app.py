@@ -53,6 +53,10 @@ with st.sidebar.expander("📂 Pasta de saída (PROJETOS)", expanded=False):
     pasta_saida = seletor_pasta("Pasta onde ficam os projetos", "pasta_saida",
                                 os.environ.get("FSEN_PASTA_SAIDA", os.path.join(RAIZ, "saidas")))
 st.sidebar.caption(f"Saída: …{pasta_saida[-45:]}")
+with st.sidebar:
+    from fsen import biblioteca as _BIB
+    st.session_state["_bib_sidebar"] = True
+    _BIB.tela(st)
 try:
     from fsen.atp import achar_tpbig as _tp
     _tpb = _tp(carregar_catalogo())

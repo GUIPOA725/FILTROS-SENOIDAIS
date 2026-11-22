@@ -138,6 +138,9 @@ def _leitura(tipo, provedor, nome_ia):
 
 
 def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
+    if not st.session_state.get("_bib_sidebar"):     # app.py antigo (sem a biblioteca na barra lateral)
+        from fsen import biblioteca as _BIB
+        _BIB.tela(st)
     with st.expander("Montante do banco – reativo medido ou com folga Electric", expanded=False):
         _modo = st.radio("Como dimensionar o montante (kvar)",
                          ["Reativo das medições (sem folga)", "Com folga Electric (crescimento + perdas do trafo + N-k)"],

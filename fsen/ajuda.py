@@ -101,6 +101,12 @@ DICAS = {
     "Harmônica de cada ramo (na ordem dos estágios)": "Sintonizado: ordem de cada ramo, ex.: 5,5,7,11.",
     "Nr = fator × h": "Sintonizado: sintonia um pouco abaixo da harmônica (padrão 0,94 × h; Electric 4,4–4,8 na 5ª).",
     "DHTi drenada da rede (%)": "Sintonizado: distorção de corrente que o filtro vai absorver (informativo para a proposta).",
+    "Pasta do projeto antigo": "Caminho completo da pasta de um projeto antigo (ex.: G:\\Drives compartilhados\\Engenharia\\1 - SERVIÇOS\\…\\PROJETO). "
+                               "Os documentos são copiados para %LOCALAPPDATA%\\FSEN\\referencias para a IA estudar.",
+    "Nome curto (ex.: CVI_sintonizado)": "Nome da subpasta da cópia local (sem espaços longos). Vazio = nome da pasta de origem.",
+    "Copiar para a biblioteca": "Copia só documentos (PDF, Word, Excel, e-mail, CAD, ATP/PTW) até 25 MB cada – sem fotos e vídeos, "
+                                "para gastar pouco espaço no computador.",
+    "Apagar as cópias locais (liberar espaço)": "Apaga a pasta %LOCALAPPDATA%\\FSEN\\referencias inteira (o Drive não é tocado).",
     "Construção do filtro sintonizado": "Padrão: reator trifásico + capacitor trifásico seco PPM (ex. TDK série F). Robusta "
                                         "(ex. Pirelli Gravataí, a maior entrega de sintonizados da Electric): 3 reatores monofásicos de 2 colunas "
                                         "por ramo + capacitor trifásico impregnado em óleo – mais robusto térmica e mecanicamente, para serviço pesado.",
