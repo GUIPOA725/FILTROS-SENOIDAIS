@@ -761,6 +761,11 @@ def gerar(ped, res, gab, prot, inds, pasta, cod, versao="", log=print):
         m["verificacoes"].insert(0, ["Gabinete", "Altura aumentada para 2200 mm: com 2000 mm as fileiras ficavam sem folga mínima",
                                      "2200 mm", "folga ≥ mínimo", CK.texto(CK.check(True, 60))])
     BP.salvar_layout(m, pasta, cod, ped)
+    try:                                                         # v1.25.0: 2D de montagem cotado do MESMO modelo
+        from . import painel2d as P2
+        m["_2d"] = P2.gerar(m, pasta, cod, ped, versao, log=log)
+    except Exception as ex:
+        log(f"   (2D de montagem não gerado: {type(ex).__name__}: {ex})")
     png = renders(m, os.path.join(pasta, "vistas"), cod)
     arq = os.path.join(pasta, f"Painel_3D_{cod}.pdf")
     W_, H_ = landscape(A3)
@@ -854,4 +859,4 @@ def gerar(ped, res, gab, prot, inds, pasta, cod, versao="", log=print):
     moldura(6, "VISTAS FRONTAL, LATERAL E TRASEIRA – VERIFICAÇÕES")
     c.save()
     log(f"   Painel 3D: {arq} (6 folhas" + (f"; a confirmar: {', '.join(m['faltam'])}" if m["faltam"] else "") + ")")
-    return dict(pdf=arq, pngs=list(png.values()), verificacoes=m["verificacoes"], faltam=m["faltam"])
+    return dict(pdf=arq, pngs=list(png.values()), verificacoes=m["verificacoes"], faltam=m["faltam"], d2=m.get("_2d"))

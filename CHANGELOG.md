@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.25.0 – 2026-11-22 (2D de montagem cotado, barramento atrás, lista de material completa, banco de componentes)
+- **Painel 2D de montagem (novo)**: vistas frontal e traseira sem portas, lateral em corte e topo, vetoriais e COTADAS (largura, altura, profundidade, colunas e altura de montagem de cada fileira), geradas do MESMO modelo do 3D – 2D e 3D nunca divergem. PDF A3 + DXF por camadas (estrutura, placa, componentes, cabos, cotas). Vai para a montadora.
+- **Barramento geral atrás da placa**, no alto, em compartimento próprio (chapa separando dos reatores + policarbonato): a porta da frente abre sem expor o barramento – forma de separação 2b (NBR IEC 61439-2). Derivações por barra flexível isolada através de passa-barras.
+- **Lista de material completa** (Lista_Material_Completa.xlsx) por marca (ABB, Schneider ou padrão Electric = componentes da Panatlântica 2024): proteção geral com manopla, barramento calculado (DIN 43671 com a temperatura interna), isoladores pelo vão, parafusos 8.8 com arruelas e torque (DIN 43673), derivações, chaves, fusíveis, contatoras, capacitores, reatores, cabos calculados (NBR 5410) com comprimento, terminais de compressão, termocontráteis, passa-cabos, comando (trafo calculado, disjuntores, relé, bornes, ponteiras), PE, pinos de aterramento temporário, indicador de tensão, placas NR-10, canaletas, trilhos, suportes e plaquetas. O que não está confirmado no catálogo sai como "CONFERIR".
+- **Banco de componentes** (dados/componentes_db.yaml) – primeira versão por marca, com código, medidas, bobina, torque, fonte e status de venda.
+- **Energia incidente**: estudo e etiqueta marcados como PRELIMINAR (o estudo definitivo é o da instalação).
+- Gestão: REQ-PNL-023/024, REQ-SEG-013/014 registrados.
+
 ## v1.24.3 – 2026-11-22 (segurança NR-10 2026, energia incidente, disjuntor geral e comando calculados)
 - **Disjuntor geral -Q0 dentro do painel** com manopla rotativa externa, intertravamento da porta e cadeado (NR-10 10.4.1/10.6.5), calculado: In ≥ 1,30·ΣI dos capacitores, Icu ≥ Icc da barra, disparador LSI. Esquema, lista de material, 3D e checklist atualizados. Panatlântica: 800 A, Icu 36 kA.
 - **Trafo de comando calculado pela carga**: retenção de todas as bobinas, controlador, exaustores, sinaleiros e relé, mais o pior instante de manobra, com disjuntores de primário e secundário. Panatlântica: 630 VA.

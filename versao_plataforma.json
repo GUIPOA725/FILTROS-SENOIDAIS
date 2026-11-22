@@ -1,5 +1,5 @@
 {
-  "versao": "1.24.3",
+  "versao": "1.25.0",
   "data": "2026-11-22",
-  "resumo": "Disjuntor geral c/ manopla externa, barramento único, NR-10 2026, energia incidente IEEE 1584, cabos NBR 5410, trafo de comando calculado, reator real no 3D"
+  "resumo": "2D de montagem cotado do mesmo modelo do 3D, barramento atrás (forma 2b), lista de material completa por marca, banco de componentes, etiqueta de arco preliminar"
 }

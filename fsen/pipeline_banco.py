@@ -159,6 +159,14 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             anexos_pnl.append(os.path.join(pnl, os.path.basename(lay[k_])))
     except Exception as ex:
         log(f"   (layout do painel não gerado: {type(ex).__name__}: {ex})")
+    try:                                            # v1.25.0: lista de material COMPLETA (até parafuso/terminal/torque) por marca
+        from . import lista_material as LMC
+        from . import painel_gabinete as _PG
+        _L = LMC.montar(ped, res, _PG.gabinete(ped, res), B.protecao_estagio(ped, res["estagios"][0]))
+        arqs["lista_completa"] = LMC.planilha(_L, os.path.join(pnl, f"Lista_Material_Completa_{cod}.xlsx"), ped, cod, versao)
+        log(f"   Lista de material completa: {len(_L)} itens ({sum(1 for r in _L if 'CONFERIR' in str(r[7]))} a conferir no catálogo)")
+    except Exception as ex:
+        log(f"   (lista de material completa não gerada: {type(ex).__name__}: {ex})")
     try:                                            # v1.24.0: painel 3D com medidas reais (catálogo + reator FEM) e check
         from . import painel3d as P3
         from . import painel_gabinete as PG
@@ -166,6 +174,10 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
                       os.path.join(sub["05_Desenhos"], "4_Painel_3D"), cod, versao, log=log)
         arqs["painel3d"] = p3["pdf"]
         shutil.copy(p3["pdf"], pnl)
+        for _k in ("pdf", "dxf"):
+            if (p3.get("d2") or {}).get(_k):
+                arqs[f"painel2d_{_k}"] = p3["d2"][_k]
+                shutil.copy(p3["d2"][_k], pnl)
         anexos_pnl.append(os.path.join(pnl, os.path.basename(p3["pdf"])))
     except Exception as ex:
         log(f"   (painel 3D não gerado: {type(ex).__name__}: {ex})")
