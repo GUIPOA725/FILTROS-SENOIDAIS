@@ -164,12 +164,20 @@ def _tipo(g):
     return "Comando"
 
 
+def _num_sec(s):
+    """Seção em número para comparar ('1,5' → 1.5; 'barra' → maior que qualquer cabo; vazio → 0)."""
+    try:
+        return float(str(s).replace(",", ".")) if s else 0.0
+    except ValueError:
+        return 1e4
+
+
 def _fios_desenhados(g):
     """Fios físicos de um potencial sem barra, pela TOPOLOGIA do desenho: cada ponto de ligação (nó) é absorvido pelo borne
     vizinho de maior seção (mais próximo no empate) – é nesse borne que os terminais se encontram; cada condutor desenhado
     vira o fio entre os bornes donos das suas pontas (com a seção e a cor DESSE condutor). Potenciais com o mesmo nome em
     folhas diferentes (L220, N220…) ligam-se pelo primeiro ponto de cada folha. → (pares, atributos)"""
-    f_ = lambda s: float(str(s).replace(",", ".")) if s else 0.0
+    f_ = _num_sec
     ref_t, info_t, adj, arestas = {}, {}, defaultdict(list), []
     pos = {b[3]: b for b in g["bornes"]}
     nomes = defaultdict(list)
@@ -242,7 +250,7 @@ def de_para(Q):
         def atrib(*refs):
             """Seção e cor do fio que chega nestes bornes (não do potencial inteiro – a barra tem cabos de várias seções)."""
             cs = [c for r in refs if r for c in g["por_borne"].get(r, [])] or conds
-            f_ = lambda s: float(s.replace(",", "."))
+            f_ = _num_sec
             por = [max((c["secao"] for c in g["por_borne"].get(r, []) if c["secao"]), key=f_, default="") for r in refs if r]
             por = [x for x in por if x]
             sec = min(por, key=f_) if por else max((c["secao"] for c in cs if c["secao"]), key=f_, default="")
