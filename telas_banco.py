@@ -108,6 +108,7 @@ def _leitura(tipo, provedor, nome_ia):
         dados.update({k: v for k, v in _fg.items() if v is not None})
         ped, just, lac = LB.decidir(dados)
         ped.acesso_painel = st.session_state.get("bc_acesso", "frontal/traseiro")
+        ped.marca = st.session_state.get("bc_marca", "Padrão Electric")
         IN.aplicar_rede(ped, dados)
         ped.cenarios_rede = dados.get("_cenarios_rede") or []
         ped.origem_dados = {k: v for k, v in origem.items() if not k.startswith("_") and k not in ("evidencias", "lacunas")}
@@ -151,6 +152,11 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
                 "Estágios de reserva (N-k)", ["automático", "0", "1", "2", "3"], key="bc_nres",
                 help="Perdendo k estágios o banco ainda entrega o necessário. Automático: 2 a partir de 250 kvar, senão 1.")],
             medido_bt=_c3.checkbox("Medição na BT (somar perdas reativas do trafo)", True, key="bc_mbt"))
+        from fsen import fabricantes as _FB
+        st.session_state["bc_marca"] = st.selectbox(
+            "Marca dos componentes", _FB.marcas(), key="bc_marca_s",
+            help="Fabricante de capacitores, contatoras, fusíveis, controlador, botões e climatização (o reator é sempre Electric). "
+                 "Os capacitores da marca entram no cálculo da sintonia e a contatora é conferida no estudo de transitórios.")
         st.session_state["bc_acesso"] = st.radio(
             "Acesso ao painel", ["frontal/traseiro", "frontal"], key="bc_acesso_r", horizontal=True,
             help="Frontal/traseiro: profundidade 800, capacitores na frente e reatores atrás (padrão AGCO/Panatlântica). "
@@ -199,6 +205,7 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
     st.markdown("#### 2. Dados – confira e ajuste")
     _R = st.session_state.get("bc_rev", 0)
     p = B.PedidoBanco(**{k: getattr(base, k) for k in B.PedidoBanco.__dataclass_fields__})
+    p.marca = st.session_state.get("bc_marca", base.marca)     # v1.20.0: pode trocar a marca sem ler de novo
     c1, c2, c3, c4 = st.columns(4)
     p.cliente = c1.text_input("Cliente", base.cliente, key=f"bcf_cli_{_R}")
     p.projeto = c2.text_input("Projeto / local", base.projeto, key=f"bcf_proj_{_R}")

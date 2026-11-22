@@ -30,7 +30,9 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     cod = DB.codigo(ped)
     versao = f"FSEN v{_vi().get('versao')}"
     pasta_cli = os.path.join(pasta_base, _achar_pasta_cliente(pasta_base, ped.cliente) if ped.cliente else pasta_cliente(""))
-    pasta = os.path.join(pasta_cli, f"{cod}_{t0:%Y%m%d_%H%M}")
+    _mc = getattr(ped, "marca", "") or ""
+    _suf = "" if _mc in ("", "Padrão Electric") else "_" + re.sub(r"[^A-Za-z0-9]+", "", _mc)
+    pasta = os.path.join(pasta_cli, f"{cod}{_suf}_{t0:%Y%m%d_%H%M}")
     sub = {k: os.path.join(pasta, k) for k in ("01_Engenharia", "02_Cliente", "03_Fornecedores", "05_Desenhos")}
     for p in sub.values():
         os.makedirs(p, exist_ok=True)
@@ -88,6 +90,17 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     figs = DB.figuras(ped, res, sub["01_Engenharia"], cod)
     arqs["memorial"] = DB.memorial(ped, res, grupos, inds, os.path.join(sub["01_Engenharia"], f"{cod}_Memorial_de_Calculo.pdf"), figs, versao)
     shutil.copy(arqs["memorial"], os.path.join(sub["02_Cliente"], os.path.basename(arqs["memorial"])))
+    trans = None
+    try:                                            # v1.20.0: transitórios eletromagnéticos (energização, back-to-back, abertura…)
+        from . import transitorios as TR
+        log("3b/5 Transitórios eletromagnéticos (mesmo método do ATP) e dupla checagem no ATP...")
+        trans = TR.gerar(ped, res, os.path.join(sub["01_Engenharia"], "4_Transitorios"), cod, log=log)
+        arqs["transitorios_xlsx"] = trans["arquivos"][-1]
+        e_ = trans["estudo"]
+        log(f"   Estágios que podem ligar juntos: {e_['max_simultaneos']} | bloqueio de religamento ≥ "
+            f"{math.ceil(e_['t_religar_s'] / 10) * 10:.0f} s | {e_['contatora']['texto'][:90]}…")
+    except Exception as ex:
+        log(f"   (transitórios não calculados: {type(ex).__name__}: {ex})")
     log("4/5 Especificações e e-mails aos fornecedores...")
     for gi, (grp, d) in enumerate(zip(grupos, inds)):
         e = res["estagios"][grp[0]]
@@ -153,6 +166,8 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         json.dump(res_s, fh, ensure_ascii=False, indent=1, default=_json_default)
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as fh:
         fh.write(resumo(ped, res, grupos, inds, cod))
+        if trans:
+            fh.write("\n" + trans["resumo"])
     carimbar_pasta(pasta, log)
     try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
         from . import consolidado as CONS

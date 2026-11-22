@@ -23,6 +23,9 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ------------------------------------------------------------------------------------------------ 1. dicas por campo
 DICAS = {
+    "Marca dos componentes": "Fabricante dos componentes do painel: Padrão Electric, ABB, Schneider, Siemens, WEG ou Epcos. O reator é "
+                             "sempre Electric. Os capacitores da marca entram no cálculo da sintonia; a contatora (comum AC-3/AC-1 com "
+                             "reator em série, ou AC-6b) é conferida no estudo de transitórios contra o pico de fechamento do catálogo.",
     # ---- barra lateral / geral
     "Tipo de filtro": "Escolha o produto: filtro senoidal (saída de inversor → motor), banco de capacitores dessintonizado "
                       "(correção de FP com reator, padrão Electric FD 8,16 %) ou filtro sintonizado (5ª/7ª/11ª, quando a "

@@ -54,6 +54,7 @@ FIGURAS = [
     (r"campo_FEM", "Campo magnético (elementos finitos)"),
     (r"mapa_termico", "Mapa térmico"),
     (r"formas_onda", "Formas de onda"),
+    (r"Transitorio_", "Transitório eletromagnético"),
 ]
 DESCR = [
     (r"Proposta", "Proposta técnica e comercial ao cliente"),
@@ -70,6 +71,9 @@ DESCR = [
     (r"Layout_Painel.*\.pdf$", "Layout do painel – PDF"),
     (r"Lista_DePara", "Lista DE/PARA de fios e etiquetas"),
     (r"Lista_Material", "Lista de material, bornes e cabos"),
+    (r"Transitorios_.*\.xlsx$", "Transitórios: critérios por caso e comparação Python × ATP"),
+    (r"trans_.*\.atp$", "Deck ATP do caso de transitório"),
+    (r"\.pl4$", "Resultado do ATP (PlotXY)"),
     (r"Etiquetas.*\.pdf$", "Etiquetas de fio e plaquetas"),
     (r"\.step$", "Modelo 3D (STEP)"),
     (r"_2D\.dxf$|\.dxf$", "Desenho CAD (DXF)"),

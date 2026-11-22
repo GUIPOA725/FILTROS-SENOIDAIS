@@ -79,7 +79,8 @@ class PedidoBanco:
     origem_dados: Dict[str, str] = field(default_factory=dict)
     barra_ligacao: str = ""
     acesso_painel: str = "frontal/traseiro"   # v1.17.4: "frontal/traseiro" (prof. 800, padrão) | "frontal" (prof. 400, mais largo)
-    leitura: Dict[str, object] = field(default_factory=dict)   # v1.19.0: leitura da IA (critério, premissas) p/ o relatório consolidado
+    leitura: Dict[str, object] = field(default_factory=dict)
+    marca: str = "Padrão Electric"        # v1.20.0: fabricante dos componentes (reator sempre Electric) – dados/fabricantes.yaml   # v1.19.0: leitura da IA (critério, premissas) p/ o relatório consolidado
 
     @property
     def p_pct(self):
@@ -127,9 +128,15 @@ def v_cap_padrao(ped, nr):
 def escolher_capacitor(ped, Q_alvo, nr, Vcap=None):
     """Combinação n × kvar unitário (na V_cap padrão) com Q efetivo mais próximo do alvo (preferindo menos unidades)."""
     Vcap = Vcap or v_cap_padrao(ped, nr)
+    serie = UNID_KVAR.get(Vcap, (10, 12.5, 15, 20, 25, 30, 40, 50))
+    if getattr(ped, "marca", "") and ped.marca != "Padrão Electric":      # v1.20.0: unidades do catálogo da marca escolhida
+        from . import fabricantes as FB
+        uc = FB.unidades_cap(ped.marca, Vcap)
+        if uc:
+            Vcap, serie = uc
     fq = fator_q(ped.tensao_v, Vcap, nr)
     melhor = None
-    for rk, u in enumerate(UNID_KVAR.get(Vcap, (10, 12.5, 15, 20, 25, 30, 40, 50))):
+    for rk, u in enumerate(serie):
         for n in range(1, 13):
             Qe = n * u * fq
             err = abs(Qe - Q_alvo) / Q_alvo
@@ -391,9 +398,17 @@ def protecao_estagio(ped, e):
     base = "NH00" if fus <= 160 else "NH01" if fus <= 250 else "NH2"
     I_ct = e["requisitos"]["In"] * 0.96 if sint else e["I60"] * 1.1
     cont = next((c for c in CONTATORES if c[1] >= I_ct), CONTATORES[-1])
+    cont_pico, cont_tipo = None, "para capacitor (AC-6b)"
+    if getattr(ped, "marca", "") and ped.marca != "Padrão Electric":      # v1.20.0: contatora da marca (comum AC-3/AC-1 c/ reator)
+        from . import fabricantes as FB
+        I_req = 1.15 * max(e.get("I_cap_rms") or 0, e["I60"]) if not sint else e["requisitos"]["In"] * 1.05
+        cm = FB.contatora(ped.marca, I_req, e["Q_kvar"], ped.tensao_v)
+        if cm:
+            cont, cont_pico, cont_tipo = (cm["nome"], cm["ie"]), cm["pico"], cm["tipo"]
     fr = 0.62                                 # agrupamento + painel a 45–50 °C (ET Electric: 50 mm² p/ 50 kvar 380 V; 70–95 mm² sintonizado)
     cabo = next((s for s, a in CABO_90C if a * fr >= e["requisitos"]["In"]), 240)
     return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cabo,
+                contator_pico=cont_pico, contator_tipo=cont_tipo,
                 cabo_ind_cap_mm2=next((s for s, a in CABO_90C if a * fr >= e["I_cap_rms"] * 0.7), 240))
 
 

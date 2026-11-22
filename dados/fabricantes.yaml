@@ -1,0 +1,173 @@
+# Componentes por fabricante para bancos dessintonizados e filtros sintonizados – v1.20.0
+# O REATOR é sempre Electric Service (projeto próprio), qualquer que seja a marca escolhida pelo cliente.
+# "fonte": de onde saiu a referência; "conferir": true = código/valor a confirmar no catálogo atual antes da compra.
+# Capacitores: kvar a 60 Hz (o projeto refaz a sintonia com a capacitância real da unidade escolhida).
+# Contatoras: "comum" = AC-3/AC-1 (permitida com reator em série – Schneider FAQ FA408331, ABB 1SBC101140C0203);
+#   ie_ac1 = corrente térmica AC-1 (A); pico_max = corrente de fechamento máxima admissível (A) p/ manobra de capacitor.
+#   "capacitor" = AC-6b com resistores de pré-carga (pico ilimitado na prática).
+
+"Padrão Electric":
+  descricao: "Padrão dos projetos Electric (Drive): Epcos/TDK + WEG/Siemens/Holec equivalentes"
+  capacitores: null            # usa a série padrão da plataforma (UNID_KVAR)
+  contatora_preferida: capacitor
+
+ABB:
+  descricao: "Tudo ABB (exceto o reator, Electric)"
+  fonte_geral:
+    - "ABB 1SBC101140C0203 – Contactors for capacitor switching (tabelas A/AF e UA..RA)"
+    - "ABB CLMD – LV capacitors (CLMD43/53/63/83; 500/525 V 60 Hz)"
+  capacitores:
+    serie: "CLMD (dielétrico seco, autorregenerativo)"
+    unidades:          # V nominal: [kvar a 60 Hz]
+      525: [15, 20, 25, 27.5]
+      480: [15, 20, 25, 27.5]
+      690: [20, 25, 30, 40, 50]
+      800: [25, 40, 50]
+    codigo: "CLMD43 {kvar} kvar {V} V 60 Hz (2GCA…A0030)"
+    conferir: true
+  contatora_preferida: comum
+  contatoras:
+    comum:             # [tipo, ie_ac1 (A), pico_max (A)] – A/AF, pico < 30·In do capacitor (tabela ABB)
+      - ["ABB AF50-30-00", 100, 2300]
+      - ["ABB AF63-30-00", 115, 2500]
+      - ["ABB AF75-30-00", 125, 2600]
+      - ["ABB AF96-30-00", 145, 4000]
+      - ["ABB AF116-30-00", 160, 4000]
+      - ["ABB AF146-30-00", 225, 4000]
+      - ["ABB AF190-30-11", 275, 5000]
+      - ["ABB AF265-30-11", 350, 8000]
+    capacitor:         # UA..RA – kvar máx a 400/415 V 55 °C
+      - ["ABB UA50-30-00RA", 40]
+      - ["ABB UA63-30-00RA", 45]
+      - ["ABB UA75-30-00RA", 50]
+      - ["ABB UA95-30-00RA", 60]
+      - ["ABB UA110-30-00RA", 70]
+  seccionadora_fusivel: {codigo: "ABB OS{A}GD (OS160/OS250) – chave seccionadora-fusível NH", conferir: true}
+  fusivel_gG: {codigo: "ABB OFAF{tam}H{A} gG {A} A", conferir: false}
+  disjuntor: {codigo: "ABB Tmax XT2/XT4 {A} A (termomagnético)", conferir: true}
+  disjuntor_comando: {codigo: "ABB S203-C10 / S202-C10", conferir: false}
+  controlador: {6: "ABB RVC-6 (2GCA288096A0050)", 8: "ABB RVC-8", 10: "ABB RVC-10", 12: "ABB RVC-12", conferir: true}
+  rele_falta_fase: {codigo: "ABB CM-PFE (1SVR550824R9300)", conferir: true}
+  botoes: {emergencia: "ABB MPMT3-11R (cogumelo c/ trava)", seletor: "ABB M2SS1-10B", sinaleiro: "ABB CL2-523G / CL2-523R", conferir: true}
+  termostato: {nf: "ABB/Rittal SK 3110.000 (NF, 0–60 °C)", na: "Rittal SK 3110.000 (NA)", conferir: true}
+  ventilador: {codigo: "Rittal TopTherm SK 3243 / ABB (equiv.) {m3h} m³/h", conferir: true}
+
+Schneider:
+  descricao: "Tudo Schneider Electric (exceto o reator, Electric)"
+  fonte_geral:
+    - "Schneider PFCED111008EN – Guide for LV PFC cubicles (VarPlus, TeSys, VarLogic, termostatos 35/55 °C)"
+    - "Schneider FAQ FA408331 – com reator de dessintonia não precisa de contatora para capacitor"
+    - "se.com – VarPlus Can HDuty 525 V (BLRCH…B52), TeSys D LC1DWK12 (63 kvar 400 V)"
+  capacitores:
+    serie: "VarPlus Can HDuty"
+    unidades:          # 525 V: 10/12, 12,5/15, 20,8/25, 25/30 kvar (50/60 Hz)
+      525: [12, 15, 25, 30]
+      480: [12, 15, 20, 25]
+      690: [15, 25, 30]
+    codigos:
+      525: {12: "BLRCH100A120B52", 30: "BLRCH250A300B52"}
+    codigo: "VarPlus Can HDuty {kvar} kvar {V} V 60 Hz (BLRCH…B52)"
+    conferir: true
+  contatora_preferida: comum
+  contatoras:
+    comum:             # TeSys D/F – ie_ac1 (A); pico_max ≈ 30·In (regra ABB/Schneider p/ reator em série)
+      - ["Schneider LC1D50A", 80, 2400]
+      - ["Schneider LC1D65A", 80, 2400]
+      - ["Schneider LC1D80", 125, 3700]
+      - ["Schneider LC1D95", 125, 3700]
+      - ["Schneider LC1D115", 200, 6000]
+      - ["Schneider LC1D150", 200, 6000]
+      - ["Schneider LC1F185", 275, 8000]
+      - ["Schneider LC1F265", 350, 10000]
+    capacitor:         # TeSys D para capacitor (LC1D•K) – kvar máx a 400 V
+      - ["Schneider LC1DMK", 25]
+      - ["Schneider LC1DPK", 30]
+      - ["Schneider LC1DTK", 40]
+      - ["Schneider LC1DWK12", 60]
+  seccionadora_fusivel: {codigo: "Schneider Fupact ISFT{A} (NH)", conferir: true}
+  fusivel_gG: {codigo: "Schneider/DF Electric NH{tam} gG {A} A", conferir: true}
+  disjuntor: {codigo: "Schneider ComPacT NSX{A} (Micrologic 2.2)", conferir: true}
+  disjuntor_comando: {codigo: "Schneider Acti9 iC60N C10 2P/3P", conferir: false}
+  controlador: {6: "Schneider VarLogic NR6 (52448)", 12: "Schneider VarLogic NR12 (52449)", conferir: false}
+  rele_falta_fase: {codigo: "Schneider Zelio RM22TG20", conferir: false}
+  botoes: {emergencia: "Schneider XB5AS8444 (cogumelo c/ trava)", seletor: "Schneider XB5AD21", sinaleiro: "Schneider XB7NVB3 / XB7NVB4", conferir: false}
+  termostato: {nf: "Schneider ClimaSys NSYCCOTHC (NF)", na: "Schneider ClimaSys NSYCCOTHO (NA)", conferir: false}
+  ventilador: {codigo: "Schneider ClimaSys NSYCVF{m3h}M230PF", conferir: true}
+
+Siemens:
+  descricao: "Siemens (capacitores Epcos/TDK – antiga Siemens Matsushita)"
+  capacitores:
+    serie: "Epcos PhaseCap Premium (TDK)"
+    unidades: {525: [12.5, 15, 20, 25, 28.2], 480: [12.5, 15, 20, 25], 690: [15, 20, 25, 30]}
+    codigo: "TDK/Epcos PhaseCap Premium {kvar} kvar {V} V 60 Hz (B25667…)"
+    conferir: true
+  contatora_preferida: comum
+  contatoras:
+    comum:
+      - ["Siemens 3RT2046-1A", 110, 3300]
+      - ["Siemens 3RT2047-1A", 110, 3300]
+      - ["Siemens 3RT1054-6A", 160, 4800]
+      - ["Siemens 3RT1056-6A", 185, 5500]
+    capacitor:
+      - ["Siemens 3RT2627-1A", 50]
+      - ["Siemens 3RT2628-1A", 60]
+  seccionadora_fusivel: {codigo: "Siemens 3NP1133 (NH00 160 A) / 3NP1143 (NH1 250 A)", conferir: false}
+  fusivel_gG: {codigo: "Siemens 3NA3 {A} A gG (NH{tam})", conferir: true}
+  disjuntor: {codigo: "Siemens 3VA1/3VA2 {A} A", conferir: true}
+  disjuntor_comando: {codigo: "Siemens 5SL6 C10", conferir: false}
+  controlador: {6: "Epcos/TDK BR6000-R6", 12: "Epcos/TDK BR6000-R12", conferir: false}
+  rele_falta_fase: {codigo: "Siemens 3UG4512", conferir: false}
+  botoes: {emergencia: "Siemens 3SU1150-1HB20", seletor: "Siemens 3SU1150-2BF60", sinaleiro: "Siemens 3SU1156-6AA40/20", conferir: true}
+  termostato: {nf: "Siemens 8MR2170-1A (NF)", na: "Siemens 8MR2170-1B (NA)", conferir: true}
+  ventilador: {codigo: "Siemens 8MR6400 (equiv.) {m3h} m³/h", conferir: true}
+
+WEG:
+  descricao: "Tudo WEG (exceto o reator, Electric)"
+  capacitores:
+    serie: "WEG UCWT / UCW-T (trifásico, autorregenerativo)"
+    unidades: {525: [15, 20, 25, 30], 480: [15, 20, 25], 440: [10, 15, 20, 25], 690: [20, 25, 30]}
+    codigo: "WEG UCWT{kvar}V{V} ({kvar} kvar {V} V 60 Hz)"
+    conferir: true
+  contatora_preferida: comum
+  contatoras:
+    comum:
+      - ["WEG CWM50", 90, 2700]
+      - ["WEG CWM65", 100, 3000]
+      - ["WEG CWM80", 125, 3700]
+      - ["WEG CWM95", 125, 3700]
+      - ["WEG CWM112", 160, 4800]
+      - ["WEG CWM150", 200, 6000]
+    capacitor:
+      - ["WEG CWMC50", 30]
+      - ["WEG CWMC65", 40]
+      - ["WEG CWMC80", 50]
+  seccionadora_fusivel: {codigo: "WEG FSW / base BFNH{tam} + punho", conferir: true}
+  fusivel_gG: {codigo: "WEG FNH{tam}-{A}K-A gG {A} A", conferir: false}
+  disjuntor: {codigo: "WEG DWB {A} A", conferir: true}
+  disjuntor_comando: {codigo: "WEG MDW-C10", conferir: false}
+  controlador: {6: "WEG PFW01-M06", 12: "WEG PFW01-M12", conferir: true}
+  rele_falta_fase: {codigo: "WEG RPW-FF", conferir: true}
+  botoes: {emergencia: "WEG CSW-BEGT4", seletor: "WEG CSW-CK2", sinaleiro: "WEG CSW-SDM", conferir: true}
+  termostato: {nf: "Rittal/Finder 7T.81 NF (equiv.)", na: "Finder 7T.81 NA", conferir: true}
+  ventilador: {codigo: "Ventilador c/ filtro 230 V {m3h} m³/h (Rittal/Finder equiv.)", conferir: true}
+
+"Epcos (TDK)":
+  descricao: "Epcos/TDK (padrão histórico Electric)"
+  capacitores:
+    serie: "Epcos PhaseCap Premium / PhiCap"
+    unidades: {525: [20, 25, 15, 12.5], 480: [18, 20, 25, 12.5, 15], 690: [40, 20, 30], 800: [50, 25, 40]}
+    codigo: "Epcos PhaseCap {kvar} kvar {V} V 60 Hz"
+    conferir: true
+  contatora_preferida: capacitor
+  contatoras:
+    capacitor:
+      - ["Epcos B44066-S2011", 22]
+      - ["Epcos B44066-S3312", 36]
+      - ["Epcos B44066-S6012", 66]
+      - ["Epcos B44066-S7410", 80]
+      - ["Epcos B44066-S9910", 100]
+    comum:
+      - ["Siemens 3RT2046-1A", 110, 3300]
+  seccionadora_fusivel: {codigo: "Chave seccionadora-fusível NH{tam} {A} A (WEG/Siemens/Holec)", conferir: false}
+  fusivel_gG: {codigo: "NH{tam} gG {A} A", conferir: false}
+  controlador: {6: "Epcos BR6000-R6", 12: "Epcos BR6000-R12", conferir: false}

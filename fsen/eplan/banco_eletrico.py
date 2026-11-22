@@ -307,6 +307,8 @@ def construir(ped, res, cod, versao, n_banco=1):
     P.dispositivo("=PAINEL", pn["itens"][0][0], "Montadora", "", n_banco, grupo="Montagem")
     P.dispositivo("-W", "Barramento de cobre eletrolítico, isoladores, canaletas, trilhos DIN, terminais, etiquetas, base de capacitores "
                         "e de reatores", "Montadora", "", 1, unid="cj", grupo="Montagem")
+    from .. import fabricantes as _FB          # v1.20.0: marca escolhida pelo cliente (reator sempre Electric)
+    _FB.aplicar_projeto(P, ped, res)
     return P
 
 
