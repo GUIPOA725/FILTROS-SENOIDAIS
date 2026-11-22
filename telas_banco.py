@@ -107,6 +107,7 @@ def _leitura(tipo, provedor, nome_ia):
         _fg = st.session_state.get("bc_folga", {})
         dados.update({k: v for k, v in _fg.items() if v is not None})
         ped, just, lac = LB.decidir(dados)
+        ped.acesso_painel = st.session_state.get("bc_acesso", "frontal/traseiro")
         IN.aplicar_rede(ped, dados)
         ped.cenarios_rede = dados.get("_cenarios_rede") or []
         ped.origem_dados = {k: v for k, v in origem.items() if not k.startswith("_") and k not in ("evidencias", "lacunas")}
@@ -145,6 +146,10 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
                 "Estágios de reserva (N-k)", ["automático", "0", "1", "2", "3"], key="bc_nres",
                 help="Perdendo k estágios o banco ainda entrega o necessário. Automático: 2 a partir de 250 kvar, senão 1.")],
             medido_bt=_c3.checkbox("Medição na BT (somar perdas reativas do trafo)", True, key="bc_mbt"))
+        st.session_state["bc_acesso"] = st.radio(
+            "Acesso ao painel", ["frontal/traseiro", "frontal"], key="bc_acesso_r", horizontal=True,
+            help="Frontal/traseiro: profundidade 800, capacitores na frente e reatores atrás (padrão AGCO/Panatlântica). "
+                 "Frontal: profundidade 400, painel mais largo (tabela de dimensionais da IFG).")
     sint_menu = tipo == "sintonizado"
     st.title("Filtro harmônico sintonizado" if sint_menu else "Banco de capacitores dessintonizado")
     st.caption("Padrão de engenharia da Electric (planilhas ESTAGIO, cartas à Cootrans, ET para a montadora, propostas FHSBT/BCD) + "

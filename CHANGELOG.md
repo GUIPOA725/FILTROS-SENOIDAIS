@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.17.4 – 2026-11-22 (painel calibrado nos projetos reais)
+- Largura do gabinete pela tabela de dimensionais da IFG (BCD 50 kvar/estágio) e pelos projetos executados: acesso frontal/traseiro (prof. 800) ≈ 200 mm por estágio em módulos de 400 mm, mín. 800 (4 → 800, 6 → 1200, 7–8 → 1600, 10 → 2000, 12 → 2400); acesso só frontal (prof. 400) ≈ 320 mm por estágio. Colunas/portas de até 800 mm. Confere com AGCO 300 kVAr 7 est. (2000 × 1600 × 800) e Panatlântica 400 kVAr 8 est. (2000 × 1600 × 800).
+- Desenho interno no padrão do layout Electric Panatlântica 2024: na frente UMA placa de montagem por toda a largura, comando no topo e os estágios em faixas verticais lado a lado (chave NH, contatora, capacitores embaixo); atrás reatores em grade 2 × 2 por coluna em duas prateleiras, exaustores no topo.
+- Tela: opção "Acesso ao painel" (frontal/traseiro × frontal). `dados/referencias_paineis.json` com os dimensionais da IFG e os gabinetes dos projetos reais.
+
 ## v1.17.3 – 2026-11-22 (montante: reativo medido × folga Electric – escolha do engenheiro)
 - Novo seletor na tela do banco/filtro sintonizado: "Reativo das medições (sem folga)" (padrão) ou "Com folga Electric (crescimento + perdas do trafo + N-k)". A plataforma calcula sempre os dois e escreve o outro como referência na justificativa (ex.: Panatlântica – medido 300 kvar; com folga seria 400 kvar = 8 × 50). Vale para dessintonizado e sintonizado (no sintonizado os módulos são repartidos entre as ordens).
 

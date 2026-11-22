@@ -81,20 +81,35 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
     Q = float(res.get("Q_total_kvar") or sum(e["Q_kvar"] for e in est))
     H = int(altura or ALTURA)
     epc = int(estagios_por_coluna or ESTAGIOS_POR_COLUNA)
-    n_col = max(1, math.ceil(n / epc))
+    # v1.17.4: largura pela tabela de dimensionais da IFG (BCD 50 kvar/estágio, 380 V) e projetos reais (AGCO 2021, Panatlântica
+    # 2024): acesso frontal/traseiro (prof. 800) ≈ 200 mm por estágio, mín. 800 (4→800, 6→1200, 8→1600, 10→2000);
+    # acesso só frontal (prof. 400) ≈ 320 mm por estágio (2→800, 4→1200, 6→2000, 10→3200). Portas de até 800 mm.
+    acesso = getattr(ped, "acesso_painel", "") or "frontal/traseiro"
+    if estagios_por_coluna:
+        larg = int(math.ceil(n / epc)) * LARG_COLUNA
+    elif acesso == "frontal":
+        larg = max(800, int(math.ceil(320 * n / 400.0)) * 400)
+    else:
+        larg = max(800, int(math.ceil(200 * n / 400.0)) * 400)   # módulos de 400 (AGCO 7 est. → 1600)
+    n_col = max(1, int(math.ceil(larg / LARG_COLUNA)))
+    bw = (larg // n_col) // 200 * 200
+    w_col = [bw] * n_col
+    for i in range((larg - bw * n_col) // 200):
+        w_col[i] += 200
     perd = perdas(res)
     vent = ventilacao(perd["total"], ped.amb_c)
     colunas = []
+    base = 0
     for i in range(n_col):
-        lote = list(range(i * epc, min(n, (i + 1) * epc)))
-        colunas.append(dict(funcao=f"coluna {i + 1}", largura=LARG_COLUNA, estagios=lote,
+        q = n // n_col + (1 if i < n % n_col else 0)
+        lote = list(range(base, base + q))
+        base += q
+        colunas.append(dict(funcao=f"coluna {i + 1}", largura=w_col[i], estagios=lote,
                             frente=(["COMANDO (porta)", "PROTEÇÃO GERAL / BARRAMENTO"] if i == 0 else ["BARRAMENTO"]) +
                                    [f"ESTÁGIO {k + 1}" for k in lote],
                             tras=[f"REATOR {k + 1}" for k in lote] + ["EXAUSTOR (teto)"],
                             zonas=["EXAUSTOR"]))
-    larg = n_col * LARG_COLUNA
-    prof = PROF_FRENTE + PROF_TRAS + 40
-    prof = 800 if prof <= 800 else 1000
+    prof = 400 if acesso == "frontal" else 800
     vent["n_exaustores"] = max(vent["n_exaustores"], n_col)        # pelo menos 1 exaustor por coluna, sobre os reatores
     vent["vazao_instalada_m3h"] = round(vent["n_exaustores"] * vent["exaustor_m3h"] * K_FILTRO)
     vent["dt_k"] = round(3.1 * perd["total"] / vent["vazao_instalada_m3h"], 1)

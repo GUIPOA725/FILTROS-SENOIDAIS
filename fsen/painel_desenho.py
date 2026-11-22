@@ -174,72 +174,92 @@ def _ind_dim(e):
     return w, int(w * 0.8)
 
 
-def _placa_estagio(v, x, y, w, h, e, k):
-    """Placa de um estágio: chave seccionadora-fusível + contatora + capacitores (frente)."""
-    v.ret(x, y, w, h, lw=0.18, tracejado=True)
-    v.ret(x + 20, y + h * 0.15, 110, h * 0.7, lw=0.3)                             # chave NH tripolar
-    v.txt(x + 75, y + h * 0.5, f"-FF{k}", fs=1.2)
-    v.ret(x + 150, y + h * 0.2, 70, h * 0.6, lw=0.3)                              # contatora
-    v.txt(x + 185, y + h * 0.5, f"-K{k}", fs=1.2)
-    latas = int((e.get("cap") or [3])[0])
-    d = 70.0
-    cabem = max(1, int((w - 250) // (d + 30)))
-    for j in range(min(latas, cabem)):
-        v.ret(x + 245 + j * (d + 30), y + 15, d, h - 30, lw=0.3)
-    extra = latas - cabem
-    v.txt(x + w - 10, y + h - 25, f"{e['codigo'].split('-')[-1]} kvar" + (f" (+{extra} cap.)" if extra > 0 else ""),
-          fs=1.1, ha="right")
-
-
 def _frontal_interno(v, gab, ped, res):
+    """Frente sem porta no padrão do layout Electric Panatlântica 2024 (Painel 400 kVAr): UMA placa de montagem por todas as
+    colunas; no topo comando (controlador/trafo/relés em trilho DIN); abaixo os estágios em FAIXAS VERTICAIS lado a lado –
+    chave seccionadora-fusível NH, contatora e capacitores embaixo (atrás da chapa divisória ficam os reatores)."""
     D = gab["dimensoes_mm"]
     H, L = D["altura"], D["largura"]
     est = res["estagios"]
+    n = len(est)
     v.ret(0, 0, L, RODAPE, lw=0.35, preench="0.85")
-    for i, (x, w, c) in enumerate(_xs(gab)):
-        v.ret(x, RODAPE, w, H - RODAPE, lw=0.5)
-        y = H - 60
-        if i == 0:
-            v.ret(x + 40, y - 260, w - 80, 240, lw=0.25)
-            v.txt(x + w / 2, y - 140, "COMANDO: TRAFO, DISJ., RELÉ F. FASE, -B0 35 °C / -BT2 55 °C", fs=1.1)
-            y -= 290
-            v.ret(x + 40, y - 200, w - 80, 180, lw=0.3)
-            v.txt(x + w / 2, y - 110, "PROTEÇÃO GERAL", fs=1.3)
-            y -= 220
-        for f_ in range(3):                                                       # barramento principal
-            v.lin(x + 20, y - 20 - f_ * 35, x + w - 20, y - 20 - f_ * 35, lw=0.6, cam="BARRAMENTO")
-        y -= 140
-        hp = min(300, (y - RODAPE - 340) / max(len(c["estagios"]), 1))           # 340 mm livres p/ entrada de ar
-        for k in c["estagios"]:
-            _placa_estagio(v, x + 30, y - hp + 10, w - 60, hp - 20, est[k], k + 1)
-            y -= hp
-        v.txt(x + w / 2, RODAPE + 170, "LIVRE – ENTRADA DE AR", fs=1.2)
+    v.ret(0, RODAPE, L, H - RODAPE, lw=0.5)
+    for x, w, c in _xs(gab)[1:]:
+        v.lin(x, RODAPE, x, H, lw=0.25)
+    xp, yp, wp, hp = 38, RODAPE + 120, L - 76, H - RODAPE - 260         # placa de montagem (Panatlântica: 1523 × 1702)
+    v.ret(xp, yp, wp, hp, lw=0.3)
+    v.cota_h(xp, xp + wp, RODAPE, off=-7)
+    y = yp + hp
+    v.ret(xp + wp / 2 - 110, y - 120, 220, 80, lw=0.3)                  # trafo de comando
+    v.txt(xp + wp / 2, y - 80, "-T1", fs=1.3)
+    v.lin(xp + wp * 0.65, y - 190, xp + wp - 40, y - 190, lw=0.6)       # trilho DIN de comando
+    for k in range(6):
+        v.ret(xp + wp * 0.65 + 15 + k * 40, y - 225, 25, 70, lw=0.2)
+    v.txt(xp + wp * 0.82, y - 250, "-F01/-F02/-B0/-BT2/-KF", fs=1.1)
+    v.ret(xp + wp / 2 - 110, y - 330, 220, 80, lw=0.3)                  # canaleta/relé falta de fase
+    v.txt(xp + wp / 2, y - 290, "-K0  /  -Q0", fs=1.3)
+    passo = wp / max(n, 1)
+    y_fus, y_ctt, y_cap = y - 560, y - 830, yp + 40
+    for k, e in enumerate(est):
+        cx = xp + passo * (k + 0.5)
+        v.circ(cx, y - 430, 18)                                         # passagem de cabos (furo)
+        wf = min(110, passo * 0.8)
+        v.ret(cx - wf / 2, y_fus, wf, 170, lw=0.3)                     # chave NH tripolar
+        v.txt(cx, y_fus - 18, f"-FF{k + 1}", fs=1.1)
+        wc = min(70, passo * 0.55)
+        v.ret(cx - wc / 2, y_ctt, wc, 120, lw=0.3)                     # contatora
+        v.txt(cx, y_ctt - 18, f"-K{k + 1}", fs=1.1)
+        v.circ(cx, y_ctt - 80, 15)
+        latas = int((e.get("cap") or [3])[0])
+        dl = min(76, passo / max(latas, 1) - 6)
+        for j_ in range(latas):
+            xl = cx - latas * (dl + 6) / 2 + j_ * (dl + 6) + 3
+            v.ret(xl, y_cap, dl, 230, lw=0.25)                          # capacitores embaixo
+        v.txt(cx, y_cap + 250, f"-C{k + 1}", fs=1.1)
+    v.txt(L / 2, H - 40, "COMANDO", fs=1.3)
+
+
+def _ind_dim(e):
+    q = float(e["Q_kvar"])
+    w = 240 if q <= 30 else 300 if q <= 60 else 360
+    return w, int(w * 0.9)
 
 
 def _traseira_interna(v, gab, res):
+    """Traseira sem porta (Panatlântica 2024): reatores em grade 2 × 2 por coluna, em duas prateleiras na metade inferior;
+    exaustores no topo de cada coluna; venezianas de entrada embaixo."""
     D = gab["dimensoes_mm"]
     H, L = D["altura"], D["largura"]
     est = res["estagios"]
     v.ret(0, 0, L, RODAPE, lw=0.35, preench="0.85")
-    cols = list(reversed(_xs(gab)))                                               # vista por trás: espelhada
+    cols = list(reversed(_xs(gab)))                                     # vista por trás: espelhada
     for (x, w, c) in cols:
         xm = L - x - w
         v.ret(xm, RODAPE, w, H - RODAPE, lw=0.5)
-        v.ret(xm + w * 0.2, H - 180, w * 0.6, 140, lw=0.25)
-        v.txt(xm + w / 2, H - 110, "EXAUSTOR", fs=1.3)
-        y = H - 300
-        livre = y - RODAPE - 250
-        n = max(len(c["estagios"]), 1)
-        for k in c["estagios"]:
-            iw, ih = _ind_dim(est[k])
-            ih = min(ih, livre / n - 60)
-            v.lin(xm + 30, y - ih - 15, xm + w - 30, y - ih - 15, lw=0.35)       # prateleira
-            v.ret(xm + (w - iw) / 2, y - ih, iw, ih, lw=0.35)
-            for b in range(3):
-                v.ret(xm + (w - iw) / 2 + iw * (0.1 + 0.3 * b), y - ih * 0.9, iw * 0.2, ih * 0.8, lw=0.13)
-            v.txt(xm + w - 35, y - ih / 2, f"-L{k + 1}\n{est[k]['L_uH'] / 1000:.3f} mH", fs=1.1, ha="right")
-            y -= ih + 60
-        _grelha(v, xm + w * 0.2, RODAPE + 60, w * 0.6, 180, n=6)
+        for kx in (0.3, 0.7):                                           # exaustores no topo
+            v.ret(xm + w * kx - 55, H - 160, 110, 90, lw=0.3)
+        lote = c["estagios"]
+        por_lin = 2
+        lin = max(1, math.ceil(len(lote) / por_lin))
+        y0 = RODAPE + 60
+        hh = min(380, (H * 0.55) / lin)
+        for li in range(lin):
+            ys = y0 + li * (hh + 40)
+            v.lin(xm + 20, ys - 10, xm + w - 20, ys - 10, lw=0.35)     # prateleira
+            for ci in range(por_lin):
+                idx = li * por_lin + ci
+                if idx >= len(lote):
+                    break
+                k = lote[idx]
+                iw, ih = _ind_dim(est[k])
+                iw = min(iw, w / 2 - 40)
+                ih = min(ih, hh - 20)
+                cx = xm + w * (0.27 + 0.46 * ci)
+                v.ret(cx - iw / 2, ys, iw, ih, lw=0.35)
+                for b_ in range(3):
+                    v.ret(cx - iw / 2 + iw * (0.1 + 0.3 * b_), ys + ih * 0.1, iw * 0.2, ih * 0.8, lw=0.13)
+                v.txt(cx, ys + ih + 18, f"-L{k + 1}  {est[k]['L_uH'] / 1000:.3f} mH", fs=1.0)
+        _grelha(v, xm + w * 0.2, RODAPE + 10, w * 0.6, 40, n=3)
     v.cota_h(0, L, 0, off=-7)
 
 
@@ -255,17 +275,19 @@ def _corte(v, gab, res):
     v.lin(xd, RODAPE + 250, xd, H - 220, lw=0.6)                                  # chapa divisória
     v.txt(xd + 15, H / 2, "CHAPA DIVISÓRIA", fs=1.2, rot=90, ha="center")
     v.ret(PROF_TRAS * 0.15, H - 160, PROF_TRAS * 0.7, 120, lw=0.3)                # exaustor no teto, atrás
-    n = max(len(gab["colunas"][0]["estagios"]), 1)
-    y = H - 320
-    for k in range(n):                                                             # reatores (trás)
-        hh = min(260, (H - 650) / n - 50)
-        v.ret(50, y - hh, PROF_TRAS - 100, hh, lw=0.35)
-        y -= hh + 50
-    y = H - 600
-    for k in range(n):                                                             # placas (frente)
-        hh = min(300, (y - RODAPE - 300) / max(n - k, 1))
-        v.ret(xd + 60, y - hh + 20, 200, hh - 40, lw=0.3)
-        y -= hh
+    lin = max(1, math.ceil(len(gab["colunas"][0]["estagios"]) / 2))
+    hh = min(380, (H * 0.55) / lin)
+    for li in range(lin):                                                          # reatores (trás, 2 prateleiras embaixo)
+        ys = RODAPE + 60 + li * (hh + 40)
+        v.ret(60, ys, PROF_TRAS - 120, hh - 20, lw=0.35)
+        v.lin(30, ys - 10, xd - 10, ys - 10, lw=0.35)
+    xp = xd + 40                                                                   # placa de montagem (frente)
+    v.lin(xp, RODAPE + 120, xp, H - 140, lw=0.5)
+    for (y0, h0, w0, t) in ((H - 760, 170, 150, "-FF"), (H - 1030, 120, 130, "-K"), (RODAPE + 160, 230, 90, "-C")):
+        v.ret(xp, y0, w0, h0, lw=0.3)
+        v.txt(xp + w0 + 30, y0 + h0 / 2, t, fs=1.2, ha="left")
+    v.ret(xp, H - 330, 160, 90, lw=0.3)
+    v.txt(xp + 190, H - 285, "COMANDO", fs=1.1, ha="left")
     a, b = v.p(P - 30, RODAPE + 120)
     c, d = v.p(30, RODAPE + 120)
     _seta(f, a + 6, b, a - 3, b)
@@ -307,12 +329,12 @@ def _iso(f, ox, oy, gab, esc, com_portas=True):
                 zz = RODAPE + 70 + k * 35
                 L_((x + w * 0.2, 0, zz), (x + w * 0.8, 0, zz), 0.13)
         else:
-            n = max(len(c["estagios"]), 1)
-            for k in range(n):
-                z0 = H - 650 - (k + 1) * (H - 1000) / n
+            for (z0, t) in ((H - 650, "Fusíveis"), (H - 930, "Contatoras"), (RODAPE + 400, "Capacitores")):
                 L_((x + 30, 0, z0), (x + w - 30, 0, z0), 0.18)
-                f.txt(*q(x + w / 2, 0, z0 + (H - 1000) / n / 2), f"Estágio {c['estagios'][k] + 1}", fs=1.2,
-                      ha="center", va="center", cam="TEXTOS")
+                f.txt(*q(x + w / 2, 0, z0 + 60), t, fs=1.2, ha="center", va="center", cam="TEXTOS")
+            for k in range(len(c["estagios"]) + 1):
+                xx = x + 30 + (w - 60) * k / max(len(c["estagios"]), 1)
+                L_((xx, 0, RODAPE + 150), (xx, 0, H - 600), 0.1)
             L_((x, P / 2, RODAPE), (x, P / 2, H), 0.18, tracejado=True)
 
 

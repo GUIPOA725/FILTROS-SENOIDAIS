@@ -3,40 +3,279 @@
  "padrao_electric_bcd_2016": {
   "origem": "Drive: 'TECHNIP montagem gabinete 220V-100KVAR.PDF', '460V-100KVAR.PDF', '460V-400KVAR.PDF' (Electric, 20/12/2016, JW/GS, rev 0)",
   "gabinetes": [
-   {"caso": "220V-100kVAr", "dimensoes_mm": {"altura": 2200, "largura": 600, "profundidade": 600}, "colunas": 1,
-    "arranjo_vertical": ["EXAUSTOR (topo)", "PAINEL DE COMANDO", "BANCO DE CAPACITORES", "RACK DE INDUTORES (base)"]},
-   {"caso": "460V-100kVAr", "dimensoes_mm": {"altura": 2200, "largura": 600, "profundidade": 600}, "colunas": 1,
-    "arranjo_vertical": ["EXAUSTOR (topo)", "PAINEL DE COMANDO", "BANCO DE CAPACITORES", "RACK DE INDUTORES (base)"]},
-   {"caso": "460V-400kVAr", "dimensoes_mm": {"altura": 2200, "largura": 1600, "profundidade": 800}, "colunas": 3,
-    "arranjo": ["PAINEL DE OPERAÇÃO", "BANCO DE CAPACITORES", "RACK DE INDUTORES"],
-    "ventilacao": "exaustores no topo frontal; admissão de ar na traseira, junto ao rack de indutores"}
+   {
+    "caso": "220V-100kVAr",
+    "dimensoes_mm": {
+     "altura": 2200,
+     "largura": 600,
+     "profundidade": 600
+    },
+    "colunas": 1,
+    "arranjo_vertical": [
+     "EXAUSTOR (topo)",
+     "PAINEL DE COMANDO",
+     "BANCO DE CAPACITORES",
+     "RACK DE INDUTORES (base)"
+    ]
+   },
+   {
+    "caso": "460V-100kVAr",
+    "dimensoes_mm": {
+     "altura": 2200,
+     "largura": 600,
+     "profundidade": 600
+    },
+    "colunas": 1,
+    "arranjo_vertical": [
+     "EXAUSTOR (topo)",
+     "PAINEL DE COMANDO",
+     "BANCO DE CAPACITORES",
+     "RACK DE INDUTORES (base)"
+    ]
+   },
+   {
+    "caso": "460V-400kVAr",
+    "dimensoes_mm": {
+     "altura": 2200,
+     "largura": 1600,
+     "profundidade": 800
+    },
+    "colunas": 3,
+    "arranjo": [
+     "PAINEL DE OPERAÇÃO",
+     "BANCO DE CAPACITORES",
+     "RACK DE INDUTORES"
+    ],
+    "ventilacao": "exaustores no topo frontal; admissão de ar na traseira, junto ao rack de indutores"
+   }
   ],
-  "itens_porta_e_placa": ["CONTROLADOR", "EMERGÊNCIA", "LUZ INDICADORA DE OPERAÇÃO/ACIONAMENTO", "CHAVE DESLIGA/LIGA/AUTOMÁTICO",
-                          "EXAUSTOR", "ADMISSÃO DE AR", "BARRAMENTO REDE", "FUSÍVEIS", "CONTACTORA", "BORNE/TERMINAL DE CONEXÃO",
-                          "BANCO DE CAPACITORES", "TRAFO DE COMANDO (220/220 V ou 460/220 V)", "DISJUNTOR", "RACK DE INDUTORES"],
-  "folhas": ["VISTA ISOMÉTRICA (com e sem portas)", "VISTA FRONTAL (com e sem portas)", "VISTA SUPERIOR", "VISTA LATERAL", "VISTA TRASEIRA"],
-  "reatores_cootrans_dessintonizados": ["0,447 mH / 87 A – 25 kVAr 220 V", "0,974 mH / 84 A – 50 kVAr 460 V", "1,949 mH / 42 A – 25 kVAr 460 V"]
+  "itens_porta_e_placa": [
+   "CONTROLADOR",
+   "EMERGÊNCIA",
+   "LUZ INDICADORA DE OPERAÇÃO/ACIONAMENTO",
+   "CHAVE DESLIGA/LIGA/AUTOMÁTICO",
+   "EXAUSTOR",
+   "ADMISSÃO DE AR",
+   "BARRAMENTO REDE",
+   "FUSÍVEIS",
+   "CONTACTORA",
+   "BORNE/TERMINAL DE CONEXÃO",
+   "BANCO DE CAPACITORES",
+   "TRAFO DE COMANDO (220/220 V ou 460/220 V)",
+   "DISJUNTOR",
+   "RACK DE INDUTORES"
+  ],
+  "folhas": [
+   "VISTA ISOMÉTRICA (com e sem portas)",
+   "VISTA FRONTAL (com e sem portas)",
+   "VISTA SUPERIOR",
+   "VISTA LATERAL",
+   "VISTA TRASEIRA"
+  ],
+  "reatores_cootrans_dessintonizados": [
+   "0,447 mH / 87 A – 25 kVAr 220 V",
+   "0,974 mH / 84 A – 50 kVAr 460 V",
+   "1,949 mH / 42 A – 25 kVAr 460 V"
+  ]
  },
  "reator_sintonizado_monofasico_2016": {
   "origem": "Drive: 'Projeto Indutor Mono - Filtro Sintonizado_0.3428mH@154ARMS_COOTRANS_V1.0 - 25.01.2016.pdf' (Electric → Cootrans)",
-  "dados": {"I_rms_A": 154, "f_Hz": 60, "U_rede_V": 440, "L_mH": 0.3428, "tol_L_pct": 2, "isolacao_V": 1000, "IP": "00",
-            "classe_termica": "F 155 °C", "Q_60Hz_min": 50, "nucleo": "duas colunas monofásico", "enrolamento": "chapa/barra de alumínio",
-            "T_max_nucleo_C": 100, "ensaios": ["R a 28 °C e corrigida a 115 °C e X por fase a 100 % e 50 % da corrente", "megômetro 1000 Vcc", "tensão aplicada 60 Hz 1 min"]}
+  "dados": {
+   "I_rms_A": 154,
+   "f_Hz": 60,
+   "U_rede_V": 440,
+   "L_mH": 0.3428,
+   "tol_L_pct": 2,
+   "isolacao_V": 1000,
+   "IP": "00",
+   "classe_termica": "F 155 °C",
+   "Q_60Hz_min": 50,
+   "nucleo": "duas colunas monofásico",
+   "enrolamento": "chapa/barra de alumínio",
+   "T_max_nucleo_C": 100,
+   "ensaios": [
+    "R a 28 °C e corrigida a 115 °C e X por fase a 100 % e 50 % da corrente",
+    "megômetro 1000 Vcc",
+    "tensão aplicada 60 Hz 1 min"
+   ]
+  }
  },
  "projetos_de_montadora": [
-  {"cliente": "BIMBO", "autor": "STW (EPLAN Pro Panel)", "uso": "sequência de folhas, layouts externo/interno/3D, bornes, cabos, peças"},
-  {"cliente": "FEMSA POA", "arquivo": "13059-100-06-2025-001-QGBT-01 - SE-01B_R02.pdf", "autor": "Novemp (EPLAN, 22 colunas, Arial)",
-   "uso": "lista de plaquetas (tipos A–D em acrílico, ex.: tipo A 3 linhas × 10 letras, 23 mm, 150×45 mm) e lista de anilhas", "estilo": "não usar no estilo aprendido (modelo diferente do AGCO)"},
-  {"cliente": "CVI", "arquivo": "VOLTEC/CVI_QGBT-rev0.pdf", "autor": "Voltec", "uso": "QGBT, comando 220 Vca, layout"},
-  {"cliente": "VEOLIA", "arquivo": "QGBT/QSA/PMT CDR PEDREIRA (V2020-0654/0650/0648)", "uso": "projetos de montadora completos"},
-  {"cliente": "AGCO", "arquivo": "140-014_06 QGBT Engenharia / 140-015_02 QGBT ETE", "uso": "quadros do cliente"},
-  {"cliente": "BUNGE", "arquivo": "PAINEL PROTEÇÃO/TR1/TR2 – AS BUILT (DWG)", "uso": "layout real em DWG"},
-  {"cliente": "STIHL", "arquivo": "ELSTHMOT.DE.504xx (QGBT, QDF, CCM, QDFL em DWG)", "uso": "quadros BT"}
+  {
+   "cliente": "BIMBO",
+   "autor": "STW (EPLAN Pro Panel)",
+   "uso": "sequência de folhas, layouts externo/interno/3D, bornes, cabos, peças"
+  },
+  {
+   "cliente": "FEMSA POA",
+   "arquivo": "13059-100-06-2025-001-QGBT-01 - SE-01B_R02.pdf",
+   "autor": "Novemp (EPLAN, 22 colunas, Arial)",
+   "uso": "lista de plaquetas (tipos A–D em acrílico, ex.: tipo A 3 linhas × 10 letras, 23 mm, 150×45 mm) e lista de anilhas",
+   "estilo": "não usar no estilo aprendido (modelo diferente do AGCO)"
+  },
+  {
+   "cliente": "CVI",
+   "arquivo": "VOLTEC/CVI_QGBT-rev0.pdf",
+   "autor": "Voltec",
+   "uso": "QGBT, comando 220 Vca, layout"
+  },
+  {
+   "cliente": "VEOLIA",
+   "arquivo": "QGBT/QSA/PMT CDR PEDREIRA (V2020-0654/0650/0648)",
+   "uso": "projetos de montadora completos"
+  },
+  {
+   "cliente": "AGCO",
+   "arquivo": "140-014_06 QGBT Engenharia / 140-015_02 QGBT ETE",
+   "uso": "quadros do cliente"
+  },
+  {
+   "cliente": "BUNGE",
+   "arquivo": "PAINEL PROTEÇÃO/TR1/TR2 – AS BUILT (DWG)",
+   "uso": "layout real em DWG"
+  },
+  {
+   "cliente": "STIHL",
+   "arquivo": "ELSTHMOT.DE.504xx (QGBT, QDF, CCM, QDFL em DWG)",
+   "uso": "quadros BT"
+  }
  ],
  "filtros_e_bancos_mt": [
-  {"cliente": "BREE/VALE", "arquivo": "DF-1040OP-E-00001-E-00007 – Eletromecânico Aprovado (33 folhas A3)",
-   "conteudo": "FHSMT dupla sintonia 7ª/11ª 12,7 Mvar 34,5 kV: capa, índice, isométrica, vistas, fundação, placas de dados, reator RFF 5,413 mH/150 A"},
-  {"cliente": "BREE/ALIANÇA", "arquivo": "14002-DE-EE50-I75815_03 – BC DETALHES CONSTRUTIVO (36 folhas)",
-   "conteudo": "banco 17 Mvar 34,5 kV dupla estrela isolada: placas, gravações, pesos, plantas"}
- ]
+  {
+   "cliente": "BREE/VALE",
+   "arquivo": "DF-1040OP-E-00001-E-00007 – Eletromecânico Aprovado (33 folhas A3)",
+   "conteudo": "FHSMT dupla sintonia 7ª/11ª 12,7 Mvar 34,5 kV: capa, índice, isométrica, vistas, fundação, placas de dados, reator RFF 5,413 mH/150 A"
+  },
+  {
+   "cliente": "BREE/ALIANÇA",
+   "arquivo": "14002-DE-EE50-I75815_03 – BC DETALHES CONSTRUTIVO (36 folhas)",
+   "conteudo": "banco 17 Mvar 34,5 kV dupla estrela isolada: placas, gravações, pesos, plantas"
+  }
+ ],
+ "dimensionais_ifg": {
+  "origem": "5 - FILTROS-BANCOS-SINE WAVE - FORNECEDORES/5 - BCD IFG PAINEL/Dimensionais.xlsx (IFG, 2017) + ETs Electric 2017–2024",
+  "dessintonizado_50kvar_380V": [
+   {
+    "kvar": 100,
+    "est": 2,
+    "acesso": "frontal",
+    "HxLxP": [
+     2200,
+     800,
+     400
+    ]
+   },
+   {
+    "kvar": 200,
+    "est": 4,
+    "acesso": "frontal",
+    "HxLxP": [
+     2200,
+     1200,
+     400
+    ]
+   },
+   {
+    "kvar": 300,
+    "est": 6,
+    "acesso": "frontal",
+    "HxLxP": [
+     2200,
+     2000,
+     400
+    ]
+   },
+   {
+    "kvar": 500,
+    "est": 10,
+    "acesso": "frontal",
+    "HxLxP": [
+     2200,
+     3200,
+     400
+    ]
+   },
+   {
+    "kvar": 200,
+    "est": 4,
+    "acesso": "frontal/traseiro",
+    "HxLxP": [
+     2200,
+     800,
+     800
+    ]
+   },
+   {
+    "kvar": 300,
+    "est": 6,
+    "acesso": "frontal/traseiro",
+    "HxLxP": [
+     2200,
+     1200,
+     800
+    ]
+   },
+   {
+    "kvar": 500,
+    "est": 10,
+    "acesso": "frontal/traseiro",
+    "HxLxP": [
+     2200,
+     2000,
+     800
+    ]
+   }
+  ],
+  "projetos": [
+   {
+    "caso": "AGCO 300 kVAr 380 V 7 est. (2021)",
+    "HxLxP": [
+     2000,
+     1600,
+     800
+    ]
+   },
+   {
+    "caso": "Panatlântica 400 kVAr 415 V 8 est. (2024)",
+    "HxLxP": [
+     2000,
+     1600,
+     800
+    ]
+   },
+   {
+    "caso": "500 kVAr 380 V 12 est. (2021)",
+    "HxLxP": [
+     2000,
+     2200,
+     800
+    ]
+   },
+   {
+    "caso": "270 kVAr 380 V (2022)",
+    "HxLxP": [
+     2000,
+     1600,
+     800
+    ]
+   },
+   {
+    "caso": "203 kVAr 440 V 6 est. Beconal",
+    "HxLxP": [
+     2000,
+     1000,
+     800
+    ]
+   },
+   {
+    "caso": "250 kVAr 380 V FD 16 %",
+    "HxLxP": [
+     1900,
+     1200,
+     800
+    ]
+   }
+  ],
+  "layout_panatlantica_2024": "frente: uma placa de montagem por toda a largura (1523 × 1702), comando no topo, estágios em faixas verticais (chave NH, contatora, capacitores embaixo); trás: reatores 2 × 2 por coluna em duas prateleiras; portas de 788 mm; plinto; entrada de cabos por baixo"
+ }
 }

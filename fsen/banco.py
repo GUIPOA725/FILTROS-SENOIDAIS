@@ -78,6 +78,7 @@ class PedidoBanco:
     cenarios_rede: List[dict] = field(default_factory=list)
     origem_dados: Dict[str, str] = field(default_factory=dict)
     barra_ligacao: str = ""
+    acesso_painel: str = "frontal/traseiro"   # v1.17.4: "frontal/traseiro" (prof. 800, padrão) | "frontal" (prof. 400, mais largo)
 
     @property
     def p_pct(self):
