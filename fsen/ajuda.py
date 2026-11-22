@@ -101,6 +101,9 @@ DICAS = {
     "Harmônica de cada ramo (na ordem dos estágios)": "Sintonizado: ordem de cada ramo, ex.: 5,5,7,11.",
     "Nr = fator × h": "Sintonizado: sintonia um pouco abaixo da harmônica (padrão 0,94 × h; Electric 4,4–4,8 na 5ª).",
     "DHTi drenada da rede (%)": "Sintonizado: distorção de corrente que o filtro vai absorver (informativo para a proposta).",
+    "Construção do filtro sintonizado": "Padrão: reator trifásico + capacitor trifásico seco PPM (ex. TDK série F). Robusta "
+                                        "(ex. Pirelli Gravataí, a maior entrega de sintonizados da Electric): 3 reatores monofásicos de 2 colunas "
+                                        "por ramo + capacitor trifásico impregnado em óleo – mais robusto térmica e mecanicamente, para serviço pesado.",
     "3 reatores monofásicos de 2 colunas por ramo": "Usa 3 reatores monofásicos em vez de 1 trifásico (correntes altas – ex. Cootrans 2016).",
     "Fator de dessintonia": "FD 8,16 % (Nr 3,5, 210 Hz) é o padrão Electric. FD 14 % (Nr 2,67) quando há 3ª harmônica relevante.",
     "k = I_projeto / I60": "Corrente de projeto do reator ÷ corrente a 60 Hz (padrão 1,3 dessintonizado / 1,8 sintonizado).",

@@ -1,5 +1,5 @@
 {
-  "versao": "1.22.0",
+  "versao": "1.23.0",
   "data": "2026-11-22",
-  "resumo": "Coluna de CHECK (APROVADO / ATENÇÃO / REPROVADO, com utilização %) em tabelas, planilhas e gráficos de resultados"
+  "resumo": "Folha de dados com valores garantidos + verificação IEC 61439/61921 com check; construção robusta do sintonizado (monofásico 2 colunas + capacitor a óleo)"
 }

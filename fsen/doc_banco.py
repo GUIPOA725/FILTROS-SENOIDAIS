@@ -575,8 +575,8 @@ def proposta(ped, res, pasta, cod, cat, inds=None, n_banco=1):
             doc.add_paragraph(f"Estudo: DHTv na barra de {_f(res['thd']['sem'], 2)} % sem filtro para {_f(res['thd']['com'], 2)} % com filtro "
                               "(corrente harmônica da carga informada).")
         doc.add_heading("Componentes básicos do filtro", 2)
-        _bullets(doc, [("Reatores monofásicos" if ped.monofasico else "Reatores trifásicos") + ", com núcleo de ferro;",
-                       f"Capacitores trifásicos conectados em delta, especiais para filtros, tensão de {E[0]['U_cap_nom']} V;",
+        _bullets(doc, [("Reatores monofásicos de 2 colunas (3 por ramo)" if ped.monofasico else "Reatores trifásicos") + ", com núcleo de ferro;",
+                       f"Capacitores {B.texto_capacitor(ped)}, especiais para filtros, tensão de {E[0]['U_cap_nom']} V;",
                        "Contatoras de manobra dimensionadas para a corrente efetiva e a distorção harmônica prevista;",
                        "Chave desconectora tripolar com base NH e fusíveis para proteção individual de cada estágio;",
                        "Chave seccionadora-fusível geral; botoeira 3 posições; controlador automático;",

@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.23.0 – 2026-11-22 (no nível ABB/Schneider: folha de dados + verificação IEC 61439/61921; sintonizado robusto)
+- **Folha de dados com valores garantidos** (banco dessintonizado e filtro sintonizado), no estilo dos catálogos ABB/Hitachi APCQ e Schneider VarSet: tensão, kvar e estágios, sintonia, DHTv admissível e na barra, capacitores, reatores, manobra e proteção, controlador (DHT, alarmes de DHT/temperatura, contador de manobras, Modbus RS-485), Icw, invólucro (IP31/IP54, IK10, IPXXB com porta aberta, RAL 7035), ventilação, perdas, transitórios e normas.
+- **Verificação de projeto IEC 61439-1/2 e conformidade IEC 61921 com Check** em todo projeto: isolação e escoamento (Tab. 1/2), temperatura interna × categoria do capacitor e vazão (IEC 60890), curto-circuito na barra × Icw e fusíveis, coordenação tipo 2, sobretensão/sobrecorrente do capacitor, descarga ≤ 75 V/180 s, inrush ≤ 100·In, contatora × pico, termostato por reator, bloqueio de religamento. O que só se prova com ensaio/declaração (IP, IK, dielétrico, rotina) sai como ATENÇÃO "comprovar no recebimento (FAT)" – nunca aprovado sem prova.
+- Saída: 01_Engenharia/5_Normas_Folha_de_Dados (cópia em 02_Cliente), tabela no RESUMO e no consolidado.
+- **Filtro sintonizado – construção**: "Padrão" (reator trifásico + capacitor trifásico seco PPM, ex. TDK série F) ou "Robusta" (ex. Pirelli Gravataí: 3 reatores monofásicos de 2 colunas por ramo + capacitor trifásico impregnado em óleo). Vai para a proposta e a folha de dados.
+
 ## v1.22.0 – 2026-11-22 (coluna de CHECK em todo resultado)
 - Padrão novo (fsen/checagem.py): todo resultado de simulação/cálculo leva **Check** – **APROVADO** (utilização < 90 % do limite, verde), **ATENÇÃO** (90–100 % ou critério de aviso violado, âmbar), **REPROVADO** (acima do limite obrigatório, vermelho), **INFO** (caso mostrado de propósito, cinza) – sempre palavra + cor, com a **utilização %** (valor ÷ limite), como nos softwares de estudo (alertas marginal/crítico) e nas tabelas de verificação conforme/não conforme.
 - Transitórios: tabela do RESUMO com Check e observação (o que pegou e quanto %), planilha com Utilização (%) e Check pintados, comparação Plataforma × ATP com Check, e selo de Check em cada figura.

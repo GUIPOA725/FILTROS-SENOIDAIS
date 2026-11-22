@@ -74,6 +74,7 @@ class PedidoBanco:
     classe: str = "F"                     # especificação Electric: classe F (155 °C), isolação 1 kV, IP00
     condutor: str = "AL"                  # "AL" (padrão Electric: chapa/barra de alumínio) | "CU"
     monofasico: bool = False              # sintonizado: 3 reatores monofásicos de 2 colunas em vez de 1 trifásico
+    capacitor_dieletrico: str = "seco"    # v1.23.0 sintonizado: "seco" (PPM metalizado, ex. TDK série F) | "oleo" (impregnado em óleo – construção robusta, ex. Pirelli)
     # v1.16.0 – Plataforma de Estudos: cenários de curto da barra (estudo de proteção) e origem de cada dado
     cenarios_rede: List[dict] = field(default_factory=list)
     origem_dados: Dict[str, str] = field(default_factory=dict)
@@ -442,3 +443,18 @@ def painel(ped, res):
         eletric += ["Multimedidores Embrasul MD4040 – proteção por estágio (1 por estágio)", "CLP de controle e proteção",
                     "Projeto elétrico (diagrama de força e comando)"]
     return dict(itens=itens, eletric=eletric, geral_A=geral, dim=(Dg['altura'], larg, Dg['profundidade']), I_total=It, gabinete=gab)
+
+
+CONSTRUCOES_SINT = {
+    "padrao": ("Padrão: reator trifásico + capacitor trifásico seco (PPM metalizado, ex. TDK/Epcos série F)", False, "seco"),
+    "robusta": ("Robusta (ex. Pirelli): 3 reatores monofásicos de 2 colunas por ramo + capacitor trifásico impregnado em óleo", True, "oleo"),
+}
+
+
+def texto_capacitor(ped):
+    """Descrição do dielétrico do capacitor conforme a construção escolhida."""
+    if getattr(ped, "capacitor_dieletrico", "seco") == "oleo":
+        return ("trifásico em Δ, impregnado em óleo isolante (não PCB, biodegradável), carcaça metálica com dispositivo de "
+                "sobrepressão, resistores de descarga – maior capacidade térmica e de sobrecarga, para filtro sintonizado de serviço pesado")
+    return ("trifásico em Δ, seco, filme de polipropileno metalizado autorregenerativo (PPM, ex. TDK/Epcos série F), "
+            "dispositivo de sobrepressão, resistores de descarga")

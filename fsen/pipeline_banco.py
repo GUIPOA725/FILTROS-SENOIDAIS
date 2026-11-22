@@ -157,6 +157,17 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         fh.write(DB.email_fornecedor("IFG", ped, res, grupos, anexos_pnl, cod, tipo="painel"))
     arqs["proposta"] = DB.proposta(ped, res, sub["02_Cliente"], cod, cat, inds, n_bancos)
     log("5/5 Dados e carimbo de versão...")
+    try:                                            # v1.23.0: folha de dados + verificação IEC 61439/61921 com check
+        from . import normas_banco as NB
+        from . import painel_gabinete as PG
+        _gab = PG.gabinete(ped, res)
+        _prot = B.protecao_estagio(ped, res["estagios"][0])
+        arqs["normas"], ver_iec = NB.gerar_pdf(ped, res, _gab, _prot, cod, os.path.join(sub["01_Engenharia"], "5_Normas_Folha_de_Dados"),
+                                               trans=trans, inds=inds, versao=versao, log=log)
+        shutil.copy(arqs["normas"], os.path.join(sub["02_Cliente"], os.path.basename(arqs["normas"])))
+    except Exception as ex:
+        ver_iec = None
+        log(f"   (folha de dados / verificação IEC não gerada: {type(ex).__name__}: {ex})")
     ped_d = ped.__dict__.copy()
     with open(os.path.join(pasta, "pedido_banco.json"), "w", encoding="utf-8") as fh:
         json.dump(dict(tipo_filtro=ped.tipo, **ped_d), fh, ensure_ascii=False, indent=1, default=_json_default)
@@ -168,6 +179,8 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         fh.write(resumo(ped, res, grupos, inds, cod))
         if trans:
             fh.write("\n" + trans["resumo"])
+        if ver_iec:
+            fh.write("\n".join(NB.verificacao_md(ver_iec)) + "\n")
     carimbar_pasta(pasta, log)
     try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
         from . import consolidado as CONS

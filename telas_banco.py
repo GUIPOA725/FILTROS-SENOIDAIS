@@ -231,7 +231,13 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
         p.fator_sintonia = c2.number_input("Nr = fator × h", 0.85, 0.99, float(base.fator_sintonia), 0.01, key=f"bcf_fs_{_R}",
                                            help="Electric: Nr 4,4–4,8 na 5ª (fator 0,88–0,96).")
         p.dhti_carga_pct = c3.number_input("DHTi drenada da rede (%)", 0.0, 400.0, float(base.dhti_carga_pct), key=f"bcf_dhti_{_R}")
-        p.monofasico = c4.checkbox("3 reatores monofásicos de 2 colunas por ramo", base.monofasico, key=f"bcf_mono_{_R}")
+        _cons = list(B.CONSTRUCOES_SINT)
+        _i0 = 1 if (base.monofasico and getattr(base, "capacitor_dieletrico", "seco") == "oleo") else 0
+        _c = st.selectbox("Construção do filtro sintonizado", _cons, index=_i0, key=f"bcf_cons_{_R}",
+                          format_func=lambda k: B.CONSTRUCOES_SINT[k][0])
+        p.monofasico, p.capacitor_dieletrico = B.CONSTRUCOES_SINT[_c][1], B.CONSTRUCOES_SINT[_c][2]
+        if _c == "padrao":
+            p.monofasico = c4.checkbox("3 reatores monofásicos de 2 colunas por ramo", base.monofasico, key=f"bcf_mono_{_R}")
     else:
         nrs = list(B.NR_DESSINT)
         p.nr = st.radio("Fator de dessintonia", nrs, index=nrs.index(base.nr) if base.nr in nrs else 0, horizontal=True, key=f"bcf_nr_{_R}",
