@@ -93,3 +93,16 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 18:42
 "E os indutores vc tem a simulação dos campos magnético então consegue especificar como montar eles? As distância s um do outro, das partes metálica dos cabos de força, isso é importante na especiação de montagem nos desenhos da especificação técnica eu não fazia isso era no chute na forma manual nunca calculado"
 → REQ-REA-010.
+
+### 19:49
+"mudei para o fable"
+### 19:59
+"eu já usei capacitores menores de 25kvar 525v, eu notei que capacitores grandes em ppm a seco esquentam muito, então prefiro dividir em 3 ou 4 capacitres menores, é mais caro mas eles não esquentam tanto. trafo de comando rasatronic ou wise. os espaços ainda vou avaliar"
+→ REQ-CMP-004, REQ-CMP-005. Limites de campo/espaços do reator: aguardando avaliação do engenheiro (REQ-REA-010).
+
+### 20:08
+"vi que vc colocou termostato nos indutores, essa fiação vai sem serie com a bobina da contatora? isso ta nos desenhos eletricos de protejo e domando e forca desenhado eu não vi"
+→ sim: folha 8 do esquema (-Bn NF em série com A1 de -Kn) e DE/PARA fios 10/11; título da folha corrigido (dizia BR6000 em projeto Schneider/ABB).
+### 20:10
+"sobre as distancias ok para u mpainel de 2 metros de largura, vc calculou todas distencias que os componentes exigem? se sim e se isso ta no codigo eu aceito"
+→ resposta: ainda NÃO todas (REQ-CMP-003 PARCIAL) – reator (FEM) e capacitor ABB (catálogo) sim; contatoras, seccionadoras, disjuntor geral e capacitor Schneider ainda com folga padrão.

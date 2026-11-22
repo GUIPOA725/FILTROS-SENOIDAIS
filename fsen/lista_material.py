@@ -169,8 +169,8 @@ def montar(ped, res, gab, prot, ext=None):
     for chave, tag, desc in (("controlador", "-A1", "Controlador de fator de potência"), ("rele_falta_fase", "-K0", "Relé de falta/sequência de fase")):
         r, o = item(d, mc, chave, ped, n=n)
         add("5 Comando", tag, desc, r.get("codigo"), 1, "pç", o, stt(r), "")
-    add("5 Comando", "-T1", f"Transformador de comando {ped.tensao_v:g}/220 V {trc['Sn']} VA", f"Trafo de comando monofásico {ped.tensao_v:g}/220 V {trc['Sn']} VA",
-        1, "pç", "ELECTRIC", "calculado", f"carga: retenção {trc['S_ret']} VA; pior manobra {trc['S_inst']} VA")
+    add("5 Comando", "-T1", f"Transformador de comando {ped.tensao_v:g}/220 V {trc['Sn']} VA", f"Rasatronic (ou Wise) – transformador isolador monofásico IP-00 {ped.tensao_v:g}/220 V {trc['Sn']} VA (sob encomenda)",
+        1, "pç", "Rasatronic / Wise", "calculado – medidas pelo desenho do fornecedor", f"carga: retenção {trc['S_ret']} VA; pior manobra {trc['S_inst']} VA")
     from . import fabricantes as _FBd
     _mk = getattr(ped, "marca", "") or _FBd.PADRAO
     _real = any(x in _mk.lower() for x in ("abb", "schneider"))

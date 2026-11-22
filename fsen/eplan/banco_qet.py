@@ -182,7 +182,11 @@ def construir(ped, res, cod, versao, P_lista=None):
             nc = fs.no(cx + 28, 548, pe_de=pe_tag.get(cx, ""))
             fs.fio(nc.term("n"), nos_pe[cx].term("n") if cx in nos_pe else nc.term("n"), cor="#2e7d32", marca="VD/AM", secao="1,5")
     # ------------------------------------------------------------------ controlador
-    fc = Q.folio("CFP – controlador BR6000", "COMANDO")
+    try:                                                   # nome do controlador = o da marca do projeto (lista de material)
+        _nc = str((P_lista.disp.get("-A1") or {}).get("cod") or "").split(" (")[0] if P_lista is not None else ""
+    except Exception:
+        _nc = ""
+    fc = Q.folio(f"CFP – controlador {_nc or 'de fator de potência'} + termostatos dos reatores em série com as bobinas", "COMANDO")
     yL, yN = 40, 600
     xs_ctrl = sorted({60, 120, 200, 260} | {400 + 60 * i for i in range(min(n, 6))} | {W_PX - 40})
     railL, railN = {}, {}

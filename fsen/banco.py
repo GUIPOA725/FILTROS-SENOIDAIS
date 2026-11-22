@@ -136,10 +136,8 @@ def escolher_capacitor(ped, Q_alvo, nr, Vcap=None):
         from . import fabricantes as FB
         uc = FB.unidades_cap(ped.marca, Vcap)
         if uc:
-            if (FB._m(ped.marca).get("capacitores") or {}).get("preferir") == "maior":
-                Vcap, serie = uc[0], tuple(sorted(uc[1], reverse=True))
-            else:
-                Vcap, serie = uc[0], tuple(sorted(uc[1], key=lambda u: (abs(u - 25), -u)))   # unidade usual Electric ≈ 25 kvar (Panatlântica 2024)
+            # REQ-CMP-004 (engenheiro, 22/11): unidades MENORES ≈ 25 kvar, 3 ou 4 por estágio – capacitor grande em PPM a seco esquenta
+            Vcap, serie = uc[0], tuple(sorted(uc[1], key=lambda u: (abs(u - 25), -u)))
     fq = fator_q(ped.tensao_v, Vcap, nr)
     melhor = None
     for rk, u in enumerate(serie):

@@ -6,11 +6,11 @@
 
 capacitores:
   "Schneider BLRCH250A300B52":      {tipo: cilindro, D: 116, A: 212, terminal: 30, kg: 2.5, fixacao: "pino M12 no fundo, 10 N·m",
-                                     borne: "ClampTite (M5, 2,5 N·m)", borne_max_mm2: 16, dist_min_mm: 20, perdas_W_kvar: 0.5,
+                                     borne: "ClampTite (M5, 2,5 N·m)", borne_max_mm2: 16, dist_min_mm: 20, conferir_dist: "20 mm = padrão Electric; valor do fabricante a confirmar na instrução NVE45179", perdas_W_kvar: 0.5,
                                      fonte: "se.com/br BLRCH250A300B52 (30 kvar 525 V 60 Hz, Ø116 × 242 mm c/ borne, caixa TC h 212 + t 30, 22/11/2026); torques catálogo VarplusCan", conferir: false,
                                      conferir_borne: "seção máx. do ClampTite – confirmar na instrução NVE45179"}
   "Schneider BLRCH200A240B52":      {tipo: cilindro, D: 116, A: 212, terminal: 30, kg: 2.5, fixacao: "pino M12 no fundo, 10 N·m",
-                                     borne: "ClampTite (M5, 2,5 N·m)", borne_max_mm2: 16, dist_min_mm: 20, perdas_W_kvar: 0.5,
+                                     borne: "ClampTite (M5, 2,5 N·m)", borne_max_mm2: 16, dist_min_mm: 20, conferir_dist: "20 mm = padrão Electric; valor do fabricante a confirmar na instrução NVE45179", perdas_W_kvar: 0.5,
                                      fonte: "se.com/br BLRCH200A240B52 – CAPACITOR VARPLUSCAN 24 kvar 525 V 60 Hz 3F (Ø116 × 242 mm, 2,5 kg, 22/11/2026)", conferir: false,
                                      conferir_borne: "seção máx. do ClampTite – confirmar na instrução NVE45179"}
   "Schneider BLRCH125A150B52":      {tipo: cilindro, D: 90, A: 212, terminal: 30, fixacao: "pino M12 no fundo, 10 N·m", borne: "ClampTite (M5, 2,5 N·m)",

@@ -19,7 +19,6 @@ ABB:
     - "new.abb.com (22/11/2026): AF52/AF65/AF80-30-00-13 ativas; OS160GD03 (1SCA114221R1001) ativa, manopla não inclusa"
   capacitores:
     serie: "CLMD (caixa metálica, dielétrico seco, fabricação Brasil)"
-    preferir: maior    # caixa metálica: 1 unidade maior por estágio ocupa menos placa que várias CLMD43
     unidades:          # V nominal: [kvar a 60 Hz] – só os que têm medida de catálogo (CLMD43/53/63; CLMD13 sem desenho)
       525: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
       690: [20, 25, 30, 40, 50]

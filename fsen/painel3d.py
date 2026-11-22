@@ -378,8 +378,8 @@ def _comando(p, x0, x1, y_face, z, faltam, cod_rele=""):
         _cx(p, "frente", xr, y_face - 90, z + 172, 22.5, 90, 90, C_VERM, 0.55)
         faltam.append("relé falta de fase (modelo a definir)")
     _rotulo(p, xr + 11, y_face - 92, z + 150, "-K0")
-    if "trafo de comando (fornecedor nacional – modelo a definir)" not in faltam:
-        faltam.append("trafo de comando (fornecedor nacional – modelo a definir)")
+    if "trafo de comando Rasatronic/Wise sob encomenda (medidas pelo desenho do fornecedor)" not in faltam:
+        faltam.append("trafo de comando Rasatronic/Wise sob encomenda (medidas pelo desenho do fornecedor)")
     _cx(p, "frente", x1 - 150, y_face - 130, z + 10, 140, 130, 130, C_VERM, 0.55)                # trafo de comando
     _rotulo(p, x1 - 80, y_face - 132, z - 12, "-T1")
 

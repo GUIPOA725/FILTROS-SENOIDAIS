@@ -54,7 +54,7 @@ def construir(ped, res, cod, versao, n_banco=1):
         P.disp["-F03"]["descr"] = f"Disjuntor bipolar {_trc['dj_sec_A']} A curva C (secundário 220 V)"
     except Exception:
         kva = 500 if n <= 6 else 1000
-    P.dispositivo("-T1", f"Transformador de comando {V:g}/220 V {kva} VA", "ELECTRIC", f"Trafo de comando monofásico {V:g}/220 V {kva} VA", 1,
+    P.dispositivo("-T1", f"Transformador de comando {V:g}/220 V {kva} VA", "Rasatronic / Wise", f"Rasatronic (ou Wise) – transformador isolador monofásico IP-00 {V:g}/220 V {kva} VA (sob encomenda)", 1,
                   grupo="Comando")
     P.dispositivo("-K0", f"Relé de falta e sequência de fase {V:g} V, 1 contato reversível", "WEG/Coel (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-S0", "Botão de emergência cogumelo Ø40 com trava, 1NF + 1NA, Ø22 mm", "WEG/Schneider (equiv.)", "", 1, grupo="Comando")

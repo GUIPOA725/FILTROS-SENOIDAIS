@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.25.3 – 2026-11-22 (capacitores menores, trafo de comando Rasatronic/Wise)
+- **Capacitores menores (REQ-CMP-004)**: a escolha passa a preferir unidades de cerca de 25 kvar, 3 ou 4 por estágio, em todas as marcas – capacitor grande em PPM a seco esquenta muito (experiência de campo do engenheiro). O ABB volta para 3 × CLMD43 25 kvar 525 V (60525025000BR) por estágio.
+- **Trafo de comando (REQ-CMP-005)**: fornecedor Rasatronic ou Wise, transformador isolador monofásico IP-00 sob encomenda, com a potência calculada pela carga. O site da Rasatronic não publica medidas (fabricação sob encomenda): no 3D o trafo continua marcado até chegar o desenho do fornecedor.
+
 ## v1.25.2 – 2026-11-22 (componentes reais de catálogo, cabos naturais, aterramento, campo do reator na montagem)
 - **Componentes reais (REQ-CMP-002/003)**: códigos, medidas e status conferidos nos sites ABB e Schneider (22/11/2026). Erros corrigidos:
   - ABB: capacitor **CLMD43 (caixa metálica, fabricado no Brasil)** 60525025000BR, 275 × 180 (266 com abas) × 152 mm, 50 mm entre unidades;
