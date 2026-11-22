@@ -1,0 +1,334 @@
+"""Ajuda embutida para quem usa a plataforma pela primeira vez (v1.18.0).
+
+Três camadas, sem manual para ler:
+  1. DICAS – passar o mouse no "?" de cada campo mostra o que ele faz, de onde vem o valor e o padrão Electric.
+     Ficam TODAS aqui (um lugar só para manter); `instalar_dicas()` coloca a dica em qualquer campo que ainda não tenha.
+  2. PASSO A PASSO – na barra lateral, o roteiro da tela aberta (o que fazer agora, o que vem depois).
+  3. ASSISTENTE – pergunta livre ("por que deu 400 kvar?", "o que é FD?", "deu erro, e agora?"): responde com a mesma IA
+     configurada para ler os pedidos, sabendo em que tela o usuário está, o que preencheu, o último log e o último erro.
+     Todo erro mostrado na tela fica registrado (~/.fsen/erros.log) e ganha o botão "Explicar este erro".
+Perguntas e respostas ficam em ~/.fsen/ajuda_historico.jsonl – o desenvolvedor vê as dúvidas mais comuns e melhora as dicas.
+"""
+from __future__ import annotations
+
+import datetime as _dt
+import json
+import os
+import traceback
+
+PASTA = os.path.join(os.path.expanduser("~"), ".fsen")
+ARQ_ERROS = os.path.join(PASTA, "erros.log")
+ARQ_HIST = os.path.join(PASTA, "ajuda_historico.jsonl")
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# ------------------------------------------------------------------------------------------------ 1. dicas por campo
+DICAS = {
+    # ---- barra lateral / geral
+    "Tipo de filtro": "Escolha o produto: filtro senoidal (saída de inversor → motor), banco de capacitores dessintonizado "
+                      "(correção de FP com reator, padrão Electric FD 8,16 %) ou filtro sintonizado (5ª/7ª/11ª, quando a "
+                      "distorção é alta). Na dúvida entre dessintonizado e sintonizado, carregue a medição: a plataforma sugere.",
+    "Menu": "Nova solicitação = projeto do zero. Ajuste manual = mexer num projeto já gerado e ressimular. Conferir proposta = "
+            "comparar o que o fornecedor cotou com o especificado.",
+    "IA para ler os pedidos": "Qual IA lê e-mails, relatórios e planilhas. 'Claude – sua assinatura' usa o Claude Code logado "
+                              "no computador (sem custo extra). Sem IA a leitura é por regras simples e você confere tudo.",
+    "Modelo Claude": "Modelo usado na leitura. O padrão já é o recomendado; troque só se o suporte pedir.",
+    "Esforço": "Quanto a IA 'pensa' antes de responder. Alto = leitura mais cuidadosa de relatórios longos (mais lento).",
+    "Testar IA": "Faz uma pergunta curta para a IA e mostra se está respondendo. Use quando a leitura falhar.",
+    "Pasta onde ficam os projetos": "Onde a plataforma grava cada projeto (uma pasta por cliente, uma subpasta por projeto "
+                                    "com data e hora). A escolha fica lembrada no seu usuário do Windows.",
+    # ---- filtro senoidal
+    "Cliente": "Nome do cliente como vai sair nos documentos e no nome da pasta.",
+    "CNPJ": "Opcional – sai na proposta.", "Cidade/UF": "Opcional – sai na proposta.",
+    "Quantidade": "Quantos filtros iguais. Afeta só proposta e pedidos aos fornecedores.",
+    "Contato": "Pessoa do cliente (sai na proposta).", "E-mail": "E-mail do contato (sai na proposta).",
+    "Topologia": "LC = indutor + capacitor (padrão). LCL = mais um indutor do lado do motor, para cabos longos ou dv/dt baixo.",
+    "Revenda": "Marque se o filtro é para revenda – muda textos e margens da proposta.",
+    "Tensão (V)": "Tensão de linha na saída do inversor (fase-fase).",
+    "Corrente do filtro (A)": "Corrente nominal do filtro – normalmente a corrente nominal do inversor (não a do motor).",
+    "Freq. rede (Hz)": "Frequência da rede de alimentação (60 Hz no Brasil).",
+    "fs chaveamento (kHz, 0 = padrão do inversor)": "Frequência de chaveamento do inversor. Deixe 0 para usar o valor típico "
+                                                     "do modelo informado; informe se o cliente souber (vem no parâmetro do inversor).",
+    "Inversor": "Fabricante e modelo do inversor (ex.: WEG CFW11). Ajuda a IA a achar fs e limites.",
+    "Corrente inversor (A)": "Corrente nominal do inversor.",
+    "f saída mín (Hz)": "Menor frequência de operação do motor.", "f saída máx (Hz)": "Maior frequência de operação do motor.",
+    "Motor (cv)": "Potência do motor.", "Corrente motor (A)": "Corrente nominal do motor (placa).",
+    "FP motor": "Fator de potência do motor (placa).", "Fator de serviço": "Fator de serviço do motor (placa, ex.: 1,15).",
+    "Cabo (m)": "Comprimento do cabo entre o filtro/inversor e o motor – decide reflexão de onda e Vpico.",
+    "Vpico máx (V)": "Pico de tensão máximo admitido no motor (NEMA MG1 parte 31 ou dado do fabricante).",
+    "dv/dt máx (V/µs)": "Taxa de subida máxima admitida no motor.",
+    "Rise time mín (µs)": "Tempo de subida mínimo admitido no motor.",
+    "Seção do cabo ao motor (mm², 0 = automática)": "Seção do cabo do motor. 0 = a plataforma escolhe pela corrente.",
+    "Cabos em paralelo por fase (0 = automático)": "Número de cabos por fase. 0 = automático.",
+    "Cabo blindado (VFD)": "Marque se o cabo ao motor é blindado para inversor (muda a capacitância do cabo).",
+    "Centro-estrela ao barramento CC (all-pole)": "Liga o centro-estrela dos capacitores ao barramento CC (filtro all-pole, "
+                                                   "reduz também a tensão de modo comum).",
+    "Aplicação": "Texto livre da aplicação (bomba, ventilador…).",
+    "Cole aqui o e-mail do cliente": "Cole o e-mail do pedido. Junto com os anexos, a IA preenche os campos; depois confira.",
+    "Anexos (PDF, imagem, DOCX)": "Arraste pedido, placa do motor/inversor, fotos, folhas de dados. Tudo é lido pela IA.",
+    "🔎 Ler solicitação": "Lê o e-mail e os anexos e preenche os campos. Os valores lidos aparecem marcados; confira antes de dimensionar.",
+    "Topologias": "Quais topologias a plataforma avalia na otimização.",
+    "Prioridade do projeto": "O que pesa mais na escolha da solução: custo, perdas ou desempenho.",
+    "⚙️ Dimensionar, simular e gerar todos os documentos": "Roda tudo: cálculo, simulação, projeto do indutor por elementos finitos, "
+                                                           "memorial, especificações, desenhos e proposta. Pode levar alguns minutos.",
+    # ---- banco / sintonizado
+    "Usar medição do ícone QEE": "Usa os resultados (resumo/ficha/anexo) gerados pela Plataforma de Estudos – ícone QEE.",
+    "A medição foi feita na barra onde o filtro será ligado?": "Se a medição foi em outro ponto, a plataforma ajusta a corrente "
+                                                               "e a distorção para a barra do filtro.",
+    "Usar estudo de proteção / curto": "Usa o estudo de proteção/curto (PDF do ícone de proteção) para tirar Scc, X/R e cenários da barra.",
+    "Estudo": "Escolha o PDF do estudo de proteção.",
+    "Barra/equipamento onde o filtro será ligado (como no estudo)": "Digite o nome da barra como aparece no estudo (ex.: QDF-03).",
+    "Barra do estudo (confira)": "Barra encontrada no estudo – confira se é a certa.",
+    "E-mail / pedido do cliente": "Cole o pedido. Junto com a medição e o estudo, a IA extrai kvar, tensão, harmônicas, trafo…",
+    "🔎 Ler solicitação e medições": "Lê pedido, medição e estudo e propõe o banco com a justificativa. Confira as lacunas listadas.",
+    "Como dimensionar o montante (kvar)": "Reativo das medições = o que a medição pede, sem folga. Com folga Electric = soma "
+                                          "crescimento + perdas do trafo e garante o necessário mesmo perdendo 1–2 estágios "
+                                          "(ex.: Panatlântica 300 → 400 kvar). A outra opção aparece como referência.",
+    "Folga p/ crescimento (%)": "Margem para aumento de carga (padrão 15 %). Só vale no modo 'Com folga Electric'.",
+    "Estágios de reserva (N-k)": "Quantos estágios podem falhar e o banco ainda entregar o necessário. Automático: 2 a partir de 250 kvar.",
+    "Medição na BT (somar perdas reativas do trafo)": "Se a medição foi no secundário, soma o reativo consumido pelo próprio trafo.",
+    "Acesso ao painel": "Frontal/traseiro: prof. 800, capacitores na frente, reatores atrás (padrão AGCO/Panatlântica). "
+                        "Frontal: prof. 400, painel mais largo.",
+    "Projeto / local": "Identificação do projeto/local (sai nos documentos).",
+    "Tensão da rede (V)": "Tensão de linha da barra onde o banco será ligado (ex.: 380, 415, 440 V).",
+    "Frequência (Hz)": "Frequência da rede.",
+    "Estágios (kvar efetivos na rede, separados por +)": "kvar que cada estágio entrega NA REDE (já com o efeito do reator), "
+                                                        "ex.: 50+50+50+50. O capacitor (maior, ex.: 3×25 kvar 525 V) a plataforma escolhe.",
+    "Quantidade de bancos/filtros": "Quantos painéis iguais (afeta pedidos e proposta).",
+    "Ambiente (°C)": "Temperatura do local do painel (padrão 40 °C) – entra na ventilação e nos reatores.",
+    "Harmônica de cada ramo (na ordem dos estágios)": "Sintonizado: ordem de cada ramo, ex.: 5,5,7,11.",
+    "Nr = fator × h": "Sintonizado: sintonia um pouco abaixo da harmônica (padrão 0,94 × h; Electric 4,4–4,8 na 5ª).",
+    "DHTi drenada da rede (%)": "Sintonizado: distorção de corrente que o filtro vai absorver (informativo para a proposta).",
+    "3 reatores monofásicos de 2 colunas por ramo": "Usa 3 reatores monofásicos em vez de 1 trifásico (correntes altas – ex. Cootrans 2016).",
+    "Fator de dessintonia": "FD 8,16 % (Nr 3,5, 210 Hz) é o padrão Electric. FD 14 % (Nr 2,67) quando há 3ª harmônica relevante.",
+    "k = I_projeto / I60": "Corrente de projeto do reator ÷ corrente a 60 Hz (padrão 1,3 dessintonizado / 1,8 sintonizado).",
+    "Fator de qualidade FQ": "Fator de qualidade do reator (padrão 60 dessintonizado / 100 sintonizado).",
+    "Tolerância de L (±%)": "Tolerância de indutância exigida do fabricante (Electric: ±2 %).",
+    "Classe térmica": "Classe de isolação térmica do reator (Electric: F, 155 °C).",
+    "Enrolamento": "Material do enrolamento do reator (Electric: chapa/barra de alumínio).",
+    "Capacitores por estágio (opcional)": "Force o capacitor (ex.: 3x25x525). Vazio = a plataforma escolhe.",
+    "Transformador (kVA)": "Potência do trafo que alimenta a barra – entra na ressonância e nas perdas.",
+    "Impedância do transformador (%)": "Z% de placa do trafo (típico 5–6 %).",
+    "Scc da rede em MT (MVA)": "Potência de curto na MT (concessionária ou estudo de proteção).",
+    "Verificação independente + análise avançada dos reatores (NGSolve, ~2–3 min por reator)": "Confere o projeto do reator com um "
+        "segundo motor de elementos finitos. Recomendado antes de mandar ao fornecedor.",
+    # ---- ajuste manual (senoidal)
+    "↺ Voltar para a solução automática": "Descarta os ajustes e volta ao que a plataforma calculou.",
+    "Frequência de chaveamento (kHz)": "fs usada na ressimulação.",
+    "Definir indutância por": "Informe o indutor por uk % ou direto em µH.",
+    "uk (%) @ rede, In": "Queda de tensão no indutor na corrente nominal (típico 3–5 %).",
+    "L1 (µH/fase)": "Indutância do indutor do lado do inversor.", "L2 (µH/fase)": "Indutância do indutor do lado do motor (LCL).",
+    "Topologia LCL (indutor L2 no lado do motor)": "Liga a topologia LCL.",
+    "Capacitor": "Capacitor do catálogo usado no filtro.", "Fabricante": "Fabricante do capacitor.", "Linha": "Série/linha do capacitor.",
+    "µF": "Capacitância de cada unidade.", "Imax RMS (A, 0 = 1,3·In)": "Corrente máxima do capacitor. 0 = 1,3 × nominal.",
+    "Preço (R$)": "Preço unitário para o custo.", "Fechamento": "Estrela ou triângulo dos capacitores.",
+    "Ressonância desejada (Hz)": "Frequência de corte do filtro LC.", "Capacitores por ramo": "Unidades em paralelo por fase.",
+    "Amortecimento": "Resistor de amortecimento (Rd) para não amplificar na ressonância.",
+    "Q desejado (2 = muito amortecido, 10 = leve)": "Fator de qualidade do filtro.",
+    "R por ramo (Ω)": "Resistência série por ramo.", "Rd por ramo (Ω)": "Resistor de amortecimento por ramo.",
+    "▶ Ressimular": "Roda a simulação com os valores atuais (rápido).",
+    "📦 Gerar pacote completo com esta configuração": "Gera todos os documentos com a configuração ajustada.",
+    "Comparar topologias": "Simula as topologias lado a lado.",
+    "Abrir projeto": "Carrega um projeto já gerado para ajuste.",
+    "Ponto de operação": "Frequência/carga para abrir no PlotXY/ATPDraw.",
+    # ---- conferência
+    "Componente": "Qual componente da proposta do fornecedor conferir.",
+    "Carregar a planilha preenchida (.xlsx)": "Planilha de conferência devolvida pelo fornecedor.",
+    "Carregar resultado_femm_FSEN.csv": "Resultado do FEMM rodado pelo script gerado pela plataforma (verificação independente).",
+    "Projeto": "Projeto já gerado (mais recente primeiro).",
+}
+
+# ------------------------------------------------------------------------------------------------ 2. passo a passo
+GUIAS = {
+    "senoidal": ["Escolha **Filtro senoidal** em Tipo de filtro.",
+                 "Cole o e-mail e arraste os anexos → **🔎 Ler solicitação**.",
+                 "Confira os campos (tensão, corrente, cabo, motor). Campo com dúvida? Passe o mouse no **?**.",
+                 "Clique **⚙️ Dimensionar, simular e gerar** e aguarde (alguns minutos).",
+                 "Abra a pasta do projeto: 02_Cliente (proposta/memorial), 03_Fornecedores (indutor, montadora), 05_Desenhos.",
+                 "Quer mudar algo? Menu → **Ajuste manual e ressimulação**."],
+    "dessintonizado": ["Escolha **Banco de capacitores dessintonizado** em Tipo de filtro.",
+                       "Opcional: em *Medição (QEE) e estudo de proteção*, aponte as pastas e a barra do filtro.",
+                       "Cole o pedido do cliente → **🔎 Ler solicitação e medições**.",
+                       "Leia a **justificativa** e as **lacunas** (o que faltou e qual premissa foi usada).",
+                       "Escolha o montante: **reativo medido** ou **com folga Electric** (crescimento, perdas do trafo, N-1/N-2).",
+                       "Confira estágios, tensão, FD e trafo → gere o pacote.",
+                       "Confira 03_Fornecedores/2_Painel_Montadora: ET do painel, esquema, layout, plaquetas, DE/PARA."],
+    "sintonizado": ["Escolha **Filtro harmônico sintonizado** em Tipo de filtro.",
+                    "Carregue a medição (harmônicas de corrente por ordem são essenciais).",
+                    "**🔎 Ler solicitação e medições** → confira as ordens dos ramos (5ª/7ª/11ª) e o Nr.",
+                    "Escolha o montante (medido ou com folga) e confira o trafo e o Scc (ressonância).",
+                    "Gere o pacote e confira as especificações dos reatores e o painel."],
+}
+
+
+def guia(tipo):
+    return GUIAS.get(tipo, GUIAS["senoidal"])
+
+
+# ------------------------------------------------------------------------------------------------ instalação das dicas
+_WIDGETS = ("number_input", "text_input", "text_area", "selectbox", "radio", "checkbox", "file_uploader", "slider",
+            "multiselect", "button", "toggle", "date_input", "select_slider", "download_button")
+
+
+def instalar_dicas():
+    """Coloca a dica de DICAS em todo widget sem help= (st.* e colunas/sidebar/expander). Idempotente.
+    Também passa a registrar todo st.error/st.exception para o assistente explicar."""
+    import streamlit as st
+    from streamlit.delta_generator import DeltaGenerator
+    if getattr(DeltaGenerator, "_fsen_ajuda", False):
+        return
+    for nome in _WIDGETS:
+        orig = getattr(DeltaGenerator, nome, None)
+        if orig is None:
+            continue
+
+        def emb(orig=orig):
+            def f(self, label=None, *a, **k):
+                if not k.get("help") and isinstance(label, str):
+                    d = DICAS.get(label.strip())
+                    if d:
+                        k["help"] = d
+                return orig(self, label, *a, **k)
+            f.__name__ = orig.__name__
+            f.__doc__ = orig.__doc__
+            return f
+        setattr(DeltaGenerator, nome, emb())
+    for nome in ("error", "exception"):
+        orig = getattr(DeltaGenerator, nome)
+
+        def emb_e(orig=orig, nome=nome):
+            def f(self, body, *a, **k):
+                try:
+                    registrar_erro(body if isinstance(body, BaseException) else str(body), tela=st.session_state.get("ajuda_tela", ""))
+                except Exception:
+                    pass
+                return orig(self, body, *a, **k)
+            return f
+        setattr(DeltaGenerator, nome, emb_e())
+    DeltaGenerator._fsen_ajuda = True
+
+
+# ------------------------------------------------------------------------------------------------ erros
+def registrar_erro(erro, tela="", contexto=None):
+    """Guarda o erro (texto ou exceção com traceback) para o assistente e para o desenvolvedor."""
+    import streamlit as st
+    if isinstance(erro, BaseException):
+        txt = "".join(traceback.format_exception(type(erro), erro, erro.__traceback__))[-4000:]
+    else:
+        txt = str(erro)[:4000]
+    reg = dict(quando=f"{_dt.datetime.now():%Y-%m-%d %H:%M:%S}", tela=tela, erro=txt, contexto=contexto or {})
+    try:
+        st.session_state["ajuda_ultimo_erro"] = reg
+    except Exception:
+        pass
+    try:
+        os.makedirs(PASTA, exist_ok=True)
+        with open(ARQ_ERROS, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(reg, ensure_ascii=False, default=str) + "\n")
+    except OSError:
+        pass
+    return reg
+
+
+# ------------------------------------------------------------------------------------------------ 3. assistente
+INSTRUCAO = """Você é o assistente de ajuda da Plataforma FSEN da Electric Service (projeto de filtros senoidais, bancos de
+capacitores dessintonizados e filtros harmônicos sintonizados). Quem pergunta é um engenheiro/colega usando a plataforma pela
+primeira vez. Responda em português, curto e prático (no máximo ~10 linhas): diga ONDE clicar/preencher (nome exato do campo ou
+botão), o que o valor significa e qual o padrão Electric. Se a pergunta for sobre um resultado (ex.: por que deu X kvar), explique
+usando a justificativa/log do contexto. Se for um erro, diga a causa provável em linguagem simples e o que fazer agora; se for
+falha de programa, diga para enviar ao desenvolvedor o arquivo ~/.fsen/erros.log. Não invente campos que não existem na lista."""
+
+
+def _base_conhecimento(tipo):
+    partes = ["CAMPOS DA TELA E O QUE FAZEM:\n" + "\n".join(f"- {k}: {v}" for k, v in DICAS.items()),
+              "PASSO A PASSO DESTA TELA:\n" + "\n".join(f"{i + 1}. {p}" for i, p in enumerate(guia(tipo)))]
+    try:
+        ch = open(os.path.join(RAIZ, "CHANGELOG.md"), encoding="utf-8").read()
+        partes.append("ÚLTIMAS MUDANÇAS DA PLATAFORMA:\n" + ch[:6000])
+    except OSError:
+        pass
+    return "\n\n".join(partes)
+
+
+def _contexto_txt(ctx):
+    linhas = []
+    for k, v in (ctx or {}).items():
+        s = json.dumps(v, ensure_ascii=False, default=str) if not isinstance(v, str) else v
+        linhas.append(f"{k}: {s[:2500]}")
+    return "\n".join(linhas)
+
+
+def perguntar(pergunta, tipo="senoidal", contexto=None, provedor=None):
+    """Resposta em texto livre, pela mesma IA da leitura de pedidos. Sem IA: responde com as dicas encontradas."""
+    from .leitor_ia import config_ia, status_provedores, _claude_cli, carregar_chaves
+    cfg = config_ia()
+    provedor = provedor or cfg.get("provedor_padrao", "claude")
+    prompt = (f"{INSTRUCAO}\n\n{_base_conhecimento(tipo)}\n\nCONTEXTO ATUAL DO USUÁRIO:\n{_contexto_txt(contexto)}\n\n"
+              f"PERGUNTA: {pergunta}")
+    resp = None
+    try:
+        if not status_provedores().get(provedor, {}).get("pronto"):
+            raise RuntimeError("IA não configurada")
+        pc = cfg["provedores"][provedor]
+        if pc["tipo"] == "claude_code":
+            import subprocess
+            import tempfile
+            exe = _claude_cli()
+            cmd = [exe, "-p", "--output-format", "json", "--model", pc["modelo"]]
+            r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=180,
+                               cwd=tempfile.gettempdir(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            resp = str(json.loads(r.stdout).get("result", "")).strip()
+        elif pc["tipo"] == "anthropic":
+            import anthropic
+            carregar_chaves()
+            cli = anthropic.Anthropic(api_key=os.environ.get(pc.get("env_chave") or "ANTHROPIC_API_KEY"))
+            m = cli.messages.create(model=pc["modelo"], max_tokens=1500, messages=[{"role": "user", "content": prompt}])
+            resp = "".join(getattr(b, "text", "") for b in m.content).strip()
+        else:
+            from openai import OpenAI
+            env = pc.get("env_chave") or ""
+            cli = OpenAI(base_url=pc["base_url"], api_key=os.environ.get(env, "") if env else "ollama")
+            m = cli.chat.completions.create(model=pc["modelo"], temperature=0.2, messages=[{"role": "user", "content": prompt}])
+            resp = m.choices[0].message.content.strip()
+    except Exception as e:
+        achados = [f"**{k}** – {v}" for k, v in DICAS.items()
+                   if any(p in (k + " " + v).lower() for p in pergunta.lower().split() if len(p) > 3)][:5]
+        resp = (f"(Assistente sem IA: {type(e).__name__}. Dicas relacionadas:)\n\n" + "\n\n".join(achados)) if achados else \
+               f"Assistente sem IA ({type(e).__name__}: {str(e)[:120]}). Passe o mouse no **?** dos campos ou veja o passo a passo acima."
+    try:
+        os.makedirs(PASTA, exist_ok=True)
+        with open(ARQ_HIST, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(dict(quando=f"{_dt.datetime.now():%Y-%m-%d %H:%M}", tipo=tipo, pergunta=pergunta,
+                                     resposta=resp[:3000]), ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+    return resp
+
+
+def painel(tipo, contexto=None, provedor=None):
+    """Bloco da barra lateral: passo a passo + pergunta ao assistente + explicar o último erro."""
+    import streamlit as st
+    st.session_state["ajuda_tela"] = tipo
+    sb = st.sidebar
+    with sb.expander("🛟 Ajuda – passo a passo e assistente", expanded=st.session_state.get("ajuda_aberta", False)):
+        st.markdown("**O que fazer nesta tela**")
+        st.markdown("\n".join(f"{i + 1}. {p}" for i, p in enumerate(guia(tipo))))
+        st.caption("Passe o mouse no **?** ao lado de cada campo para ver o que ele faz.")
+        q = st.text_input("Pergunte ao assistente", key="ajuda_q", placeholder="ex.: por que deu 400 kvar? o que é FD?",
+                          help="Pergunta livre. O assistente sabe em que tela você está, o que preencheu e o último log/erro.")
+        ctx = dict(contexto or {})
+        err = st.session_state.get("ajuda_ultimo_erro")
+        if err:
+            ctx["ultimo_erro"] = err
+        c1, c2 = st.columns(2)
+        if c1.button("Perguntar", key="ajuda_btn", disabled=not q):
+            with st.spinner("Pensando…"):
+                st.session_state["ajuda_resp"] = perguntar(q, tipo, ctx, provedor)
+            st.session_state["ajuda_aberta"] = True
+        if err and c2.button("Explicar este erro", key="ajuda_err", help="Explica o último erro mostrado na tela e o que fazer."):
+            with st.spinner("Analisando o erro…"):
+                st.session_state["ajuda_resp"] = perguntar("Explique o último erro e o que eu faço agora.", tipo, ctx, provedor)
+            st.session_state["ajuda_aberta"] = True
+        if st.session_state.get("ajuda_resp"):
+            st.info(st.session_state["ajuda_resp"])
+        if err:
+            st.caption(f"Último erro ({err['quando']}) registrado em {ARQ_ERROS} – envie ao desenvolvedor se não resolver.")

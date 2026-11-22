@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.0 – 2026-11-22 (ajuda embutida para usuários novos)
+- **Dica em todos os campos**: passar o mouse no "?" mostra o que o campo faz, de onde vem o valor e o padrão Electric (≈ 130 campos das telas de filtro senoidal, banco dessintonizado, filtro sintonizado, ajuste manual e conferência). As dicas ficam num só lugar (`fsen/ajuda.py`, DICAS) e entram automaticamente em qualquer campo novo que tenha o mesmo nome.
+- **🛟 Ajuda na barra lateral**: passo a passo da tela aberta (o que fazer agora e depois) + **assistente**: pergunta livre ("por que deu 400 kvar?", "o que é FD?"), respondida pela mesma IA da leitura de pedidos, sabendo a tela, o que foi preenchido, a justificativa/lacunas da leitura e o último erro. Sem IA, mostra as dicas relacionadas.
+- **Erros explicados**: todo erro mostrado na tela é registrado em `%USERPROFILE%\.fsen\erros.log` e ganha o botão "Explicar este erro" (causa provável e o que fazer). Perguntas e respostas ficam em `.fsen\ajuda_historico.jsonl` – mostram ao desenvolvedor as dúvidas mais comuns para melhorar as dicas.
+
 ## v1.17.4 – 2026-11-22 (painel calibrado nos projetos reais)
 - Largura do gabinete pela tabela de dimensionais da IFG (BCD 50 kvar/estágio) e pelos projetos executados: acesso frontal/traseiro (prof. 800) ≈ 200 mm por estágio em módulos de 400 mm, mín. 800 (4 → 800, 6 → 1200, 7–8 → 1600, 10 → 2000, 12 → 2400); acesso só frontal (prof. 400) ≈ 320 mm por estágio. Colunas/portas de até 800 mm. Confere com AGCO 300 kVAr 7 est. (2000 × 1600 × 800) e Panatlântica 400 kVAr 8 est. (2000 × 1600 × 800).
 - Desenho interno no padrão do layout Electric Panatlântica 2024: na frente UMA placa de montagem por toda a largura, comando no topo e os estágios em faixas verticais lado a lado (chave NH, contatora, capacitores embaixo); atrás reatores em grade 2 × 2 por coluna em duas prateleiras, exaustores no topo.

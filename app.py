@@ -34,6 +34,8 @@ from fsen.leitor_ia import status_provedores, config_ia, salvar_config_ia, salva
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 from fsen.versao import NOME, info as _vinfo
 st.set_page_config(page_title=f"FSEN v{_vinfo().get('versao')} – Filtros Senoidais", page_icon="⚡", layout="wide")
+from fsen import ajuda as _AJ   # v1.18.0: dica em cada campo (?), passo a passo e assistente na barra lateral
+_AJ.instalar_dicas()
 
 st.sidebar.title(f"⚡ FSEN v{_vinfo().get('versao')}")
 st.sidebar.caption(f"{NOME} – versão {_vinfo().get('versao')} de {_vinfo().get('data', '')}")
@@ -108,6 +110,11 @@ if not _cc:
             with st.spinner("Testando..."):
                 _ok, _msg = testar_ia(_prov)
             (st.success if _ok else st.error)(_msg)
+
+_AJ.painel(tipo_filtro, dict(tela=pagina, tipo_filtro=tipo_filtro,
+                             leitura_banco=st.session_state.get("bc_info"), pedido_banco=st.session_state.get("bc_ped"),
+                             pedido_senoidal=st.session_state.get("pedido").__dict__ if hasattr(st.session_state.get("pedido"), "__dict__") else None),
+           provedor=_prov)
 
 
 def form_pedido(p: Pedido) -> Pedido:
