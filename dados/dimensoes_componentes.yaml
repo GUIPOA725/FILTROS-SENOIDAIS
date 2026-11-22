@@ -47,3 +47,14 @@ disjuntores_modulares:
   "Schneider Acti9 iC60N 1P":       {tipo: caixa, L: 18, A: 85, P: 78.5, fixacao: "trilho DIN 35",
                                      fonte: "Schneider Acti9 iC60N – folha de dados (18 mm por polo × 85 × 78,5 mm)", conferir: true}
 disjuntores: {}
+
+# Consumo de bobinas/cargas de comando (para dimensionar o trafo de comando) – VA em 220 V CA 60 Hz
+cargas_comando:
+  "Schneider LC1D80":   {partida_VA: 245, retencao_VA: 26, fonte: "Schneider TeSys D – bobina CA LC1D80 (consumo médio partida/retenção)", conferir: true}
+  "ABB A50-30-00":      {partida_VA: 120, retencao_VA: 12, fonte: "ABB A-line – bobina CA (consumo partida/retenção)", conferir: true}
+  "ABB AF50-30-00":     {partida_VA: 23, retencao_VA: 2.5, fonte: "ABB AF – bobina eletrônica (baixo consumo)", conferir: true}
+  "Epcos B44066S7410":  {partida_VA: 200, retencao_VA: 20, fonte: "TDK/Epcos B44066 – bobina 230 V", conferir: true}
+  controlador:          {retencao_VA: 15, fonte: "controladores BR6000/VarLogic – consumo típico de catálogo", conferir: true}
+  exaustor:             {retencao_VA: 45, fonte: "exaustor 220 V de painel (grelha c/ filtro) – catálogo", conferir: true}
+  sinaleiro_led:        {retencao_VA: 1.5, fonte: "sinaleiro LED Ø22 220 V", conferir: false}
+  rele_falta_fase:      {retencao_VA: 3, fonte: "relé de monitoramento de fase – catálogo", conferir: true}

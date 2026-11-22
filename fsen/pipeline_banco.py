@@ -181,6 +181,19 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         arqs["normas"], ver_iec = NB.gerar_pdf(ped, res, _gab, _prot, cod, os.path.join(sub["01_Engenharia"], "5_Normas_Folha_de_Dados"),
                                                trans=trans, inds=inds, versao=versao, log=log)
         shutil.copy(arqs["normas"], os.path.join(sub["02_Cliente"], os.path.basename(arqs["normas"])))
+        try:                                        # v1.24.3: energia incidente IEEE 1584 + etiqueta (REQ-SEG-007/009, NR-10 10.4.12)
+            from . import arco as AR
+            _pn = os.path.join(sub["01_Engenharia"], "5_Normas_Folha_de_Dados")
+            _ra = AR.cenarios(ped, NB._icc_barra_ka(ped), _gab)
+            arqs["arco"] = AR.relatorio_pdf(os.path.join(_pn, f"Estudo_Energia_Incidente_{cod}.pdf"), ped, cod, _ra, versao)
+            arqs["etiqueta_arco"] = AR.etiqueta_pdf(os.path.join(_pn, f"Etiqueta_Arco_Eletrico_{cod}.pdf"), ped, cod, _ra, versao)
+            for _a in (arqs["arco"], arqs["etiqueta_arco"]):
+                shutil.copy(_a, sub["02_Cliente"])
+            shutil.copy(arqs["etiqueta_arco"], pnl)
+            res["arco"] = _ra
+            log(f"   Energia incidente: barramento {_ra['cenarios'][1]['E']:.1f} cal/cm² (sem disjuntor geral seria {_ra['sem_geral']['E']:.1f})")
+        except Exception as _ex:
+            log(f"   (energia incidente não calculada: {type(_ex).__name__}: {_ex})")
     except Exception as ex:
         ver_iec = None
         log(f"   (folha de dados / verificação IEC não gerada: {type(ex).__name__}: {ex})")
@@ -296,6 +309,13 @@ def resumo(ped, res, grupos, inds, cod):
             L.append(f"- Reator {gi+1} ({len(grp)} pç): {d['N']} esp., coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {d['perdas']['total']:.0f} W, "
                      f"{d['massa_kg']['total']:.0f} kg, ΔT {d['termico']['elev_bobina_K']:.0f} K")
     L += verificacoes_md(ped, res, grupos, inds)
+    if res.get("arco"):                                 # v1.24.3: energia incidente IEEE 1584
+        from . import arco as _AR
+        L += ["", "## Energia incidente – IEEE 1584-2018 (NR-10 10.4.12)", "",
+              "| Local | Eliminado por | I arco | Tempo | Energia | Fronteira | Categoria | Check |", "|---|---|---|---|---|---|---|---|"]
+        L += ["| " + " | ".join(str(x) for x in r) + " |" for r in _AR.linhas_check(res["arco"])]
+        L += ["", f"Sem disjuntor geral no painel o barramento ficaria com {res['arco']['sem_geral']['E']:.1f} cal/cm² "
+              f"(proteção do cliente {res['arco']['t_montante_ms']:.0f} ms – confirmar no estudo de seletividade)."]
     if res["avisos"]:
         L += ["", "Avisos:"] + [f"- {a}" for a in res["avisos"]]
     return "\n".join(L) + "\n"

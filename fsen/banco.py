@@ -392,6 +392,33 @@ CONTATORES = [("Epcos B44066-S2011 (≤ 22 kvar 440 V)", 28.9), ("Epcos B44066-S
 CABO_90C = [(10, 60), (16, 80), (25, 105), (35, 130), (50, 160), (70, 205), (95, 245), (120, 285), (150, 325), (185, 370), (240, 435)]
 
 
+# v1.24.3 (REQ-PNL-017): cabos calculados pela NBR 5410 – capacidade de condução × FCT (temperatura do ar DENTRO do painel)
+# × FCA (circuitos agrupados na mesma canaleta). Base: CABO_90C (EPR/XLPE 90 °C, 30 °C).
+FCT_90C = {30: 1.00, 35: 0.96, 40: 0.91, 45: 0.87, 50: 0.82, 55: 0.76, 60: 0.71}          # NBR 5410 tab. 40 (EPR/XLPE)
+FCA_FEIXE = {1: 1.00, 2: 0.80, 3: 0.70, 4: 0.65, 5: 0.60, 6: 0.57, 7: 0.54, 8: 0.52, 9: 0.50, 12: 0.45, 16: 0.41, 20: 0.38}  # tab. 42
+T_INTERNA_PROJETO_C = 50.0                                     # ar interno de projeto (verificado no térmico IEC 60890 ≤ 55 °C)
+ISO_IEC60502 = {10: 1.0, 16: 1.0, 25: 1.2, 35: 1.2, 50: 1.4, 70: 1.4, 95: 1.6, 120: 1.6, 150: 1.8, 185: 2.0, 240: 2.2}
+
+
+def _fator(tab, x, menor=True):
+    ks = sorted(tab)
+    for k in ks:
+        if x <= k:
+            return tab[k]
+    return tab[ks[-1]]
+
+
+def cabo_nbr5410(I, n_agrup, T_int=T_INTERNA_PROJETO_C):
+    """Menor seção com Iz = I0·FCT·FCA ≥ I. Devolve dict(secao, Iz, I0, FCT, FCA, d_ext_mm)."""
+    fct = _fator(FCT_90C, T_int)
+    fca = _fator(FCA_FEIXE, max(1, int(n_agrup)))
+    for sec, i0 in CABO_90C:
+        if i0 * fct * fca >= I:
+            break
+    d_ext = 1.15 * 1.128 * math.sqrt(sec) + 2 * ISO_IEC60502.get(sec, 1.6)   # cabo flexível classe 5 (estimativa IEC 60502)
+    return dict(secao=sec, Iz=i0 * fct * fca, I0=i0, FCT=fct, FCA=fca, d_ext_mm=round(d_ext, 1), T_int=T_int, n_agrup=n_agrup, I=I)
+
+
 def protecao_estagio(ped, e):
     """Chave-fusível, fusível, contator e cabos por estágio (regras tiradas das ET Electric 2017–2023)."""
     sint = ped.tipo == "sintonizado"
@@ -408,34 +435,102 @@ def protecao_estagio(ped, e):
         cm = FB.contatora(ped.marca, I_req, e["Q_kvar"], ped.tensao_v)
         if cm:
             cont, cont_pico, cont_tipo = (cm["nome"], cm["ie"]), cm["pico"], cm["tipo"]
-    fr = 0.62                                 # agrupamento + painel a 45–50 °C (ET Electric: 50 mm² p/ 50 kvar 380 V; 70–95 mm² sintonizado)
-    cabo = next((s for s, a in CABO_90C if a * fr >= e["requisitos"]["In"]), 240)
-    return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cabo,
-                contator_pico=cont_pico, contator_tipo=cont_tipo,
-                cabo_ind_cap_mm2=next((s for s, a in CABO_90C if a * fr >= e["I_cap_rms"] * 0.7), 240))
+    from .painel_gabinete import ESTAGIOS_POR_COLUNA as _EPC
+    n_ag = _EPC                                               # nº de CIRCUITOS (estágios) na mesma canaleta – NBR 5410 tab. 42
+    cb = cabo_nbr5410(e["requisitos"]["In"], n_ag)
+    cc = cabo_nbr5410(e["I_cap_rms"] * 0.7, n_ag)              # reator → cada capacitor (corrente dividida entre as latas)
+    return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cb["secao"],
+                contator_pico=cont_pico, contator_tipo=cont_tipo, cabo_calc=cb, cabo_cap_calc=cc,
+                cabo_ind_cap_mm2=cc["secao"])
+
+
+TRAFO_VA = (100, 250, 400, 630, 1000, 1600, 2500)
+DJ_GERAL_A = (250, 400, 630, 800, 1000, 1250, 1600)
+ICU_KA = (25, 36, 50, 65, 70, 85, 100)
+
+
+def _cargas_cat():
+    import yaml, os
+    try:
+        return (yaml.safe_load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dados",
+                                                   "dimensoes_componentes.yaml"), encoding="utf-8")) or {}).get("cargas_comando", {})
+    except Exception:
+        return {}
+
+
+def trafo_comando(ped, res, prot=None, n_exaust=2):
+    """REQ-PNL-020: trafo de comando pela CARGA – soma das retenções (tudo ligado) e pior instante de manobra
+    (bobinas partindo ao mesmo tempo + retenção do resto). Critério: S_n ≥ ΣS_ret / 0,8 e S_n ≥ S_inst / 3
+    (sobrecarga momentânea admissível ~3×S_n com queda ≤ 5 % – prática dos catálogos de trafos de comando)."""
+    cat = _cargas_cat()
+    prot = prot or protecao_estagio(ped, res["estagios"][0])
+    n = len(res["estagios"])
+    bob = next((v for k, v in cat.items() if k.lower() in str(prot.get("contator", "")).lower()), {"partida_VA": 245, "retencao_VA": 26})
+    sim = 2                                                    # o controlador manobra 1 estágio por vez; 2 = folga (religamento)
+    itens = [(f"Bobinas das contatoras ({prot.get('contator')}) – retenção", n, bob.get("retencao_VA", 26)),
+             ("Controlador de fator de potência", 1, cat.get("controlador", {}).get("retencao_VA", 15)),
+             ("Exaustores 220 V", n_exaust, cat.get("exaustor", {}).get("retencao_VA", 45)),
+             ("Sinaleiros LED (estágio ligado + energizado)", n + 1, cat.get("sinaleiro_led", {}).get("retencao_VA", 1.5)),
+             ("Relé falta de fase", 1, cat.get("rele_falta_fase", {}).get("retencao_VA", 3))]
+    S_ret = sum(q * va for _, q, va in itens)
+    S_inst = S_ret + sim * (bob.get("partida_VA", 245) - bob.get("retencao_VA", 26))
+    S_req = max(S_ret / 0.8, S_inst / 3.0)
+    Sn = next(x for x in TRAFO_VA if x >= S_req)
+    I2 = Sn / 220.0
+    return dict(itens=itens, S_ret=round(S_ret), S_inst=round(S_inst), S_req=round(S_req), Sn=Sn, sim=sim,
+                bobina=bob, I_sec_A=round(I2, 2), I_pri_A=round(Sn / ped.tensao_v, 2),
+                dj_sec=f"Disjuntor bipolar {next(x for x in (2, 4, 6, 10, 16) if x >= 1.25 * I2)} A curva C (secundário 220 V)",
+                dj_pri=f"Disjuntor bipolar {next(x for x in (2, 4, 6, 10, 16) if x >= 2.0 * Sn / ped.tensao_v)} A curva D (primário – 2·In p/ o inrush do trafo)")
+
+
+def disjuntor_geral(ped, res):
+    """REQ-PNL-020 / IEC 61921 / IEC 60831: corrente do geral ≥ 1,30 × ΣI dos capacitores (rms com harmônicas);
+    Icu ≥ Icc trifásica na barra; disparador eletrônico LSI – Ir ajustado em 1,30·ΣI, Isd/Ii acima do pico de energização."""
+    import math as _m
+    It = sum(e["I_cap_rms"] for e in res["estagios"])
+    In = next(x for x in DJ_GERAL_A if x >= 1.30 * It)
+    s = ped.trafo_kva * 1e3
+    icc = s / (_m.sqrt(3) * ped.tensao_v) / (ped.trafo_z_pct / 100 + (ped.trafo_kva / 1e3) / max(ped.scc_rede_mva, 1e-6)) / 1e3
+    icu = next(x for x in ICU_KA if x >= 1.1 * icc)
+    marca = (getattr(ped, "marca", "") or "").lower()
+    ex = {"abb": "ABB Tmax XT (XT5/XT7 conforme corrente)", "schneider": "Schneider ComPact NSX/NS (conforme corrente)",
+          "weg": "WEG DWB", "siemens": "Siemens 3VA"}.get(next((k for k in ("abb", "schneider", "weg", "siemens") if k in marca), ""),
+                                                          "ABB Tmax XT / Schneider ComPact / WEG DWB / Siemens 3VA")
+    return dict(It=round(It, 1), In=In, Ir=round(1.30 * It), Ir_frac=round(1.30 * It / In, 2), Icc_kA=round(icc, 1), Icu_kA=icu,
+                exemplo=ex, texto=f"Disjuntor geral caixa moldada {In} A, 3P, Icu ≥ {icu} kA @ {ped.tensao_v:g} V, disparador eletrônico LSI "
+                                  f"(Ir = {1.30 * It:.0f} A = {1.30 * It / In:.2f}·In), manopla rotativa externa c/ intertravamento e cadeado – ex.: {ex}")
 
 
 def painel(ped, res):
     """Itens gerais do painel (padrão ET Electric) e dimensões orientativas."""
     n = len(res["estagios"])
     It = sum(e["I_cap_rms"] for e in res["estagios"])
-    geral = next(x for x in NH + (800, 1000, 1250, 1600) if x >= 1.35 * It)
+    djg = disjuntor_geral(ped, res)
+    geral = djg["In"]
     from .painel_gabinete import gabinete          # v1.17.0: gabinete padrão Electric/AGCO (frente/trás)
     gab = gabinete(ped, res)
+    trc = trafo_comando(ped, res, n_exaust=gab["ventilacao"]["n_exaustores"])
     Dg = gab["dimensoes_mm"]
     larg = Dg["largura"]
     itens = [(f"Painel metálico {Dg['altura']}(A) × {larg}(L) × {Dg['profundidade']}(P) mm – capacitores na frente, reatores "
               f"atrás com chapa divisória ({len(gab['colunas'])} coluna(s) de 800 mm; ver Layout_Painel)", 1, "pç"),
              (f"Controlador de fator de potência Epcos BR6000 {6 if n <= 6 else 12} estágios", 1, "pç"),
              (f"Relé falta de fase trifásico {ped.tensao_v:.0f} V", 1, "pç"),
-             ("Disjuntor bipolar 10 A DIN (comando)", 2, "pç"), ("Disjuntor tripolar 10 A DIN (relé falta de fase)", 1, "pç"),
-             (f"Transformador de comando {ped.tensao_v:.0f}/220 V – {500 if n <= 6 else 1000} VA", 1, "pç"),
+             (trc["dj_pri"], 1, "pç"), (trc["dj_sec"], 1, "pç"), ("Disjuntor tripolar 2 A DIN curva C (relé falta de fase)", 1, "pç"),
+             (f"Transformador de comando {ped.tensao_v:.0f}/220 V – {trc['Sn']} VA (carga calculada: retenção {trc['S_ret']} VA, "
+              f"pior manobra {trc['S_inst']} VA)", 1, "pç"),
              (f"Exaustor 220 V {gab['ventilacao']['exaustor_m3h']} m³/h com grelha e filtro (teto, sobre os reatores)",
               gab["ventilacao"]["n_exaustores"], "pç"),
              ("Termostato do painel -B0 35 °C (liga exaustores) e -BT2 55 °C (desliga o banco)", 2, "pç"),
              ("Botoeira de emergência c/ trava Ø22 mm 1NF+1NA", 1, "pç"), ("Sinaleiro LED vermelho Ø22 mm 220 V (estágio ligado)", n, "pç"),
              ("Chave seletora 2 posições Ø22 mm (desligado – automático)", 1, "pç"),
-             (f"Proteção geral: chave seccionadora-fusível {geral} A (ou disjuntor caixa moldada)", 1, "pç")]
+             (djg["texto"] + " (NR-10 10.4.1/10.6.5)", 1, "pç"),
+             ("Barreira de policarbonato no compartimento do barramento (IPXXB com porta aberta) – forma de separação 2b", 1, "cj"),
+             ("Barramento geral único de cobre estanhado, isolado (termocontrátil), identificado L1/L2/L3", 1, "cj"),
+             ("Barra PE de cobre + cordoalhas de aterramento de portas, placa e estrutura (verde-amarelo)", 1, "cj"),
+             ("Pino esférico para aterramento temporário no barramento (NR-10 10.4.6)", 3, "pç"),
+             ("Indicador de presença de tensão na porta (constatação de ausência de tensão – NR-10 10.13)", 1, "pç"),
+             ("Etiqueta de energia incidente (IEEE 1584) + sinalização NR-10 (tensão, choque, arco, acesso restrito)", 1, "cj")]
     if ped.tipo == "sintonizado":
         Imx = max(e["requisitos"]["In"] for e in res["estagios"])
         itens += [(f"TCs de proteção por estágio {next(x for x in NH if x >= Imx)}/5 A", 3 * n, "pç"),
@@ -444,7 +539,8 @@ def painel(ped, res):
     if ped.tipo == "sintonizado":
         eletric += ["Multimedidores Embrasul MD4040 – proteção por estágio (1 por estágio)", "CLP de controle e proteção",
                     "Projeto elétrico (diagrama de força e comando)"]
-    return dict(itens=itens, eletric=eletric, geral_A=geral, dim=(Dg['altura'], larg, Dg['profundidade']), I_total=It, gabinete=gab)
+    return dict(itens=itens, eletric=eletric, geral_A=geral, dim=(Dg['altura'], larg, Dg['profundidade']), I_total=It, gabinete=gab,
+                disjuntor_geral=djg, trafo_comando=trc)
 
 
 CONSTRUCOES_SINT = {

@@ -14,3 +14,4 @@ ezdxf>=1.3
 pyvista>=0.44   # vista realista 3D do indutor (opcional: sem ela a folha 6 não é gerada)
 ngsolve>=6.2   # verificação independente do indutor (opcional: sem ela o relatório de comparação não é gerado)
 rainflow>=3.2   # contagem de laços de histerese na análise avançada do indutor
+pint>=0.23   # energia incidente IEEE 1584 (módulo arcflash, MIT – Plataforma de Estudos)

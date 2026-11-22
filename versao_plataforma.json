@@ -1,5 +1,5 @@
 {
-  "versao": "1.24.2",
+  "versao": "1.24.3",
   "data": "2026-11-22",
-  "resumo": "Painel montável (componentes com forma de catálogo, distribuição sem vazio, cabos e canaletas) + biblioteca de painéis aprovados"
+  "resumo": "Disjuntor geral c/ manopla externa, barramento único, NR-10 2026, energia incidente IEEE 1584, cabos NBR 5410, trafo de comando calculado, reator real no 3D"
 }

@@ -126,6 +126,42 @@ def verificacao(ped, res, gab, prot, trans=None):
             ("61439-1 §11", "Verificação de rotina (fiação, torque, funcionamento, placa de identificação)", "laudo + fotos"),
             ("61921 §9", "Ensaios de rotina do banco (inspeção, dielétrico, descarga, operação do controlador)", "laudo da montadora")):
         L.append(_linha(cl, it, "exigido na ET", req, CK.ATENCAO, "comprovar na inspeção de recebimento (FAT)"))
+    # ---------------------------------------------------------------- v1.24.3: disjuntor geral, trafo de comando, cabos (REQ-PNL-017/020)
+    try:
+        from . import banco as _B
+        djg = _B.disjuntor_geral(ped, res)
+        L.append(_linha("61921 / 60831-1", f"Disjuntor geral {djg['In']} A × 1,30 × ΣI dos capacitores ({djg['It']:.0f} A rms c/ harmônicas)",
+                        f"Ir {djg['Ir']} A ({djg['Ir_frac']}·In)", f"≥ {1.30 * djg['It']:.0f} A", CK.check(djg["In"] >= 1.30 * djg["It"],
+                        CK.utilizacao(1.30 * djg["It"], djg["In"])), "cálculo da plataforma"))
+        L.append(_linha("61439-1 §10.11", "Capacidade de interrupção do disjuntor geral × Icc na barra", f"Icu {djg['Icu_kA']} kA",
+                        f"≥ {djg['Icc_kA']:.1f} kA", CK.check(djg["Icu_kA"] >= djg["Icc_kA"], CK.utilizacao(djg["Icc_kA"], djg["Icu_kA"])),
+                        "IEC 60909 simplificado"))
+        trc = _B.trafo_comando(ped, res, prot, n_exaust=((gab or {}).get("ventilacao") or {}).get("n_exaustores", 2))
+        L.append(_linha("61439-1 / NBR 5410", f"Trafo de comando {trc['Sn']} VA × carga (retenção {trc['S_ret']} VA; pior manobra "
+                        f"{trc['S_inst']} VA com {trc['sim']} bobinas partindo)", f"{trc['Sn']} VA", f"≥ {trc['S_req']} VA",
+                        CK.check(trc["Sn"] >= trc["S_req"], CK.utilizacao(trc["S_req"], trc["Sn"])), "ΣS_ret/0,8 e S_inst/3"))
+        for nome, cb in (("estágio (chave → contatora → reator)", prot.get("cabo_calc")), ("reator → capacitor", prot.get("cabo_cap_calc"))):
+            if cb:
+                L.append(_linha("NBR 5410 §6.2.5", f"Cabo do {nome}: {cb['secao']} mm² – I0 {cb['I0']} A × FCT {cb['FCT']} ({cb['T_int']:g} °C "
+                                f"interno) × FCA {cb['FCA']} ({cb['n_agrup']} circuitos na canaleta)", f"Iz {cb['Iz']:.0f} A",
+                                f"≥ {cb['I']:.0f} A", CK.check(cb["Iz"] >= cb["I"], CK.utilizacao(cb["I"], cb["Iz"])), "tab. 36/40/42"))
+    except Exception as ex:
+        L.append(_linha("—", f"Cálculo do geral/comando/cabos não feito: {type(ex).__name__}", "-", "-", CK.ATENCAO, "-"))
+    # ---------------------------------------------------------------- NR-10 (Portaria MTE 737/2026) – itens de projeto
+    nr10 = [("10.4.1", "Dispositivo de desligamento com impedimento de reenergização e sinalização da condição", "disjuntor geral c/ cadeado + sinaleiro"),
+            ("10.4.2", "Seccionamento de ação simultânea (3 polos)", "disjuntor geral tripolar"),
+            ("10.4.3.1", "Circuitos de finalidades distintas separados (força × comando)", "zona de comando separada + canaletas próprias"),
+            ("10.4.4", "Aterramento das partes condutoras (portas, placa, estrutura)", "barra PE + cordoalhas"),
+            ("10.4.6", "Condições para aterramento temporário", "pinos esféricos no barramento"),
+            ("10.4.12", "Estudo de energia incidente", "IEEE 1584-2018 – Estudo_Energia_Incidente + etiqueta na porta"),
+            ("10.6.1/10.6.2", "Partes vivas inacessíveis (barreiras/invólucros)", "policarbonato no barramento, protetores de borne (IPXXB)"),
+            ("10.6.5", "Medidas contra arco: abertura sob carga, intertravamento, limitação de corrente, tempo curto", "disjuntor c/ intertravamento; fusíveis NH limitadores nos estágios"),
+            ("10.7.7.1", "Porta fechada + sinalização de tensão, choque, arco e acesso restrito", "manopla com intertravamento + placas NR-10"),
+            ("10.13", "Sequência de desenergização/reenergização prevista em projeto", "memorial descritivo / manual"),
+            ("10.4.9", "Memorial descritivo (proteções, identificação de circuitos, restrições de acesso, princípio das proteções)", "memorial + plaquetas DE/PARA")]
+    for it, req, como in nr10:
+        L.append(_linha(f"NR-10 {it}", req, como, "obrigatório (pior caso)", CK.APROVADO,
+                        "projeto Electric (conferir no FAT)"))
     return L
 
 

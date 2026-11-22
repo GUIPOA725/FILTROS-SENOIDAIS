@@ -40,8 +40,8 @@ def construir(ped, res, cod, versao, n_banco=1):
                         f"{res['Q_total_kvar']:.0f} kvar {ped.tensao_v:g} V", f"ESQ-{cod}", f"{_dt.date.today():%d/%m/%Y}", versao)
     V = ped.tensao_v
     # --------------------------------------------------------------------------- dispositivos gerais
-    P.dispositivo("-Q0", f"Chave seccionadora-fusível tripolar geral {pn['geral_A']} A, base NH, fusíveis gG {pn['geral_A']} A",
-                  "WEG/Siemens/Holec (equiv.)", "", 1, grupo="Proteção geral")
+    P.dispositivo("-Q0", f"Disjuntor geral caixa moldada tripolar {pn['geral_A']} A com manopla rotativa externa, intertravamento "
+                  f"da porta e bloqueio por cadeado (NR-10)", "ABB/Schneider/WEG (conforme marca do projeto)", "", 1, grupo="Proteção geral")
     P.dispositivo("-F01", "Disjuntor tripolar 10 A curva C (relé falta de fase / medição)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-F02", "Disjuntor bipolar 10 A curva C (primário do trafo de comando)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-F03", "Disjuntor bipolar 10 A curva C (secundário 220 V)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
@@ -96,7 +96,8 @@ def construir(ped, res, cod, versao, n_banco=1):
         f.lin(xx, 205, xx, 160 + k * 0, cam="POTENCIA", lw=0.5)
     f.txt(xe, 219, "Alimentação do cliente – cabo dimensionado pelo cliente", fs=1.8, ha="center", cor="0.3")
     f.txt(xe, 223, f"{V:g} V 3F + PE  {ped.freq_hz:g} Hz", fs=2.2, ha="center", negrito=True)
-    y = S.seccionadora_fusivel(f, xe, 160, "-Q0", f"{pn['geral_A']} A NH")
+    y = S.disjuntor_3p(f, xe, 160, "-Q0", f"{pn['geral_A']} A – manopla externa")
+    f.txt(xe + 14, 150, "Intertravamento c/ porta + cadeado (NR-10)", fs=1.5, ha="left", cor="0.25")
     for k, xx in enumerate((xe - S.PF, xe, xe + S.PF)):
         f.lin(xx, y, xx, 120, cam="POTENCIA", lw=0.5)
         f.lin(xx, 120, 150 - 2 + k * 0, 120, cam="POTENCIA", lw=0.0)
