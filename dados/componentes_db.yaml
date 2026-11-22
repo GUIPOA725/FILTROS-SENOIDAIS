@@ -1,0 +1,55 @@
+# BANCO DE COMPONENTES DA PLATAFORMA (REQ-GER-010 / REQ-PNL-021 / REQ-PNL-022) – v1.25.0 (em construção)
+# Uma família por marca: ELECTRIC (padrão usado na Panatlântica 2024), ABB, SCHNEIDER. O projeto usa a marca escolhida;
+# se faltar o item na marca, usa o equivalente ELECTRIC e registra.
+# Campos: codigo, descricao, L/A/P (mm), kg, terminal (tipo/parafuso), torque_Nm, bobina (VA partida/retenção), fonte,
+#         status (ATIVO | DESCONTINUADO | A_VERIFICAR), verificado_em (data da última checagem no site do fabricante),
+#         conferir (true = algum valor ainda não confirmado no catálogo – sai marcado na lista, nunca como certo)
+versao: "2026-11-22"
+marcas:
+  ELECTRIC:          # padrão Electric – componentes da ET Panatlântica 2024 (IFG/Montebras)
+    capacitor_25kvar_525V: {codigo: "TDK/Epcos B32344E5251A040 (PhiCap 25 kvar 525 V)", descricao: "Capacitor PhiCap trifásico 25 kvar 525 V 60 Hz",
+                            terminal: "bornes de mola/parafuso M5 (cabo até 16 mm²)", torque_Nm: null, fonte: "ET Panatlântica 2024 item 17", status: A_VERIFICAR, conferir: true}
+    contatora_capacitor: {codigo: "TDK/Epcos B44066S6012C221", descricao: "Contatora para capacitor 60 kvar (bobina 240 V) – In 87 A",
+                          L: 60, A: 145, P: 128.5, terminal: "parafuso M6 (potência)", torque_Nm: null, bobina: {partida_VA: 200, retencao_VA: 20},
+                          fonte: "ET Panatlântica 2024 item 16; desenho Epcos B44066S (CVI 2021)", status: A_VERIFICAR, conferir: true}
+    chave_fusivel_nh00: {codigo: "Chave seccionadora-fusível tripolar NH00 160 A", descricao: "Chave fusível seccionadora tripolar 160 A NH00",
+                         terminal: "parafuso M8", torque_Nm: null, fonte: "ET Panatlântica 2024 item 14", status: A_VERIFICAR, conferir: true}
+    fusivel_nh00: {codigo: "Fusível NH00 gG (corrente do projeto)", descricao: "Fusível NH00 gG 500 V", fonte: "ET Panatlântica 2024 item 15 (125 A)", status: ATIVO, conferir: false}
+    controlador: {codigo: "TDK/Epcos BR6000-R12 (B44066R6012E230)", descricao: "Controlador de fator de potência 12 estágios", L: 144, A: 144, P: 55,
+                  recorte: "138 × 138", fonte: "ET Panatlântica 2024 item 2; manual BR6000 5.2", status: A_VERIFICAR, conferir: false}
+    rele_falta_fase: {codigo: "Relé de falta/sequência de fase trifásico 415 V (trilho DIN)", fonte: "ET Panatlântica 2024 item 3", status: A_VERIFICAR, conferir: true}
+    trafo_comando: {codigo: "Transformador de comando 415/220 V (VA calculado)", fonte: "ET Panatlântica 2024 item 6 (500 VA)", status: ATIVO, conferir: true}
+    barramento: {codigo: "Barra de cobre eletrolítico estanhada", descricao: "Barramento Cu – seção calculada (ET 2024: 1\" × 3/8\")", fonte: "ET Panatlântica 2024 item 12", status: ATIVO, conferir: false}
+    isolador_barra: {codigo: "Isolador epóxi 30 × 30 M6 (ou 40 × 40 M8 p/ barras maiores)", fonte: "ET Panatlântica 2024 item 13", status: ATIVO, conferir: false}
+  SCHNEIDER:
+    capacitor_25kvar_525V: {codigo: "BLRCH250A300B52", descricao: "VarPlus Can HDuty 25 kvar 525 V 50 Hz (30 kvar 60 Hz)", D: 116, A: 242, kg: 2.5,
+                            terminal: "bornes CLAMPTITE", torque_Nm: null, fonte: "Schneider – folha de dados BLRCH250A300B52", status: A_VERIFICAR, conferir: true}
+    contatora_capacitor: {codigo: "LC1D80M7 (TeSys D 80 A, bobina 220 V)", descricao: "Contatora TeSys D 80 A – estágio dessintonizado (reator limita o inrush)",
+                          L: 85, A: 127, P: 186, kg: 2.59, terminal: "parafuso-estribo", torque_Nm: null, bobina: {partida_VA: 245, retencao_VA: 26},
+                          fonte: "Schneider – folha de dados LC1D80; guia de correção de FP (estágio com reator)", status: A_VERIFICAR, conferir: true}
+    chave_fusivel_nh00: {codigo: "LV480801 (Fupact ISFT160 NH00 3P)", L: 106, A: 194, P: 80, terminal: "parafuso M8", torque_Nm: null,
+                         fonte: "Schneider LV480801 – catálogo Fupact (CVI 2021)", status: A_VERIFICAR, conferir: true}
+    chave_fusivel_nh2: {codigo: "LV480806 (Fupact ISFT400 NH2 3P)", L: 210, A: 306, P: 130, fonte: "Schneider LV480806 – catálogo Fupact + STEP (CVI 2021)", status: A_VERIFICAR, conferir: true}
+    controlador: {codigo: "VarPlus Logic VL12 (VPL12N)", L: 144, A: 144, fonte: "Schneider – VarPlus Logic", status: A_VERIFICAR, conferir: true}
+    rele_falta_fase: {codigo: "RM22TR33 (Zelio Control – falta/sequência de fase)", L: 22.5, fonte: "Schneider Zelio RM22", status: A_VERIFICAR, conferir: true}
+    disjuntor_comando: {codigo: "Acti9 iC60N (curva conforme cálculo)", L_polo: 18, A: 85, P: 78.5, fonte: "Schneider Acti9 iC60N – folha de dados", status: ATIVO, conferir: true}
+    disjuntor_geral: {codigo: "Linha ComPact (NSX até 630 A / NS ou sucessora acima) – escolher pela corrente calculada", fonte: "site Schneider: ComPact NS800N 3P (INA_3P33466D) DESCONTINUADO em 29/09/2025", status: A_VERIFICAR, conferir: true}
+  ABB:
+    contatora_capacitor: {codigo: "UA75-30-00 (contatora para capacitor) ou AF50-30-00 (estágio com reator)", fonte: "ABB – contatoras UA/AF para manobra de capacitores", status: A_VERIFICAR, conferir: true,
+                          bobina: {partida_VA: 23, retencao_VA: 2.5}}
+    contatora_af50: {codigo: "AF50-30-00-13", descricao: "Contatora AF50 3P (bobina eletrônica 100–250 V CA/CC)", fonte: "ABB AF – catálogo 1SBC101438D0201", status: A_VERIFICAR, conferir: true}
+    contatora_a50: {codigo: "A50-30-00", L: 70, A: 110, P: 108, kg: 1.16, fonte: "ABB – folha de dados A50-30-00 (1SBL351001R)", status: A_VERIFICAR, conferir: true}
+    chave_fusivel_nh00: {codigo: "XLP00 (chave seccionadora-fusível NH00 160 A)", fonte: "ABB XLP – catálogo", status: A_VERIFICAR, conferir: true}
+    controlador: {codigo: "RVC-12 (controlador de FP 12 estágios)", L: 144, A: 144, fonte: "ABB RVC", status: A_VERIFICAR, conferir: true}
+    rele_falta_fase: {codigo: "CM-PFE (monitor de sequência/falta de fase)", fonte: "ABB CM-series", status: A_VERIFICAR, conferir: true}
+    disjuntor_comando: {codigo: "S202/S203 (curva conforme cálculo)", L_polo: 17.5, fonte: "ABB System pro M compact", status: A_VERIFICAR, conferir: true}
+    disjuntor_geral: {codigo: "Tmax XT (XT5 até 630 A / XT7 800–1600 A) com manopla rotativa RHE", fonte: "ABB Tmax XT – catálogo", status: A_VERIFICAR, conferir: true}
+
+# Ferragens e montagem (iguais para todas as marcas) – valores normalizados
+ferragens:
+  torque_barramento_Nm: {M6: 9, M8: 20, M10: 40, M12: 70, fonte: "DIN 43673 (uniões de barramento Cu com parafuso classe 8.8)", conferir: false}
+  parafuso_barramento: "parafuso sextavado classe 8.8 zincado + arruela lisa larga + arruela de pressão (ou arruela cônica/Belleville) + porca"
+  terminal_cabo: "terminal de compressão tubular de cobre estanhado (DIN 46235), furo conforme borne do componente; luva termocontrátil na cor da fase"
+  barra_ampacidade_A: {"30x10": 573, "40x10": 715, "50x10": 852, "60x10": 985, "80x10": 1240, "2x40x10": 1290, "2x50x10": 1510,
+                       fonte: "DIN 43671 – barras Cu nuas, ar 35 °C, barra 65 °C, CA", conferir: false}
+  fator_temp_barra: {35: 1.00, 40: 0.94, 45: 0.88, 50: 0.81, 55: 0.74, fonte: "DIN 43671 – correção pela temperatura do ar (barra 65 °C)", conferir: false}

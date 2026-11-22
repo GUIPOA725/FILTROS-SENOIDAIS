@@ -55,3 +55,11 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
   barra única, NR-10 2026 e energia incidente atendidos; cabos e trafo de comando calculados. Próximo bloco (REQ-PNL-021/022,
   REQ-GER-010): banco de componentes completo por marca (ABB/Schneider/padrão Panatlântica) até parafuso, terminal e torque,
   e modelos 3D reais dos fabricantes.
+
+## Revisão – v1.24.3 – 2026-11-22 16:58
+- Requisitos: 91 | APROVADO 60 | ATENÇÃO 20 | REPROVADO 11
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261122_1652
+- Mudanças: REQ-SEG-007 MELHOROU (REPROVADO→APROVADO); REQ-SEG-009 MELHOROU (REPROVADO→ATENÇÃO); REQ-PNL-017 MELHOROU (REPROVADO→ATENÇÃO); REQ-PNL-018 MELHOROU (REPROVADO→APROVADO); REQ-SEG-010 MELHOROU (REPROVADO→APROVADO); REQ-SEG-012 MELHOROU (REPROVADO→ATENÇÃO); REQ-PNL-020 MELHOROU (REPROVADO→ATENÇÃO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021
+- Decisão: pode publicar

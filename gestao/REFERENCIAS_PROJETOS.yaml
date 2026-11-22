@@ -41,6 +41,8 @@ referencias:
     - "Reator Cootrans 796 µH/95 A, alumínio, classe F, IP00, R$ 1.950 (ORC 0413/2024); ~55 kg (planilha de peso); cabem 2 por prateleira na coluna de 788 mm, 2 prateleiras."
     - "Painel 1600 × 2000 × 800 (2 colunas de 788), placa da frente com 16 capacitores em fileira, 8 chaves NH e 8 contatoras; reatores atrás; peso total ~801 kg."
     - "Montadora IFG; TAF IFG (Norton) e TAF cliente (pastas 2 e 3)."
+    - "Componentes padrão Electric usados (ET 2024): controlador Epcos 12 estágios (BR6000), relé falta de fase 415 V, disjuntores DIN 10 A 2P/3P, trafo 415/220 V 500 VA, 4 conjuntos de ventilação 220 V, botoeira de emergência Ø22, 7 sinaleiros LED Ø22, seletora 2 posições, barramento Cu 1\" × 3/8\" (20 kg), isoladores epóxi 30×30 M6, chave-fusível NH00 160 A, fusível NH00 125 A, contatora Epcos B44066-S6012-C221 (60 kvar), capacitor PhiCap 25 kvar/525 V, cabos 35 mm² nos estágios (esquema REV 2)."
+    - "Achado: cabos de 35 mm² no estágio NÃO atendem NBR 5410 com 4 circuitos agrupados na canaleta a 50 °C (Iz ≈ 69 A < 92 A); a plataforma calcula 70 mm² – a discutir com o engenheiro (instalação espaçada ao ar admite seção menor)."
   requisitos: [REQ-REA-002, REQ-PNL-010, REQ-BCO-001, REQ-PNL-003]
   usada_em: "teste de fogo (montante 400 kvar OK); reator e largura do painel PENDENTES"
 - id: REF-PANAT-HIST
