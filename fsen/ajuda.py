@@ -356,7 +356,8 @@ def novidades(max_chars=900):
         ch = open(os.path.join(RAIZ, "CHANGELOG.md"), encoding="utf-8").read()
         i = ch.index("## v")
         j = ch.find("\n## v", i + 4)
-        sec = ch[i:j if j > 0 else None].strip()
+        sec = ch[i:j if j > 0 else None].strip().replace("## ", "**", 1)
+        sec = sec.replace("\n", "**\n", 1) if sec.startswith("**") else sec
         return sec[:max_chars] + ("…" if len(sec) > max_chars else "")
     except (OSError, ValueError):
         return ""
@@ -366,15 +367,11 @@ def painel(tipo, contexto=None, provedor=None):
     """Bloco da barra lateral: passo a passo + pergunta ao assistente + explicar o último erro."""
     import streamlit as st
     st.session_state["ajuda_tela"] = tipo
-    sb = st.sidebar
-    with sb.expander("🛟 Ajuda – passo a passo e assistente", expanded=st.session_state.get("ajuda_aberta", False)):
-        nov = novidades()
-        if nov:
-            st.markdown("**Novidades desta versão**")
-            st.caption(nov)
-        st.markdown("**O que fazer nesta tela**")
-        st.markdown("\n".join(f"{i + 1}. {p}" for i, p in enumerate(guia(tipo))))
-        st.caption("Passe o mouse no **?** ao lado de cada campo para ver o que ele faz.")
+    # v1.18.2: botão grande no TOPO da tela (canto direito) – na barra lateral ficava escondido lá embaixo
+    _, cdir = st.columns([5, 1])
+    pop = cdir.popover("🛟 Ajuda", use_container_width=True, help="Passo a passo desta tela, novidades da versão e assistente com IA")
+    st.sidebar.info("🛟 **Ajuda**: botão no canto superior direito da tela (passo a passo, assistente, explicar erros).")
+    with pop:
         q = st.text_input("Pergunte ao assistente", key="ajuda_q", placeholder="ex.: por que deu 400 kvar? o que é FD?",
                           help="Pergunta livre. O assistente sabe em que tela você está, o que preencheu e o último log/erro.")
         ctx = dict(contexto or {})
@@ -394,3 +391,10 @@ def painel(tipo, contexto=None, provedor=None):
             st.info(st.session_state["ajuda_resp"])
         if err:
             st.caption(f"Último erro ({err['quando']}) registrado em {ARQ_ERROS} – envie ao desenvolvedor se não resolver.")
+        st.markdown("**O que fazer nesta tela**")
+        st.markdown("\n".join(f"{i + 1}. {p}" for i, p in enumerate(guia(tipo))))
+        st.caption("Passe o mouse no **?** ao lado de cada campo para ver o que ele faz.")
+        nov = novidades()
+        if nov:
+            with st.expander("Novidades desta versão"):
+                st.markdown(nov)

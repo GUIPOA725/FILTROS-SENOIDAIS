@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.2 – 2026-11-22 (abre como programa; ajuda visível)
+- **Abre como PROGRAMA, não no navegador**: o ABRIR_FSEN.bat agora abre uma janela própria "FSEN v… – Filtros e Bancos" (janela nativa do Windows via pywebview; se não der, Edge/Chrome em modo aplicativo – sem abas e sem barra de endereço). A janela preta fecha sozinha e, ao fechar a janela do programa, tudo se encerra. Na primeira vez cria o atalho **"FSEN Filtros"** na área de trabalho.
+- **Botão 🛟 Ajuda no canto superior direito** de todas as telas (antes ficava escondido no fim da barra lateral): pergunta ao assistente, explicar erro, passo a passo da tela e novidades da versão.
+- Menu "Deploy" do Streamlit escondido.
+
 ## v1.18.1 – 2026-11-22 (ajuda em todas as versões)
 - A ajuda passa a ser regra permanente: antes de publicar qualquer versão, `validacao/verificar_ajuda.py` confere que TODO campo e botão tem dica (hoje 142 dicas, 0 faltando) – versão com campo sem dica não é publicada.
 - Na 🛟 Ajuda da barra lateral aparece **"Novidades desta versão"** (o que mudou e como usar), para quem atualiza saber o que há de novo sem perguntar.

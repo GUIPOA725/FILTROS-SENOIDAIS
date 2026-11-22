@@ -49,13 +49,24 @@ if errorlevel 1 (
   echo [3/4] Bibliotecas ja instaladas.
 )
 
-REM --- 4) configuracoes e abertura
+REM --- 4) janela propria (v1.18.2): pywebview na primeira vez (opcional - se falhar, abre em modo aplicativo do Edge/Chrome)
+if not exist "%LOCALAPPDATA%\FSEN\webview_ok.txt" (
+  echo [4/5] Preparando a janela do programa ^(so na primeira vez^)...
+  %PY% -m pip install pywebview >nul 2>&1
+  echo ok> "%LOCALAPPDATA%\FSEN\webview_ok.txt"
+)
+
+REM --- 5) atalho na area de trabalho (uma vez) e abertura como PROGRAMA (sem navegador, sem janela preta)
 set "FSEN_PASTA_SAIDA=G:\Drives compartilhados\Engenharia\15 - TEMPLATES-PLANILHA ESTUDOS\PLATAFORMA FILTROS SENOIDAIS\PROJETOS"
 REM Chave da IA (opcional). Tire o REM e cole a chave para usar o Claude na leitura dos e-mails:
 REM set ANTHROPIC_API_KEY=sk-ant-...
-echo [4/4] Abrindo a plataforma no navegador...  ^(NAO feche esta janela enquanto estiver usando^)
-start "" cmd /c "timeout /t 6 >nul & start http://localhost:8501"
-%PY% -m streamlit run app.py --server.headless true --browser.gatherUsageStats false
-echo.
-echo Plataforma encerrada.
-pause
+if not exist "%USERPROFILE%\Desktop\FSEN Filtros.lnk" (
+  powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Desktop')+'\FSEN Filtros.lnk');$s.TargetPath='%ORIGEM%ABRIR_FSEN.bat';$s.WorkingDirectory='%ORIGEM%';$s.WindowStyle=7;$s.Description='Plataforma FSEN - Filtros e Bancos';$s.Save()" >nul 2>&1
+)
+set "PYW=%PY%"
+if /i "%PY:~-10%"=="python.exe" set "PYW=%PY:~0,-10%pythonw.exe"
+if /i "%PY:~0,3%"=="py " set "PYW=pyw %PY:~3%"
+if /i "%PY%"=="python" set "PYW=pythonw"
+echo [5/5] Abrindo a plataforma...  ^(esta janela fecha sozinha^)
+start "" %PYW% "%LOCAL%\janela_fsen.py"
+exit /b 0
