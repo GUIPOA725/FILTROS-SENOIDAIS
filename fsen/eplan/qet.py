@@ -96,6 +96,36 @@ def _def_propria(nome):
         return (f'<definition type="element" width="{w+10}" height="90" hotspot_x="0" hotspot_y="10" link_type="simple" version="0.90">'
                 f'<names><name lang="pt">Controlador automático de FP ({n} saídas)</name><name lang="en">PF controller</name></names>'
                 f'<informations>FSEN</informations><description>{"".join(d)}</description></definition>')
+    if nome == "inversor":                  # inversor de frequência (externo): retângulo com ~/~, saídas U V W embaixo + PE
+        d = [f'<rect x="-45" y="-30" width="90" height="50" {st}/>', f'<line x1="-45" y1="20" x2="45" y2="-30" {st}/>',
+             '<text x="-38" y="-14" size="10" text="~"/>', '<text x="28" y="14" size="10" text="~"/>',
+             '<input x="-45" y="-36" size="10" text="_" tagg="label"/>']
+        for k, (t, x) in enumerate((("U", -20), ("V", 0), ("W", 20))):
+            d.append(f'<line x1="{x}" y1="20" x2="{x}" y2="30" {st}/><terminal x="{x}" y="30" orientation="s"/>')
+        d.append(f'<line x1="40" y1="20" x2="40" y2="30" {st}/><terminal x="40" y="30" orientation="s"/>')
+        return (f'<definition type="element" width="100" height="70" hotspot_x="50" hotspot_y="35" link_type="simple" version="0.90">'
+                f'<names><name lang="pt">Inversor de frequência</name><name lang="en">Variable frequency drive</name></names>'
+                f'<informations>FSEN</informations><description>{"".join(d)}</description></definition>')
+    if nome == "motor3":                    # motor trifásico (externo): círculo M 3~, entradas U V W em cima + PE
+        d = [f'<circle x="-22" y="-12" diameter="44" {st}/>', '<text x="-7" y="10" size="12" text="M"/>',
+             '<text x="-6" y="21" size="8" text="3~"/>', '<input x="26" y="6" size="10" text="_" tagg="label"/>']
+        for t, x in (("U", -20), ("V", 0), ("W", 20)):
+            y1 = -12 + 22 - (22 ** 2 - x ** 2) ** 0.5 if abs(x) < 22 else -2
+            d.append(f'<line x1="{x}" y1="-30" x2="{x}" y2="{y1:.1f}" {st}/><terminal x="{x}" y="-30" orientation="n"/>')
+        d.append(f'<line x1="30" y1="-30" x2="30" y2="0" {st}/><line x1="30" y1="0" x2="20" y2="10" {st}/>'
+                 f'<terminal x="30" y="-30" orientation="n"/>')
+        return (f'<definition type="element" width="70" height="80" hotspot_x="35" hotspot_y="40" link_type="simple" version="0.90">'
+                f'<names><name lang="pt">Motor trifásico</name><name lang="en">Three-phase motor</name></names>'
+                f'<informations>FSEN</informations><description>{"".join(d)}</description></definition>')
+    if nome == "cabo3":                     # cabo multipolar blindado (externo): 3 vias + PE passando, elipse do cabo e da blindagem
+        d = [f'<ellipse x="-30" y="-6" width="80" height="12" {st}/>', f'<ellipse x="-34" y="-9" width="88" height="18" {std}/>',
+             '<input x="54" y="4" size="9" text="_" tagg="label"/>']
+        for x in (-20, 0, 20, 40):
+            d.append(f'<line x1="{x}" y1="-20" x2="{x}" y2="20" {st}/><terminal x="{x}" y="-20" orientation="n"/>'
+                     f'<terminal x="{x}" y="20" orientation="s"/>')
+        return (f'<definition type="element" width="100" height="40" hotspot_x="40" hotspot_y="20" link_type="simple" version="0.90">'
+                f'<names><name lang="pt">Cabo blindado</name><name lang="en">Shielded cable</name></names>'
+                f'<informations>FSEN</informations><description>{"".join(d)}</description></definition>')
     if nome == "rele_ff":
         d = [f'<rect x="-30" y="-15" width="60" height="30" {st}/>', '<input x="-26" y="2" size="9" text="_" tagg="label"/>',
              '<text x="-26" y="11" size="5" text="falta/seq. de fase"/>']
@@ -169,6 +199,8 @@ NOMES_TERM = {
     "moteur_mono": {("n", 0): "1", ("n", 1): "2"},
     "rele_ff": {("n", 0): "L1", ("n", 1): "L2", ("n", 2): "L3"},
     "transfo_mono": {("n", 0): "H1", ("n", 1): "H2", ("s", 0): "X1", ("s", 1): "X2"},
+    "inversor": {("s", 0): "U", ("s", 1): "V", ("s", 2): "W", ("s", 3): "PE"},
+    "motor3": {("n", 0): "U", ("n", 1): "V", ("n", 2): "W", ("n", 3): "PE"},
 }
 
 
@@ -208,7 +240,7 @@ class Elemento:
 class Folio:
     def __init__(self, proj, titulo, funcao=""):
         self.proj, self.titulo, self.funcao = proj, titulo, funcao
-        self.elems, self.conds, self.textos = [], [], []
+        self.elems, self.conds, self.textos, self.retangulos = [], [], [], []
         self.n = len(proj.folios) + 1
 
     def el(self, nome, x, y, label="", info=None, ori=0, chave=None):
@@ -243,6 +275,10 @@ class Folio:
 
     def texto(self, x, y, t, size=9, cor="#000000"):
         self.textos.append((x, y, t, size, cor))
+
+    def ret(self, x, y, w, h, rotulo=""):
+        """Contorno tracejado de local (ex.: +PAINEL) – como a moldura de localização do EPLAN."""
+        self.retangulos.append((x, y, w, h, rotulo))
 
 
 class ProjetoQet:
@@ -319,6 +355,8 @@ class ProjetoQet:
                 if e.label and e.d.nome != "no":
                     lb = [q for q in primitivas_elemento(e) if q[0] == "lbl"]
                     lx, ly = (lb[0][1] - e.x, lb[0][2] - e.y - 9) if lb else (12, -8)
+                    if lb and len(lb[0]) > 6 and lb[0][6] == "right":
+                        lx -= 6.2 * len(e.label)
                     fs = 6 if e.d.nome == "borne_continuite" else 9
                     L.append(f'<dynamic_texts><dynamic_elmt_text x="{lx:g}" y="{ly:g}" rotation="0" uuid="{_uuid_det(e.uuid, "lbl")}" '
                              f'font="Sans Serif,{fs},-1,5,75,0,0,0,0,0" frame="false" text_from="ElementInfo" Halignment="AlignLeft" '
@@ -357,6 +395,9 @@ def _num(v, p=0.0):
         return float(v)
     except (TypeError, ValueError):
         return p
+
+
+_PINO_TXT = re.compile(r"^(\d{1,2}|[LT]\s?[123]|A[12]|NO|NC|NA|NF)(\s+\S+)?$")
 
 
 def primitivas_elemento(e):
@@ -411,6 +452,7 @@ def primitivas_elemento(e):
     if e.label and e.d.nome != "no":
         xs = [q[0] for o in out if o[0] in ("lin", "pol") for q in o[1]]
         ys = [q[1] for o in out if o[0] in ("lin", "pol") for q in o[1]]
+        xs += [o[1] - 2 for o in out if o[0] == "txt" and o[3] and not _PINO_TXT.match(str(o[3]).strip())]   # θ, M… fora do traço
         if xs:
             if e.d.nome == "cap3":          # capacitores lado a lado: rótulo e dados embaixo do símbolo
                 out.append(("lbl", min(xs) + 2, max(ys) + 11, e.label, 8.0, 0))
@@ -418,10 +460,14 @@ def primitivas_elemento(e):
                     out.append(("dad", min(xs) + 2, max(ys) + 19, e.info["dados"], 6.5, 0))
             elif e.d.nome == "borne_continuite":
                 out.append(("lbl", min(xs) - 1, min(ys) - 3, e.label.split(":")[-1], 6.5, 0))
-            else:
+            elif e.d.nome in ("reator3", "ctrl6", "ctrl12", "inversor", "motor3", "cabo3") or e.d.nome.startswith("ctrl") or e.d.nome == "rele_ff":
                 out.append(("lbl", max(xs) + 4, (min(ys) + max(ys)) / 2 + 3, e.label, 10.0, 0))
                 if e.info.get("dados"):
                     out.append(("dad", max(xs) + 4, (min(ys) + max(ys)) / 2 + 12, e.info["dados"], 6.5, 0))
+            else:                           # padrão EPLAN: tag à ESQUERDA do símbolo, alinhada à direita, dados embaixo
+                out.append(("lbl", min(xs) - 5, (min(ys) + max(ys)) / 2 + 2, e.label, 10.0, 0, "right"))
+                if e.info.get("dados"):
+                    out.append(("dad", min(xs) - 5, (min(ys) + max(ys)) / 2 + 10, e.info["dados"], 6.5, 0, "right"))
     return out
 
 
@@ -546,15 +592,41 @@ def _carimbo(ax, proj, f, total, pt):
     ax.text(408, y0 + 4, f"{f.n} / {total}", fontsize=6, ha="right", weight="bold")
 
 
+_PINO = re.compile(r"^(\d{1,2}|[LT]\s?[123]|A[12]|NO|NC|NA|NF)$")
+AZUL_EPLAN, VERDE_XR, VERM_SEC = "#1f3fbf", "#5b8c32", "#d32f2f"
+
+
+def _pinos(e):
+    """(x, y, nome, lado) de cada borne com nome – desenhados junto do terminal, como no EPLAN."""
+    out = []
+    for lado in "nesw":
+        k = 0
+        while True:
+            try:
+                t = e.term(lado, k)
+            except IndexError:
+                break
+            if t[4]:
+                out.append((t[1], t[2], t[4], lado))
+            k += 1
+    return out
+
+
 def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
+    """Folhas A3 no padrão gráfico do EPLAN (gabarito Electric): traço fino uniforme (0,25 mm), barramentos em azul com
+    pontos de derivação vazados, seção marcada por traço oblíquo + texto vermelho só no último condutor do grupo, número de
+    borne junto de cada terminal, tag à esquerda do símbolo em azul, dados em preto, referência cruzada em verde."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
+    from matplotlib.patches import Circle
     pt = 72 / 25.4
+    LW = 0.25 * pt                          # 0,25 mm em pontos
     xr = _xrefs(proj)
     tmp = arq if not pdf_extra else arq + ".tmp.pdf"
-    with PdfPages(tmp) as pdf:
+    rc = {"font.family": ["Arial", "Liberation Sans", "DejaVu Sans"], "pdf.fonttype": 42}
+    with matplotlib.rc_context(rc), PdfPages(tmp) as pdf:
         for f in proj.folios:
             fig = plt.figure(figsize=(420 / 25.4, 297 / 25.4))
             ax = fig.add_axes([0, 0, 1, 1])
@@ -563,51 +635,114 @@ def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
             ax.set_aspect("equal")
             ax.axis("off")
             _carimbo(ax, proj, f, len(proj.folios) + (_n_paginas(pdf_extra) if pdf_extra else 0), pt)
+            grau = {}
+            for c in f.conds:
+                for t in (c["a"], c["b"]):
+                    grau[t[0]] = grau.get(t[0], 0) + 1
+            marcas, cmd_sec = [], {}
             for c in f.conds:
                 pts = [_mm(x, y) for x, y in rota(c["a"][1:3], c["b"][1:3], c.get("ym"))]
-                cor = c["cor"] or (COR_POT if c["pot"] else COR_CMD)
-                ax.plot([p[0] for p in pts], [p[1] for p in pts], color=cor, lw=(0.5 if c["pot"] else 0.35) * pt / 2.83 * 2.2,
-                        solid_capstyle="butt", zorder=2)
-                if c["num"] or c["secao"] or c.get("marca"):
-                    (xa, ya), (xb, yb) = pts[0], pts[-1]
-                    xm, ym = (xa + xb) / 2, (ya + yb) / 2
-                    vert = abs(xa - xb) < 0.2
-                    ax.text(xm + (0.8 if vert else 0), ym + (0 if vert else 0.6), " ".join(x for x in (c["num"], c.get("marca", ""), (c["secao"] + " mm²") if c["secao"] else "") if x),
-                            fontsize=3.8, rotation=90 if vert else 0, ha="left" if vert else "center", va="center" if vert else "bottom",
-                            color="0.25", zorder=3)
+                ea, eb = c["a"][3], c["b"][3]
+                barra = ea.d.nome == "no" and eb.d.nome == "no" and ea.info.get("barra") and eb.info.get("barra")
+                mc = (c.get("marca") or "").upper()
+                if barra and not ea.info["barra"].startswith("-PE"):
+                    cor, lw = AZUL_EPLAN, LW * 1.4
+                elif c["cor"] == "#2e7d32" or "VD" in mc:
+                    cor, lw = "#2e7d32", LW
+                elif mc == "AZ":
+                    cor, lw = AZUL_EPLAN, LW
+                else:
+                    cor, lw = "k", LW
+                ax.plot([p[0] for p in pts], [p[1] for p in pts], color=cor, lw=lw, solid_capstyle="butt", zorder=2)
+                segs = list(zip(pts, pts[1:]))
+                (x0, y0), (x1, y1) = max(segs, key=lambda sg: abs(sg[0][0] - sg[1][0]) + abs(sg[0][1] - sg[1][1]))
+                xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+                vert = abs(x0 - x1) < 0.2
+                if c["secao"] and not barra and c["pot"] and abs(x0 - x1) + abs(y0 - y1) > 6:
+                    marcas.append((xm, ym, vert, c["secao"]))
+                elif c["secao"] and not c["pot"]:
+                    cmd_sec[(c["secao"], (c.get("marca") or "").upper())] = cmd_sec.get((c["secao"], (c.get("marca") or "").upper()), 0) + 1
+                if c["num"] and not barra:
+                    ax.text(xm + (0.9 if vert else 0), ym + (2.2 if vert else 0.7), c["num"], fontsize=4.0, rotation=90 if vert else 0,
+                            ha="left" if vert else "center", va="bottom", color="k", zorder=3)
+            if cmd_sec:                              # comando: nota geral (como no EPLAN), sem marcar fio a fio
+                cores = {"VM": "vermelho", "AZ": "azul", "PT": "preto", "CZ": "cinza", "VD/AM": "verde/amarelo"}
+                secs = sorted({k[0] for k in cmd_sec})
+                cs = sorted({cores.get(k[1], k[1]) for k in cmd_sec if k[1]})
+                ax.text(16, 30.5, f"Fiação de comando: {' / '.join(x + ' mm²' for x in secs)} – cabo flexível 750 V, cores: "
+                        f"{', '.join(cs)} (fase vermelho, neutro azul, sinal/alarme cinza), salvo indicação.", fontsize=4.6, color="0.25", zorder=5)
+            for (xm, ym, vert, sec) in marcas:      # traço oblíquo em todos; texto só no último do grupo (à direita/abaixo)
+                d = 0.8
+                ax.plot([xm - d, xm + d], [ym - d, ym + d], color="k", lw=LW, zorder=3)
+                vizinho = any(abs(o[1] - ym) < 4 and 0 < o[0] - xm < 9 and o[3] == sec for o in marcas) if vert else \
+                    any(abs(o[0] - xm) < 9 and 0 < ym - o[1] < 9 and o[3] == sec for o in marcas)
+                if not vizinho:
+                    ax.text(xm + 1.6, ym + 0.2, f"{sec} mm²" if sec != "barra" else "barra", fontsize=4.2, color=VERM_SEC,
+                            va="center", ha="left", zorder=3)
             for e in f.elems:
+                if e.d.nome == "no":                 # ponto de derivação: só onde há derivação (3+ condutores)
+                    g = sum(grau.get(t, 0) for t in e.tid)
+                    if g >= 3:
+                        x, y = _mm(e.x, e.y)
+                        if e.info.get("barra") and not e.info["barra"].startswith("-PE"):
+                            ax.add_patch(Circle((x, y), 0.75, fc="white", ec=AZUL_EPLAN, lw=LW, zorder=6))
+                        else:
+                            ax.add_patch(Circle((x, y), 0.5, fc="k", ec="k", lw=0, zorder=6))
+                    continue
                 for p in primitivas_elemento(e):
                     if p[0] == "lin":
                         (x0, y0), (x1, y1) = _mm(*p[1][0]), _mm(*p[1][1])
-                        ax.plot([x0, x1], [y0, y1], color="k", lw=0.25 * pt / 2.83 * 2.2, ls="--" if p[2] else "-", zorder=4)
+                        ax.plot([x0, x1], [y0, y1], color="k", lw=LW, ls=(0, (3, 2)) if p[2] else "-", zorder=4)
                     elif p[0] == "pol":
                         q = [_mm(*a) for a in p[1]]
                         if p[3]:
                             ax.fill([a[0] for a in q], [a[1] for a in q], color="k", zorder=4)
                         else:
-                            ax.plot([a[0] for a in q], [a[1] for a in q], color="k", lw=0.25 * pt / 2.83 * 2.2, ls="--" if p[2] else "-",
-                                    zorder=4)
+                            ax.plot([a[0] for a in q], [a[1] for a in q], color="k", lw=LW, ls=(0, (3, 2)) if p[2] else "-", zorder=4)
                     elif p[0] == "dad":
                         x, y = _mm(p[1], p[2])
-                        ax.text(x, y, p[3], fontsize=3.6, color="0.25", va="baseline", zorder=5)
+                        ha = p[6] if len(p) > 6 else "left"
+                        for k, ln in enumerate(str(p[3]).split("\n")):
+                            ax.text(x, y - k * 2.0, ln, fontsize=4.6, color="k", va="baseline", ha=ha, zorder=5)
                     elif p[0] in ("txt", "lbl"):
+                        if p[0] == "txt" and str(p[3]).split() and all(_PINO.match(tk) for tk in str(p[3]).split()):
+                            continue                # nº de borne do símbolo: redesenhado abaixo, junto do terminal
                         x, y = _mm(p[1], p[2])
                         if p[3]:
-                            ax.text(x, y, p[3], fontsize=p[4] * S_MM * pt * (1.0 if p[0] == "txt" else 1.05), rotation=-p[5] if p[5] else 0,
-                                    ha="left", va="baseline", weight="bold" if p[0] == "lbl" else "normal",
-                                    color=COR_CMD if p[0] == "lbl" else "k", zorder=5)
+                            ha = p[6] if len(p) > 6 else "left"
+                            ax.text(x, y, p[3], fontsize=p[4] * S_MM * pt * (0.95 if p[0] == "txt" else 1.0), rotation=-p[5] if p[5] else 0,
+                                    ha=ha, va="baseline", color=AZUL_EPLAN if p[0] == "lbl" else "k", zorder=5)
+                if e.d.nome not in ("borne_continuite",):
+                    for (tx, ty, nm, lado) in _pinos(e):
+                        X, Y = _mm(tx, ty)
+                        if lado == "n":
+                            ax.text(X + 0.6, Y - 1.4, nm, fontsize=4.2, color="k", ha="left", va="top", zorder=5)
+                        elif lado == "s":
+                            ax.text(X + 0.6, Y + 1.4, nm, fontsize=4.2, color="k", ha="left", va="bottom", zorder=5)
+                        elif lado == "e":
+                            ax.text(X - 1.0, Y + 0.5, nm, fontsize=4.2, color="k", ha="right", va="bottom", zorder=5)
+                        else:
+                            ax.text(X + 1.0, Y + 0.5, nm, fontsize=4.2, color="k", ha="left", va="bottom", zorder=5)
                 if e.uuid in xr and xr[e.uuid]:
                     lb = [p for p in primitivas_elemento(e) if p[0] == "lbl"]
-                    x, y = _mm(lb[0][1], lb[0][2] + 8) if lb else _mm(e.x + 14, e.y + 14)
                     if e.d.link == "slave":
-                        ax.text(x, y, " ".join(xr[e.uuid]), fontsize=3.6, color="#6a1b9a", zorder=5)
-                    else:
-                        x, y = _mm(e.x - 18, e.y + 30)
+                        off = 17 if e.info.get("dados") else 8
+                        x, y = _mm(lb[0][1], lb[0][2] + off) if lb else _mm(e.x + 14, e.y + 14)
+                        ha = lb[0][6] if lb and len(lb[0]) > 6 else "left"
+                        ax.text(x, y, " ".join(xr[e.uuid]), fontsize=4.4, color=VERDE_XR, ha=ha, zorder=5)
+                    else:                           # espelho de contatos sob a bobina
+                        x, y = _mm(e.x - 10, e.y + 26)
+                        ax.plot([x, x + 20], [y + 1.2, y + 1.2], color="k", lw=LW * 0.8, zorder=5)
                         for k, t in enumerate(xr[e.uuid][:8]):
-                            ax.text(x, y - k * 2.0, t, fontsize=3.4, color="#6a1b9a", zorder=5)
+                            ax.text(x, y - k * 2.1, t, fontsize=4.0, color=VERDE_XR, zorder=5)
+            for (x, y, w, h, rot) in f.retangulos:
+                (X0, Y0), (X1, Y1) = _mm(x, y), _mm(x + w, y + h)
+                ax.plot([X0, X1, X1, X0, X0], [Y0, Y0, Y1, Y1, Y0], color="0.35", lw=LW, ls=(0, (8, 2, 1, 2)), zorder=1)
+                if rot:
+                    ax.text(X1 - 1, Y0 - 1.2, rot, fontsize=5.5, color="0.35", va="top", ha="right", zorder=1)
             for (x, y, t, size, cor) in f.textos:
                 X, Y = _mm(x, y)
-                ax.text(X, Y, t, fontsize=size * S_MM * pt, color=cor, va="baseline", zorder=5)
+                ax.text(X, Y, t, fontsize=size * S_MM * pt, color=AZUL_EPLAN if cor == "#1f4e8c" else cor, va="baseline", zorder=5)
             if png_dir and f.n <= 4:
                 fig.savefig(os.path.join(png_dir, f"esquema_folha_{f.n:02d}.png"), dpi=110)
             pdf.savefig(fig)

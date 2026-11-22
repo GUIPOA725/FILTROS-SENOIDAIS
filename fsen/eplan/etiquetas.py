@@ -83,6 +83,8 @@ def potenciais(Q):
             g["conds"].append((f.n, c))
             for t in (c["a"], c["b"]):
                 e = t[3]
+                if e.info.get("externo"):
+                    continue                    # inversor, motor, cabo de campo: fora do painel (vão na lista de cabos externos)
                 if e.d.nome == "no":
                     if e.info.get("pe_de"):
                         ref = f"{e.info['pe_de']}:PE"
@@ -135,6 +137,8 @@ def _cadeia(bs, conds=()):
     for fl, c in conds:
         for t in (c["a"], c["b"]):
             coord[("t", t[0])] = (fl, t[1], t[2])
+    if not bs:
+        return []
     ini = sorted(bs, key=lambda b: (b[0], not b[3].startswith("-X"), b[2], b[1]))[0]
     k0 = next((k for k, r in ref_de_t.items() if r == ini[3]), None)
     if k0 is None:
@@ -195,7 +199,7 @@ def _fios_desenhados(g):
                 nm = e.info.get("pot")
                 if nm and t[0] not in [x for x, _ in nomes[nm]]:
                     nomes[nm].append((t[0], (fl, t[2], t[1])))
-            else:
+            elif not e.info.get("externo"):
                 ref_t[t[0]] = _ref(t)
     dono = dict(ref_t)
     for _ in range(50):                      # nó → borne vizinho de maior seção; nó sem borne vizinho herda do nó vizinho
@@ -293,7 +297,7 @@ def etiquetas_componentes(Q, extra=()):
     for f in Q.folios:
         for e in f.elems:
             tag = e.label
-            if not tag or e.d.nome == "no":
+            if not tag or e.d.nome == "no" or e.info.get("externo"):
                 continue
             base = tag.split(":")[0] if e.d.nome == "borne_continuite" else re.sub(r"\.\d+$", "", tag) if False else tag
             if base in vistos:

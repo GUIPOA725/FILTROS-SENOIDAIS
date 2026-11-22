@@ -48,24 +48,33 @@ def construir(proj, arr, cod, versao):
     # ------------------------------------------------------------------ força (rotacionado: corrente da esquerda p/ direita)
     fp = Q.folio("Força – filtro senoidal", "FORCA")
     fases = ("U", "V", "W")
-    # bornes de entrada X1 (do inversor) e de saída X2 (para o motor) em coluna vertical
-    x1 = [fp.el("borne_continuite", 120 + 20 * k, 120, f"-X1:{f}1", inf("Borne de potência entrada (inversor)")) for k, f in enumerate(fases)]
-    fp.texto(70, 112, "-X1", 9, "#1f4e8c")
-    fp.texto(100, 80, "do inversor (cabo blindado)", 7, "#555555")
-    xL1 = 300
-    L1 = fp.el("reator3", xL1, 300, "-L1", inf(f"Indutor do filtro {l1.l_uh:.0f} µH/fase", ref="projeto FSEN",
-                                                  dados=f"{l1.l_uh:.0f}uH-{l1.i_nom_a:.0f}A"))
-    # X1 → L1 (entradas no topo do reator)
+    # ---- fora do painel: inversor e cabo -W1 (em cima, à esquerda)
+    ext = dict(externo=True)
+    inv = fp.el("inversor", 140, 50, "-U1", dict(ext, designation=f"Inversor {pd.get('inversor') or ''}".strip(),
+                                                  dados=f"fs = {proj.fs_hz / 1000:g} kHz fixa"))
+    w1 = fp.el("cabo3", 140, 130, "-W1", dict(ext, designation="Cabo blindado inversor → filtro"))
+    x1 = [fp.el("borne_continuite", 120 + 20 * k, 200, f"-X1:{f}1", inf("Borne de potência entrada (inversor)")) for k, f in enumerate(fases)]
+    x1pe = fp.el("borne_continuite", 180, 200, "-X1:PE", inf("Borne PE entrada"))
+    fp.texto(76, 192, "-X1", 9, "#1f4e8c")
     for k in range(3):
-        fp.fio(x1[k].term("s"), L1.term("n", k), potencia=True, secao=s_pot, marca="PT", ym=190 + 8 * k)
+        fp.fio(inv.term("s", k), w1.term("n", k), potencia=True, marca="PT")
+        fp.fio(w1.term("s", k), x1[k].term("n"), potencia=True, marca="PT")
+    fp.fio(inv.term("s", 3), w1.term("n", 3), marca="VD/AM", cor="#2e7d32")
+    fp.fio(w1.term("s", 3), x1pe.term("n"), marca="VD/AM", cor="#2e7d32")
+    fp.texto(250, 140, f"-W1  3×{s_pot or '?'} mm² + PE, blindado, blindagem aterrada 360° nas duas pontas", 6.5, "#555555")
+    xL1 = 300
+    L1 = fp.el("reator3", xL1, 330, "-L1", inf(f"Indutor do filtro {l1.l_uh:.0f} µH/fase", ref="projeto FSEN",
+                                                  dados=f"{l1.l_uh:.0f}uH-{l1.i_nom_a:.0f}A"))
+    for k in range(3):
+        fp.fio(x1[k].term("s"), L1.term("n", k), potencia=True, secao=s_pot, marca="PT", ym=250 + 8 * k)
     nos_saida = []
     for k in range(3):
-        n_ = fp.no(L1.term("s", k)[1], 430 + 12 * k)
+        n_ = fp.no(L1.term("s", k)[1], 460 + 12 * k)
         fp.fio(L1.term("s", k), n_.term("n"), potencia=True, secao=s_pot, marca="PT")
         nos_saida.append(n_)
     if lcl:
         # -L2 girado 180°: entra por baixo (vindo dos nós de saída do -L1) e sai por cima para o -X2 – sem cruzar os símbolos
-        L2 = fp.el("reator3", 640, 300, "-L2", inf(f"Indutor de saída {l2.l_uh:.0f} µH/fase", ref="projeto FSEN",
+        L2 = fp.el("reator3", 600, 330, "-L2", inf(f"Indutor de saída {l2.l_uh:.0f} µH/fase", ref="projeto FSEN",
                                                        dados=f"{l2.l_uh:.0f}uH"), ori=2)
         ent = sorted([L2.term("s", k) for k in range(3)], key=lambda t: "UVW".index(t[4]) if t[4] in "UVW" else 0)
         sai = sorted([L2.term("n", k) for k in range(3)], key=lambda t: "XYZ".index(t[4]) if t[4] in "XYZ" else 0)
@@ -74,12 +83,32 @@ def construir(proj, arr, cod, versao):
         orig_x2 = sai
     else:
         orig_x2 = [nos_saida[k].term("n") for k in range(3)]
-    x2 = [fp.el("borne_continuite", 860 + 20 * k, 120, f"-X2:{f}2", inf("Borne de potência saída (motor)")) for k, f in enumerate(fases)]
-    fp.texto(810, 112, "-X2", 9, "#1f4e8c")
-    fp.texto(840, 80, "para o motor", 7, "#555555")
+    # ---- saída X2 (lado direito, dentro do painel) → cabo -W2 → motor (fora do painel, à direita)
+    x2 = [fp.el("borne_continuite", 760 + 20 * k, 330, f"-X2:{f}2", inf("Borne de potência saída (motor)")) for k, f in enumerate(fases)]
+    x2pe = fp.el("borne_continuite", 820, 330, "-X2:PE", inf("Borne PE saída"))
+    fp.texto(716, 322, "-X2", 9, "#1f4e8c")
+    w2 = fp.el("cabo3", 920, 420, "-W2", dict(ext, designation="Cabo blindado filtro → motor"))
+    mot = fp.el("motor3", 920, 520, "-M", dict(ext, designation="Motor",
+                                              dados=f"{pd.get('motor_cv') or '?'} cv {pd.get('motor_corrente_a') or '?'} A"))
+    if lcl:     # -L2 sai por cima: entra no -X2 por cima; cabo do motor sai por baixo do -X2
+        for k in range(3):
+            fp.fio(orig_x2[k], x2[k].term("n"), potencia=True, secao=s_pot, marca="PT", ym=260 + 8 * k)
+            fp.fio(x2[k].term("s"), w2.term("n", k), potencia=True, marca="PT", ym=360 + 8 * k)
+        fp.fio(x2pe.term("s"), w2.term("n", 3), marca="VD/AM", cor="#2e7d32", ym=384)
+        pe_x2 = x2pe.term("n")
+    else:       # LC: fios do -L1 chegam por baixo do -X2; cabo do motor sai por cima e desce até o motor
+        for k in range(3):
+            a_ = orig_x2[k]
+            fp.fio(a_, x2[k].term("s"), potencia=True, secao=s_pot, marca="PT", ym=a_[2])
+            fp.fio(x2[k].term("n"), w2.term("n", k), potencia=True, marca="PT", ym=292 - 8 * k)
+        fp.fio(x2pe.term("n"), w2.term("n", 3), marca="VD/AM", cor="#2e7d32", ym=268)
+        pe_x2 = x2pe.term("s")
     for k in range(3):
-        a_ = orig_x2[k]
-        fp.fio(a_, x2[k].term("s"), potencia=True, secao=s_pot, marca="PT", ym=a_[2] if not lcl else 200 + 8 * k)
+        fp.fio(w2.term("s", k), mot.term("n", k), potencia=True, marca="PT")
+    fp.fio(w2.term("s", 3), mot.term("n", 3), marca="VD/AM", cor="#2e7d32")
+    fp.texto(870, 600, f"-W2  3×{s_pot or '?'} mm² + PE blindado", 6.5, "#555555")
+    fp.texto(870, 612, f"comprimento {pd.get('cabo_m') or '?'} m", 6.5, "#555555")
+    fp.ret(70, 170, 790, 480, "+PAINEL – filtro senoidal")
     # banco de capacitores: n_por_ramo blocos de 3 capacitores (1 por ramo) em paralelo
     nb = b.n_por_ramo
     dados_c = f"3× {b.uf_unit:g} µF {b.v_unit:g} V"
@@ -88,7 +117,7 @@ def construir(proj, arr, cod, versao):
     passo = min(80, (W_PX - 160 - 160) / max(nb, 1))
     for c in range(nb):
         cx = 180 + c * passo
-        cp = fp.el("cap3", cx, 530, f"-C{c + 1}", inf(f"Capacitores {dados_c} em {lig} (1 por ramo){' + resistor de descarga' if b.r_descarga_mohm else ''}",
+        cp = fp.el("cap3", cx, 560, f"-C{c + 1}", inf(f"Capacitores {dados_c} em {lig} (1 por ramo){' + resistor de descarga' if b.r_descarga_mohm else ''}",
                                                     fab=b.fabricante, ref=b.pn, qtd=3, dados=dados_c), chave=c)
         caps.append(cp)
         pe_tag[cx] = cp.label
@@ -98,25 +127,27 @@ def construir(proj, arr, cod, versao):
         for c in range(1, nb):
             fp.fio(caps[c - 1].term("n", k), caps[c].term("n", k), potencia=True, secao=s_jmp, marca="PT", ym=yt - 8 - 5 * (2 - k))
     # barra PE
-    xpe1, xpe2 = 520, 760                     # descidas do PE das massas dos indutores (fora da área do banco)
-    pe_pts = sorted({30, W_PX - 30, xpe1} | ({xpe2} if lcl else set()))
+    xpe1, xpe2 = 520, 690                     # descidas do PE das massas dos indutores (fora da área do banco)
+    pe_pts = sorted({110, 840, xpe1, 180, 820} | ({xpe2} if lcl else set()))
     prev, nos_pe = None, {}
     for x in pe_pts:
-        n_ = fp.no(x, 640, barra="-PE")
+        n_ = fp.no(x, 645, barra="-PE")
         nos_pe[x] = n_
         if prev is not None:
             fp.fio(prev.term("n"), n_.term("n"), marca="VD/AM", secao=s_pe, potencia=True)
         prev = n_
-    fp.texto(8, 636, "-PE BARRA PE", 8, "#2e7d32")
+    fp.texto(76, 641, "-PE", 8, "#2e7d32")
     for xr, tg in ((xpe1, "-L1"),) + (((xpe2, "-L2"),) if lcl else ()):
-        nm = fp.no(xr, 380, pe_de=tg)
+        nm = fp.no(xr, 410, pe_de=tg)
         fp.fio(nm.term("n"), nos_pe[xr].term("n"), marca="VD/AM", secao=s_pe, potencia=True)
-        fp.texto(xr + 4, 376, f"PE massa {tg}", 6, "#2e7d32")
-    fp.texto(160, 618, f"Banco: {b.n_total} × {b.uf_unit:g} µF / {b.v_unit:g} V {b.fabricante} ({b.pn}), ligação {lig}, "
+        fp.texto(xr + 4, 406, f"PE massa {tg}", 6, "#2e7d32")
+    fp.fio(x1pe.term("s"), nos_pe[180].term("n"), marca="VD/AM", secao=s_pe, potencia=True)
+    fp.fio(pe_x2, nos_pe[820].term("n"), marca="VD/AM", secao=s_pe, potencia=True)
+    fp.texto(160, 625, f"Banco: {b.n_total} × {b.uf_unit:g} µF / {b.v_unit:g} V {b.fabricante} ({b.pn}), ligação {lig}, "
              f"C eq. Y = {b.c_y_uf:g} µF/fase; descarga {b.r_descarga_mohm * 1000:.0f} kΩ em cada capacitor", 6.5, "#555555")
     if proj.amortecimento:
         am = proj.amortecimento
-        fp.texto(160, 628, f"Amortecimento: {am.tipo} – R {am.r_ramo_ohm:.2f} Ω {am.p_nominal_w:g} W por ramo (ver memorial)", 6.5, "#c62828")
+        fp.texto(160, 634, f"Amortecimento: {am.tipo} – R {am.r_ramo_ohm:.2f} Ω {am.p_nominal_w:g} W por ramo (ver memorial)", 6.5, "#c62828")
 
     # ------------------------------------------------------------------ comando: ventilação e alarme
     fc = Q.folio("Comando – ventilação e alarme", "COMANDO")
@@ -174,7 +205,7 @@ def gerar(proj, arr, pasta, cod, versao, log=print):
              dict(tag="-W4", de="-X3:3/4", para="CLP/inversor do cliente", formacao="2×1,0 mm²", funcao="Alarme de temperatura do indutor")]
     funcoes = {"-L1": "INDUTOR DO FILTRO", "-L2": "INDUTOR DE SAÍDA", "-F1": "AUXILIAR 220 V", "-B0": "TERMOSTATO DO PAINEL",
                "-B1": "TERMOSTATO DO INDUTOR", "-X1": "ENTRADA – DO INVERSOR", "-X2": "SAÍDA – PARA O MOTOR"}
-    massas = ["-L1"] + (["-L2"] if proj.l2 is not None else []) + ["PORTA", "PLACA DE MONTAGEM", "ESTRUTURA DO PAINEL", "-X1:PE", "-X2:PE"]
+    massas = ["-L1"] + (["-L2"] if proj.l2 is not None else []) + ["PORTA", "PLACA DE MONTAGEM", "ESTRUTURA DO PAINEL"]
     et = ET.gerar(Q, pasta, cod, cabos_externos=cabos, versao=versao, titulo=Q.titulo, funcoes=funcoes,
                   pe_massas=[m for m in massas if m not in ("-L1", "-L2")],
                   secao_pe=_sec(arr.cabos, "terra", "16"),

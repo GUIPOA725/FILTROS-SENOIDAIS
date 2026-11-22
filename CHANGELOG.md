@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.16.2 – 2026-11-21 (desenho no padrão gráfico do EPLAN)
+- PDF dos esquemas (três filtros) redesenhado no padrão gráfico dos projetos EPLAN da Electric (AGCO): traço fino uniforme de 0,25 mm; barramentos em azul com ponto de derivação vazado; ponto preto só onde há derivação real (3+ condutores); seção marcada com traço oblíquo e texto vermelho só no último condutor do grupo (sem texto ao longo de cada fio); número do borne junto de cada terminal (1/2, 3/4, 5/6, A1/A2…); tag à ESQUERDA do símbolo em azul, dados embaixo em preto, referência cruzada em verde; neutro em azul, PE em verde; fiação de comando com nota geral de seção e cores (como no EPLAN) em vez de marcar fio a fio; moldura tracejada de local (+PAINEL).
+- **Filtro senoidal: inversor (-U1), cabo blindado de entrada (-W1), cabo blindado de saída (-W2) e motor (-M) desenhados** na folha de força, fora da moldura do painel, com formação do cabo, comprimento, blindagem aterrada 360° e dados do motor; bornes PE de entrada/saída (-X1:PE, -X2:PE) ligados à barra PE. Os elementos externos não entram na DE/PARA nem nas plaquetas (vão na lista de cabos externos).
+- Símbolos novos: inversor de frequência, motor trifásico, cabo multipolar blindado.
+
 ## v1.16.1 – 2026-11-21 (lista DE/PARA e etiquetas – todos os filtros)
 - **Lista DE/PARA** (`fsen/eplan/etiquetas.py`) gerada do próprio esquema, para filtro senoidal, banco dessintonizado e filtro sintonizado: um registro por FIO FÍSICO – nº do fio (o do desenho ou folha.sequência), DE (tag:borne), PARA (tag:borne ou barra), seção e cor do condutor desenhado, tipo (força / comando / PE), folhas.
   - Monta os fios pela topologia do desenho: cada ponto de ligação é absorvido pelo borne vizinho de maior seção (onde os terminais se encontram); barramentos de cobre (-R2/-S2/-T2, -PE2/-PE) em estrela; potenciais que continuam em outra folha (L220/N220 do trafo de comando) ligados entre folhas.
