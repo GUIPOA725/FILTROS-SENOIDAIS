@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.23.4 – 2026-11-22 (teste de fogo: harmônicas que só existem em gráfico)
+- No teste de fogo a IA avisou que os espectros de harmônicas do relatório RTM só existem como FIGURA (sem tabela) e ficaram de fora. Agora a plataforma extrai as figuras dos PDFs anexados e manda a IA abrir e ler os valores pela escala do gráfico (THD e cada ordem), registrando nas observações que foram lidos da figura.
+- Início do catálogo de dimensões reais dos componentes (dados/dimensoes_componentes.yaml), cada medida com a fonte do catálogo – base do novo desenho 2D/3D do painel.
+
 ## v1.23.3 – 2026-11-22 (teste de fogo pela tela – Panatlântica com o relatório original)
 - **Bug corrigido**: com o relatório original (banco de 300 kvar em operação durante a medição, FP sem o banco não medido) a leitura dava "25 kvar" – o kvar pelo FP não era calculável e o banco existente era subtraído de zero. Agora é SUBSTITUIÇÃO no mesmo porte (300 kvar) e, com folga Electric, 8 × 50 = 400 kvar (igual ao projeto real).
 - A marca pedida no e-mail ("componentes todos Schneider") é lida pela IA e já vem selecionada em "Marca dos componentes".

@@ -237,6 +237,47 @@ def _claude_cli():
     return c
 
 
+def _figuras_pdf(anexos, max_fig=30, min_kb=25):
+    """v1.23.4: extrai as figuras (gráficos de espectro, tendências) dos PDFs anexados para a IA LER os valores –
+    relatórios de QEE costumam trazer as harmônicas só em gráfico. Devolve [(caminho_png, legenda)]."""
+    import tempfile
+    out = []
+    try:
+        import pypdf
+    except Exception:
+        return out
+    dst = os.path.join(tempfile.gettempdir(), "fsen_figuras_pdf")
+    os.makedirs(dst, exist_ok=True)
+    for a in anexos or []:
+        if not a.lower().endswith(".pdf"):
+            continue
+        try:
+            r = pypdf.PdfReader(a)
+        except Exception:
+            continue
+        base = os.path.splitext(os.path.basename(a))[0][:40]
+        for ip, pg in enumerate(r.pages, 1):
+            try:
+                imgs = list(pg.images)
+            except Exception:
+                continue
+            for k, im in enumerate(imgs):
+                if len(im.data) < min_kb * 1024:
+                    continue
+                ext = os.path.splitext(im.name)[1] or ".png"
+                cam = os.path.join(dst, f"{base}_p{ip:02d}_{k}{ext}")
+                try:
+                    with open(cam, "wb") as fh:
+                        fh.write(im.data)
+                    txt = (pg.extract_text() or "").strip().replace("\n", " ")
+                    out.append((cam, f"{os.path.basename(a)} – página {ip} ({txt[:120]})"))
+                except Exception:
+                    pass
+                if len(out) >= max_fig:
+                    return out
+    return out
+
+
 def _ler_via_claude_code(pc, texto_email, anexos, historico_txt, instrucao=None, ferramenta=None):
     """Usa o Claude Code instalado no computador, logado na ASSINATURA do Claude (Pro/Max/Team) – sem chave de API.
     Equivale a: claude -p --model <m> --effort <e> --output-format json --json-schema <esquema>."""
@@ -246,8 +287,14 @@ def _ler_via_claude_code(pc, texto_email, anexos, historico_txt, instrucao=None,
         raise RuntimeError("Claude Code não encontrado. Instale (claude.com/claude-code) e faça login com sua conta Claude.")
     instrucao = instrucao or INSTRUCAO
     esquema = (ferramenta or _ferramenta())["input_schema"]
-    pastas = sorted({os.path.dirname(os.path.abspath(a)) for a in anexos or []})
+    figs = _figuras_pdf(anexos)
+    pastas = sorted({os.path.dirname(os.path.abspath(a)) for a in list(anexos or []) + [f for f, _ in figs]})
     lista = "\n".join(f"- {os.path.abspath(a)}" for a in anexos or [])
+    if figs:
+        lista += ("\n\nFIGURAS EXTRAÍDAS DOS PDFs (gráficos – espectros de harmônicas, tendências). Quando o texto não trouxer os "
+                  "valores por ordem harmônica, ABRA estas imagens com Read e leia os valores pela escala do gráfico (THD e cada "
+                  "ordem, tensão em % e corrente em A ou %), dizendo em `observacoes` que foram lidos da figura:\n"
+                  + "\n".join(f"- {os.path.abspath(f)}  [{leg}]" for f, leg in figs))
     prompt = (f"{instrucao}\nResponda SOMENTE com o JSON do pedido (esquema fornecido).\n\n"
               f"Arquivos anexos (leia PDF/imagens com a ferramenta Read; o texto do Word/PDF já vai abaixo):\n{lista or '(nenhum)'}\n\n"
               f"TEXTO DOS ANEXOS:\n{_texto_anexos(anexos)}\n\nE-MAIL:\n{texto_email}\n\n{historico_txt}")
