@@ -106,3 +106,13 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 20:10
 "sobre as distancias ok para u mpainel de 2 metros de largura, vc calculou todas distencias que os componentes exigem? se sim e se isso ta no codigo eu aceito"
 → resposta: ainda NÃO todas (REQ-CMP-003 PARCIAL) – reator (FEM) e capacitor ABB (catálogo) sim; contatoras, seccionadoras, disjuntor geral e capacitor Schneider ainda com folga padrão.
+
+### 20:22–20:24
+"consegue me mandar um relatorio consolidado da abb?" / "o capacitor da abb de 25kvar 525 v é maior que schneider e epcos tdk?" / "me manda o relatorio consolidado da schneider tb"
+### ~20:30 (voz)
+"Esses estudos você fez usando a plataforma local rodando ou não?" (resposta: não – ambiente de teste)
+"...a gente implementou a IA, primeiramente como ajuda. Na plataforma você também deve ter isso já implementado, um AI como ajuda. Mas eu preciso de algo a mais: caso fique muito difícil para o pessoal operar, você também possa fazer comandos. Se a pessoa falar digitando 'eu quero que você faça o filtro senoidal, vá na pasta tal, lá tem todas as informações e me gere os resultados salvando na pasta tal'. Porque muitas vezes o pessoal que vai operar não desenvolveu, ficam cansados, não têm muita paciência."
+→ REQ-IA-010.
+### 20:38
+"Outra coisa , se o meu colega chat um chat no Claude, ele consegue comandar ou vc a plataforma no Claude dele? Existe alguma forma de ter um chat que eu possa passar para ele e se ele precisar digitar e vc assume em casos graves?"
+→ REQ-IA-011.
