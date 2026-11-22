@@ -133,7 +133,7 @@ def escolher_capacitor(ped, Q_alvo, nr, Vcap=None):
         from . import fabricantes as FB
         uc = FB.unidades_cap(ped.marca, Vcap)
         if uc:
-            Vcap, serie = uc
+            Vcap, serie = uc[0], tuple(sorted(uc[1], reverse=True))   # prefere unidades maiores (menos capacitores por estágio)
     fq = fator_q(ped.tensao_v, Vcap, nr)
     melhor = None
     for rk, u in enumerate(serie):

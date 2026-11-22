@@ -96,7 +96,7 @@ def aplicar_projeto(P, ped, res):
 
     def put(tag, cod, descr_extra=""):
         if tag in D and cod:
-            D[tag]["fab"] = marca
+            D[tag]["fab"] = marca if cod.startswith(marca) or not cod.split() else cod.split()[0].split("/")[0]
             D[tag]["cod"] = cod
             if descr_extra:
                 D[tag]["descr"] = D[tag]["descr"] + descr_extra

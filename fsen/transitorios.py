@@ -395,10 +395,13 @@ def recomendar_contatora(casos, par):
     s1 = next((c for c in casos if c["codigo"] == "S1"), None)
     irms = s1["metricas"]["i_rms"] if s1 else (s.get("I_cap_rms") or s["I60"])
     ie_ac1 = 1.15 * max(irms, s["I60"])
-    ok_pico = pior <= 30 * s["In_cap"]
-    return dict(comum_serve=bool(ok_pico), pico_pior_A=round(pior, 1), lim_pico_A=round(30 * s["In_cap"], 1),
+    lim = min(s["cont_pico"], 30 * s["In_cap"]) if s.get("cont_pico") else 30 * s["In_cap"]
+    ok_pico = pior <= lim
+    nome = s["cont"].split("(")[0].strip()
+    return dict(comum_serve=bool(ok_pico), pico_pior_A=round(pior, 1), lim_pico_A=round(lim, 1),
                 ie_ac1_min_A=round(ie_ac1, 1),
-                texto=(f"Contatora COMUM (AC-3/AC-1) serve: pior pico de manobra {pior:.0f} A ≤ 30·In do capacitor ({30 * s['In_cap']:.0f} A) – "
+                texto=(f"Contatora COMUM (AC-3/AC-1) serve: pior pico de manobra {pior:.0f} A ≤ {lim:.0f} A "
+                       f"({'catálogo ' + nome + ' e ' if s.get('cont_pico') else ''}30·In do capacitor) – "
                        f"escolher pela corrente AC-1 ≥ {ie_ac1:.0f} A (1,15 × {max(irms, s['I60']):.0f} A RMS com harmônicas). "
                        "Base: Schneider FAQ FA408331 e ABB 1SBC101140C0203 (reator em série limita o inrush)."
                        if ok_pico else
