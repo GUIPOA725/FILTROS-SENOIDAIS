@@ -43,3 +43,15 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
   consolidado sem "NÃO INCLUÍDO". Pendentes críticos: REA-002 (reator), GER-003 (3D no senoidal), PNL-002 (3 medidas),
   REF-001 (referências não usadas), SEG-007 (energia incidente – em desenvolvimento, módulo IEEE 1584 da Plataforma de Estudos
   identificado em GeradorProtecao/terceiros/arcflash, licença MIT).
+
+## Revisão – v1.24.3 – 2026-11-22 16:57
+- Requisitos: 91 | APROVADO 57 | ATENÇÃO 16 | REPROVADO 18
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261122_1652
+- Mudanças: REQ-REA-002 MELHOROU (REPROVADO→ATENÇÃO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEG-007, REQ-PNL-015, REQ-SEG-009, REQ-PNL-016, REQ-PNL-017, REQ-PNL-018, REQ-SEG-010, REQ-SEG-011, REQ-SEG-012, REQ-PNL-020, REQ-PNL-021
+- Decisão: pode publicar
+- Análise v1.24.3: rodada completa da Panatlântica (191 páginas no consolidado, todos os arquivos incluídos). Segurança: DJ geral,
+  barra única, NR-10 2026 e energia incidente atendidos; cabos e trafo de comando calculados. Próximo bloco (REQ-PNL-021/022,
+  REQ-GER-010): banco de componentes completo por marca (ABB/Schneider/padrão Panatlântica) até parafuso, terminal e torque,
+  e modelos 3D reais dos fabricantes.

@@ -1,5 +1,19 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.24.3 – 2026-11-22 (segurança NR-10 2026, energia incidente, disjuntor geral e comando calculados)
+- **Disjuntor geral -Q0 dentro do painel** com manopla rotativa externa, intertravamento da porta e cadeado (NR-10 10.4.1/10.6.5), calculado: In ≥ 1,30·ΣI dos capacitores, Icu ≥ Icc da barra, disparador LSI. Esquema, lista de material, 3D e checklist atualizados. Panatlântica: 800 A, Icu 36 kA.
+- **Trafo de comando calculado pela carga**: retenção de todas as bobinas, controlador, exaustores, sinaleiros e relé, mais o pior instante de manobra, com disjuntores de primário e secundário. Panatlântica: 630 VA.
+- **Cabos pela NBR 5410**: capacidade × fator de temperatura do ar dentro do painel × fator de agrupamento na canaleta. Panatlântica: 70 mm² nos estágios e 25 mm² do reator aos capacitores.
+- **Barramento geral único** atravessando as colunas, num compartimento com policarbonato (IPXXB, forma 2b); barra PE com cordoalhas; pinos de aterramento temporário; indicador de presença de tensão; zona de comando separada.
+- **Energia incidente IEEE 1584-2018** (módulo arcflash da Plataforma de Estudos, licença MIT): estudo por cenário (entrada, barramento, estágio), comparação com e sem disjuntor geral, etiqueta de arco para a porta. Na Panatlântica o barramento fica com 2,0 cal/cm² com o disjuntor geral, contra 19,9 cal/cm² sem ele. O tempo da proteção do cliente (500 ms) é premissa a confirmar.
+- **Nova NR-10** (Portaria MTE 737/2026, vigência 01/06/2027) aplicada já: checklist de projeto com Check na folha de normas.
+- **Painel 3D**:
+  - reator REAL (as mesmas peças do STEP do fabricante);
+  - disjuntor geral, comando, bornes, PE, retorno reator → capacitores e plaquetas com as tags do esquema;
+  - altura automática de 2200 mm quando 2000 mm não dá folga.
+- Reator: a busca agora inclui candidatos que cabem em colunas de 800 mm e avisa quando não cabe; comparação com o reator antigo é só referência (REQ-REF-003/004).
+- Gestão: 91 requisitos; conversa de 22/11 registrada literalmente em gestao/conversas; normas aplicáveis em gestao/NORMAS_APLICAVEIS.md.
+
 ## v1.24.2 – 2026-11-22 (painel montável + biblioteca de painéis aprovados)
 - **Componentes com a forma do catálogo** (envelope de catálogo, detalhes proporcionais): capacitor com friso, etiqueta, bloco de terminais e resistor de descarga; chave NH Fupact com base, tampa porta-fusíveis, janelas e punho; contatora TeSys escalonada com bornes, janela de indicação e A1/A2; reator com núcleo laminado, quadros em U zincados, tirantes, bobinas com enfaixamento, saídas em barra de cobre e caixa do termostato.
 - **Arranjo revisado como montador**:
