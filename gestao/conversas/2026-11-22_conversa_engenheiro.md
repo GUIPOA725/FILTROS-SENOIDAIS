@@ -55,3 +55,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 17:08 "Vc tá seguindo todas as normas da NR e IEC para este tipo de painel?" [REQ-SEG-014]
 - 17:09 "O ideal seria seguir todas as normas para montagem pois ele pode ser auditado em algum momento por cliente exigente, os 3 filtros na verdade isso vale para os 3" [REQ-SEG-014]
 - 17:03 "O barramento geral não fica mais seguro atrás da placa de montagem junto com indutores?…" [REQ-PNL-023] / 17:04 energia incidente simplificada [REQ-SEG-013] / 17:06 "O meu painel que é montagem livre é um 2b?" [REQ-PNL-024]
+- 17:10 "Sei que dá trabalho mas na época que fiz esse da panatlantica manualmente isso não foi exigido" [contexto do REQ-SEG-014: exigência nova dos clientes]
