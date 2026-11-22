@@ -26,6 +26,8 @@ barra (sobretensão × suportabilidade de inversores/cargas sensíveis), resisto
 from __future__ import annotations
 
 import math
+
+from . import checagem as CK
 import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -356,44 +358,57 @@ def avaliar(m, s, par, caso):
     out = []
     info = caso == "R1"                                   # religamento sem descarga: caso proibido – mostra a necessidade do bloqueio
     if caso == "D2":                                      # reacendimento: raro em contatora BT; mostra o risco (contatora sem reacendimento)
-        def add(comp, gr, val, lim, ok, nivel="crit"):
-            out.append((comp, gr, val, lim, bool(ok), "aviso"))
+        def add(comp, gr, val, lim, ok, nivel="crit", u=None):
+            out.append((comp, gr, val, lim, bool(ok), "aviso", u))
 
     if caso != "D2":
-        def add(comp, gr, val, lim, ok, nivel="crit"):
-            out.append((comp, gr, val, lim, bool(ok), "info" if info else nivel))
+        def add(comp, gr, val, lim, ok, nivel="crit", u=None):
+            out.append((comp, gr, val, lim, bool(ok), "info" if info else nivel, u))
 
     if s.get("cont_pico"):                                # pico máximo do catálogo (ex.: ABB A/AF – tabela de manobra de capacitor)
         add("Contatora", f"Pico de fechamento ({s['cont'].split('(')[0].strip()} – {s.get('cont_tipo')})", f"{m['ipk']:.0f} A",
-            f"≤ {s['cont_pico']:.0f} A (catálogo)", m["ipk"] <= s["cont_pico"])
+            f"≤ {s['cont_pico']:.0f} A (catálogo)", m["ipk"] <= s["cont_pico"], u=CK.utilizacao(m["ipk"], s["cont_pico"]))
     else:
         add("Contatora", f"Pico de fechamento ({s['cont'].split('(')[0].strip()})", f"{m['ipk']:.0f} A ({m['ipk'] / s['cont_In']:.1f}·Ie)",
-            f"≤ {s['cont_k']}·Ie = {s['cont_k'] * s['cont_In']:.0f} A", m["ipk"] <= s["cont_k"] * s["cont_In"])
+            f"≤ {s['cont_k']}·Ie = {s['cont_k'] * s['cont_In']:.0f} A", m["ipk"] <= s["cont_k"] * s["cont_In"],
+            u=CK.utilizacao(m["ipk"], s["cont_k"] * s["cont_In"]))
     i2f = I2T_FUSAO_GG.get(s["fus"]) or min((v for k, v in I2T_FUSAO_GG.items() if k >= s["fus"]), default=1e9)
     add("Fusível", f"I²t nos 10 ms (gG {s['fus']} A)", f"{m['i2t']:.0f} A²s", f"≤ 50 % do I²t de fusão ({0.5 * i2f:.0f} A²s)",
-        m["i2t"] <= 0.5 * i2f)
+        m["i2t"] <= 0.5 * i2f, u=CK.utilizacao(m["i2t"], 0.5 * i2f))
     lim_mag = K_DISJ_MAG * s["fus"] * math.sqrt(2)
     add("Disjuntor (se usado no lugar do fusível)", f"Pico × disparo magnético curva C {s['fus']} A", f"{m['ipk']:.0f} A",
-        f"< {lim_mag:.0f} A (10·In·√2)", m["ipk"] < lim_mag, "aviso")
+        f"< {lim_mag:.0f} A (10·In·√2)", m["ipk"] < lim_mag, "aviso", u=CK.utilizacao(m["ipk"], lim_mag))
     add("Capacitor", "Tensão de pico (IEC 60831-1: 2√2·Un)", f"{m['vcap_pk']:.0f} V", f"≤ {2 * math.sqrt(2) * s['Ucap']:.0f} V",
-        m["vcap_pk"] <= 2 * math.sqrt(2) * s["Ucap"])
+        m["vcap_pk"] <= 2 * math.sqrt(2) * s["Ucap"], u=CK.utilizacao(m["vcap_pk"], 2 * math.sqrt(2) * s["Ucap"]))
     add("Capacitor", "Corrente de pico (IEC 60831-1: 100·In)", f"{m['ipk']:.0f} A", f"≤ {100 * s['In_cap']:.0f} A",
-        m["ipk"] <= 100 * s["In_cap"])
+        m["ipk"] <= 100 * s["In_cap"], u=CK.utilizacao(m["ipk"], 100 * s["In_cap"]))
     if s["Isat"]:
         # o reator é especificado linear até Isat para as harmônicas em regime (IEC 60076-6); no inrush o fluxo tem componente
         # contínua que decai em poucos ciclos – passar de Isat aqui é ATENÇÃO (pede reator com Isat maior ou entreferro maior)
-        add("Reator", "Pico de corrente × linearidade (Isat)", f"{m['ipk']:.0f} A", f"≤ Isat {s['Isat']:.0f} A", m["ipk"] <= s["Isat"], "aviso")
+        add("Reator", "Pico de corrente × linearidade (Isat)", f"{m['ipk']:.0f} A", f"≤ Isat {s['Isat']:.0f} A", m["ipk"] <= s["Isat"], "aviso",
+            u=CK.utilizacao(m["ipk"], s["Isat"]))
     add("Barra", "Sobretensão de manobra (inversores podem desarmar)", f"{m['vbus_pu']:.2f} pu", f"≤ {V_BARRA_INV:.2f} pu",
-        m["vbus_pu"] <= V_BARRA_INV, "aviso")
+        m["vbus_pu"] <= V_BARRA_INV, "aviso", u=CK.utilizacao(m["vbus_pu"], V_BARRA_INV))
     add("Barra", "Sobretensão de manobra (equipamentos BT)", f"{m['vbus_pu']:.2f} pu", f"≤ {V_BARRA_MAX:.2f} pu",
-        m["vbus_pu"] <= V_BARRA_MAX)
+        m["vbus_pu"] <= V_BARRA_MAX, u=CK.utilizacao(m["vbus_pu"], V_BARRA_MAX))
     if caso.startswith("D"):
         # par de polos em série: rede em oposição à carga presa no Δ (a abertura polo a polo pode deixar a carga presa acima do
         # pico da tensão de linha). Limite conservador: metade da tensão suportável de impulso dos contatos abertos
         # (Uimp 6 kV – IEC 60947-4-1, contatoras BT usuais) para o par de polos.
         add("Contatora", "Tensão entre contatos após abrir (par de polos, entre fases)", f"{m['trv']:.0f} V "
-            f"(carga presa no capacitor {m['vcap_final']:.0f} V)", "≤ 3000 V (Uimp 6 kV ÷ 2 – IEC 60947-4-1)", m["trv"] <= 3000)
+            f"(carga presa no capacitor {m['vcap_final']:.0f} V)", "≤ 3000 V (Uimp 6 kV ÷ 2 – IEC 60947-4-1)", m["trv"] <= 3000,
+            u=CK.utilizacao(m["trv"], 3000))
     return out
+
+
+def check_criterio(x):
+    """(componente, grandeza, valor, limite, ok, nível, utilização) → APROVADO/ATENÇÃO/REPROVADO/INFO."""
+    u = x[6] if len(x) > 6 else None
+    return CK.check(x[4], u, x[5])
+
+
+def check_caso(c):
+    return CK.pior([check_criterio(x) for x in c["criterios"]])
 
 
 def recomendar_contatora(casos, par):
@@ -651,6 +666,9 @@ def figuras(est, pasta, cod):
             a.grid(alpha=0.3)
             a.legend(fontsize=7, loc="upper right")
         fig.suptitle(f"{cod} – {c['codigo']}: {c['nome']}", fontsize=10)
+        _st = check_caso(c)
+        _ruins = [x for x in c["criterios"] if check_criterio(x) in (CK.REPROVADO, CK.ATENCAO)]
+        CK.selo(ax[0], _st, "; ".join(f"{x[0]} {x[6]:.0f} %" if x[6] is not None else x[0] for x in _ruins)[:70])
         fig.tight_layout()
         arq = os.path.join(pasta, f"Transitorio_{c['codigo']}_{cod}.png")
         fig.savefig(arq, dpi=110)
@@ -666,16 +684,20 @@ def resumo_md(est, chk=None):
     L.append(f"- Descarga do capacitor: {est['t_descarga_s']:.0f} s até 75 V (IEC 60831-1: ≤ 180 s); "
              f"**bloqueio de religamento no controlador ≥ {math.ceil(est['t_religar_s'] / 10) * 10:.0f} s** (até 10 % de Un)")
     L.append(f"- {est['contatora']['texto']}")
-    L += ["", "| Caso | Descrição | Pico I (A) | I²t 10 ms (A²s) | Pico V cap (V) | Barra (pu) | Resultado |", "|---|---|---|---|---|---|---|"]
+    L += ["", "| Caso | Descrição | Pico I (A) | I²t 10 ms (A²s) | Pico V cap (V) | Barra (pu) | Check | Observação |",
+          "|---|---|---|---|---|---|---|---|"]
     for c in est["casos"]:
         m = c["metricas"]
-        crit = [x for x in c["criterios"] if not x[4] and x[5] == "crit"]
-        av = [x for x in c["criterios"] if not x[4] and x[5] == "aviso"]
-        inf = [x for x in c["criterios"] if not x[4] and x[5] == "info"]
-        st = ("❌ " + "; ".join(f"{x[0]}: {x[1]} {x[2]} ({x[3]})" for x in crit)) if crit else \
-             ("ℹ️ caso proibido – exige bloqueio de religamento" if inf else ("⚠️ " + "; ".join(f"{x[0]}: {x[2]} ({x[3]})" for x in av)) if av else "✅")
+        st = check_caso(c)
+        ruins = [x for x in c["criterios"] if check_criterio(x) in (CK.REPROVADO, CK.ATENCAO)]
+        if st == CK.INFO:
+            obs = "caso proibido mostrado de propósito – exige bloqueio de religamento no controlador"
+        else:
+            obs = "; ".join(f"{x[0]}: {x[2]} ({x[3]}){'' if x[6] is None else f' – {x[6]:.0f} %'}" for x in ruins) or "dentro de todos os critérios"
         L.append(f"| {c['codigo']} | {c['nome']} | {m.get('ipk', m.get('i_rms', 0)):.0f} | {m.get('i2t', 0):.0f} | "
-                 f"{m.get('vcap_pk', 0):.0f} | {m.get('vbus_pu', 0):.2f} | {st} |")
+                 f"{m.get('vcap_pk', 0):.0f} | {m.get('vbus_pu', 0):.2f} | {CK.texto(st)} | {obs} |")
+    L += ["", "Check: APROVADO (utilização < 90 % do limite), ATENÇÃO (90–100 % ou critério de aviso violado), "
+          "REPROVADO (passa do limite obrigatório), INFO (caso mostrado de propósito)."]
     L.append("")
     L.append("**Status do estudo de transitórios: " + status(est, chk) + "**")
     return "\n".join(L) + "\n"
@@ -708,16 +730,18 @@ def planilha(est, chk, arq):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Casos"
-    ws.append(["Caso", "Descrição", "Componente", "Grandeza", "Valor", "Limite", "OK", "Nível"])
+    ws.append(["Caso", "Descrição", "Componente", "Grandeza", "Valor", "Limite", "Utilização (%)", "Check", "Nível do critério"])
     for c in est["casos"]:
         for x in c["criterios"]:
-            ws.append([c["codigo"], c["nome"], x[0], x[1], x[2], x[3], "sim" if x[4] else "NÃO", x[5]])
+            u = x[6] if len(x) > 6 else None
+            ws.append([c["codigo"], c["nome"], x[0], x[1], x[2], x[3], None if u is None else round(u, 1), check_criterio(x),
+                       {"crit": "obrigatório", "aviso": "aviso", "info": "informativo"}.get(x[5], x[5])])
     ws2 = wb.create_sheet("Python x ATP")
-    ws2.append(["Caso", "Grandeza", "Unidade", "Python", "ATP", "Dif (%)", "Tolerância (%)", "Convergiu"])
+    ws2.append(["Caso", "Grandeza", "Unidade", "Python", "ATP", "Dif (%)", "Tolerância (%)", "Check"])
     for x in (chk or {}).get("casos", []):
         for y in x["comparacao"]:
             ws2.append([x["caso"], y["grandeza"], y["unidade"], y["python"], y["atp"], y["dif_pct"], y["tolerancia_pct"],
-                        "sim" if y["convergiu"] else "NÃO"])
+                        CK.APROVADO if y["convergiu"] else CK.REPROVADO])
         if not x["comparacao"]:
             ws2.append([x["caso"], x.get("erro") or ("ATP não rodado" if not x["rodou"] else ""), "", "", "", "", "", ""])
     ws3 = wb.create_sheet("Parâmetros")
@@ -726,6 +750,8 @@ def planilha(est, chk, arq):
     for s_ in par["estagios"]:
         ws3.append([f"Estágio {s_['i']}", f"L {s_['L'] * 1e6:.1f} µH", f"R {s_['R'] * 1e3:.2f} mΩ", f"C Δ {s_['Cd'] * 1e6:.1f} µF",
                     f"Rdesc {s_['Rdesc'] / 1e3:.0f} kΩ", f"fusível {s_['fus']} A", s_["cont"]])
+    for w_ in (ws, ws2):
+        CK.colorir_planilha(w_)
     wb.save(arq)
     return arq
 

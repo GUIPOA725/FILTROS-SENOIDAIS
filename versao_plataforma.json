@@ -1,5 +1,5 @@
 {
-  "versao": "1.21.2",
+  "versao": "1.22.0",
   "data": "2026-11-22",
-  "resumo": "Espectros de harmônicas sempre com a coluna THD"
+  "resumo": "Coluna de CHECK (APROVADO / ATENÇÃO / REPROVADO, com utilização %) em tabelas, planilhas e gráficos de resultados"
 }

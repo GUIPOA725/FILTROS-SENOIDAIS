@@ -216,9 +216,11 @@ def memorial(ped, res, grupos, inds, arq, figs, versao=""):
     lin = []
     for i, e in enumerate(E):
         fs = e["faixa_sintonia"]
+        from . import checagem as CK
+        _ck = CK.pior([CK.check(v <= l, CK.utilizacao(v, l)) for _, v, l in e["limites_cap"]])
         lin.append([i + 1] + [f"{v*100:.0f} % (≤ {l*100:.0f})" for _, v, l in e["limites_cap"]]
-                   + [f"{_f(fs['f_min'], 0)}–{_f(fs['f_max'], 0)} Hz"])
-    R.tab(["Est.", "V pico", "V rms", "I rms", "kvar", "Sintonia c/ tolerâncias"], lin, [0.5, 1.3, 1.3, 1.3, 1.3, 1.8])
+                   + [f"{_f(fs['f_min'], 0)}–{_f(fs['f_max'], 0)} Hz", CK.texto(_ck)])
+    R.tab(["Est.", "V pico", "V rms", "I rms", "kvar", "Sintonia c/ tolerâncias", "Check"], lin, [0.5, 1.2, 1.2, 1.2, 1.2, 1.6, 1.3])
     R.h1("Ressonância com a rede")
     R.p(f"Sem reator, o banco ressonaria com o transformador em h ≈ √(Scc/Q) = {_f(res['hr_sem_reator'], 2)} (usando a potência de "
         "placa dos capacitores) – é o motivo do reator.")

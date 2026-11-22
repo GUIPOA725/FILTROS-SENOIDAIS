@@ -117,7 +117,7 @@ def _fonte():
 def _limpa(s):
     """Texto seguro para o PDF: emojis → palavras, escapa <>&, **negrito** → <b>."""
     s = str(s)
-    for a, b in (("✅", "[OK]"), ("⚠️", "[ATENÇÃO]"), ("⚠", "[ATENÇÃO]"), ("❌", "[FALHA]"), ("🔎", ""), ("🛟", ""),
+    for a, b in (("✅", "APROVADO"), ("⚠️", "ATENÇÃO"), ("⚠", ""), ("❌", "REPROVADO"), ("✔", ""), ("✖", ""), ("ℹ️", ""), ("ℹ", ""), ("🔎", ""), ("🛟", ""),
                  ("→", "→"), ("\u200b", "")):
         s = s.replace(a, b)
     s = re.sub(r"[\U0001F300-\U0001FAFF\u2600-\u26FF\u2700-\u27BF]", "", s)
@@ -145,12 +145,28 @@ def _estilos(f, fb):
 
 
 def _tabela(linhas, E, larg=None, cab=True):
-    dados = [[Paragraph(_limpa(c), E["celb"] if (cab and i == 0) else E["cel"]) for c in r] for i, r in enumerate(linhas)]
+    from . import checagem as CK
+
+    def _p(c, i):
+        if cab and i == 0:
+            return Paragraph(_limpa(c), E["celb"])
+        ck = CK.de_texto(c) if len(str(c)) <= 40 else None
+        if ck:
+            return Paragraph(f'<b><font color="{CK.COR[ck]}">{_limpa(c)}</font></b>', E["cel"])
+        return Paragraph(_limpa(c), E["cel"])
+    dados = [[_p(c, i) for c in r] for i, r in enumerate(linhas)]
     t = Table(dados, colWidths=larg, repeatRows=1 if cab else 0)
     st = [("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#999999")), ("VALIGN", (0, 0), (-1, -1), "TOP"),
           ("LEFTPADDING", (0, 0), (-1, -1), 3), ("RIGHTPADDING", (0, 0), (-1, -1), 3)]
     if cab:
         st.append(("BACKGROUND", (0, 0), (-1, 0), AZUL))
+    for i, r in enumerate(linhas):
+        if cab and i == 0:
+            continue
+        for j, c in enumerate(r):
+            ck = CK.de_texto(c)
+            if ck and len(str(c)) <= 40:
+                st.append(("BACKGROUND", (j, i), (j, i), colors.HexColor(CK.COR_FUNDO[ck])))
     t.setStyle(TableStyle(st))
     return t
 

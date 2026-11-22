@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.22.0 – 2026-11-22 (coluna de CHECK em todo resultado)
+- Padrão novo (fsen/checagem.py): todo resultado de simulação/cálculo leva **Check** – **APROVADO** (utilização < 90 % do limite, verde), **ATENÇÃO** (90–100 % ou critério de aviso violado, âmbar), **REPROVADO** (acima do limite obrigatório, vermelho), **INFO** (caso mostrado de propósito, cinza) – sempre palavra + cor, com a **utilização %** (valor ÷ limite), como nos softwares de estudo (alertas marginal/crítico) e nas tabelas de verificação conforme/não conforme.
+- Transitórios: tabela do RESUMO com Check e observação (o que pegou e quanto %), planilha com Utilização (%) e Check pintados, comparação Plataforma × ATP com Check, e selo de Check em cada figura.
+- Banco/filtro: tabela "Verificações (check)" no RESUMO – limites do capacitor (IEEE 18), elevação de temperatura do reator, ressonância × harmônicas presentes e DHTv na barra (IEEE 519); memorial com coluna Check nos limites do capacitor.
+- Relatório consolidado: células de Check pintadas (verde/âmbar/vermelho/cinza).
+
 ## v1.21.2 – 2026-11-22 (espectros sempre com a coluna THD)
 - Padrão Electric: **todo espectro de harmônicas tem a coluna THD** (distorção harmônica total) antes das ordens. Banco/filtro: corrente no estágio e tensão no capacitor com THD em barra e valor; estágios iguais aparecem uma vez só ("Estágio(s) 1–8"). Filtro senoidal – comparação Python × ATP: barra THD de cada um à esquerda do espectro (o espectro principal já tinha a tabela de DHTv por ponto).
 

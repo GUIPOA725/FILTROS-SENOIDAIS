@@ -266,6 +266,45 @@ def resumo(ped, res, grupos, inds, cod):
         if d:
             L.append(f"- Reator {gi+1} ({len(grp)} pç): {d['N']} esp., coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {d['perdas']['total']:.0f} W, "
                      f"{d['massa_kg']['total']:.0f} kg, ΔT {d['termico']['elev_bobina_K']:.0f} K")
+    L += verificacoes_md(ped, res, grupos, inds)
     if res["avisos"]:
         L += ["", "Avisos:"] + [f"- {a}" for a in res["avisos"]]
     return "\n".join(L) + "\n"
+
+
+def verificacoes_md(ped, res, grupos, inds):
+    """v1.22.0: tabela de verificações com coluna de CHECK (aprovado/atenção/reprovado) – capacitor (IEEE 18),
+    sintonia × harmônicas presentes, reator (elevação de temperatura) e distorção de tensão na barra."""
+    from . import checagem as CK
+    L = ["", "## Verificações (check)", "", "| Item | Grandeza | Valor | Limite | Utilização | Check |", "|---|---|---|---|---|---|"]
+    vistos = set()
+    for i, e in enumerate(res["estagios"]):
+        ch = (e["codigo"], round(e["Q_kvar"], 1))
+        if ch in vistos:
+            continue
+        vistos.add(ch)
+        iguais = [str(k + 1) for k, x in enumerate(res["estagios"]) if (x["codigo"], round(x["Q_kvar"], 1)) == ch]
+        for nome, v, l in e["limites_cap"]:
+            u = CK.utilizacao(v, l)
+            L.append(f"| Capacitor est. {', '.join(iguais)} | {nome} (IEEE 18) | {v * 100:.0f} % | ≤ {l * 100:.0f} % | {u:.0f} % | "
+                     f"{CK.texto(CK.check(v <= l, u))} |")
+    lim_dt = {"B": 80, "F": 105, "H": 125}.get(str(ped.classe).upper(), 105)   # elevação média (IEC 60076-6, amb. 40 °C)
+    for gi, (grp, d) in enumerate(zip(grupos, inds)):
+        if d:
+            dt = d["termico"]["elev_bobina_K"]
+            u = CK.utilizacao(dt, lim_dt)
+            L.append(f"| Reator {gi + 1} | Elevação de temperatura da bobina (classe {ped.classe}) | {dt:.0f} K | ≤ {lim_dt} K | {u:.0f} % | "
+                     f"{CK.texto(CK.check(dt <= lim_dt, u))} |")
+    for x in res["varredura"]["picos"]:
+        hs = [h for h in (ped.harm_tensao_pct or {}) if ped.harm_tensao_pct.get(h, 0) > 0.3] + list(ped.harm_carga_a or {})
+        dist = min((abs(x - h) / h for h in hs), default=1.0)
+        st = CK.APROVADO if dist >= 0.10 else CK.ATENCAO
+        L.append(f"| Ressonância paralela | {x:.2f}ª × harmônicas presentes | {dist * 100:.0f} % da harmônica mais próxima | ≥ 10 % | – | "
+                 f"{CK.texto(st)} |")
+    if res.get("thd"):
+        lim = 8.0 if ped.tensao_v <= 1000 else 5.0                            # IEEE 519-2022 (≤ 1 kV: 8 %)
+        v = res["thd"]["com"]
+        u = CK.utilizacao(v, lim)
+        L.append(f"| Barra | DHTv com o banco (IEEE 519) | {v:.2f} % | ≤ {lim:g} % | {u:.0f} % | {CK.texto(CK.check(v <= lim, u))} |")
+    L += ["", "Check: APROVADO (< 90 % do limite), ATENÇÃO (90–100 % ou aviso), REPROVADO (acima do limite obrigatório)."]
+    return L
