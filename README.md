@@ -54,3 +54,10 @@ O programa roda no computador de cada um (copie o zip para o disco local, não r
 ## Limitações conhecidas (v1.0)
 Dimensões/massa de indutor e preços são estimativas até chegarem desenhos e cotações reais; Imax dos capacitores
 usa 1,3·In (IEC 60831) até ser preenchido com o datasheet. Ver `MELHORIAS.md`.
+
+
+## Regra para TODA versão nova (desde a v1.18.0)
+1. Todo campo/botão novo nasce com dica: `help=` no widget **ou** entrada em `fsen/ajuda.py` (DICAS). Tela nova ganha seu roteiro em `GUIAS`.
+2. Antes de publicar: `python validacao/verificar_ajuda.py` precisa dar **0 campo(s) sem dica** (senão não publica).
+3. O CHANGELOG é escrito para o usuário (o que mudou e como usar) – a primeira seção aparece em "Novidades desta versão" na ajuda e alimenta o assistente.
+4. Publicação: commit + push, zip em PROGRAMAS, arquivos alterados no FSEN_v1.7.1, CHANGELOG em ATUALIZACOES-MELHORIAS. Os colegas atualizam fechando a janela preta e abrindo o ABRIR_FSEN.bat de novo.

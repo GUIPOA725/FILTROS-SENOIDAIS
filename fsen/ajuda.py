@@ -135,6 +135,52 @@ DICAS = {
     "Carregar a planilha preenchida (.xlsx)": "Planilha de conferência devolvida pelo fornecedor.",
     "Carregar resultado_femm_FSEN.csv": "Resultado do FEMM rodado pelo script gerado pela plataforma (verificação independente).",
     "Projeto": "Projeto já gerado (mais recente primeiro).",
+    # ---- complementos (conferidos por validacao/verificar_ajuda.py)
+    "Modelo": "Nome do modelo da IA para este provedor. Deixe o padrão, a menos que o suporte indique outro.",
+    "Carregar exemplo A&W 293 A": "Preenche um pedido real de exemplo (A&W, 293 A) para treinar ou testar a plataforma.",
+    "Avaliar somente": "Limita a otimização às topologias marcadas (vazio = todas).",
+    "Capacitores a considerar / FORÇAR capacitor do estoque (vazio = todos)": "Restringe a escolha a estes capacitores – use para aproveitar estoque.",
+    "Ligação do banco de capacitores": "Estrela ou triângulo; vazio = a plataforma avalia as duas.",
+    "Perda de inserção máxima admitida @ f máx (%) – queda real de tensão na saída": "Queda de tensão máxima que o filtro pode causar "
+        "na maior frequência de saída (típico 3–5 %). Mais folga = indutor maior e melhor filtragem.",
+    "Usar a corrente informada pelo cliente (desmarcado = a Electric define pela carga: motor × FS + capacitores + cabo + ripple, "
+    "margem 10 %; o ferro vai pela corrente do inversor)": "Marcado: usa a corrente do pedido. Desmarcado (padrão Electric): calcula "
+        "pela carga real; o núcleo continua dimensionado pela corrente do inversor.",
+    "Construção do indutor (projeto de referência por elementos finitos)": "Tipo construtivo do indutor de referência mandado ao fornecedor.",
+    "Condutor do enrolamento (construção com 2 entreferros)": "Fio, barra ou chapa – muda perdas e temperatura.",
+    "Verificação independente + análise avançada do indutor (NGSolve 2D/3D, térmico; +4 a 8 min)": "Confere o indutor com um segundo "
+        "motor de elementos finitos e análise térmica. Recomendado antes de enviar ao fornecedor.",
+    "Estudo 1 / 2 / 3 camadas da bobina (+2 a 4 min)": "Compara bobinas de 1, 2 e 3 camadas (perdas × custo × temperatura).",
+    "➕ Adicionar esta pasta à lista": "Inclui a pasta escolhida na lista de pastas a importar para o histórico.",
+    "Pastas a importar": "Pastas de projetos antigos que alimentam o histórico de clientes.",
+    "Exportar planilha de clientes": "Gera Clientes_Fornecidos.xlsx com tudo o que já foi fornecido.",
+    "Fornecedor": "Nome do fornecedor da cotação.",
+    "Energia do indutor (J) – ver memorial": "Energia armazenada ½·L·I² do indutor (está no memorial) – base para comparar preços.",
+    "Salvar cotação": "Guarda a cotação no histórico para calibrar custos futuros.",
+    "catalogo.yaml": "Catálogo de componentes (capacitores, núcleos, preços). Edite com cuidado – vale para todos os projetos.",
+    "Salvar catálogo": "Grava o catálogo editado.",
+    "Nova melhoria / pedido": "Anote uma melhoria ou problema – vai para a lista do desenvolvedor (MELHORIAS.md).",
+    "Anexos: pedido, unifilar, placa do trafo, fotos, relatório de QEE, medições (xlsx, csv, txt, pdf, docx, imagens)": "Arraste tudo "
+        "o que tiver do cliente. Relatórios de QEE e exportações do Dranview/Fluke são lidos pela IA (médias, P95, máximos).",
+    "Gerar projeto completo (reatores, desenhos, CAD, memorial, planilhas ESTAGIO, especificações, ET painel, proposta)": "Gera o "
+        "pacote inteiro na pasta de projetos: reatores por elementos finitos, esquema elétrico, layout do painel, plaquetas, DE/PARA, "
+        "memorial, especificações para Cootrans/montadora e proposta.",
+    "Definir por": "Escolha como definir o capacitor: pela ressonância desejada ou pelo número de unidades.",
+    "Definir": "Escolha como definir o amortecimento: pelo Q desejado ou pelo valor do resistor.",
+    "Capacitores Cd por ramo (mesmo tipo)": "Capacitores do ramo de amortecimento (em série com Rd).",
+    "Rd": "Resistor de amortecimento: calcular automaticamente ou informar.",
+    "Carregar no ajuste manual": "Topologia da comparação a levar para o ajuste manual.",
+    "Carregar esta topologia": "Leva a topologia escolhida para o ajuste manual.",
+    "fs mínima avaliada (kHz)": "Menor frequência de chaveamento considerada nos critérios de projeto.",
+    "fs máxima avaliada (kHz)": "Maior frequência de chaveamento considerada nos critérios de projeto.",
+    "Salvar critérios": "Grava os critérios de projeto (valem para os próximos projetos).",
+    "Onde procurar": "Na pasta de projetos padrão ou em outra pasta.",
+    "Projeto (mais recente primeiro)": "Projeto a abrir.",
+    "🖥️ Abrir este ponto no PlotXY (ATP + Python) e no ATPDraw": "Gera os arquivos do ponto escolhido para conferir no ATP. "
+        "Os programas não são abertos automaticamente – abra-os você.",
+    "Navegar": "Liga a navegação por pastas para escolher sem digitar o caminho.",
+    "Entrar em": "Subpasta para entrar.",
+    "…ou unidade": "Troca de unidade/drive (C:, G: …).",
 }
 
 # ------------------------------------------------------------------------------------------------ 2. passo a passo
@@ -304,12 +350,28 @@ def perguntar(pergunta, tipo="senoidal", contexto=None, provedor=None):
     return resp
 
 
+def novidades(max_chars=900):
+    """Primeira seção do CHANGELOG (versão atual) – aparece na ajuda para os colegas saberem o que mudou."""
+    try:
+        ch = open(os.path.join(RAIZ, "CHANGELOG.md"), encoding="utf-8").read()
+        i = ch.index("## v")
+        j = ch.find("\n## v", i + 4)
+        sec = ch[i:j if j > 0 else None].strip()
+        return sec[:max_chars] + ("…" if len(sec) > max_chars else "")
+    except (OSError, ValueError):
+        return ""
+
+
 def painel(tipo, contexto=None, provedor=None):
     """Bloco da barra lateral: passo a passo + pergunta ao assistente + explicar o último erro."""
     import streamlit as st
     st.session_state["ajuda_tela"] = tipo
     sb = st.sidebar
     with sb.expander("🛟 Ajuda – passo a passo e assistente", expanded=st.session_state.get("ajuda_aberta", False)):
+        nov = novidades()
+        if nov:
+            st.markdown("**Novidades desta versão**")
+            st.caption(nov)
         st.markdown("**O que fazer nesta tela**")
         st.markdown("\n".join(f"{i + 1}. {p}" for i, p in enumerate(guia(tipo))))
         st.caption("Passe o mouse no **?** ao lado de cada campo para ver o que ele faz.")

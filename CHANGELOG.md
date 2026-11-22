@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.1 – 2026-11-22 (ajuda em todas as versões)
+- A ajuda passa a ser regra permanente: antes de publicar qualquer versão, `validacao/verificar_ajuda.py` confere que TODO campo e botão tem dica (hoje 142 dicas, 0 faltando) – versão com campo sem dica não é publicada.
+- Na 🛟 Ajuda da barra lateral aparece **"Novidades desta versão"** (o que mudou e como usar), para quem atualiza saber o que há de novo sem perguntar.
+- Completadas as dicas que faltavam (senoidal avançado, histórico/catálogo, ajuste manual, seletor de pastas).
+
 ## v1.18.0 – 2026-11-22 (ajuda embutida para usuários novos)
 - **Dica em todos os campos**: passar o mouse no "?" mostra o que o campo faz, de onde vem o valor e o padrão Electric (≈ 130 campos das telas de filtro senoidal, banco dessintonizado, filtro sintonizado, ajuste manual e conferência). As dicas ficam num só lugar (`fsen/ajuda.py`, DICAS) e entram automaticamente em qualquer campo novo que tenha o mesmo nome.
 - **🛟 Ajuda na barra lateral**: passo a passo da tela aberta (o que fazer agora e depois) + **assistente**: pergunta livre ("por que deu 400 kvar?", "o que é FD?"), respondida pela mesma IA da leitura de pedidos, sabendo a tela, o que foi preenchido, a justificativa/lacunas da leitura e o último erro. Sem IA, mostra as dicas relacionadas.
