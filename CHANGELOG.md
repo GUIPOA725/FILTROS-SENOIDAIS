@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.21.1 – 2026-11-22 (consolidado: TUDO dentro + conferência arquivo a arquivo)
+- Entram também **todas** as figuras e folhas de desenho (folhas do reator, corte 3D, folhas do esquema elétrico), os **decks ATP** de cada caso de transitório (texto completo) e todos os dados de entrada/resultados (JSON).
+- O índice virou **conferência**: cada arquivo da pasta aparece com "onde está neste relatório" (página do conteúdo, página do anexo, ou o PDF que tem o mesmo desenho do DXF/QET, a vista 3D do STEP e a tabela Plataforma × ATP dos .pl4). Se algum arquivo ficar de fora aparece **NÃO INCLUÍDO** e o log avisa.
+- Marcadores do PDF para cada documento, planilha e figura transcritos (navegação rápida). Cópias do mesmo arquivo em pastas diferentes (ex.: listas na pasta da montadora e em 05_Desenhos) entram uma vez só.
+- As pastas por fornecedor/análise continuam iguais – servem para mandar a cada um só o que é dele.
+- Exemplo Panatlântica ABB: 174 páginas, todos os 79 arquivos incluídos.
+
 ## v1.21.0 – 2026-11-22 (relatório consolidado com TUDO)
 - O relatório consolidado (00_RELATORIO_CONSOLIDADO_*.pdf) agora traz no corpo o **conteúdo completo** de tudo o que a plataforma gera fora de PDF, nos 3 tipos de filtro: planilha de transitórios (critérios por caso e comparação **Plataforma × ATP** grandeza a grandeza), proposta técnica e comercial, planilhas ESTAGIO, especificações do reator/indutor para cada fornecedor, ET do painel (Word e Excel), lista de material/bornes/cabos, lista DE/PARA, planilha de resultados medidos, resultados numéricos do reator (verificação independente e análise avançada) e os textos dos e-mails. Os PDFs continuam anexados com marcadores. Só ficam de fora, listados no índice, os arquivos de CAD/ATP (DXF, STEP, QET, .pl4). Exemplo Panatlântica ABB: de 76 para 91 páginas.
 

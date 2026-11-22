@@ -28,7 +28,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
+from reportlab.platypus import (Flowable, Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 
 AZUL = colors.HexColor("#1F3A5F")
 VERMELHO = colors.HexColor("#C62828")
@@ -139,6 +139,7 @@ def _estilos(f, fb):
         capsub=ParagraphStyle("capsub", parent=base, fontSize=12, leading=16, alignment=TA_CENTER),
         bul=ParagraphStyle("bul", parent=base, leftIndent=10, bulletIndent=2),
         cel=ParagraphStyle("cel", parent=base, fontSize=7.5, leading=9),
+        mono=ParagraphStyle("mono", parent=base, fontName="Courier", fontSize=6, leading=7),
         celb=ParagraphStyle("celb", parent=base, fontName=fb, fontSize=7.5, leading=9, textColor=colors.white),
     )
 
@@ -234,7 +235,22 @@ def _figuras(arqs):
             if re.search(pad, os.path.basename(a), re.I) and os.path.basename(a) not in vistos:
                 vistos.add(os.path.basename(a))
                 out.append((tit, a))
+    for a in pngs:                                    # v1.21.1: TODAS as figuras (folhas de desenho, cortes, esquema)
+        if os.path.basename(a) not in vistos:
+            vistos.add(os.path.basename(a))
+            out.append(("Figura / folha de desenho", a))
     return out
+
+
+class _Marca(Flowable):
+    """Marcador invisível: registra a página em que um item do corpo caiu (índice 'onde está no consolidado')."""
+    def __init__(self, reg, chave):
+        super().__init__()
+        self.reg, self.chave = reg, chave
+        self.width = self.height = 0
+
+    def draw(self):
+        self.reg.setdefault(self.chave, self.canv.getPageNumber())
 
 
 def _img(caminho, larg_max=170 * mm, alt_max=110 * mm):
@@ -262,6 +278,10 @@ ORDEM_CONTEUDO = [
     (r"(Questionario|Sensibilidade).*\.(docx|xlsx)$", "Dados faltantes"),
     (r"(verificacao|avancado)_.*\.json$", "Resultados numéricos do reator/indutor"),
     (r"Email_.*\.txt$", "E-mails gerados (fornecedores, montadora, cliente)"),
+    (r"trans_.*\.atp$", "Deck ATP-EMTP do caso de transitório (mesmos dados da plataforma)"),
+    (r"(pedido|banco_resultado|indutor_projeto|resultado).*\.json$", "Dados de entrada e resultados do projeto"),
+    (r"\.json$", "Dados do projeto (JSON)"),
+    (r"\.txt$", "Texto"),
     (r"\.docx$", "Documento Word"),
     (r"\.xlsx$", "Planilha Excel"),
 ]
@@ -363,6 +383,9 @@ def _conteudo_arquivo(a, E):
             return _conteudo_xlsx(a, E)
         if nome.endswith(".docx"):
             return _conteudo_docx(a, E)
+        if nome.endswith(".atp"):
+            txt = open(a, encoding="latin-1", errors="replace").read()
+            return [Paragraph(_limpa(l).replace(" ", "&nbsp;") or "&nbsp;", E["mono"]) for l in txt.splitlines()]
         if nome.endswith(".txt"):
             txt = open(a, encoding="utf-8", errors="replace").read()
             return [Paragraph(_limpa(l) or "&nbsp;", E["base"]) for l in txt.splitlines()]
@@ -378,11 +401,11 @@ def _conteudo_arquivo(a, E):
 def _conteudos(arqs):
     """(título, arquivo) dos documentos não-PDF a transcrever, em ordem de leitura, sem cópias repetidas."""
     vistos, out = set(), []
-    cand = [a for a in arqs if re.search(r"\.(xlsx|docx|txt|json)$", a, re.I)]
+    cand = [a for a in arqs if re.search(r"\.(xlsx|docx|txt|json|atp)$", a, re.I)]
     for pad, tit in ORDEM_CONTEUDO:
         for a in cand:
             b = os.path.basename(a)
-            chave = (b, os.path.getsize(a))
+            chave = b                                 # mesmo nome em 2 pastas = mesmo documento (cópia p/ fornecedor)
             if chave in vistos or not re.search(pad, b, re.I):
                 continue
             vistos.add(chave)
@@ -409,6 +432,44 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
     agora = _dt.datetime.now()
     saida = os.path.join(pasta, f"00_RELATORIO_CONSOLIDADO_{cod}.pdf")
     frente = saida + ".frente.pdf"
+
+    M = dict(ant={}, cur={}, pdf={})                  # marcas de página: passada anterior / atual / anexos PDF
+
+    def onde(a):
+        """Onde o arquivo está dentro do consolidado (coluna do índice)."""
+        b = os.path.basename(a)
+        bl = b.lower()
+        pg = M["ant"].get(a)
+        if pg:
+            return f"pág. {pg}"
+        for k, p_ in M["ant"].items():                # cópia do mesmo arquivo em outra pasta (mesmo nome)
+            if os.path.basename(k) == b:
+                return f"pág. {p_} (mesmo arquivo)"
+        if bl.endswith(".pdf"):
+            p_ = M["pdf"].get((b, os.path.getsize(a)))
+            return f"anexo, pág. {p_}" if p_ else "anexo"
+        if bl == "resumo.md":
+            return "seção 1 (resumo)"
+        st = os.path.splitext(b)[0]
+        if bl.endswith((".dxf", ".qet")):
+            alvo = st.replace("_2D", "")
+            for (bn, _sz), p_ in M["pdf"].items():
+                if bn.startswith(st) or (alvo in bn and "Projeto_Referencia" in bn):
+                    return f"mesmo desenho no anexo PDF, pág. {p_}"
+            return "desenho CAD (sem PDF equivalente)"
+        if bl.endswith(".step"):
+            for k, p_ in M["ant"].items():
+                if "render" in os.path.basename(k).lower():
+                    return f"vista 3D nas figuras, pág. {p_}"
+            return "modelo 3D (STEP)"
+        if bl.endswith((".pl4", ".lis")):
+            for k, p_ in M["ant"].items():
+                if re.search(r"Transitorios_.*\.xlsx$", os.path.basename(k)):
+                    return f"resultado do ATP – comparado na tabela Plataforma × ATP, pág. {p_}"
+            return "resultado do ATP"
+        if bl.endswith(".lua"):
+            return "script do FEMM (geometria para abrir no FEMM – não é texto de leitura)"
+        return "NÃO INCLUÍDO"
 
     def corpo(pag_anexos):
         h = []
@@ -491,21 +552,27 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
             for t_, a in figs:
                 im = _img(a)
                 if im:
-                    h.append(KeepTogether([Paragraph(_limpa(f"{t_} – {os.path.basename(a)}"), E["h2"]), im, Spacer(1, 4)]))
+                    h.append(KeepTogether([_Marca(M["cur"], a), Paragraph(_limpa(f"{t_} – {os.path.basename(a)}"), E["h2"]), im, Spacer(1, 4)]))
         if conts:
             h += [PageBreak(), Paragraph(f"{n}  Documentos e planilhas do projeto (conteúdo completo)", E["h1"])]; n += 1
             h.append(Paragraph("Conteúdo integral de cada Word, Excel, e-mail e resultado numérico gerado (os originais editáveis "
                                "continuam na pasta – ver o índice).", E["peq"]))
             for t_, a in conts:
                 rel = os.path.relpath(a, pasta)
-                h += [Paragraph(_limpa(f"{t_} – {os.path.basename(a)}"), E["h2"]), Paragraph(_limpa(rel), E["peq"])]
+                h += [_Marca(M["cur"], a), Paragraph(_limpa(f"{t_} – {os.path.basename(a)}"), E["h2"]), Paragraph(_limpa(rel), E["peq"])]
                 h += _conteudo_arquivo(a, E)
         h += [PageBreak(), Paragraph(f"{n}  Índice de todos os arquivos gerados", E["h1"])]; n += 1
-        linhas = [["Pasta", "Arquivo", "O que é"]]
+        h.append(Paragraph("Conferência: cada arquivo da pasta e onde ele está dentro deste relatório. As pastas servem para mandar a "
+                           "cada fornecedor/montadora só o que é dele; aqui está tudo junto.", E["peq"]))
+        linhas = [["Pasta", "Arquivo", "O que é", "Onde está neste relatório"]]
+        faltam = 0
         for a in arqs:
             rel = os.path.relpath(os.path.dirname(a), pasta)
-            linhas.append(["(raiz)" if rel == "." else rel, os.path.basename(a), _descr(os.path.basename(a))])
-        h.append(_tabela(linhas, E, larg=[55 * mm, 75 * mm, 50 * mm]))
+            o_ = onde(a)
+            faltam += o_ == "NÃO INCLUÍDO"
+            linhas.append(["(raiz)" if rel == "." else rel, os.path.basename(a), _descr(os.path.basename(a)), o_])
+        h.append(_tabela(linhas, E, larg=[38 * mm, 58 * mm, 40 * mm, 44 * mm]))
+        M["faltam"] = faltam
         h += [PageBreak(), Paragraph(f"{n}  Anexos", E["h1"])]
         if anexos:
             h.append(Paragraph("Os PDFs do projeto vêm a seguir, nesta ordem (marcadores do PDF para navegar):", E["base"]))
@@ -525,7 +592,9 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
     def montar(pag_anexos):
         doc = SimpleDocTemplate(frente, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=15 * mm,
                                 bottomMargin=15 * mm, title=f"Relatório consolidado {cod}", author=f"Electric Service – {versao}")
+        M["cur"] = {}
         doc.build(corpo(pag_anexos), onFirstPage=rodape, onLaterPages=rodape)
+        M["ant"] = M["cur"]
         return len(PdfReader(frente).pages)
 
     # 2 passadas: a 1ª mede a frente, a 2ª escreve o sumário com a página de cada anexo
@@ -535,23 +604,35 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
             leitores.append((t_, a, PdfReader(a)))
         except Exception as ex:
             log(f"   (relatório consolidado: {os.path.basename(a)} não anexado – {type(ex).__name__})")
-    n_frente = montar([(t_, 0) for t_, _, _ in leitores])
-    pag, pos = [], n_frente + 1
-    for t_, _, r in leitores:
-        pag.append((t_, pos))
-        pos += len(r.pages)
-    n2 = montar(pag)
-    if n2 != n_frente:                                # o sumário mudou de tamanho – refaz com as páginas certas
-        pag, pos = [], n2 + 1
-        for t_, _, r in leitores:
+    def paginas(n_fr):
+        pag, pos = [], n_fr + 1
+        M["pdf"] = {}
+        for t_, a, r in leitores:
             pag.append((t_, pos))
+            M["pdf"][(os.path.basename(a), os.path.getsize(a))] = pos
             pos += len(r.pages)
-        montar(pag)
+        for a in arqs:                                # cópias do mesmo PDF em outras pastas → mesma página
+            if a.lower().endswith(".pdf"):
+                for (bn, sz), p_ in list(M["pdf"].items()):
+                    if bn == os.path.basename(a):
+                        M["pdf"].setdefault((bn, os.path.getsize(a)), p_)
+        return pag
+
+    n = montar([(t_, 0) for t_, _, _ in leitores])
+    for _ in range(4):                                # repete até as páginas pararem de mudar (sumário/índice)
+        n2 = montar(paginas(n))
+        if n2 == n:
+            break
+        n = n2
     w = PdfWriter()
     fr = PdfReader(frente)
     for p_ in fr.pages:
         w.add_page(p_)
-    w.add_outline_item("Relatório consolidado – resumo, critério, premissas, painel, índice", 0)
+    topo = w.add_outline_item("Relatório consolidado – resumo, critério, premissas, painel, índice", 0)
+    for t_, a in sorted(conts + figs, key=lambda x: M["ant"].get(x[1], 10 ** 6)):   # marcador por item, na ordem
+        p_ = M["ant"].get(a)
+        if p_:
+            w.add_outline_item(f"{t_} – {os.path.basename(a)}"[:120], p_ - 1, parent=topo)
     raiz = w.add_outline_item("Anexos", len(fr.pages)) if leitores else None
     for t_, _, r in leitores:
         ini = len(w.pages)
@@ -562,5 +643,6 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
     with open(saida, "wb") as fh:
         w.write(fh)
     os.remove(frente)
-    log(f"   Relatório consolidado: {os.path.basename(saida)} ({len(w.pages)} páginas, {len(leitores)} anexos)")
+    log(f"   Relatório consolidado: {os.path.basename(saida)} ({len(w.pages)} páginas, {len(leitores)} anexos"
+        + (f", ATENÇÃO: {M['faltam']} arquivo(s) não incluído(s)" if M.get("faltam") else ", todos os arquivos incluídos") + ")")
     return saida
