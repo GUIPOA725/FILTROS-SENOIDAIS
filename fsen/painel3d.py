@@ -269,14 +269,13 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         _cx(p, "placa", xa, yp - CHAPA / 2, zp0, xb - xa, CHAPA, zp1 - zp0, C_PLACA)
         yf = yp - CHAPA / 2
         cv = prm["canaleta_vertical_mm"]
-        _canaleta(p, "frente", xa + 10, yf, zp0 + 20, cv, zp1 - zp0 - 40, vertical=True)   # canaletas verticais laterais
-        _canaleta(p, "frente", xb - 10 - cv, yf, zp0 + 20, cv, zp1 - zp0 - 40, vertical=True)
-        xu0, xu1 = xa + 10 + cv + folga, xb - 10 - cv - folga        # largura útil entre canaletas
+        xu0, xu1 = xa + 10 + cv + folga, xb - 10 - cv - folga        # largura útil entre canaletas (zona da manobra)
+        xk0, xk1 = xa + folga, xb - folga                            # capacitores usam a largura toda (canaletas param acima)
         # capacitores: fileiras na largura, no máx. N fileiras na profundidade; o resto vai para um 2º nível (prateleira)
         dcap, acap, tcap = cd.get("D", 116), cd.get("A", 291), cd.get("terminal", 45)
         n_tot = n_cap * n_est
         passo_c = dcap + prm["folga_capacitores_mm"]
-        por_linha = max(1, int((xu1 - xu0 + prm["folga_capacitores_mm"]) // passo_c))
+        por_linha = max(1, int((xk1 - xk0 + prm["folga_capacitores_mm"]) // passo_c))
         nprof_max = max(1, int((yf - PERFIL - 30) // (dcap + 15)))
         nprof = min(prm["capacitores_fileiras_prof_max"], nprof_max)
         por_nivel = por_linha * nprof
@@ -284,35 +283,35 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         h_cap = acap + tcap + 25
         # contatoras e chaves NH: fileira única por coluna, passo distribuído por toda a largura útil (afastadas = ar e ferramenta)
         passo = (xu1 - xu0) / n_est
-        blocos = [h_cap] * niveis_c + [kd["A"], sd["A"], 3 * 45 + 30]   # capacitores (níveis), contatoras, chaves, barramento
-        nomes = [f"capacitores nível {k + 1}" for k in range(niveis_c)] + ["contatoras", "chaves NH", "barramento"]
         dut = prm["canaleta_horizontal_mm"]
-        # canaleta horizontal entre cada fileira (acima dos capacitores, entre contatoras e chaves, abaixo do barramento)
-        blocos_c = []
-        for k, b in enumerate(blocos):
-            blocos_c.append(b)
-            if k < len(blocos) - 1:
-                blocos_c.append(dut)
+        # níveis de capacitores empilhados (só a prateleira entre eles); canaleta acima dos capacitores, entre contatoras e
+        # chaves e abaixo do barramento; folgas iguais distribuídas no que sobra (sem vazio concentrado)
+        blocos_c = [niveis_c * h_cap + (niveis_c - 1) * 40, dut, kd["A"], dut, sd["A"], dut, 3 * 45 + 30]
         zs, gap, livre = _dist_vertical(zp0 + 40, zp1 - 30, blocos_c, prm["folga_vertical_min_mm"])
-        z_blk = zs[0::2]
-        z_dut = zs[1::2]
+        z_caps = [zs[0] + k * (h_cap + 40) for k in range(niveis_c)]
+        z_dut = [zs[1], zs[3], zs[5]]
+        z_km, z_sc, z_bb = zs[2], zs[4], zs[6]
+        zv0 = z_dut[0]
+        _canaleta(p, "frente", xa + 10, yf, zv0, cv, zp1 - 20 - zv0, vertical=True)   # canaletas verticais laterais (acima dos capacitores)
+        _canaleta(p, "frente", xb - 10 - cv, yf, zv0, cv, zp1 - 20 - zv0, vertical=True)
         for zd in z_dut:
             _canaleta(p, "frente", xu0 - folga, yf, zd, xu1 - xu0 + 2 * folga, dut)
         # capacitores
         k = 0
-        z_caps = z_blk[:niveis_c]
         for nv, zc in enumerate(z_caps):
             yprat = yf - nprof * (dcap + 15) - 20
-            _cx(p, "frente", xu0 - 10, yprat, zc - 22, xu1 - xu0 + 20, nprof * (dcap + 15) + 20, 22, C_PRAT)   # prateleira/trilho
-            larg_l = min(por_linha, n_tot) * passo_c - prm["folga_capacitores_mm"]
-            xc0 = (xu0 + xu1) / 2 - larg_l / 2 + dcap / 2
+            _cx(p, "frente", xk0 - 10, yprat, zc - 22, xk1 - xk0 + 20, nprof * (dcap + 15) + 20, 22, C_PRAT)   # prateleira/trilho
+            n_lv = min(por_nivel, n_tot - nv * por_nivel)
+            n_l = min(por_linha, math.ceil(n_lv / nprof))
+            passo_r = (xk1 - xk0) / n_l                                   # latas espalhadas por igual na largura (ar entre elas)
+            xc0 = xk0 + passo_r / 2
             for _ in range(por_nivel):
                 if k >= n_tot:
                     break
                 lin, ck = divmod(k - nv * por_nivel, por_linha)
-                _capacitor(p, xc0 + ck * passo_c, yf - dcap / 2 - 15 - lin * (dcap + 15), zc, dcap, acap, bool(capd), tcap)
+                lin, ck = divmod(k - nv * por_nivel, n_l)
+                _capacitor(p, xc0 + ck * passo_r, yf - dcap / 2 - 15 - lin * (dcap + 15), zc, dcap, acap, bool(capd), tcap)
                 k += 1
-        z_km, z_sc, z_bb = z_blk[niveis_c], z_blk[niveis_c + 1], z_blk[niveis_c + 2]
         for j in range(n_est):
             xm = xu0 + passo * (j + 0.5)
             _contatora(p, xm - kd["L"] / 2, yf, z_km, kd, bool(ctt))
@@ -322,11 +321,11 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 dx = (f - 1) * sd["L"] * 0.28
                 ycab = yf - 35
                 _tubo(p, "frente", [(xm + dx, yf - 70, z_bb + f * 45 + 15), (xm + dx, yf - 70, z_sc + sd["A"] + 10)], 10, "#b87333")
-                _tubo(p, "frente", [(xm + dx, ycab, z_sc), (xm + dx, ycab, z_dut[niveis_c] + dut / 2),
+                _tubo(p, "frente", [(xm + dx, ycab, z_sc), (xm + dx, ycab, z_dut[1] + dut / 2),
                                     (xm + dx * 0.8, ycab, z_km + kd["A"])], 12, "#1e1e1e")
-                _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[niveis_c - 1] + dut / 2),
-                                    (xm + dx * 0.8, yp, z_dut[niveis_c - 1] + dut / 2)], 12, "#1e1e1e")
-            _cl(p, "placa", xm, yp, z_dut[niveis_c - 1] + dut / 2, 50, 8, "#f2f2f2", eixo="y")   # passa-cabos (prensa) na placa
+                _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[0] + dut / 2),
+                                    (xm + dx * 0.8, yp, z_dut[0] + dut / 2)], 12, "#1e1e1e")
+            _cl(p, "placa", xm, yp, z_dut[0] + dut / 2, 50, 8, "#f2f2f2", eixo="y")   # passa-cabos (prensa) na placa
         _barramento(p, xu0 - folga + 10, xu1 + folga - 10, yf, z_bb + 15)
         # verificações de montagem (Check)
         ocup = sum(blocos_c) / (zp1 - zp0 - 70)
@@ -361,7 +360,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             zr = BASE + 40 + PERFIL + nv * passo_niv
             _reator(p, xr, yr, zr, rL, rP, rA)
             xm = xu0 + passo * (j % n_est + 0.5)
-            zpass = z_dut[niveis_c - 1] + dut / 2
+            zpass = z_dut[0] + dut / 2
             for f in range(3):                                          # cabo: passagem na placa → saída do reator
                 xt = xr + rL * (0.17 + 0.33 * f)
                 _tubo(p, "tras", [(xm + (f - 1) * 25, yp, zpass), (xm + (f - 1) * 25, yr + rP + 30, zpass),
