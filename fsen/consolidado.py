@@ -10,7 +10,8 @@ nos 3 tipos (filtro senoidal, banco dessintonizado, filtro sintonizado):
   6. índice de TODOS os arquivos gerados, por pasta, com o que é cada um;
   7. anexos: todos os PDFs do projeto em ordem de leitura (relatório técnico, memorial, auditoria, reator/indutor,
      desenhos, esquema elétrico, layout do painel, etiquetas), com marcadores no PDF para navegar.
-Arquivos que não são PDF (Word, Excel, DXF, STEP, QET) ficam listados no índice com o caminho.
+v1.21.0: Word, Excel (inclusive a comparação Plataforma × ATP dos transitórios), e-mails e resultados JSON entram com o
+conteúdo completo no corpo. DXF, STEP, QET e .pl4 (CAD/ATP) ficam no índice com o caminho.
 Determinístico: mesma pasta → mesmo relatório (exceto data/hora de geração).
 """
 from __future__ import annotations
@@ -246,6 +247,149 @@ def _img(caminho, larg_max=170 * mm, alt_max=110 * mm):
         return None
 
 
+# ------------------------------------------------------------------ v1.21.0: conteúdo de Word/Excel/e-mails/JSON
+# ordem de leitura dos documentos que não são PDF – entram INTEIROS no corpo do consolidado
+ORDEM_CONTEUDO = [
+    (r"Transitorios_.*\.xlsx$", "Transitórios – critérios por caso e comparação Plataforma × ATP"),
+    (r"Proposta.*\.docx$", "Proposta técnica e comercial"),
+    (r"ESTAGIO.*\.xlsx$", "Planilha ESTAGIO (padrão Electric)"),
+    (r"(Indutor_Trifasico|Especificacao).*\.docx$", "Especificação do reator/indutor ao fornecedor"),
+    (r"ET_Painel.*\.docx$", "Especificação técnica do painel (montadora)"),
+    (r"ET_Painel.*\.xlsx$", "Especificação técnica do painel – planilha"),
+    (r"Lista_Material.*\.xlsx$", "Lista de material, bornes e cabos"),
+    (r"Lista_DePara.*\.xlsx$", "Lista DE/PARA de fios e etiquetas"),
+    (r"Resultados_Medidos.*\.xlsx$", "Planilha de resultados medidos do reator/indutor"),
+    (r"(Questionario|Sensibilidade).*\.(docx|xlsx)$", "Dados faltantes"),
+    (r"(verificacao|avancado)_.*\.json$", "Resultados numéricos do reator/indutor"),
+    (r"Email_.*\.txt$", "E-mails gerados (fornecedores, montadora, cliente)"),
+    (r"\.docx$", "Documento Word"),
+    (r"\.xlsx$", "Planilha Excel"),
+]
+MAX_LIN_PLAN = 400          # linhas por aba (proteção contra planilhas enormes)
+MAX_COL_PLAN = 12
+
+
+def _cel(v):
+    if v is None:
+        return ""
+    if isinstance(v, float):
+        return f"{v:.4g}"
+    return str(v)
+
+
+def _conteudo_xlsx(a, E):
+    from openpyxl import load_workbook
+    out = []
+    wb = load_workbook(a, data_only=True, read_only=True)
+    for ws in wb.worksheets:
+        linhas = []
+        for r in ws.iter_rows(values_only=True):
+            r = [_cel(v) for v in r[:MAX_COL_PLAN]]
+            if any(c.strip() for c in r):
+                linhas.append(r)
+            if len(linhas) >= MAX_LIN_PLAN:
+                break
+        if not linhas:
+            continue
+        n = max(len(r) for r in linhas)
+        while n > 1 and all(not (r[n - 1] if len(r) >= n else "").strip() for r in linhas):
+            n -= 1
+        linhas = [(r + [""] * n)[:n] for r in linhas]
+        out.append(Paragraph(_limpa(f"Aba: {ws.title}"), E["peq"]))
+        out.append(_tabela(linhas, E, larg=[(180 * mm) / n] * n))
+        out.append(Spacer(1, 4))
+    wb.close()
+    return out
+
+
+def _conteudo_docx(a, E):
+    import docx
+    d = docx.Document(a)
+    out = []
+    corpo = d.element.body
+    from docx.table import Table as _T
+    from docx.text.paragraph import Paragraph as _P
+    for el in corpo.iterchildren():
+        tag = el.tag.split("}")[-1]
+        if tag == "p":
+            p = _P(el, d)
+            t = p.text.strip()
+            if not t:
+                continue
+            est = (p.style.name or "").lower() if p.style is not None else ""
+            out.append(Paragraph(_limpa(t), E["h2"] if est.startswith(("heading", "título", "titulo", "title")) else E["base"]))
+        elif tag == "tbl":
+            tb = _T(el, d)
+            linhas = []
+            for r in tb.rows:
+                cel, ult = [], None
+                for c in r.cells:                    # células mescladas repetem o mesmo objeto
+                    if c._tc is ult:
+                        continue
+                    ult = c._tc
+                    cel.append(c.text.strip())
+                linhas.append(cel[:MAX_COL_PLAN])
+            if linhas:
+                n = max(len(r) for r in linhas)
+                linhas = [r + [""] * (n - len(r)) for r in linhas]
+                out.append(_tabela(linhas, E, larg=[(180 * mm) / n] * n, cab=False))
+                out.append(Spacer(1, 4))
+    return out
+
+
+def _plano(d, pre=""):
+    """JSON → linhas (chave, valor), sem listas longas."""
+    out = []
+    if isinstance(d, dict):
+        for k, v in d.items():
+            out += _plano(v, f"{pre}.{k}" if pre else str(k))
+    elif isinstance(d, list):
+        if len(d) <= 8 and all(not isinstance(x, (dict, list)) for x in d):
+            out.append([pre, ", ".join(_cel(x) for x in d)])
+        elif len(d) <= 8:
+            for i, x in enumerate(d):
+                out += _plano(x, f"{pre}[{i + 1}]")
+        else:
+            out.append([pre, f"(série com {len(d)} valores – ver o arquivo)"])
+    else:
+        out.append([pre, _cel(d)])
+    return out
+
+
+def _conteudo_arquivo(a, E):
+    nome = a.lower()
+    try:
+        if nome.endswith(".xlsx"):
+            return _conteudo_xlsx(a, E)
+        if nome.endswith(".docx"):
+            return _conteudo_docx(a, E)
+        if nome.endswith(".txt"):
+            txt = open(a, encoding="utf-8", errors="replace").read()
+            return [Paragraph(_limpa(l) or "&nbsp;", E["base"]) for l in txt.splitlines()]
+        if nome.endswith(".json"):
+            import json
+            linhas = [["Grandeza", "Valor"]] + _plano(json.load(open(a, encoding="utf-8")))[:MAX_LIN_PLAN]
+            return [_tabela(linhas, E, larg=[90 * mm, 90 * mm])]
+    except Exception as ex:                               # nunca derruba o consolidado
+        return [Paragraph(_limpa(f"[ATENÇÃO] não foi possível ler {os.path.basename(a)}: {type(ex).__name__}: {ex}"), E["peq"])]
+    return []
+
+
+def _conteudos(arqs):
+    """(título, arquivo) dos documentos não-PDF a transcrever, em ordem de leitura, sem cópias repetidas."""
+    vistos, out = set(), []
+    cand = [a for a in arqs if re.search(r"\.(xlsx|docx|txt|json)$", a, re.I)]
+    for pad, tit in ORDEM_CONTEUDO:
+        for a in cand:
+            b = os.path.basename(a)
+            chave = (b, os.path.getsize(a))
+            if chave in vistos or not re.search(pad, b, re.I):
+                continue
+            vistos.add(chave)
+            out.append((tit, a))
+    return out
+
+
 # ----------------------------------------------------------------------------------------------------- relatório
 def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=None, painel=None, extras=None, log=print):
     """Gera 00_RELATORIO_CONSOLIDADO_<cod>.pdf na raiz da pasta do projeto e devolve o caminho.
@@ -257,6 +401,7 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
     arqs = _listar(pasta)
     anexos = _anexos(arqs)
     figs = _figuras(arqs)
+    conts = _conteudos(arqs)
     resumo_md = ""
     rp = os.path.join(pasta, "RESUMO.md")
     if os.path.exists(rp):
@@ -274,7 +419,7 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
                ["Pasta", pasta]]
         h += [_tabela(cab, E, larg=[40 * mm, 130 * mm], cab=False), Spacer(1, 10 * mm),
               Paragraph("Tudo o que a plataforma gerou neste projeto, num só documento: resumo, como foi decidido, premissas, painel, "
-                        "figuras, índice de arquivos e, em anexo, todos os PDFs (memorial, reator/indutor, desenhos, esquema "
+                        "figuras, o conteúdo de todas as planilhas, documentos Word e e-mails, índice de arquivos e, em anexo, todos os PDFs (memorial, reator/indutor, desenhos, esquema "
                         "elétrico, layout e etiquetas). Use os marcadores do PDF para navegar.", E["peq"]), PageBreak()]
         # sumário
         h.append(Paragraph("Sumário", E["h1"]))
@@ -286,6 +431,8 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
             sec.append(f"{n}  {t_}"); n += 1
         if figs:
             sec.append(f"{n}  Figuras principais"); n += 1
+        if conts:
+            sec.append(f"{n}  Documentos e planilhas do projeto (conteúdo completo)"); n += 1
         sec.append(f"{n}  Índice de todos os arquivos gerados"); n += 1
         sec.append(f"{n}  Anexos")
         for s_ in sec:
@@ -345,6 +492,14 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
                 im = _img(a)
                 if im:
                     h.append(KeepTogether([Paragraph(_limpa(f"{t_} – {os.path.basename(a)}"), E["h2"]), im, Spacer(1, 4)]))
+        if conts:
+            h += [PageBreak(), Paragraph(f"{n}  Documentos e planilhas do projeto (conteúdo completo)", E["h1"])]; n += 1
+            h.append(Paragraph("Conteúdo integral de cada Word, Excel, e-mail e resultado numérico gerado (os originais editáveis "
+                               "continuam na pasta – ver o índice).", E["peq"]))
+            for t_, a in conts:
+                rel = os.path.relpath(a, pasta)
+                h += [Paragraph(_limpa(f"{t_} – {os.path.basename(a)}"), E["h2"]), Paragraph(_limpa(rel), E["peq"])]
+                h += _conteudo_arquivo(a, E)
         h += [PageBreak(), Paragraph(f"{n}  Índice de todos os arquivos gerados", E["h1"])]; n += 1
         linhas = [["Pasta", "Arquivo", "O que é"]]
         for a in arqs:

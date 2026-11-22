@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.21.0 – 2026-11-22 (relatório consolidado com TUDO)
+- O relatório consolidado (00_RELATORIO_CONSOLIDADO_*.pdf) agora traz no corpo o **conteúdo completo** de tudo o que a plataforma gera fora de PDF, nos 3 tipos de filtro: planilha de transitórios (critérios por caso e comparação **Plataforma × ATP** grandeza a grandeza), proposta técnica e comercial, planilhas ESTAGIO, especificações do reator/indutor para cada fornecedor, ET do painel (Word e Excel), lista de material/bornes/cabos, lista DE/PARA, planilha de resultados medidos, resultados numéricos do reator (verificação independente e análise avançada) e os textos dos e-mails. Os PDFs continuam anexados com marcadores. Só ficam de fora, listados no índice, os arquivos de CAD/ATP (DXF, STEP, QET, .pl4). Exemplo Panatlântica ABB: de 76 para 91 páginas.
+
 ## v1.20.1 – 2026-11-22 (dupla checagem Panatlântica Schneider: Plataforma = ATP)
 - Primeira dupla checagem real no ATP (Panatlântica tudo Schneider): picos de corrente, I²t, tensão no capacitor e na barra bateram em até 0,45 % em todos os casos. Só a "tensão entre contatos" divergia porque era medida fase-terra: o capacitor BT é **trifásico em Δ, sem referência de terra** – aberto, fica como uma bateria entre fases e o potencial em relação à terra não é definido pelo circuito. Agora é medida **entre fases** (tensão da barra no par menos a tensão do lado do capacitor no mesmo par = rede em oposição à carga presa) e só nos casos de abertura. No filtro senoidal continua a análise de modo comum (alta frequência: capacitâncias à terra importam).
 
