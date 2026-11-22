@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.17.2 – 2026-11-22 (critério Electric de folga do banco)
+- Montante do banco = maior entre (a) necessário × (1 + folga de crescimento, padrão 15 %) + perdas reativas do trafo quando a medição foi na BT (magnetização ~1 % + Z % × carregamento²) e (b) critério N-k: perdendo k estágios ainda sobra o necessário (N-2 a partir de 250 kvar, N-1 abaixo). Arredondado em módulos IGUAIS de 50 kvar (qualquer estágio perdido vale o mesmo).
+- Validado no caso real Panatlântica TR 1500 kVA 415 V: necessário 300 kvar → 300 × 1,15 + 19 = 364; N-2 = 400 → 8 × 50 = 400 kvar, igual ao projeto da Electric (2024). Estágio: 3 × 25 kvar 525 V, Nr 3,5 (210 Hz), 796 µH, I60 71 A – iguais à planilha ESTAGIO 50KVAR 415V.
+- Tela do banco: quadro "Critério de folga do banco" (folga %, estágios de reserva automático/0–3, medição na BT).
+
 ## v1.17.1 – 2026-11-22 (teste prático Panatlântica TR 1500 kVA 415 V)
 - Leitura do pedido: quando a IA traz o montante total necessário e um banco existente que já cobre esse montante, a plataforma trata como SUBSTITUIÇÃO (painel novo do mesmo porte) e avisa para confirmar o escopo – antes descontava o existente e caía em 50 kvar.
 - Lista de material do gabinete: IP 42 (padrão das propostas Electric).

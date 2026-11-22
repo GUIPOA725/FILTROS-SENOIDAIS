@@ -1,5 +1,5 @@
 {
-  "versao": "1.17.1",
+  "versao": "1.17.2",
   "data": "2026-11-22",
-  "resumo": "Teste Panatlântica: banco existente não é mais descontado duas vezes (substituição); gabinete IP 42"
+  "resumo": "Critério Electric de folga do banco: crescimento, perdas reativas do trafo e N-1/N-2 com módulos de 50 kvar"
 }

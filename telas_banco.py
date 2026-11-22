@@ -104,6 +104,8 @@ def _leitura(tipo, provedor, nome_ia):
         dados["_fonte"] = dados_ia.get("_fonte") or ("Plataforma de Estudos (" + ", ".join(
             x for x, y in (("QEE", dq), ("Proteção", dp)) if y) + ")")
         precisa, motivos = IN.necessidade(dados)
+        _fg = st.session_state.get("bc_folga", {})
+        dados.update({k: v for k, v in _fg.items() if v is not None})
         ped, just, lac = LB.decidir(dados)
         IN.aplicar_rede(ped, dados)
         ped.cenarios_rede = dados.get("_cenarios_rede") or []
@@ -129,6 +131,14 @@ def _leitura(tipo, provedor, nome_ia):
 
 
 def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
+    with st.expander("Critério de folga do banco (padrão Electric)", expanded=False):
+        _c1, _c2, _c3 = st.columns(3)
+        st.session_state["bc_folga"] = dict(
+            crescimento_pct=_c1.number_input("Folga p/ crescimento (%)", 0.0, 100.0, 15.0, 5.0, key="bc_cresc"),
+            n_reserva={"automático": None, "0": 0, "1": 1, "2": 2, "3": 3}[_c2.selectbox(
+                "Estágios de reserva (N-k)", ["automático", "0", "1", "2", "3"], key="bc_nres",
+                help="Perdendo k estágios o banco ainda entrega o necessário. Automático: 2 a partir de 250 kvar, senão 1.")],
+            medido_bt=_c3.checkbox("Medição na BT (somar perdas reativas do trafo)", True, key="bc_mbt"))
     sint_menu = tipo == "sintonizado"
     st.title("Filtro harmônico sintonizado" if sint_menu else "Banco de capacitores dessintonizado")
     st.caption("Padrão de engenharia da Electric (planilhas ESTAGIO, cartas à Cootrans, ET para a montadora, propostas FHSBT/BCD) + "

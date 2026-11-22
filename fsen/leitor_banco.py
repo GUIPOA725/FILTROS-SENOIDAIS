@@ -129,6 +129,46 @@ def estagios_padrao(kvar, V=380):
     return sorted(est)
 
 
+CRESCIMENTO_PCT = 15.0        # folga para crescimento de carga (critério Electric – Panatlântica 2024)
+N_RESERVA = 2                 # critério N-2 a partir de 250 kvar necessários (abaixo, N-1): perdendo 1/2 estágios ainda entrega o necessário
+MODULO_KVAR = 50.0            # módulo padrão dos bancos maiores (todos iguais → qualquer estágio perdido vale o mesmo)
+I0_TRAFO_PCT = 1.0            # corrente de magnetização típica (% de In) – trafo a óleo/seco de distribuição
+
+
+def perdas_reativas_trafo(kva, z_pct, s_carga_kva):
+    """kvar consumidos no próprio transformador (magnetização + dispersão) – não aparecem na medição feita na BT."""
+    if not kva:
+        return 0.0
+    carga = min(1.2, (s_carga_kva or 0) / kva)
+    return kva * (I0_TRAFO_PCT + z_pct * carga ** 2) / 100
+
+
+def folga_electric(q_base, dados, j, lac):
+    """Critério Electric para o montante do banco (explicado pelo eng. Guilherme no teste Panatlântica):
+    (1) folga para crescimento de carga; (2) perdas reativas do trafo quando a medição foi na BT;
+    (3) N-k: perdendo k estágios (falha de capacitor/contatora) ainda sobra o montante necessário.
+    O banco final é o maior dos três critérios, arredondado para módulos iguais de 50 kvar."""
+    cres = float(dados.get("crescimento_pct") if dados.get("crescimento_pct") is not None else CRESCIMENTO_PCT)
+    nres = int(dados.get("n_reserva") if dados.get("n_reserva") is not None else (N_RESERVA if q_base >= 250 else 1))
+    medido_bt = dados.get("medido_bt", True)
+    kva = float(dados.get("trafo_kva") or 0)
+    z = float(dados.get("trafo_z_pct") or 6.0)
+    s_c = float(dados.get("kva_carga") or 0) or (float(dados.get("kw_carga") or 0) / 0.8)
+    qt = perdas_reativas_trafo(kva, z, s_c) if medido_bt else 0.0
+    q1 = q_base * (1 + cres / 100) + qt
+    q2 = q_base + nres * MODULO_KVAR
+    alvo = max(q1, q2)
+    n = max(2, math.ceil(alvo / MODULO_KVAR - 1e-6))
+    est = [MODULO_KVAR] * n
+    j.append(f"Folga Electric sobre {q_base:g} kvar necessários: crescimento {cres:g} %"
+             + (f" + perdas reativas do trafo {kva:g} kVA ({qt:.0f} kvar, medição na BT)" if qt else "")
+             + f" = {q1:.0f} kvar; critério N-{nres} (perdendo {nres} estágio(s) de {MODULO_KVAR:g} ainda sobram "
+             f"{q_base:g}) = {q2:.0f} kvar → {n} × {MODULO_KVAR:g} = {n * MODULO_KVAR:g} kvar.")
+    if not dados.get("trafo_kva"):
+        lac.append("Potência do trafo não informada – perdas reativas do trafo não incluídas na folga.")
+    return n * MODULO_KVAR, est
+
+
 def decidir(dados, tipo_forcado=None):
     """Critério Electric → PedidoBanco + justificativa (lista de frases para a tela)."""
     j, lac = [], list(dados.get("lacunas") or [])
@@ -159,6 +199,8 @@ def decidir(dados, tipo_forcado=None):
     else:
         kvar -= kex
     est = [float(x) for x in (dados.get("estagios_kvar") or []) if x]
+    if not est and kvar >= 100:
+        kvar, est = folga_electric(kvar, dados, j, lac)
     if not est:
         est = estagios_padrao(kvar or 50, V)
         j.append(f"Estágios em módulos padrão: {' + '.join(f'{x:g}' for x in est)} = {sum(est):g} kvar"
