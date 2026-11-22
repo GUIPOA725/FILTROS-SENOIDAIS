@@ -8,6 +8,14 @@ echo.
 
 REM --- 1) copia a versao do Drive para este computador (roda mais rapido e sem conflito no Drive)
 set "ORIGEM=%~dp0"
+REM v1.18.5: sempre abre a versao MAIS NOVA do Drive (pasta PROGRAMAS\FSEN_v1.7.1), mesmo que o atalho
+REM ou o duplo-clique tenha sido numa pasta de versao antiga (FSEN_plataforma_v1.xx.x)
+for %%I in ("%~dp0..\FSEN_v1.7.1") do set "CANON=%%~fI\"
+if exist "%CANON%ABRIR_FSEN.bat" if /i not "%ORIGEM%"=="%CANON%" (
+  echo Abrindo a versao mais nova: %CANON%
+  call "%CANON%ABRIR_FSEN.bat"
+  exit /b
+)
 set "LOCAL=%LOCALAPPDATA%\FSEN\programa"
 echo [1/4] Atualizando a copia local do programa...
 robocopy "%ORIGEM%." "%LOCAL%" /MIR /XD __pycache__ saidas /XF historico.db /NFL /NDL /NJH /NJS /NP >nul
@@ -60,7 +68,8 @@ REM --- 5) atalho na area de trabalho (uma vez) e abertura como PROGRAMA (sem na
 set "FSEN_PASTA_SAIDA=G:\Drives compartilhados\Engenharia\15 - TEMPLATES-PLANILHA ESTUDOS\PLATAFORMA FILTROS SENOIDAIS\PROJETOS"
 REM Chave da IA (opcional). Tire o REM e cole a chave para usar o Claude na leitura dos e-mails:
 REM set ANTHROPIC_API_KEY=sk-ant-...
-if not exist "%USERPROFILE%\Desktop\FSEN Filtros.lnk" (
+REM v1.18.5: o atalho e sempre refeito apontando para esta pasta (a mais nova), corrigindo atalhos antigos
+(
   powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Desktop')+'\FSEN Filtros.lnk');$s.TargetPath='%ORIGEM%ABRIR_FSEN.bat';$s.WorkingDirectory='%ORIGEM%';$s.WindowStyle=7;$s.Description='Plataforma FSEN - Filtros e Bancos';$s.Save()" >nul 2>&1
 )
 set "PYW=%PY%"

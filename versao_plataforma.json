@@ -1,5 +1,5 @@
 {
-  "versao": "1.18.4",
+  "versao": "1.18.5",
   "data": "2026-11-22",
-  "resumo": "Termostato -BT2 55 °C (sobretemperatura do painel) no esquema elétrico, lista de material e DE/PARA"
+  "resumo": "Atalho e ABRIR_FSEN.bat sempre abrem a versão mais nova do Drive"
 }

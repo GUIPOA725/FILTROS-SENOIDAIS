@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.5 – 2026-11-22 (atalho sempre abre a versão mais nova)
+- Correção achada no teste de fogo: o atalho **"FSEN Filtros"** apontava para a pasta da versão em que foi criado (ex.: FSEN_plataforma_v1.18.2) e continuava abrindo aquela versão. Agora o ABRIR_FSEN.bat, de qualquer pasta de versão, passa sempre para a pasta atualizada `PROGRAMAS\FSEN_v1.7.1` e refaz o atalho apontando para ela. Quem já tem o atalho antigo passa a abrir a versão nova sem fazer nada.
+
 ## v1.18.4 – 2026-11-22 (termostato de sobretemperatura no esquema)
 - **-BT2 55 °C no esquema elétrico** do banco dessintonizado e do filtro sintonizado: termostato NF do painel em série na cadeia de habilitação (-S0 emergência → -K0 falta de fase → **-BT2** → -S1 manual/auto). Se o ar interno passar de 55 °C (limite dos capacitores), o banco inteiro desliga; religa sozinho ao esfriar. O -B0 35 °C continua ligando os exaustores.
 - -BT2 entra na lista de material, na lista DE/PARA de fios (-K0:14 → -BT2:1, -BT2:2 → -S1:13), nas etiquetas e na lista de plaquetas ("SOBRETEMPERATURA DO PAINEL").
