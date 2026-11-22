@@ -1,5 +1,5 @@
 {
-  "versao": "1.16.3",
+  "versao": "1.17.0",
   "data": "2026-11-22",
-  "resumo": "Motor de desenho próprio com estilo aprendido dos PDFs do EPLAN, conferência automática do desenho e controlador de 12 saídas em duas folhas"
+  "resumo": "Módulo de painel: gabinete no padrão Electric/AGCO (capacitores na frente, reatores atrás), ventilação IEC 60890, layout em PDF/DXF, plaquetas e material do gabinete"
 }

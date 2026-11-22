@@ -400,13 +400,19 @@ def painel(ped, res):
     n = len(res["estagios"])
     It = sum(e["I_cap_rms"] for e in res["estagios"])
     geral = next(x for x in NH + (800, 1000, 1250, 1600) if x >= 1.35 * It)
-    larg = 1000 if n <= 3 else 1200 if n <= 4 else 1600 if n <= 6 else 2000 if n <= 10 else 2400
-    itens = [(f"Painel metálico {2000}(A) × {larg}(L) × 800(P) mm (orientativo)", 1, "pç"),
+    from .painel_gabinete import gabinete          # v1.17.0: gabinete padrão Electric/AGCO (frente/trás)
+    gab = gabinete(ped, res)
+    Dg = gab["dimensoes_mm"]
+    larg = Dg["largura"]
+    itens = [(f"Painel metálico {Dg['altura']}(A) × {larg}(L) × {Dg['profundidade']}(P) mm – capacitores na frente, reatores "
+              f"atrás com chapa divisória ({len(gab['colunas'])} coluna(s) de 800 mm; ver Layout_Painel)", 1, "pç"),
              (f"Controlador de fator de potência Epcos BR6000 {6 if n <= 6 else 12} estágios", 1, "pç"),
              (f"Relé falta de fase trifásico {ped.tensao_v:.0f} V", 1, "pç"),
              ("Disjuntor bipolar 10 A DIN (comando)", 2, "pç"), ("Disjuntor tripolar 10 A DIN (relé falta de fase)", 1, "pç"),
              (f"Transformador de comando {ped.tensao_v:.0f}/220 V – {500 if n <= 6 else 1000} VA", 1, "pç"),
-             ("Conjunto de ventilação forçada 220 V (com grelhas de entrada de ar)", 2 if n <= 4 else 4, "pç"),
+             (f"Exaustor 220 V {gab['ventilacao']['exaustor_m3h']} m³/h com grelha e filtro (teto, sobre os reatores)",
+              gab["ventilacao"]["n_exaustores"], "pç"),
+             ("Termostato do painel -B0 35 °C (liga exaustores) e -BT2 55 °C (desliga o banco)", 2, "pç"),
              ("Botoeira de emergência c/ trava Ø22 mm 1NF+1NA", 1, "pç"), ("Sinaleiro LED vermelho Ø22 mm 220 V (estágio ligado)", n, "pç"),
              ("Chave seletora 2 posições Ø22 mm (desligado – automático)", 1, "pç"),
              (f"Proteção geral: chave seccionadora-fusível {geral} A (ou disjuntor caixa moldada)", 1, "pç")]
@@ -418,4 +424,4 @@ def painel(ped, res):
     if ped.tipo == "sintonizado":
         eletric += ["Multimedidores Embrasul MD4040 – proteção por estágio (1 por estágio)", "CLP de controle e proteção",
                     "Projeto elétrico (diagrama de força e comando)"]
-    return dict(itens=itens, eletric=eletric, geral_A=geral, dim=(2000, larg, 800), I_total=It)
+    return dict(itens=itens, eletric=eletric, geral_A=geral, dim=(Dg['altura'], larg, Dg['profundidade']), I_total=It, gabinete=gab)

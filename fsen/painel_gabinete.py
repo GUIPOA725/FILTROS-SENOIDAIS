@@ -100,7 +100,7 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
     vent["dt_k"] = round(3.1 * perd["total"] / vent["vazao_instalada_m3h"], 1)
     vent["t_interna_c"] = round(ped.amb_c + vent["dt_k"], 1)
     vent["area_entrada_cm2"] = int(max(100, math.ceil(Q * AREA_ENTRADA_CM2_POR_KVAR / 50) * 50))
-    vent["termostatos"] = [dict(tag="-BT1", ajuste_c=35, funcao="liga exaustores"),
+    vent["termostatos"] = [dict(tag="-B0", ajuste_c=35, funcao="liga exaustores"),
                            dict(tag="-BT2", ajuste_c=55, funcao="desliga o banco (sobretemperatura)")]
     avisos = []
     if vent["t_interna_c"] > ped.amb_c + DT_MAX + 0.05:

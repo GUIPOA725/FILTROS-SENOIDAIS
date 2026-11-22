@@ -129,6 +129,17 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             anexos_pnl.append(os.path.join(pnl, os.path.basename(esq[k_])))
     except Exception as ex:
         log(f"   (esquema elétrico não gerado: {type(ex).__name__}: {ex})")
+    # v1.17.0: layout do gabinete (capacitores na frente, reatores atrás) + plaquetas + material do gabinete
+    try:
+        from . import painel_desenho as PDES
+        dlay = os.path.join(sub["05_Desenhos"], "3_Layout_Painel")
+        lay = PDES.gerar(ped, res, dlay, cod, versao, log=log)
+        for k_ in ("pdf", "dxf"):
+            arqs[f"layout_{k_}"] = lay[k_]
+            shutil.copy(lay[k_], pnl)
+            anexos_pnl.append(os.path.join(pnl, os.path.basename(lay[k_])))
+    except Exception as ex:
+        log(f"   (layout do painel não gerado: {type(ex).__name__}: {ex})")
     with open(os.path.join(pnl, "Email_Montadora.txt"), "w", encoding="utf-8") as fh:
         fh.write(DB.email_fornecedor("IFG", ped, res, grupos, anexos_pnl, cod, tipo="painel"))
     arqs["proposta"] = DB.proposta(ped, res, sub["02_Cliente"], cod, cat, inds, n_bancos)

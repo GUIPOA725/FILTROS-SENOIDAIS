@@ -178,7 +178,7 @@ def _placa_estagio(v, x, y, w, h, e, k):
     """Placa de um estágio: chave seccionadora-fusível + contatora + capacitores (frente)."""
     v.ret(x, y, w, h, lw=0.18, tracejado=True)
     v.ret(x + 20, y + h * 0.15, 110, h * 0.7, lw=0.3)                             # chave NH tripolar
-    v.txt(x + 75, y + h * 0.5, f"-Q{k}", fs=1.2)
+    v.txt(x + 75, y + h * 0.5, f"-FF{k}", fs=1.2)
     v.ret(x + 150, y + h * 0.2, 70, h * 0.6, lw=0.3)                              # contatora
     v.txt(x + 185, y + h * 0.5, f"-K{k}", fs=1.2)
     latas = int((e.get("cap") or [3])[0])
@@ -201,7 +201,7 @@ def _frontal_interno(v, gab, ped, res):
         y = H - 60
         if i == 0:
             v.ret(x + 40, y - 260, w - 80, 240, lw=0.25)
-            v.txt(x + w / 2, y - 140, "COMANDO: TRAFO, DISJ., RELÉ F. FASE, -BT1 35 °C / -BT2 55 °C", fs=1.1)
+            v.txt(x + w / 2, y - 140, "COMANDO: TRAFO, DISJ., RELÉ F. FASE, -B0 35 °C / -BT2 55 °C", fs=1.1)
             y -= 290
             v.ret(x + 40, y - 200, w - 80, 180, lw=0.3)
             v.txt(x + w / 2, y - 110, "PROTEÇÃO GERAL", fs=1.3)
@@ -359,7 +359,110 @@ def construir(ped, res, gab, cod, versao):
     ox2 = ox + (L + P * 0.6 + 350) / esc3
     _iso(f3, ox2, area_y0 + 8, gab, esc3, False)
     f3.txt(ox2 + L / 2 / esc3, area_y0 - 6, "ISOMÉTRICA S/ PORTAS", fs=2.2, ha="center", negrito=True)
+    _folhas_listas(pr, ped, res, gab)
     return pr
+
+
+# ------------------------------------------------------------------------------ listas (modelo FEMSA/Novemp)
+TIPOS_PLAQUETA = {   # tipo: (linhas máx., altura letra mm, caracteres/linha, A mm, B mm) – acrílico 3 mm, fundo preto, letras brancas
+    "A": (3, 10, 23, 150, 45), "B": (3, 7, 20, 80, 30), "C": (3, 3, 22, 60, 20), "E": (2, 3, 14, 35, 15)}
+
+
+def plaquetas(ped, res, gab):
+    """Lista de plaquetas do gabinete no modelo FEMSA (item, tipo, quantidade, inscrição)."""
+    est = res["estagios"]
+    tipo = "DESSINTONIZADO" if ped.tipo == "dessintonizado" else "SINTONIZADO"
+    out = [("PAINEL", "A", 1, f"BANCO DE CAPACITORES {tipo} | {res['Q_total_kvar']:.0f} kVAr | 3F-{ped.tensao_v:.0f}V+PE-{ped.freq_hz:.0f}Hz"),
+           ("PERIGO", "B", len(gab["colunas"]) * 2, "PERIGO | ALTA TENSÃO | AGUARDAR 5 min DESCARGA"),
+           ("-U1", "C", 1, "CONTROLADOR | FATOR DE POTÊNCIA"),
+           ("-S1", "E", 1, "DESL. | AUTOM."),
+           ("-S0", "E", 1, "EMERGÊNCIA"),
+           ("-Q0", "C", 1, "PROTEÇÃO | GERAL"),
+           ("-B0", "E", 1, "TERMOST. | 35 °C"),
+           ("-BT2", "E", 1, "TERMOST. | 55 °C"),
+           ("-T1", "C", 1, f"TRAFO COMANDO | {ped.tensao_v:.0f}/220 V")]
+    for k, e in enumerate(est, 1):
+        q = e["codigo"].split("-")[-1]
+        out += [(f"-H{k}", "E", 1, f"ESTÁGIO {k} | {q} kvar"),
+                (f"-FF{k}", "C", 1, f"FUSÍVEIS | ESTÁGIO {k}"),
+                (f"-K{k}", "C", 1, f"CONTATORA | ESTÁGIO {k}"),
+                (f"-C{k}", "C", 1, f"CAPACITORES | ESTÁGIO {k} | {q} kvar"),
+                (f"-L{k}", "C", 1, f"REATOR {k} | {e['L_uH'] / 1000:.3f} mH")]
+    for i in range(gab["ventilacao"]["n_exaustores"]):
+        out.append((f"-M{i + 1}", "E", 1, f"EXAUSTOR {i + 1}"))
+    return out
+
+
+def material_gabinete(ped, res, gab):
+    D = gab["dimensoes_mm"]
+    v = gab["ventilacao"]
+    n_col, n = len(gab["colunas"]), len(res["estagios"])
+    return [
+        ("Gabinete autoportante modular, chapa 2,0 mm, pintura RAL 7035, IP 31, com soleira 100 mm",
+         f"{D['altura']}×{gab['colunas'][0]['largura']}×{D['profundidade']} mm", n_col, "pç"),
+        ("Porta frontal com fecho, venezianas inferiores (entrada de ar) e filtro", "", n_col, "pç"),
+        ("Porta traseira com fecho e venezianas inferiores", "", n_col, "pç"),
+        ("Chapa divisória vertical frente/trás (capacitores | reatores), galvanizada 1,5 mm", "", n_col, "pç"),
+        ("Placa de montagem por estágio (chave-fusível + contatora + capacitores)", "", n, "pç"),
+        ("Prateleira/suporte de reator, com isoladores", "", n, "pç"),
+        (f"Exaustor 230 V {v['exaustor_m3h']} m³/h com grelha e filtro de saída (teto)", "", v["n_exaustores"], "pç"),
+        ("Termostato NF 0–60 °C (-B0 35 °C liga exaustores)", "", 1, "pç"),
+        ("Termostato NF 0–60 °C (-BT2 55 °C desliga o banco)", "", 1, "pç"),
+        ("Barramento de cobre principal (L1/L2/L3) com isoladores", f"{D['largura']} mm", 3, "barra"),
+        ("Barra de terra (PE) com conectores", f"{D['largura']} mm", 1, "barra"),
+        ("Placa de entrada de cabos (teto ou fundo) com prensa-cabos", "", 1, "pç"),
+        ("Olhal de içamento M12", "", 4 * n_col, "pç"),
+        ("Plaquetas de acrílico (ver lista de plaquetas)", "", len(plaquetas(ped, res, gab)), "pç"),
+    ]
+
+
+def _tabela_folha(f, titulo, cab, larg, linhas, y0=None):
+    x0, y = X0 + 6, (y0 or Y1 - 12)
+    f.txt(x0, y, titulo, fs=3.0, ha="left", va="bottom", negrito=True)
+    y -= 7
+    xs = [x0]
+    for w in larg:
+        xs.append(xs[-1] + w)
+    f.ret(x0, y - 0.5, xs[-1] - x0, 6, lw=0.3, cam="TEXTOS")
+    for x, c in zip(xs, cab):
+        f.txt(x + 1.2, y + 1.3, c, fs=2.0, ha="left", va="bottom", negrito=True)
+    for ln in linhas:
+        y -= 5.2
+        if y < Y0 + CAR_H + 6:
+            break
+        for x, t, w in zip(xs, ln, larg):
+            t = str(t)
+            fs = min(2.0, (w - 2) / max(len(t), 1) * 1.75)
+            f.txt(x + 1.2, y + 1.2, t, fs=fs, ha="left", va="bottom")
+        f.lin(x0, y - 0.3, xs[-1], y - 0.3, lw=0.1, cam="TEXTOS")
+    return y
+
+
+def _folhas_listas(pr, ped, res, gab):
+    pl = plaquetas(ped, res, gab)
+    porf = 38
+    for k0 in range(0, len(pl), porf):
+        f = pr.nova("LISTA DE PLAQUETAS" + (f" ({k0 // porf + 1})" if len(pl) > porf else ""), "=PAINEL", "+GAB", tipo="lista")
+        _tabela_folha(f, "Lista de plaquetas", ("ITEM", "TIPO", "QUANT.", "INSCRIÇÃO ( | = quebra de linha)"),
+                      (28, 16, 18, 210), pl[k0:k0 + porf])
+        leg = [(t, d[0], d[1], d[2], f"{d[3]} × {d[4]}") for t, d in TIPOS_PLAQUETA.items()]
+        x = X1 - 120
+        f.txt(x, Y1 - 12, "Tipos de plaqueta", fs=2.6, ha="left", va="bottom", negrito=True)
+        cab = ("TIPO", "LINHAS", "ALT. LETRA", "CARAC.", "A × B mm")
+        xs = [x, x + 14, x + 30, x + 50, x + 66]
+        y = Y1 - 19
+        for xx, c in zip(xs, cab):
+            f.txt(xx, y, c, fs=1.9, ha="left", va="bottom", negrito=True)
+        for ln in leg:
+            y -= 5
+            for xx, t in zip(xs, ln):
+                f.txt(xx, y, str(t), fs=1.9, ha="left", va="bottom")
+        for i, t in enumerate(["MATERIAL: ACRÍLICO", "ESPESSURA: 3 mm", "FUNDO: PRETO", "LETRAS: BRANCAS",
+                               "Fixação: rebite ou fita dupla face VHB"]):
+            f.txt(x, y - 8 - 4.5 * i, t, fs=1.9, ha="left", va="bottom")
+    f = pr.nova("LISTA DE MATERIAL DO GABINETE", "=PAINEL", "+GAB", tipo="lista")
+    _tabela_folha(f, "Lista de material – gabinete e ventilação", ("ITEM", "DESCRIÇÃO", "DADOS", "QTD.", "UN."),
+                  (14, 230, 70, 18, 16), [(i + 1, *ln) for i, ln in enumerate(material_gabinete(ped, res, gab))])
 
 
 def _titulo(f, v, x, t):
@@ -379,7 +482,7 @@ def _tabela_itens(f, gab, ped, res, titulo_eq, esc):
               f"Ar interno estimado: {v['t_interna_c']} °C com ambiente {ped.amb_c:.0f} °C (IEC 60890)",
               f"Arranjo: capacitores na frente, reatores atrás, separados por chapa divisória",
               f"Entrada de ar ≥ {v['area_entrada_cm2']} cm² embaixo; saída pelos exaustores no teto",
-              "Termostatos: -BT1 35 °C liga exaustores · -BT2 55 °C desliga o banco",
+              "Termostatos: -B0 35 °C liga exaustores · -BT2 55 °C desliga o banco",
               f"Escala 1:{esc} · cotas em mm · base/soleira {RODAPE} mm incluída na altura"]
     x, y = X1 - 135, Y1 - 10
     f.ret(x - 2, y - 4.2 * len(linhas) - 3, 133, 4.2 * len(linhas) + 5, lw=0.25, cam="TEXTOS")
