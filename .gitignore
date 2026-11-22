@@ -4,3 +4,4 @@ saidas/
 dados/historico.db
 dados/config_local.yaml
 .env
+gestao/saida/

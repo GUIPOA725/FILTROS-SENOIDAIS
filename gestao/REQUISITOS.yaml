@@ -1,0 +1,517 @@
+# REGISTRO DE REQUISITOS DO ENGENHEIRO – Plataforma FSEN (Electric Service)
+# Fonte única das instruções do Guilherme. TODA instrução nova entra aqui NA HORA (antes de programar).
+# Toda versão: rodar gestao/verificar_requisitos.py; requisito crítico reprovado/regredido = versão NÃO publica.
+#
+# Campos:
+#   id          REQ-<área>-<nº>
+#   data        data da instrução (aaaa-mm-dd)
+#   area        GERAL | PUBLICACAO | SEGURANCA | RELATORIO | SIMULACAO | REATOR | PAINEL | BANCO | SINTONIZADO | SENOIDAL |
+#               IA | REFERENCIAS | CAMPO | USO | LIMPEZA
+#   critico     true = bloqueia publicação se não atendido/regredido
+#   requisito   o que o Guilherme pediu (palavras dele quando possível, entre aspas)
+#   fonte       conversa / projeto de referência / medição de campo
+#   atende      módulos/arquivos da plataforma que implementam
+#   verificacao auto:<id do teste no verificar_requisitos.py> | manual:<como conferir>
+#   status      ATENDIDO | PARCIAL | PENDENTE   (avaliação honesta – PARCIAL quando só parte funciona)
+#   desde       versão em que passou a ser atendido (ou "-")
+#   nota        lacunas, o que falta, lições
+revisao: 1
+atualizado: "2026-11-22"
+requisitos:
+
+# ------------------------------------------------------------------ GERAL / VISÃO
+- id: REQ-GER-001
+  data: "2026-11-22"
+  area: GERAL
+  critico: true
+  requisito: "Melhor plataforma de simulação dos 3 tipos de filtros do mundo, sem software caro; igual ou melhor que ABB, Schneider, EPLAN e SolidWorks."
+  fonte: conversa 22/11
+  atende: toda a plataforma
+  verificacao: "manual: comparação por folha com AGCO/CVI (SolidWorks/EPLAN) e catálogos ABB/Schneider – registrar em REVISOES.md"
+  status: PARCIAL
+  desde: "-"
+  nota: "Cálculo, simulação, ATP, normas e relatório no nível; desenho do painel ainda ABAIXO do padrão SolidWorks AGCO (REQ-PNL-*)."
+- id: REQ-GER-002
+  data: "2026-11-22"
+  area: GERAL
+  critico: true
+  requisito: "A IA é o maestro: tudo na plataforma usando ao máximo Python e softwares auxiliares gratuitos (ATP, FEM, CAD); o engenheiro aprova ou não o resultado final."
+  fonte: conversa 22/11
+  atende: app.py, fsen/*
+  verificacao: "manual: nenhum passo do projeto exige software pago"
+  status: ATENDIDO
+  desde: "1.9.0"
+- id: REQ-GER-003
+  data: "2026-11-22"
+  area: GERAL
+  critico: true
+  requisito: "Manter a identidade da plataforma Electric nos 3 filtros (senoidal, dessintonizado, sintonizado); só mudam as diferenças técnicas."
+  fonte: conversa 22/11
+  atende: normas_banco.pdf_padrao, consolidado.py, checagem.py, painel3d.py
+  verificacao: "auto:identidade_3_filtros"
+  status: PARCIAL
+  desde: "1.23.2"
+  nota: "Folha de normas, Check e consolidado iguais nos 3; painel 3D ainda só no banco/sintonizado – falta senoidal."
+- id: REQ-GER-004
+  data: "2026-11-22"
+  area: GERAL
+  critico: false
+  requisito: "Tudo que foi passado são ideias – a IA pode e deve fazer melhor, mais rápido que EPLAN/SolidWorks/ABB/Schneider (softwares manuais sem IA)."
+  fonte: conversa 22/11
+  atende: "-"
+  verificacao: "manual: revisão por versão"
+  status: PARCIAL
+  desde: "-"
+- id: REQ-GER-005
+  data: "2026-11-22"
+  area: GERAL
+  critico: true
+  requisito: "Tudo que o engenheiro fala deve ser salvo em documento/tabela como num software profissional, com gestão de requisitos, revisões e análise – nada solto no chat."
+  fonte: conversa 22/11 15:52–15:53
+  atende: gestao/REQUISITOS.yaml, gestao/verificar_requisitos.py, gestao/REVISOES.md, CLAUDE.md
+  verificacao: "auto:gestao_existe"
+  status: ATENDIDO
+  desde: "1.24.1"
+- id: REQ-GER-006
+  data: "2026-11-22"
+  area: GERAL
+  critico: false
+  requisito: Responder sempre em português.
+  fonte: conversa
+  atende: "-"
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.0.0"
+
+# ------------------------------------------------------------------ PUBLICAÇÃO / VERSÃO
+- id: REQ-PUB-001
+  data: "2026-11-19"
+  area: PUBLICACAO
+  critico: true
+  requisito: "Toda versão: commit+push no GitHub GUIPOA725/FILTROS-SENOIDAIS, zip em PROGRAMAS, arquivos em PROGRAMAS\\FSEN_v1.7.1, CHANGELOG em ATUALIZACOES-MELHORIAS, cópia em %LOCALAPPDATA%\\FSEN\\programa."
+  fonte: conversa
+  atende: processo de publicação
+  verificacao: "manual: checklist de publicação em REVISOES.md"
+  status: ATENDIDO
+  desde: "1.7.1"
+- id: REQ-PUB-002
+  data: "2026-11-19"
+  area: PUBLICACAO
+  critico: true
+  requisito: Mostrar a versão no app e em todos os arquivos gerados.
+  fonte: conversa
+  atende: versao_plataforma.json, carimbos, gerado_por
+  verificacao: "auto:versao_nos_arquivos"
+  status: ATENDIDO
+  desde: "1.8.2"
+- id: REQ-PUB-003
+  data: "2026-11-22"
+  area: PUBLICACAO
+  critico: true
+  requisito: "Erro encontrado no uso pela tela = bug: corrigir, testar, publicar nova versão e continuar o projeto."
+  fonte: skill fsen-rodar-pela-plataforma
+  atende: processo
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.18.6"
+
+# ------------------------------------------------------------------ SEGURANÇA / OPERAÇÃO
+- id: REQ-SEG-001
+  data: "2026-11-20"
+  area: SEGURANCA
+  critico: true
+  requisito: "Nunca digitar senhas/credenciais; a chave da API é digitada pelo usuário e salva só em %USERPROFILE%\\.fsen."
+  fonte: conversa
+  atende: ia.py
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.8.4"
+- id: REQ-SEG-002
+  data: "2026-11-20"
+  area: SEGURANCA
+  critico: true
+  requisito: "\"Não quero que use robô para simulação via ATPDraw\" – não abrir ATPDraw/PlotXY automaticamente."
+  fonte: conversa
+  atende: atp.py
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.9.1"
+- id: REQ-SEG-003
+  data: "2026-11-21"
+  area: SEGURANCA
+  critico: true
+  requisito: "Plataforma de Estudos: \"só não roda direto lá, copia para uma pasta separada\"."
+  fonte: conversa
+  atende: estudos
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.16.0"
+- id: REQ-SEG-004
+  data: "2026-11-22"
+  area: SEGURANCA
+  critico: true
+  requisito: "Não apagar tarefas agendadas sem perguntar; não baixar/instalar programas no computador de ninguém sem confirmação (GPU/CUDA precisa autorização)."
+  fonte: conversa
+  atende: processo
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "-"
+- id: REQ-SEG-005
+  data: "2026-11-22"
+  area: SEGURANCA
+  critico: false
+  requisito: "guilando@gmail.com só para consulta técnica; não digitar senha do Google – ele entra ou manda link de álbum."
+  fonte: conversa
+  atende: processo
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "-"
+- id: REQ-SEG-006
+  data: "2026-11-22"
+  area: SEGURANCA
+  critico: false
+  requisito: "\"Quando vc acabar o uso da tela me avisa\" – avisar sempre que terminar de usar mouse/teclado no notebook."
+  fonte: conversa 22/11
+  atende: processo
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "-"
+
+# ------------------------------------------------------------------ USO PELA PLATAFORMA
+- id: REQ-USO-001
+  data: "2026-11-22"
+  area: USO
+  critico: true
+  requisito: "Fazer os projetos sozinho pela plataforma desktop, como um engenheiro (mouse/teclado quando precisar) e informar só a pasta + resumo curto."
+  fonte: skill fsen-rodar-pela-plataforma
+  atende: processo
+  verificacao: "manual: teste de fogo por versão"
+  status: ATENDIDO
+  desde: "1.18.6"
+- id: REQ-USO-002
+  data: "2026-11-21"
+  area: USO
+  critico: false
+  requisito: Ajuda embutida para usuários novos em todos os campos (dicas).
+  fonte: conversa
+  atende: fsen/ajuda.py (verificar_ajuda)
+  verificacao: "auto:ajuda_completa"
+  status: ATENDIDO
+  desde: "1.18.0"
+
+# ------------------------------------------------------------------ RELATÓRIOS / RESULTADOS
+- id: REQ-REL-001
+  data: "2026-11-22"
+  area: RELATORIO
+  critico: true
+  requisito: "Relatório consolidado com TUDO que foi simulado e gerado, todas as etapas – pode ficar grande; conferido no próprio consolidado (nenhum \"NÃO INCLUÍDO\")."
+  fonte: conversa 22/11
+  atende: fsen/consolidado.py
+  verificacao: "auto:consolidado_completo"
+  status: ATENDIDO
+  desde: "1.21.1"
+- id: REQ-REL-002
+  data: "2026-11-22"
+  area: RELATORIO
+  critico: true
+  requisito: "Pastas separadas por fornecedor, montadora e tipo de análise – cada um recebe só o que tem que fornecer/montar/cotar, de forma rápida e fácil."
+  fonte: conversa 22/11
+  atende: pipeline.py, pipeline_banco.py
+  verificacao: "auto:pastas_por_fornecedor"
+  status: ATENDIDO
+  desde: "1.10.2"
+- id: REQ-REL-003
+  data: "2026-11-22"
+  area: RELATORIO
+  critico: true
+  requisito: "Todo espectro de harmônicas (tensão, corrente, potência) SEMPRE com a coluna THD/DHT, para todos os casos."
+  fonte: conversa 22/11
+  atende: doc_banco.py, vista_simulacao.py, documentos.py
+  verificacao: "auto:thd_nos_espectros"
+  status: ATENDIDO
+  desde: "1.21.2"
+- id: REQ-REL-004
+  data: "2026-11-22"
+  area: RELATORIO
+  critico: true
+  requisito: "Coluna de Check em toda tabela/gráfico de resultado: APROVADO / ATENÇÃO / REPROVADO (+ utilização %), forma mais usada."
+  fonte: conversa 22/11
+  atende: fsen/checagem.py e todas as tabelas
+  verificacao: "auto:coluna_check"
+  status: ATENDIDO
+  desde: "1.22.0"
+- id: REQ-REL-005
+  data: "2026-11-22"
+  area: RELATORIO
+  critico: true
+  requisito: "Folha de dados com valores garantidos + verificação de normas (IEC 61439/61921/60831, IEEE 519/18) com Check, no nível ABB/Schneider."
+  fonte: conversa 22/11 (comparação internacional ABB/Schneider)
+  atende: normas_banco.py, normas_senoidal.py
+  verificacao: "auto:folha_normas"
+  status: ATENDIDO
+  desde: "1.23.0"
+- id: REQ-REL-006
+  data: "2026-11-19"
+  area: RELATORIO
+  critico: false
+  requisito: Relatório técnico final no padrão RTM da Electric (Word + PDF).
+  fonte: modelo_RTM.docx
+  atende: relatorio_rtm
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.9.6"
+
+# ------------------------------------------------------------------ SIMULAÇÃO / ATP
+- id: REQ-SIM-001
+  data: "2026-11-19"
+  area: SIMULACAO
+  critico: true
+  requisito: "Dupla checagem no ATP: Plataforma × ATP com tolerância (1 %) e alerta de divergência."
+  fonte: MELHORIAS.md 19/11
+  atende: atp.py, transitorios.py
+  verificacao: "auto:atp_dupla_checagem"
+  status: ATENDIDO
+  desde: "1.20.1"
+- id: REQ-SIM-002
+  data: "2026-11-22"
+  area: SIMULACAO
+  critico: false
+  requisito: "Caso S2: tensão na bobina do reator com notches (6 pulsos), plataforma + ATP dt 1 µs, validar com a medição ALCAST."
+  fonte: conversa 22/11 + dados/medicoes_campo/ALCAST_2016_modulos.md
+  atende: "-"
+  verificacao: "manual"
+  status: PENDENTE
+  desde: "-"
+
+# ------------------------------------------------------------------ REATOR / INDUTOR
+- id: REQ-REA-001
+  data: "2026-11-22"
+  area: REATOR
+  critico: false
+  requisito: "Núcleo definido pela tensão da bobina (entrada − saída); notches têm pouco volt-segundo mas pesam em perdas parasitas e dv/dt."
+  fonte: conversa 22/11
+  atende: ind_projeto.py (espectro da tensão sobre o indutor)
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.10.0"
+- id: REQ-REA-002
+  data: "2026-11-22"
+  area: REATOR
+  critico: true
+  requisito: "Comparar o reator calculado com o REAL que o engenheiro já instalou (ex.: Panatlântica 2024 – Cootrans 796 µH/95 A, ~55 kg, 2 por coluna de 788 mm): não pode sair maior que o de mercado sem motivo."
+  fonte: conversa 22/11 15:41 (Panatlântica 2024, ORC Cootrans 0413/2024)
+  atende: "-"
+  verificacao: "auto:reator_vs_referencia"
+  status: PENDENTE
+  desde: "-"
+  nota: "Plataforma deu 412×284×357 mm (não cabe 2 por coluna de 800); Cootrans cabe. Meta de forma (caber em 800 mm) e uso do limite classe F a implementar."
+- id: REQ-REA-003
+  data: "2026-11-20"
+  area: REATOR
+  critico: false
+  requisito: Reator padrão Electric classe F alumínio; 2 entreferros por coluna + fio/barra retangular (padrão nacional, fotos Cootrans).
+  fonte: conversa 20/11 + fotos Cootrans
+  atende: ind_projeto.py, ind_estrutura.py
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.11.2"
+
+# ------------------------------------------------------------------ PAINEL 2D / 3D
+- id: REQ-PNL-001
+  data: "2026-11-22"
+  area: PAINEL
+  critico: true
+  requisito: "Desenho 2D/3D do painel no padrão dos layouts Electric feitos no SolidWorks (AGCO Ibirubá 2022) ou melhor, mais leve, igual para os 3 filtros."
+  fonte: "conversa 22/11 + MONTEBRAS\\AGCO_IBIRUBA\\STOLL\\LAYOUT\\VERSÃO 1 8-3-22"
+  atende: fsen/painel3d.py
+  verificacao: "auto:painel_padrao_agco"
+  status: PARCIAL
+  desde: "-"
+  nota: "v1.24.1: concepção AGCO (placa única dupla face, portas frente/trás, 6 folhas). Falta acabamento SolidWorks, cotas por vista, DXF/STEP do painel e aplicação no senoidal."
+- id: REQ-PNL-002
+  data: "2026-11-22"
+  area: PAINEL
+  critico: true
+  requisito: "Componentes só com tamanho real retirado dos desenhos dos catálogos especificados – nada de desenho chutado sem equipamento real."
+  fonte: conversa 22/11
+  atende: dados/dimensoes_componentes.yaml, painel3d.achar_dim
+  verificacao: "auto:dimensoes_com_fonte"
+  status: PARCIAL
+  desde: "1.24.0"
+  nota: "Catálogo cobre Schneider/Epcos/ABB principais; faltam ABB AF50, NR12, Siemens, WEG. Sem medida → vermelho 'a confirmar'."
+- id: REQ-PNL-003
+  data: "2026-11-22"
+  area: PAINEL
+  critico: true
+  requisito: "Concepção do painel Electric: UMA placa de montagem laranja no meio (dupla face) – frente capacitores, contatoras, chaves NH; atrás reatores em prateleiras pretas e cabos subindo; portas frontais E traseiras; exaustores no teto; venezianas embaixo."
+  fonte: AGCO 500 kVAr (SolidWorks 2022) + Panatlântica 2024 (layout REV 1)
+  atende: fsen/painel3d.py
+  verificacao: "auto:painel_padrao_agco"
+  status: ATENDIDO
+  desde: "1.24.1"
+- id: REQ-PNL-004
+  data: "2026-11-22"
+  area: PAINEL
+  critico: true
+  requisito: "Sequência de folhas do layout: fechado frente/fundo com cotas → portas abertas frente/fundo → topo com abertura das portas → sem chapas → só a placa (frente e trás) → vistas frontal/lateral/traseira."
+  fonte: AGCO 500 kVAr (6 folhas A0)
+  atende: fsen/painel3d.gerar
+  verificacao: "auto:painel_padrao_agco"
+  status: ATENDIDO
+  desde: "1.24.1"
+- id: REQ-PNL-005
+  data: "2026-11-22"
+  area: PAINEL
+  critico: true
+  requisito: "Gabinete dimensionado pelos componentes reais (reator FEM, capacitores, manobra) com verificação de arranjo físico com Check."
+  fonte: conversa 22/11
+  atende: painel_gabinete.py, painel3d.modelo
+  verificacao: "auto:painel_padrao_agco"
+  status: ATENDIDO
+  desde: "1.24.0"
+- id: REQ-PNL-006
+  data: "2026-11-21"
+  area: PAINEL
+  critico: false
+  requisito: "Esquema elétrico no padrão EPLAN/AGCO (folhas A3, grade, carimbo, DE/PARA, etiquetas)."
+  fonte: AGCO/CVI (EPLAN)
+  atende: fsen/eplan/
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.16.3"
+- id: REQ-PNL-007
+  data: "2026-11-22"
+  area: PAINEL
+  critico: false
+  requisito: Balões do desenho ligados à lista de material; DXF e STEP leves do painel.
+  fonte: padrão SolidWorks/EPLAN
+  atende: "-"
+  verificacao: "manual"
+  status: PENDENTE
+  desde: "-"
+
+# ------------------------------------------------------------------ BANCO / SINTONIZADO
+- id: REQ-BCO-001
+  data: "2026-11-22"
+  area: BANCO
+  critico: true
+  requisito: "Montante: reativo medido × folga Electric (crescimento + perdas do trafo + N-2), escolha do engenheiro; substituição de banco existente no MESMO porte."
+  fonte: conversa 22/11 + Panatlântica (300 → 400 kvar)
+  atende: leitor_banco.py, banco.py
+  verificacao: "manual: teste de fogo Panatlântica deve dar 8×50 = 400 kvar"
+  status: ATENDIDO
+  desde: "1.23.3"
+- id: REQ-SIN-001
+  data: "2026-11-22"
+  area: SINTONIZADO
+  critico: true
+  requisito: "Sintonizado em 2 construções: PADRÃO = reator trifásico + capacitor trifásico seco PPM (ex. TDK série F); ROBUSTA = 3 reatores monofásicos de 2 colunas por ramo + capacitor trifásico impregnado em óleo (ex. Pirelli Gravataí)."
+  fonte: conversa 22/11 + PIRELLI_GRAVATAI (maior entrega de sintonizados)
+  atende: banco.CONSTRUCOES_SINT, telas_banco.py
+  verificacao: "manual"
+  status: PARCIAL
+  desde: "1.23.0"
+  nota: "Opção existe; falta calibrar a robusta com os dados Pirelli e confirmar fornecedor/códigos do capacitor a óleo."
+
+# ------------------------------------------------------------------ IA / LEITURA
+- id: REQ-IA-001
+  data: "2026-11-22"
+  area: IA
+  critico: false
+  requisito: Ler harmônicas que só existem em gráfico nos relatórios (figuras dos PDFs).
+  fonte: teste de fogo Panatlântica
+  atende: leitor_ia._figuras_pdf
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.23.4"
+- id: REQ-IA-002
+  data: "2026-11-22"
+  area: IA
+  critico: false
+  requisito: Marca dos componentes pedida no e-mail ("todos Schneider") já vem selecionada.
+  fonte: teste de fogo
+  atende: leitor_banco.CAMPOS marca_componentes
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.23.3"
+
+# ------------------------------------------------------------------ REFERÊNCIAS / CAMPO
+- id: REQ-REF-001
+  data: "2026-11-22"
+  area: REFERENCIAS
+  critico: true
+  requisito: "Projetos antigos (AGCO, CVI, PLASBIL, Pirelli, Panatlântica…) são referência para MELHORAR, não para copiar – e devem ser USADOS: cada lição registrada e ligada a um requisito."
+  fonte: conversa 22/11
+  atende: gestao/REFERENCIAS_PROJETOS.yaml, fsen/biblioteca.py
+  verificacao: "auto:referencias_ligadas"
+  status: PARCIAL
+  desde: "1.24.1"
+- id: REQ-REF-002
+  data: "2026-11-22"
+  area: REFERENCIAS
+  critico: false
+  requisito: "Abrir pastas profundas do Drive sem o engenheiro mover nada (sem desculpa de pasta funda)."
+  fonte: conversa 22/11
+  atende: fsen/biblioteca.py, leitura direta pelo computador vinculado
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "1.23.1"
+- id: REQ-CMP-001
+  data: "2026-11-22"
+  area: CAMPO
+  critico: false
+  requisito: "Medições de campo (Fluke, Dranetz, fotos do Google Fotos) guardadas como base de melhoria contínua e ligadas aos clientes da Engenharia/Engenharia_Backup."
+  fonte: conversa 22/11 (Google Fotos guilando@gmail.com, ALCAST)
+  atende: dados/medicoes_campo/
+  verificacao: "manual"
+  status: PARCIAL
+  desde: "1.23.0"
+  nota: "ALCAST registrado; álbuns do Google Fotos aguardando links do engenheiro."
+
+# ------------------------------------------------------------------ LIMPEZA / ESPAÇO
+- id: REQ-LIM-001
+  data: "2026-11-22"
+  area: LIMPEZA
+  critico: false
+  requisito: "Cuidado com espaço (notebook e Drive apertados): apagar versões antigas do programa (aprovado); salvar no Git o que importa."
+  fonte: conversa 22/11
+  atende: processo
+  verificacao: "manual"
+  status: PENDENTE
+  desde: "-"
+  nota: "Versões antigas em PROGRAMAS ainda não apagadas (Drive pessoal não apaga em drive compartilhado)."
+- id: REQ-LIM-002
+  data: "2026-11-22"
+  area: LIMPEZA
+  critico: true
+  requisito: "\"Os projetos antigos de teste eu preciso ver eles antes de apagar\" – só apagar depois que ele revisar; perguntar se já analisou, se não, aguardar e perguntar de novo."
+  fonte: conversa 22/11
+  atende: processo (lembrete agendado)
+  verificacao: "manual"
+  status: ATENDIDO
+  desde: "-"
+
+# ------------------------------------------------------------------ RECUPERADOS DO HISTÓRICO (CHANGELOG v1.0–v1.18: pedidos/avisos do engenheiro)
+- {id: REQ-SEN-001, data: "2026-11-19", area: SENOIDAL, critico: true, requisito: "Substituir a planilha 'Filtro Senoidal LC_Ver_1.0': leitura do pedido, otimização, simulação PWM, documentos e fornecedores.", fonte: "CHANGELOG v1.0", atende: "fsen/*", verificacao: "manual", status: ATENDIDO, desde: "1.0.0"}
+- {id: REQ-SEN-002, data: "2026-11-19", area: SENOIDAL, critico: true, requisito: "Padrão Electric: SÓ LC sem resistor; RC/LCL apenas por escolha na tela de comparação.", fonte: "CHANGELOG v1.8.0", atende: "catalogo cascata_topologias", verificacao: "manual", status: ATENDIDO, desde: "1.8.0"}
+- {id: REQ-SEN-003, data: "2026-11-19", area: SENOIDAL, critico: true, requisito: "fr mínima = 13 × f saída máx (calibrada nos filtros que funcionam em campo: 13,3–15×).", fonte: "CHANGELOG v1.8.0 (validação filtros fabricados)", atende: "criterios", verificacao: "manual", status: ATENDIDO, desde: "1.8.0"}
+- {id: REQ-SEN-004, data: "2026-11-19", area: SENOIDAL, critico: true, requisito: "Aviso do usuário: corrente do filtro saía menor que a da carga – manter a CORRENTE de carga na sobremodulação (só a tensão cai).", fonte: "CHANGELOG v1.7.3", atende: "op_efetivo", verificacao: "manual", status: ATENDIDO, desde: "1.7.3"}
+- {id: REQ-SEN-005, data: "2026-11-20", area: SENOIDAL, critico: true, requisito: "Regra: 'o cobre vai pela carga, o ferro vai pelo inversor' – corrente do indutor definida pela Electric (carga × inversor), a do cliente é informativa.", fonte: "CHANGELOG v1.11.0", atende: "corrente_carga", verificacao: "manual", status: ATENDIDO, desde: "1.11.0"}
+- {id: REQ-SEN-006, data: "2026-11-20", area: SENOIDAL, critico: false, requisito: "Indutor do senoidal classe H como padrão (compras Cootrans anteriores); capacitor de estoque TDK B32361A4206J080 20 µF 480 V IEC 61071 corrigido pela placa.", fonte: "CHANGELOG v1.5.0/v1.7.1", atende: "catalogo.yaml", verificacao: "manual", status: ATENDIDO, desde: "1.7.1"}
+- {id: REQ-SEN-007, data: "2026-11-20", area: SENOIDAL, critico: false, requisito: "Mínimo de capacitores com o capacitor que a empresa tem em estoque; alternativa de L com o MESMO capacitor.", fonte: "CHANGELOG v1.9.12/13", atende: "ponto_otimo.py", verificacao: "manual", status: ATENDIDO, desde: "1.9.13"}
+- {id: REQ-SEN-008, data: "2026-11-19", area: SENOIDAL, critico: false, requisito: "Calibração com as medições Dranetz (SENAI, IHR) – medições SEM motor; THD crítico calculado COM motor.", fonte: "CHANGELOG v1.9.4/1.9.5", atende: "simulacao", verificacao: "manual", status: ATENDIDO, desde: "1.9.5"}
+- {id: REQ-IA-003, data: "2026-11-19", area: IA, critico: true, requisito: "Aviso do usuário 'faz sempre o mesmo questionário': perguntar ao cliente só o que falta NESTE pedido; mostrar o que já recebemos.", fonte: "CHANGELOG v1.8.6", atende: "dados_faltantes.py", verificacao: "manual", status: ATENDIDO, desde: "1.8.6"}
+- {id: REQ-IA-004, data: "2026-11-19", area: IA, critico: true, requisito: "Aviso do usuário 'não é 100 A o filtro': ler tabelas dos .docx; sem valor padrão escondido – faltou dado, avisa e bloqueia.", fonte: "CHANGELOG v1.8.3", atende: "leitor", verificacao: "manual", status: ATENDIDO, desde: "1.8.3"}
+- {id: REQ-IA-005, data: "2026-11-19", area: IA, critico: false, requisito: "IA pela assinatura Claude (Claude Code), modelo e esforço selecionáveis; queda para regras com motivo visível.", fonte: "CHANGELOG v1.8.4/1.8.5", atende: "leitor_ia.py", verificacao: "manual", status: ATENDIDO, desde: "1.8.5"}
+- {id: REQ-USO-003, data: "2026-11-19", area: USO, critico: false, requisito: "Uma pasta por cliente PROJETOS\\<Cliente>\\<data>_<código>; nunca sobrescrever (sufixo _hhmm); cliente obrigatório.", fonte: "CHANGELOG v1.7.2/1.8.7", atende: "pipeline", verificacao: "manual", status: ATENDIDO, desde: "1.8.7"}
+- {id: REQ-USO-004, data: "2026-11-19", area: USO, critico: false, requisito: "Escolher pastas por botão (sem digitar caminho); abrir projeto já feito e ressimular.", fonte: "CHANGELOG v1.8.1/1.8.8", atende: "seletor.py", verificacao: "manual", status: ATENDIDO, desde: "1.8.8"}
+- {id: REQ-USO-005, data: "2026-11-22", area: USO, critico: false, requisito: "Abrir como programa (janela própria), atalho sempre na versão mais nova, fundo branco padrão, versões dos programas visíveis.", fonte: "CHANGELOG v1.18.2–1.18.5", atende: "janela_fsen.py, ABRIR_FSEN.bat", verificacao: "manual", status: ATENDIDO, desde: "1.18.5"}
+- {id: REQ-REL-007, data: "2026-11-20", area: RELATORIO, critico: false, requisito: "E-mails/ETs aos fornecedores com contatos reais e o 'por quê' de cada pedido (Cootrans – Geraldo; IFG – André; Stampgraf – Thiago; IBT; Wise); protótipo e série cotados separados.", fonte: "CHANGELOG v1.7.1/1.9.8/1.11.0", atende: "documentos.py", verificacao: "manual", status: ATENDIDO, desde: "1.11.0"}
+- {id: REQ-REL-008, data: "2026-11-20", area: RELATORIO, critico: false, requisito: "Relatório de Auditoria interno (entradas, origem de cada dado, verificações, rastreabilidade SHA-256, parecer do auditor).", fonte: "CHANGELOG v1.10.0", atende: "auditoria.py", verificacao: "manual", status: ATENDIDO, desde: "1.10.0"}
+- {id: REQ-SIM-003, data: "2026-11-19", area: SIMULACAO, critico: true, requisito: "ATP sempre visível: status (rodou/convergiu/divergiu/não rodou e por quê) na tela, RESUMO e memorial; não abrir ATPDraw/PlotXY ao terminar.", fonte: "CHANGELOG v1.8.9/1.9.3", atende: "atp.py", verificacao: "manual", status: ATENDIDO, desde: "1.9.3"}
+- {id: REQ-SIM-004, data: "2026-11-19", area: SIMULACAO, critico: false, requisito: "Desenho da rede no ATPDraw (.xml) igual ao deck – conferido no ATPDraw 7.7 do PC.", fonte: "CHANGELOG v1.9.2", atende: "atp.py", verificacao: "manual", status: ATENDIDO, desde: "1.9.2"}
+- {id: REQ-REA-004, data: "2026-11-20", area: REATOR, critico: false, requisito: "Indutor por elementos finitos + verificação independente (NGSolve) + script FEMM; desenhos padrão fábrica (ABNT, carimbo, balões=BOM), STEP/DXF; protocolo de ensaio e questionário ao fabricante.", fonte: "CHANGELOG v1.10–1.11.8", atende: "ind_fem.py, ind_desenhos.py, ind_verificacao.py", verificacao: "manual", status: ATENDIDO, desde: "1.11.8"}
+- {id: REQ-REA-005, data: "2026-11-20", area: REATOR, critico: true, requisito: "Chapa do núcleo GO NOVA com certificado da usina (exigência, não orientação) na ET, protocolo, questionário e e-mail.", fonte: "CHANGELOG v1.11.7", atende: "ET indutor", verificacao: "manual", status: ATENDIDO, desde: "1.11.7"}
+- {id: REQ-PNL-008, data: "2026-11-22", area: PAINEL, critico: true, requisito: "Termostato -BT2 55 °C de sobretemperatura no esquema; termostato por reator; regras Schneider/EN 61921: reator nunca abaixo do capacitor, ar entra embaixo e sai pelo teto.", fonte: "CHANGELOG v1.17.0/1.18.4", atende: "eplan, painel_gabinete", verificacao: "manual", status: ATENDIDO, desde: "1.18.4"}
+- {id: REQ-PNL-009, data: "2026-11-22", area: PAINEL, critico: false, requisito: "Lista de plaquetas no modelo das montadoras (FEMSA/Novemp) e etiquetas de fio/componente/cabo (DE/PARA) para os 3 filtros.", fonte: "CHANGELOG v1.16.1/1.17.0", atende: "eplan/etiquetas.py", verificacao: "manual", status: ATENDIDO, desde: "1.16.1"}
+- {id: REQ-PNL-010, data: "2026-11-22", area: PAINEL, critico: false, requisito: "Largura do gabinete calibrada pelos dimensionais IFG e projetos executados (Panatlântica 2024: 1600 × 2000 × 800, 2 colunas de 788)", fonte: "CHANGELOG v1.17.4 + layout Panatlântica REV 1", atende: "painel_gabinete.py", verificacao: "manual", status: PARCIAL, desde: "1.17.4", nota: "Com o reator maior que o Cootrans a plataforma vai para 2000 mm – depende de REQ-REA-002."}

@@ -1,0 +1,83 @@
+# REFERÊNCIAS DE PROJETO E CAMPO – o que cada uma ensina e em qual requisito entrou.
+# Regra (REQ-REF-001): referência é para MELHORAR, não copiar – mas toda lição tem que virar requisito e ser usada.
+referencias:
+- id: REF-AGCO-2022
+  nome: "AGCO Ibirubá – filtros/banco 300 e 500 kVAr (layout SolidWorks, 6 folhas A0) – Montebras/Stoll"
+  caminho: "G:\\Drives compartilhados\\Engenharia\\1 - SERVIÇOS\\9 - QUALIDADE DE ENERGIA ELÉTRICA\\3 - INDUSTRIAL\\MONTEBRAS\\AGCO_IBIRUBA\\STOLL\\LAYOUT\\VERSÃO 1  8-3-22"
+  licoes:
+    - "Placa de montagem ÚNICA no meio, dupla face: frente capacitores (embaixo), contatoras e chaves NH (fileiras), seccionadora geral e barramento no alto; trás reatores em prateleiras pretas, cabos vermelhos subindo."
+    - "Portas frontais E traseiras; venezianas embaixo; exaustores no teto; base preta; estrutura em perfil; controlador e sinaleiros na porta."
+    - "Folhas: fechado frente/fundo com cotas → portas abertas frente/fundo → topo com abertura das portas (0,99 m) → sem chapas frente/fundo → só a placa → frontal/lateral/traseira."
+  requisitos: [REQ-PNL-001, REQ-PNL-003, REQ-PNL-004]
+  usada_em: "fsen/painel3d.py (v1.24.1)"
+- id: REF-CVI-2021
+  nome: "CVI Santa Maria – filtro harmônico sintonizado 2021 (EPLAN + SolidWorks, células 2×2)"
+  caminho: "G:\\...\\3 - INDUSTRIAL\\CVI SANTA MARIA-RS\\3 - 2021\\FILTRO HARMONIC\\PROJETO FILTRO"
+  licoes:
+    - "Dimensional dos componentes (Epcos B32344E 116×291, Fupact ISFT160/400, BR6000, M221, Cootrans RTC125A 310×320×240 60 kg) → catálogo de dimensões."
+    - "Montagem interna em células 2×2; TAGs DE/PARA de cabos; biblioteca Electric_Lib_v9.1 (EPLAN)."
+    - "Ensaios: relatório de painel PI-47127, ensaios Cootrans e de rotina dos capacitores → modelos de FAT/ensaio (pendente)."
+  requisitos: [REQ-PNL-002, REQ-PNL-006, REQ-SIN-001]
+  usada_em: "dados/dimensoes_componentes.yaml; eplan/"
+- id: REF-PIRELLI-GRV
+  nome: "Pirelli Gravataí – maior entrega de filtros sintonizados (reatores monofásicos 2 colunas + capacitores a óleo)"
+  caminho: "G:\\...\\3 - INDUSTRIAL\\PIRELLI_GRAVATAI"
+  licoes:
+    - "Construção ROBUSTA do sintonizado: 3 reatores monofásicos de 2 colunas por ramo + capacitor trifásico impregnado em óleo."
+    - "Lições de campo: '14 - CAPACITOR VAZANDO' e seccionadoras danificadas (a analisar)."
+  requisitos: [REQ-SIN-001]
+  usada_em: "banco.CONSTRUCOES_SINT (opção); calibração PENDENTE"
+- id: REF-PLASBIL
+  nome: "PLASBIL – filtro sintonizado"
+  caminho: "G:\\...\\3 - INDUSTRIAL\\PLASBIL"
+  licoes: ["A ler pela biblioteca (pendente)."]
+  requisitos: [REQ-SIN-001]
+  usada_em: "-"
+- id: REF-PANAT-2024
+  nome: "Panatlântica Caxias do Sul – banco dessintonizado 400 kVAr 415 V (2024) – projeto real instalado"
+  caminho: "G:\\...\\3 - INDUSTRIAL\\PANATLANTICA CAXIAS DO SUL\\2024\\1 - PROJETO FILTRO 400KVAR 415V"
+  licoes:
+    - "8 × 50 kVAr, capacitores 3×25 kVAr/525 V, FD 8,16 % (Nr 3,5), L 796 µH, I 95 A (planilha ESTAGIO 50KVAR 415V DHT 50%)."
+    - "Reator Cootrans 796 µH/95 A, alumínio, classe F, IP00, R$ 1.950 (ORC 0413/2024); ~55 kg (planilha de peso); cabem 2 por prateleira na coluna de 788 mm, 2 prateleiras."
+    - "Painel 1600 × 2000 × 800 (2 colunas de 788), placa da frente com 16 capacitores em fileira, 8 chaves NH e 8 contatoras; reatores atrás; peso total ~801 kg."
+    - "Montadora IFG; TAF IFG (Norton) e TAF cliente (pastas 2 e 3)."
+  requisitos: [REQ-REA-002, REQ-PNL-010, REQ-BCO-001, REQ-PNL-003]
+  usada_em: "teste de fogo (montante 400 kvar OK); reator e largura do painel PENDENTES"
+- id: REF-PANAT-HIST
+  nome: "Panatlântica – histórico 2016–2026 (módulos 50 kVAr 380/415 V, problemas, termografia, troca de capacitores 2018, medições 2019/2023/2026)"
+  caminho: "G:\\...\\3 - INDUSTRIAL\\PANATLANTICA CAXIAS DO SUL"
+  licoes: ["2018: troca de 8 capacitores de 4 módulos 380 V danificados (termografia + corrente) – lição de campo a registrar (pendente)."]
+  requisitos: [REQ-CMP-001]
+  usada_em: "-"
+- id: REF-COOTRANS
+  nome: "Cootrans – ETs, ajustes e propostas de indutores (2013–2021)"
+  caminho: "G:\\Drives compartilhados\\Engenharia\\5 - FILTROS-BANCOS-SINE WAVE - FORNECEDORES\\FORNECEDORES\\COOTRANS"
+  licoes:
+    - "Planilhas 'Ajuste Indutor Trifásico/Monofásico' e ETs por kvar/tensão – padrão Electric de especificação."
+    - "Fotos de montagem dos reatores (quadros em U, tirantes fora das bobinas, saídas em barra)."
+  requisitos: [REQ-REA-003, REQ-REL-007]
+  usada_em: "ind_estrutura.py, ET do reator"
+- id: REF-TECHNIP-2016
+  nome: "TECHNIP – montagem de gabinetes BCD 220/460 V 100/400 kVAr (Electric 2016)"
+  caminho: "Drive (ver dados/referencias_paineis.json)"
+  licoes: ["Arranjos verticais (exaustor, comando, capacitores, rack de indutores) e 400 kVAr em 1600 × 2200 × 800."]
+  requisitos: [REQ-PNL-010]
+  usada_em: "dados/referencias_paineis.json"
+- id: REF-ALCAST-2016
+  nome: "ALCAST – medições Fluke dos módulos (notches de 6 pulsos)"
+  caminho: "dados/medicoes_campo/ALCAST_2016_modulos.md"
+  licoes: ["Notches de retificador de 6 pulsos na tensão – caso S2 do reator."]
+  requisitos: [REQ-SIM-002, REQ-CMP-001]
+  usada_em: "-"
+- id: REF-GFOTOS
+  nome: "Google Fotos (guilando@gmail.com) – álbuns com fotos de filtros e dados de campo"
+  caminho: "https://photos.app.goo.gl/1b635VM45rXQsvei6 (+ álbuns a enviar)"
+  licoes: ["Aguardando links dos álbuns; relacionar com os clientes da Engenharia/Engenharia_Backup."]
+  requisitos: [REQ-CMP-001]
+  usada_em: "-"
+- id: REF-ABB-SCHNEIDER
+  nome: "ABB (Hitachi APCQ) e Schneider (VarSet) – catálogos internacionais de bancos dessintonizados"
+  caminho: "web"
+  licoes: ["Folha de dados com valores garantidos, verificação IEC 61439/61921 – nível exigido ('não admito abaixo')."]
+  requisitos: [REQ-REL-005, REQ-GER-001]
+  usada_em: "normas_banco.py"

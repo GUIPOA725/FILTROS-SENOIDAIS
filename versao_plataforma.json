@@ -1,5 +1,5 @@
 {
-  "versao": "1.24.0",
+  "versao": "1.24.1",
   "data": "2026-11-22",
-  "resumo": "Painel 3D com medidas reais (catálogo + reator FEM) e gabinete dimensionado pelo tamanho do reator"
+  "resumo": "Gestão de requisitos do engenheiro (registro, referências, revisões, verificador) + painel 3D na concepção AGCO (placa dupla face, 6 folhas)"
 }
