@@ -334,7 +334,14 @@ def metricas(sim, par, estagio, t0, janela=0.04):
     vcap_pk = max(float(np.max(np.abs(v))) for v in vcap)
     vbus_pk = max(float(np.max(np.abs(sim["V"][f"BUS{k}"][sel]))) for k in FASES) / par["Vfase_pk"]
     K = f"K{n:02d}"
-    trv = max(float(np.max(np.abs(sim["V"][f"BUS{k}"][sel] - sim["V"][f"{K}{k}"][sel]))) for k in FASES)
+    # v1.20.1: capacitor BT trifásico em Δ, sem referência de terra – a tensão entre contatos é medida ENTRE FASES:
+    # (tensão da barra no par x-y) − (tensão do lado do capacitor no mesmo par) = soma das tensões nos 2 polos do par
+    # (no pior caso: rede em oposição à carga presa no capacitor, até 2·√2·V_LL). Fase-terra do lado do Δ aberto não é
+    # definida pelo circuito (dava 850 × 1278 V entre plataforma e ATP) e não é grandeza de projeto a 60 Hz.
+    sel_a = t >= t0 + 0.5e-3
+    trv = max(float(np.max(np.abs((sim["V"][f"BUS{x}"][sel_a] - sim["V"][f"BUS{y}"][sel_a])
+                                  - (sim["V"][f"{K}{x}"][sel_a] - sim["V"][f"{K}{y}"][sel_a]))))
+              for x, y in (("A", "B"), ("B", "C"), ("C", "A")))
     # frequência do inrush pelo intervalo entre os 2 primeiros picos da fase com maior pico
     x = i_ph[int(np.argmax([np.max(np.abs(y)) for y in i_ph]))]
     zc = np.nonzero(np.diff(np.sign(x - np.mean(x[-int(1 / par['f'] / dtt):]))))[0]
@@ -381,8 +388,11 @@ def avaliar(m, s, par, caso):
     add("Barra", "Sobretensão de manobra (equipamentos BT)", f"{m['vbus_pu']:.2f} pu", f"≤ {V_BARRA_MAX:.2f} pu",
         m["vbus_pu"] <= V_BARRA_MAX)
     if caso.startswith("D"):
-        add("Contatora", "Tensão de restabelecimento entre contatos", f"{m['trv']:.0f} V",
-            f"≤ {2.5 * par['Vfase_pk'] * math.sqrt(3):.0f} V (2,5 pu L-L)", m["trv"] <= 2.5 * par["Vfase_pk"] * math.sqrt(3))
+        # par de polos em série: rede em oposição à carga presa no Δ (a abertura polo a polo pode deixar a carga presa acima do
+        # pico da tensão de linha). Limite conservador: metade da tensão suportável de impulso dos contatos abertos
+        # (Uimp 6 kV – IEC 60947-4-1, contatoras BT usuais) para o par de polos.
+        add("Contatora", "Tensão entre contatos após abrir (par de polos, entre fases)", f"{m['trv']:.0f} V "
+            f"(carga presa no capacitor {m['vcap_final']:.0f} V)", "≤ 3000 V (Uimp 6 kV ÷ 2 – IEC 60947-4-1)", m["trv"] <= 3000)
     return out
 
 
@@ -570,7 +580,7 @@ def sim_de_pl4(pl4, rede):
 TOL_ATP = 1.0
 GRANDEZAS = [("ipk", "Pico de corrente no estágio", "A", TOL_ATP), ("i2t", "I²t nos 10 ms", "A²s", TOL_ATP),
              ("vcap_pk", "Pico de tensão no capacitor", "V", TOL_ATP), ("vbus_pu", "Pico de tensão na barra", "pu", TOL_ATP),
-             ("trv", "Tensão entre contatos", "V", TOL_ATP)]
+             ("trv", "Tensão entre contatos (entre fases)", "V", TOL_ATP)]
 
 
 def dupla_checagem(est, pasta, log=print):
@@ -592,6 +602,8 @@ def dupla_checagem(est, pasta, log=print):
                     s_alvo = next(s for s in est["parametros"]["estagios"] if s["i"] == c["estagio"])
                     ma = metricas(s_atp, est["parametros"], s_alvo, c["t0"])
                     for k, nome, un, tol in GRANDEZAS:
+                        if k == "trv" and not c["codigo"].startswith(("D", "R")):
+                            continue                      # tensão entre contatos só nas aberturas
                         a_, b_ = c["metricas"].get(k), ma.get(k)
                         if a_ is None or b_ is None or not a_:
                             continue
