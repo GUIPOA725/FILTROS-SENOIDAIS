@@ -91,72 +91,104 @@ def _grelha(v, x, y, w, h, n=6):
         v.lin(x, yy, x + w, yy, lw=0.13)
 
 
-# ------------------------------------------------------------------------------ folha 1
+# ------------------------------------------------------------------------------ folha 1 – externo
+def _seta(f, x0, y0, x1, y1):
+    f.lin(x0, y0, x1, y1, lw=0.25, cam="AR")
+    a = math.atan2(y1 - y0, x1 - x0)
+    for d in (2.6, -2.6):
+        f.lin(x1, y1, x1 - 2.2 * math.cos(a + d * 0.2), y1 - 2.2 * math.sin(a + d * 0.2), lw=0.25, cam="AR")
+
+
 def _frontal_portas(v, gab, ped, res):
     D = gab["dimensoes_mm"]
     H, L = D["altura"], D["largura"]
     v.ret(0, 0, L, RODAPE, lw=0.35, preench="0.85")
-    for x, w, c in _xs(gab):
+    for i, (x, w, c) in enumerate(_xs(gab)):
         v.ret(x, RODAPE, w, H - RODAPE, lw=0.5)
-        v.ret(x + 15, RODAPE + 15, w - 30, H - RODAPE - 30, lw=0.25)          # porta
-        v.ret(x + w - 45, RODAPE + (H - RODAPE) / 2 - 60, 15, 120, lw=0.25)   # fecho
-        if "EXAUSTOR" in c["zonas"]:
-            _grelha(v, x + w * 0.2, H - 170, w * 0.6, 110)
-        if c["funcao"] in ("única", "operação/comando"):
-            yc = H - 520
-            v.ret(x + w / 2 - 72, yc, 144, 144, lw=0.35)                      # controlador 144×144
+        v.ret(x + 15, RODAPE + 15, w - 30, H - RODAPE - 30, lw=0.25)              # porta
+        v.ret(x + w - 50, RODAPE + (H - RODAPE) / 2 - 60, 15, 120, lw=0.25)       # fecho
+        _grelha(v, x + w * 0.2, RODAPE + 60, w * 0.6, 220, n=8)                    # entrada de ar (embaixo)
+        v.txt(x + w / 2, RODAPE + 310, "ENTRADA DE AR", fs=1.2)
+        if i == 0:
+            yc = H - 480
+            v.ret(x + w / 2 - 72, yc, 144, 144, lw=0.35)                          # controlador 144×144
             v.txt(x + w / 2, yc + 72, "CFP", fs=1.6)
             n = len(res["estagios"])
-            for i in range(n):                                                # sinaleiros Ø22
-                cx = x + w / 2 + (i - (n - 1) / 2) * min(40, (w - 80) / max(n, 1))
-                v.circ(cx, yc - 60, 11)
-            v.circ(x + w / 2 - 50, yc - 130, 14)                              # chave
-            v.circ(x + w / 2 + 50, yc - 130, 20)                              # emergência
-            v.txt(x + w / 2, yc - 175, "D/L/A   EMERG.", fs=1.4)
+            passo = min(45, (w - 120) / max(n, 1))
+            for k in range(n):                                                    # sinaleiros Ø22
+                v.circ(x + w / 2 + (k - (n - 1) / 2) * passo, yc - 60, 11)
+            v.circ(x + w / 2 - 60, yc - 140, 14)                                  # seletora
+            v.circ(x + w / 2 + 60, yc - 140, 20)                                  # emergência
+            v.txt(x + w / 2 - 60, yc - 185, "D/A", fs=1.3)
+            v.txt(x + w / 2 + 60, yc - 185, "EMERG.", fs=1.3)
+            v.ret(x + w / 2 - 100, yc + 200, 200, 60, lw=0.25)                    # plaqueta TAG
+            v.txt(x + w / 2, yc + 230, "TAG DO PAINEL", fs=1.2)
     v.cota_h(0, L, 0, off=-7)
     if len(gab["colunas"]) > 1:
         for x, w, c in _xs(gab):
             v.cota_h(x, x + w, H, off=5)
     v.cota_v(0, H, 0, off=-7)
-    v.txt(L / 2, -0, "", fs=1)
 
 
-def _lateral(v, gab, com_admissao=True):
+def _lateral(v, gab):
     D = gab["dimensoes_mm"]
     H, P = D["altura"], D["profundidade"]
     v.ret(0, 0, P, RODAPE, lw=0.35, preench="0.85")
     v.ret(0, RODAPE, P, H - RODAPE, lw=0.5)
-    v.lin(P - 25, RODAPE, P - 25, H, lw=0.18, tracejado=True)                 # porta (frente à direita)
     v.cota_h(0, P, 0, off=-7)
     v.cota_v(0, H, P, off=7)
+    v.txt(P * 0.25, H + 60, "TRÁS", fs=1.4)
+    v.txt(P * 0.75, H + 60, "FRENTE", fs=1.4)
 
 
 def _superior(v, gab):
     D = gab["dimensoes_mm"]
     L, P = D["largura"], D["profundidade"]
     v.ret(0, 0, L, P, lw=0.5)
-    vent = gab["ventilacao"]
-    quentes = [(x, w) for x, w, c in _xs(gab) if "EXAUSTOR" in c["zonas"] and c["funcao"] != "operação/comando"] or \
-              [(x, w) for x, w, c in _xs(gab)]
-    n = vent["n_exaustores"]
-    for i in range(n):
-        x, w = quentes[i % len(quentes)]
-        k = i // len(quentes)
-        r = min(w, P) * 0.22
-        cx = x + w / 2
-        cy = P * (0.35 + 0.3 * k) if n > len(quentes) else P * 0.45
-        v.circ(cx, cy, r, lw=0.35)
-        v.lin(cx - r, cy, cx + r, cy, lw=0.13)
-        v.lin(cx, cy - r, cx, cy + r, lw=0.13)
+    v.lin(0, P / 2, L, P / 2, lw=0.13, tracejado=True)                            # chapa divisória (projeção)
+    cols = _xs(gab)
+    n = gab["ventilacao"]["n_exaustores"]
+    por = math.ceil(n / len(cols))
+    k = 0
+    for x, w, c in cols:
+        for j in range(por):
+            if k >= n:
+                break
+            r = min(w / por, P / 2) * 0.32
+            cx = x + w * (j + 0.5) / por
+            cy = P * 0.28                                                         # sobre o compartimento traseiro
+            v.circ(cx, cy, r, lw=0.35)
+            v.lin(cx - r, cy, cx + r, cy, lw=0.13)
+            v.lin(cx, cy - r, cx, cy + r, lw=0.13)
+            k += 1
+    v.txt(L + 60, P * 0.25, "TRÁS (reatores)", fs=1.3, ha="left")
+    v.txt(L + 60, P * 0.75, "FRENTE (capacitores)", fs=1.3, ha="left")
     v.cota_h(0, L, 0, off=-7)
-    v.cota_v(0, P, L, off=7)
+    v.cota_v(0, P, 0, off=-7)
 
 
-# ------------------------------------------------------------------------------ folha 2
+# ------------------------------------------------------------------------------ folha 2 – frente e trás sem portas
 def _ind_dim(e):
     q = float(e["Q_kvar"])
-    w = 220 if q <= 30 else 280 if q <= 60 else 340
-    return w, int(w * 0.85)
+    w = 240 if q <= 30 else 300 if q <= 60 else 360
+    return w, int(w * 0.8)
+
+
+def _placa_estagio(v, x, y, w, h, e, k):
+    """Placa de um estágio: chave seccionadora-fusível + contatora + capacitores (frente)."""
+    v.ret(x, y, w, h, lw=0.18, tracejado=True)
+    v.ret(x + 20, y + h * 0.15, 110, h * 0.7, lw=0.3)                             # chave NH tripolar
+    v.txt(x + 75, y + h * 0.5, f"-Q{k}", fs=1.2)
+    v.ret(x + 150, y + h * 0.2, 70, h * 0.6, lw=0.3)                              # contatora
+    v.txt(x + 185, y + h * 0.5, f"-K{k}", fs=1.2)
+    latas = int((e.get("cap") or [3])[0])
+    d = 70.0
+    cabem = max(1, int((w - 250) // (d + 30)))
+    for j in range(min(latas, cabem)):
+        v.ret(x + 245 + j * (d + 30), y + 15, d, h - 30, lw=0.3)
+    extra = latas - cabem
+    v.txt(x + w - 10, y + h - 25, f"{e['codigo'].split('-')[-1]} kvar" + (f" (+{extra} cap.)" if extra > 0 else ""),
+          fs=1.1, ha="right")
 
 
 def _frontal_interno(v, gab, ped, res):
@@ -164,129 +196,124 @@ def _frontal_interno(v, gab, ped, res):
     H, L = D["altura"], D["largura"]
     est = res["estagios"]
     v.ret(0, 0, L, RODAPE, lw=0.35, preench="0.85")
-    cols = _xs(gab)
-    ind_cols = [c for c in cols if c[2]["funcao"].startswith("indutores")]
-    cap_cols = [c for c in cols if c[2]["funcao"].startswith("capacitores")]
-    for x, w, c in cols:
+    for i, (x, w, c) in enumerate(_xs(gab)):
         v.ret(x, RODAPE, w, H - RODAPE, lw=0.5)
-        v.ret(x + 30, RODAPE + 20, w - 60, H - RODAPE - 40, lw=0.13, tracejado=True)   # placa/estrutura
-        if "EXAUSTOR" in c["zonas"]:
-            v.ret(x + w * 0.25, H - H_EXAUST + 20, w * 0.5, H_EXAUST - 40, lw=0.25)
-            v.txt(x + w / 2, H - H_EXAUST / 2, "EXAUSTOR", fs=1.4)
-    if gab["colunas"][0]["funcao"] == "única":
-        x, w, c = cols[0]
-        y_cmd = H - H_EXAUST - 380
-        v.ret(x + 50, y_cmd, w - 100, 360, lw=0.25)
-        v.txt(x + w / 2, y_cmd + 180, "COMANDO / PROTEÇÃO / FUSÍVEIS / CONTATORAS", fs=1.3)
-        y_cap = y_cmd - 650
-        _capacitores(v, x + 40, y_cap, w - 80, 620, est)
-        _indutores(v, x + 40, RODAPE + 40, w - 80, y_cap - RODAPE - 60, est)
-        return
-    x, w, c = cols[0]                                   # coluna de operação
-    v.ret(x + 40, H - H_EXAUST - 520, w - 80, 480, lw=0.25)
-    v.txt(x + w / 2, H - H_EXAUST - 280, "COMANDO", fs=1.4)
-    v.ret(x + 40, RODAPE + 300, w - 80, 900, lw=0.25)
-    v.txt(x + w / 2, RODAPE + 750, "PROTEÇÃO GERAL", fs=1.4, rot=90)
-    for i in range(3):                                  # barramento horizontal (rede)
-        v.lin(x + 20, H - H_EXAUST - 600 - i * 40, L - 20, H - H_EXAUST - 600 - i * 40, lw=0.6, cam="BARRAMENTO")
-    per = [est[i::len(cap_cols)] for i in range(len(cap_cols))]
-    for (x, w, c), lote in zip(cap_cols, per):
-        y_top = H - H_EXAUST - 720
-        for k, e in enumerate(lote):                    # fusíveis + contatora por estágio
-            yy = y_top - k * 170
-            for f in range(3):
-                v.ret(x + 50 + f * 40, yy - 120, 30, 120, lw=0.25)
-            v.ret(x + 190, yy - 120, 80, 120, lw=0.25)
-            v.txt(x + w - 40, yy - 60, e["codigo"].split("-")[-1] + " kvar", fs=1.2, ha="right")
-        y_cap_top = y_top - len(lote) * 170 - 40
-        _capacitores(v, x + 40, RODAPE + 40, w - 80, y_cap_top - RODAPE - 40, lote)
-    per = [est[i::len(ind_cols)] for i in range(len(ind_cols))]
-    for (x, w, c), lote in zip(ind_cols, per):
-        _indutores(v, x + 40, RODAPE + 40, w - 80, H - H_EXAUST - RODAPE - 80, lote)
+        y = H - 60
+        if i == 0:
+            v.ret(x + 40, y - 260, w - 80, 240, lw=0.25)
+            v.txt(x + w / 2, y - 140, "COMANDO: TRAFO, DISJ., RELÉ F. FASE, -BT1 35 °C / -BT2 55 °C", fs=1.1)
+            y -= 290
+            v.ret(x + 40, y - 200, w - 80, 180, lw=0.3)
+            v.txt(x + w / 2, y - 110, "PROTEÇÃO GERAL", fs=1.3)
+            y -= 220
+        for f_ in range(3):                                                       # barramento principal
+            v.lin(x + 20, y - 20 - f_ * 35, x + w - 20, y - 20 - f_ * 35, lw=0.6, cam="BARRAMENTO")
+        y -= 140
+        hp = min(300, (y - RODAPE - 340) / max(len(c["estagios"]), 1))           # 340 mm livres p/ entrada de ar
+        for k in c["estagios"]:
+            _placa_estagio(v, x + 30, y - hp + 10, w - 60, hp - 20, est[k], k + 1)
+            y -= hp
+        v.txt(x + w / 2, RODAPE + 170, "LIVRE – ENTRADA DE AR", fs=1.2)
 
 
-def _capacitores(v, x, y, w, h, est):
-    latas = sum(int((e.get("cap") or [3])[0]) for e in est)
-    d = 76.0
-    por_lin = max(1, int(w // (d + 12)))
-    lin = math.ceil(latas / por_lin)
-    hh = min(230, h / max(lin, 1) - 20)
-    if hh < 60:                                          # não cabe em escala: desenha o que cabe e anota
-        lin = max(1, int(h // 80))
-        hh = 60
-        latas_d = lin * por_lin
-    else:
-        latas_d = latas
-    k = 0
-    for i in range(lin):
-        for j in range(min(por_lin, latas_d - k)):
-            v.ret(x + j * (d + 12), y + h - (i + 1) * (hh + 20), d, hh, lw=0.25)
-            k += 1
-    v.txt(x + w / 2, y + h + 15, f"CAPACITORES ({latas} un.)" + ("" if latas_d >= latas else " – ver lista"), fs=1.2)
-
-
-def _indutores(v, x, y, w, h, est):
-    yy = y
-    for e in est:
-        iw, ih = _ind_dim(e)
-        iw = min(iw, w - 20)
-        if yy + ih > y + h:
-            break
-        v.ret(x + (w - iw) / 2, yy, iw, ih, lw=0.35)
-        for k in range(3):
-            v.ret(x + (w - iw) / 2 + iw * (0.12 + 0.3 * k), yy + ih * 0.1, iw * 0.18, ih * 0.8, lw=0.13)
-        v.txt(x + w / 2, yy + ih + 12, f"L {e['L_uH']/1000:.3f} mH", fs=1.1)
-        v.lin(x, yy - 10, x + w, yy - 10, lw=0.25)    # prateleira
-        yy += ih + 70
-
-
-def _traseira(v, gab):
+def _traseira_interna(v, gab, res):
     D = gab["dimensoes_mm"]
     H, L = D["altura"], D["largura"]
+    est = res["estagios"]
     v.ret(0, 0, L, RODAPE, lw=0.35, preench="0.85")
-    v.ret(0, RODAPE, L, H - RODAPE, lw=0.5)
-    for x, w, c in _xs(gab):
-        v.lin(x, RODAPE, x, H, lw=0.25)
-        if c["funcao"] == "única" or c["funcao"].startswith("indutores"):
-            _grelha(v, x + w * 0.15, RODAPE + 80, w * 0.7, 300, n=8)
-            v.txt(x + w / 2, RODAPE + 420, "ADMISSÃO DE AR", fs=1.3)
+    cols = list(reversed(_xs(gab)))                                               # vista por trás: espelhada
+    for (x, w, c) in cols:
+        xm = L - x - w
+        v.ret(xm, RODAPE, w, H - RODAPE, lw=0.5)
+        v.ret(xm + w * 0.2, H - 180, w * 0.6, 140, lw=0.25)
+        v.txt(xm + w / 2, H - 110, "EXAUSTOR", fs=1.3)
+        y = H - 300
+        livre = y - RODAPE - 250
+        n = max(len(c["estagios"]), 1)
+        for k in c["estagios"]:
+            iw, ih = _ind_dim(est[k])
+            ih = min(ih, livre / n - 60)
+            v.lin(xm + 30, y - ih - 15, xm + w - 30, y - ih - 15, lw=0.35)       # prateleira
+            v.ret(xm + (w - iw) / 2, y - ih, iw, ih, lw=0.35)
+            for b in range(3):
+                v.ret(xm + (w - iw) / 2 + iw * (0.1 + 0.3 * b), y - ih * 0.9, iw * 0.2, ih * 0.8, lw=0.13)
+            v.txt(xm + w - 35, y - ih / 2, f"-L{k + 1}\n{est[k]['L_uH'] / 1000:.3f} mH", fs=1.1, ha="right")
+            y -= ih + 60
+        _grelha(v, xm + w * 0.2, RODAPE + 60, w * 0.6, 180, n=6)
     v.cota_h(0, L, 0, off=-7)
 
 
-# ------------------------------------------------------------------------------ folha 3
+# ------------------------------------------------------------------------------ folha 3 – corte e isométricas
+def _corte(v, gab, res):
+    D = gab["dimensoes_mm"]
+    H, P = D["altura"], D["profundidade"]
+    from .painel_gabinete import PROF_TRAS
+    f = v.f
+    v.ret(0, 0, P, RODAPE, lw=0.35, preench="0.85")
+    v.ret(0, RODAPE, P, H - RODAPE, lw=0.5)
+    xd = PROF_TRAS + 20
+    v.lin(xd, RODAPE + 250, xd, H - 220, lw=0.6)                                  # chapa divisória
+    v.txt(xd + 15, H / 2, "CHAPA DIVISÓRIA", fs=1.2, rot=90, ha="center")
+    v.ret(PROF_TRAS * 0.15, H - 160, PROF_TRAS * 0.7, 120, lw=0.3)                # exaustor no teto, atrás
+    n = max(len(gab["colunas"][0]["estagios"]), 1)
+    y = H - 320
+    for k in range(n):                                                             # reatores (trás)
+        hh = min(260, (H - 650) / n - 50)
+        v.ret(50, y - hh, PROF_TRAS - 100, hh, lw=0.35)
+        y -= hh + 50
+    y = H - 600
+    for k in range(n):                                                             # placas (frente)
+        hh = min(300, (y - RODAPE - 300) / max(n - k, 1))
+        v.ret(xd + 60, y - hh + 20, 200, hh - 40, lw=0.3)
+        y -= hh
+    a, b = v.p(P - 30, RODAPE + 120)
+    c, d = v.p(30, RODAPE + 120)
+    _seta(f, a + 6, b, a - 3, b)
+    _seta(f, c - 6, d, c + 3, d)
+    a, b = v.p(xd / 2, RODAPE + 200)
+    _seta(f, a, b, a, b + (H - 600) / v.e)
+    a, b = v.p(xd + 150, RODAPE + 200)
+    _seta(f, a, b, a, b + (H - 900) / v.e)
+    a, b = v.p(PROF_TRAS / 2, H)
+    _seta(f, a, b, a, b + 8)
+    v.txt(P * 0.25, -150, "TRÁS (reatores)", fs=1.3)
+    v.txt(P * 0.75, -150, "FRENTE (capacitores)", fs=1.3)
+    v.cota_h(0, xd, H, off=5, txt=f"{xd:.0f}")
+    v.cota_h(xd, P, H, off=5, txt=f"{P - xd:.0f}")
+
+
 def _iso(f, ox, oy, gab, esc, com_portas=True):
     D = gab["dimensoes_mm"]
     H, L, P = D["altura"], D["largura"], D["profundidade"]
     ang = math.radians(30)
-    def q(x, y, z):                                     # x largura, y profundidade, z altura
-        return (ox + (x - y * math.cos(ang)) / esc * 0.95, oy + (z + y * math.sin(ang) * 0.6) / esc)
+    def q(x, y, z):
+        return (ox + (x + y * math.cos(ang) * 0.6) / esc, oy + (z + y * math.sin(ang) * 0.6) / esc)
     def L_(a, b, lw=0.35, tracejado=False):
         f.lin(*q(*a), *q(*b), lw=lw, cam="GABINETE", tracejado=tracejado)
-    pts = [(0, 0, 0), (L, 0, 0), (L, 0, H), (0, 0, H)]
-    for a, b in zip(pts, pts[1:] + pts[:1]):
+    for a, b in [((0, 0, 0), (L, 0, 0)), ((L, 0, 0), (L, 0, H)), ((L, 0, H), (0, 0, H)), ((0, 0, H), (0, 0, 0)),
+                 ((0, 0, H), (0, P, H)), ((L, 0, H), (L, P, H)), ((L, 0, 0), (L, P, 0)), ((0, P, H), (L, P, H)),
+                 ((L, P, H), (L, P, 0)), ((0, 0, RODAPE), (L, 0, RODAPE))]:
         L_(a, b, 0.5)
-    for a in [(0, 0, H), (L, 0, H), (0, 0, 0)]:
-        L_(a, (a[0], P, a[2]), 0.5)
-    L_((0, P, 0), (0, P, H), 0.5)
-    L_((0, P, H), (L, P, H), 0.5)
-    L_((0, 0, RODAPE), (L, 0, RODAPE), 0.25)
     for x, w, c in _xs(gab):
         L_((x, 0, RODAPE), (x, 0, H), 0.35)
+        L_((x, 0, H), (x, P, H), 0.18)
+        cx, cy = q(x + w / 2, P * 0.72, H)                                         # exaustor sobre os reatores
+        f.circ(cx, cy, w * 0.13 / esc, lw=0.25, cam="GABINETE")
         if com_portas:
             for a, b in [((x + 15, 0, RODAPE + 15), (x + w - 15, 0, RODAPE + 15)), ((x + w - 15, 0, RODAPE + 15), (x + w - 15, 0, H - 15)),
                          ((x + w - 15, 0, H - 15), (x + 15, 0, H - 15)), ((x + 15, 0, H - 15), (x + 15, 0, RODAPE + 15))]:
                 L_(a, b, 0.18)
+            for k in range(6):
+                zz = RODAPE + 70 + k * 35
+                L_((x + w * 0.2, 0, zz), (x + w * 0.8, 0, zz), 0.13)
         else:
-            zs = c["zonas"]
-            hz = (H - RODAPE) / len(zs)
-            for k, z in enumerate(zs):
-                z0 = H - (k + 1) * hz
-                L_((x + 30, 0, z0 + 15), (x + w - 30, 0, z0 + 15), 0.18)
-                f.txt(*q(x + w / 2, 0, z0 + hz / 2), z.split(" (")[0].title(), fs=1.3, ha="center", va="center", cam="TEXTOS")
-    for x, w, c in _xs(gab):                            # exaustores no teto
-        if "EXAUSTOR" in c["zonas"] and c["funcao"] != "operação/comando":
-            cx, cy = q(x + w / 2, P / 2, H)
-            f.circ(cx, cy, min(w, P) * 0.18 / esc, lw=0.25, cam="GABINETE")
+            n = max(len(c["estagios"]), 1)
+            for k in range(n):
+                z0 = H - 650 - (k + 1) * (H - 1000) / n
+                L_((x + 30, 0, z0), (x + w - 30, 0, z0), 0.18)
+                f.txt(*q(x + w / 2, 0, z0 + (H - 1000) / n / 2), f"Estágio {c['estagios'][k] + 1}", fs=1.2,
+                      ha="center", va="center", cam="TEXTOS")
+            L_((x, P / 2, RODAPE), (x, P / 2, H), 0.18, tracejado=True)
 
 
 # ------------------------------------------------------------------------------ montagem
@@ -300,7 +327,6 @@ def construir(ped, res, gab, cod, versao):
                          norma="NBR IEC 61439-1/2 · IEC 60890 · NBR 5410")
     area_y0 = Y0 + CAR_H + 22
     area_h = Y1 - area_y0 - 14
-    # folha 1: frontal | lateral | superior
     f = pr.nova("LAYOUT EXTERNO", "=PAINEL", "+GAB")
     esc = _escala(L + P + 900, H + P + 700, X1 - X0 - 150, area_h)
     v = _Vista(f, X0 + 22, area_y0 + P / esc + 30, esc)
@@ -313,24 +339,26 @@ def construir(ped, res, gab, cod, versao):
     _superior(vs, gab)
     _titulo(f, vs, L / 2, "VISTA SUPERIOR")
     _tabela_itens(f, gab, ped, res, titulo_eq, esc)
-    # folha 2: interno + traseira
     f2 = pr.nova("LAYOUT INTERNO", "=PAINEL", "+GAB")
     esc2 = _escala(2 * L + 500, H + 400, X1 - X0 - 30, area_h)
     v2 = _Vista(f2, X0 + 20, area_y0 + 14, esc2)
     _frontal_interno(v2, gab, ped, res)
-    _titulo(f2, v2, L / 2, "VISTA FRONTAL S/ PORTAS")
+    _titulo(f2, v2, L / 2, "VISTA FRONTAL S/ PORTA (CAPACITORES)")
     v3 = _Vista(f2, X0 + 20 + (L + 400) / esc2, area_y0 + 14, esc2)
-    _traseira(v3, gab)
-    _titulo(f2, v3, L / 2, "VISTA TRASEIRA")
+    _traseira_interna(v3, gab, res)
+    _titulo(f2, v3, L / 2, "VISTA TRASEIRA S/ PORTA (REATORES)")
     f2.txt(X1 - 4, area_y0 - 14, f"ESCALA 1:{esc2}", fs=2.0, ha="right")
-    # folha 3: isométricas
-    f3 = pr.nova("ISOMÉTRICAS", "=PAINEL", "+GAB")
-    esc3 = _escala(2 * (L + P) + 600, H + P, X1 - X0 - 30, area_h)
-    _iso(f3, X0 + 20 + P * 0.9 / esc3, area_y0 + 8, gab, esc3, True)
-    f3.txt(X0 + 20 + (L / 2 + P * 0.3) / esc3, area_y0 - 6, "VISTA ISOMÉTRICA", fs=2.2, ha="center", negrito=True)
-    ox2 = X0 + 20 + (L + P * 1.9 + 400) / esc3
+    f3 = pr.nova("CORTE E ISOMÉTRICAS", "=PAINEL", "+GAB")
+    esc3 = _escala(P + 2 * (L + P * 0.6) + 900, H + P, X1 - X0 - 30, area_h)
+    vc = _Vista(f3, X0 + 22, area_y0 + 8, esc3)
+    _corte(vc, gab, res)
+    _titulo(f3, vc, P / 2, "CORTE LATERAL – FLUXO DE AR")
+    ox = X0 + 22 + (P + 400) / esc3
+    _iso(f3, ox, area_y0 + 8, gab, esc3, True)
+    f3.txt(ox + L / 2 / esc3, area_y0 - 6, "ISOMÉTRICA", fs=2.2, ha="center", negrito=True)
+    ox2 = ox + (L + P * 0.6 + 350) / esc3
     _iso(f3, ox2, area_y0 + 8, gab, esc3, False)
-    f3.txt(ox2 + (L / 2 - P * 0.6) / esc3, area_y0 - 6, "VISTA ISOMÉTRICA S/ PORTAS", fs=2.2, ha="center", negrito=True)
+    f3.txt(ox2 + L / 2 / esc3, area_y0 - 6, "ISOMÉTRICA S/ PORTAS", fs=2.2, ha="center", negrito=True)
     return pr
 
 
@@ -349,6 +377,9 @@ def _tabela_itens(f, gab, ped, res, titulo_eq, esc):
               f"Perdas internas: {p['total']} W (reatores {p['reatores']} W, capacitores {p['capacitores']} W)",
               f"Ventilação: {v['n_exaustores']} × {v['exaustor_m3h']} m³/h (instalado {v['vazao_instalada_m3h']} m³/h c/ filtro)",
               f"Ar interno estimado: {v['t_interna_c']} °C com ambiente {ped.amb_c:.0f} °C (IEC 60890)",
+              f"Arranjo: capacitores na frente, reatores atrás, separados por chapa divisória",
+              f"Entrada de ar ≥ {v['area_entrada_cm2']} cm² embaixo; saída pelos exaustores no teto",
+              "Termostatos: -BT1 35 °C liga exaustores · -BT2 55 °C desliga o banco",
               f"Escala 1:{esc} · cotas em mm · base/soleira {RODAPE} mm incluída na altura"]
     x, y = X1 - 135, Y1 - 10
     f.ret(x - 2, y - 4.2 * len(linhas) - 3, 133, 4.2 * len(linhas) + 5, lw=0.25, cam="TEXTOS")

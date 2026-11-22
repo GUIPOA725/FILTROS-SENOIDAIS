@@ -17,7 +17,7 @@ import os
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REF = os.path.join(RAIZ, "dados", "referencias_paineis.json")
 
-ALTURA = 2200
+ALTURA = 2000                             # AGCO Ibirubá (IFG): 2000 × 1600 × 800
 PROF_1COL, PROF_NCOL = 600, 800
 LARG_COL = (600, 800)                     # larguras comerciais de coluna
 VAZOES_EXAUSTOR = (55, 105, 160, 230, 300, 550, 850)   # m³/h livres (série comercial 230 V com grelha/filtro)
@@ -64,39 +64,52 @@ def ventilacao(P_w, amb_c=40.0, dt_max=DT_MAX):
                 t_interna_c=round(amb_c + 3.1 * P_w / (n * q * K_FILTRO), 1))
 
 
-def gabinete(ped, res):
-    """Escolhe o gabinete, as colunas e a ventilação. Retorna dict pronto para desenho/lista de peças."""
-    n = len(res["estagios"])
-    Q = float(res.get("Q_total_kvar") or sum(e["Q_kvar"] for e in res["estagios"]))
+ESTAGIOS_POR_COLUNA = 4                   # AGCO Ibirubá: 7 estágios em 2 colunas de 800 (2000×1600×800)
+LARG_COLUNA = 800
+PROF_FRENTE = 360                         # compartimento frontal: placas de estágio (chave-fusível, contatora, capacitores)
+PROF_TRAS = 400                           # compartimento traseiro: reatores (separado por chapa divisória)
+AREA_ENTRADA_CM2_POR_KVAR = 1.0           # Schneider PB Guide: 100 cm² até 100 kvar, 200 cm² até 200 kvar
+
+
+def gabinete(ped, res, altura=None, estagios_por_coluna=None):
+    """Arranjo padrão Electric/AGCO (Ibirubá, filtros CVI): capacitores NA FRENTE, reatores ATRÁS, compartimentos
+    separados por chapa divisória vertical; colunas de 800 mm, profundidade 800, altura 2000.
+    Ar entra embaixo (venezianas da porta frontal e traseira), sobe e sai pelos exaustores no teto, sobre os reatores.
+    Termostatos: T1 liga a ventilação a 35 °C, T2 desliga o banco a 55 °C (no topo, longe dos reatores)."""
+    est = res["estagios"]
+    n = len(est)
+    Q = float(res.get("Q_total_kvar") or sum(e["Q_kvar"] for e in est))
+    H = int(altura or ALTURA)
+    epc = int(estagios_por_coluna or ESTAGIOS_POR_COLUNA)
+    n_col = max(1, math.ceil(n / epc))
     perd = perdas(res)
     vent = ventilacao(perd["total"], ped.amb_c)
-    if Q <= 105 and n <= 4:                                  # padrão TECHNIP 100 kVAr (220 e 460 V)
-        colunas = [dict(funcao="única", largura=600,
-                        zonas=["EXAUSTOR", "PAINEL DE COMANDO", "BANCO DE CAPACITORES", "RACK DE INDUTORES"])]
-        prof = PROF_1COL
-    else:
-        # padrão TECHNIP 400 kVAr 460 V = 1600 mm: comando 400 | capacitores 600 | indutores 600.
-        # Capacidade por coluna (kVAr efetivos, referência 440 V; em 220/380 V a corrente maior reduz na proporção V/440).
-        cap_col = 400.0 * min(1.0, ped.tensao_v / 440.0) ** 0.5
-        n_col = max(1, math.ceil(Q / (1.05 * cap_col)))      # 5 % de folga (400 kVAr nominais ≈ 410 efetivos)
-        w = 600 if Q / n_col <= 1.05 * 400 else 800
-        colunas = [dict(funcao="operação/comando", largura=400 if n <= 6 else 600,
-                        zonas=["EXAUSTOR", "CONTROLADOR E COMANDO", "PROTEÇÃO GERAL E BARRAMENTO"])]
-        colunas += [dict(funcao=f"capacitores {i + 1}", largura=w,
-                         zonas=["EXAUSTOR", "FUSÍVEIS E CONTATORAS", "BANCO DE CAPACITORES"]) for i in range(n_col)]
-        colunas += [dict(funcao=f"indutores {i + 1}", largura=w,
-                         zonas=["EXAUSTOR", "RACK DE INDUTORES", "ADMISSÃO DE AR (traseira)"]) for i in range(n_col)]
-        prof = PROF_NCOL
-    larg = sum(c["largura"] for c in colunas)
-    # exaustores distribuídos: pelo menos 1 por coluna que tem indutores ou capacitores
-    quentes = [c for c in colunas if c["funcao"] == "única" or c["funcao"].startswith(("indutores", "capacitores"))]
-    vent["n_exaustores"] = max(vent["n_exaustores"], len(quentes))
+    colunas = []
+    for i in range(n_col):
+        lote = list(range(i * epc, min(n, (i + 1) * epc)))
+        colunas.append(dict(funcao=f"coluna {i + 1}", largura=LARG_COLUNA, estagios=lote,
+                            frente=(["COMANDO (porta)", "PROTEÇÃO GERAL / BARRAMENTO"] if i == 0 else ["BARRAMENTO"]) +
+                                   [f"ESTÁGIO {k + 1}" for k in lote],
+                            tras=[f"REATOR {k + 1}" for k in lote] + ["EXAUSTOR (teto)"],
+                            zonas=["EXAUSTOR"]))
+    larg = n_col * LARG_COLUNA
+    prof = PROF_FRENTE + PROF_TRAS + 40
+    prof = 800 if prof <= 800 else 1000
+    vent["n_exaustores"] = max(vent["n_exaustores"], n_col)        # pelo menos 1 exaustor por coluna, sobre os reatores
     vent["vazao_instalada_m3h"] = round(vent["n_exaustores"] * vent["exaustor_m3h"] * K_FILTRO)
     vent["dt_k"] = round(3.1 * perd["total"] / vent["vazao_instalada_m3h"], 1)
     vent["t_interna_c"] = round(ped.amb_c + vent["dt_k"], 1)
+    vent["area_entrada_cm2"] = int(max(100, math.ceil(Q * AREA_ENTRADA_CM2_POR_KVAR / 50) * 50))
+    vent["termostatos"] = [dict(tag="-BT1", ajuste_c=35, funcao="liga exaustores"),
+                           dict(tag="-BT2", ajuste_c=55, funcao="desliga o banco (sobretemperatura)")]
     avisos = []
     if vent["t_interna_c"] > ped.amb_c + DT_MAX + 0.05:
         avisos.append(f"Temperatura interna {vent['t_interna_c']} °C acima de amb+{DT_MAX:.0f} K – rever ventilação.")
-    return dict(dimensoes_mm=dict(altura=ALTURA, largura=larg, profundidade=prof), colunas=colunas,
+    if ped.amb_c + vent["dt_k"] > 55:
+        avisos.append("Ar interno > 55 °C (máximo dos capacitores IEC 60831 classe D) – aumentar ventilação.")
+    return dict(dimensoes_mm=dict(altura=H, largura=larg, profundidade=prof), colunas=colunas, arranjo="frente/trás",
                 perdas_w=perd, ventilacao=vent, avisos=avisos,
-                base="Padrão Electric BCD 2016 (TECHNIP) + IEC 60890 ventilação forçada")
+                folgas_mm=dict(entre_capacitores=30, capacitor_parede=30, entre_fases=30, exaustor_componentes=100,
+                               parede_traseira_instalacao=600),
+                base="Padrão Electric/AGCO Ibirubá (capacitores na frente, reatores atrás, separados) + IEC 60890 + "
+                     "Schneider PB Guide (reator nunca abaixo do capacitor; entrada de ar embaixo, saída no topo)")
