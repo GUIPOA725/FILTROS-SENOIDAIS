@@ -107,6 +107,10 @@ DICAS = {
     "Copiar para a biblioteca": "Copia só documentos (PDF, Word, Excel, e-mail, CAD, ATP/PTW) até 25 MB cada – sem fotos e vídeos, "
                                 "para gastar pouco espaço no computador.",
     "Apagar as cópias locais (liberar espaço)": "Apaga a pasta %LOCALAPPDATA%\\FSEN\\referencias inteira (o Drive não é tocado).",
+    "Observação da aprovação (o que ficou bom / o que corrigir)": "Fica gravada junto do painel aprovado na biblioteca – o próximo projeto "
+                                                                    "mostra de qual painel partiu e esta observação.",
+    "Aprovar painel": "Salva o arranjo deste painel (afastamentos, fileiras, canaletas, reatores) na BIBLIOTECA_PAINEIS do Drive como "
+                      "APROVADO; os próximos projetos do mesmo tipo partem do último aprovado (motor de experiência).",
     "Construção do filtro sintonizado": "Padrão: reator trifásico + capacitor trifásico seco PPM (ex. TDK série F). Robusta "
                                         "(ex. Pirelli Gravataí, a maior entrega de sintonizados da Electric): 3 reatores monofásicos de 2 colunas "
                                         "por ramo + capacitor trifásico impregnado em óleo – mais robusto térmica e mecanicamente, para serviço pesado.",

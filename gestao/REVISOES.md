@@ -31,3 +31,15 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
   atendidos passaram. Pendentes críticos (prioridade): REQ-REA-002 (reator × Cootrans – causa achada), REQ-GER-003 (painel 3D
   no senoidal), REQ-PNL-002 (3 componentes sem medida de catálogo), REQ-REF-001 (PLASBIL, Panatlântica histórico, ALCAST e
   Google Fotos ainda não usados). Aguardando o engenheiro aprovar as folhas do painel.
+
+## Revisão – v1.24.2 – 2026-11-22 16:23
+- Requisitos: 76 | APROVADO 56 | ATENÇÃO 11 | REPROVADO 9
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261122_1621
+- Mudanças: nenhuma
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-REA-002, REQ-PNL-002, REQ-REF-001, REQ-SEG-007
+- Decisão: pode publicar
+- Análise v1.24.2: projeto completo da Panatlântica gerado com o arranjo novo – nenhuma verificação de montagem reprovada,
+  consolidado sem "NÃO INCLUÍDO". Pendentes críticos: REA-002 (reator), GER-003 (3D no senoidal), PNL-002 (3 medidas),
+  REF-001 (referências não usadas), SEG-007 (energia incidente – em desenvolvimento, módulo IEEE 1584 da Plataforma de Estudos
+  identificado em GeradorProtecao/terceiros/arcflash, licença MIT).

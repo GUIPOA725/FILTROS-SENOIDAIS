@@ -1,5 +1,18 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.24.2 – 2026-11-22 (painel montável + biblioteca de painéis aprovados)
+- **Componentes com a forma do catálogo** (envelope de catálogo, detalhes proporcionais): capacitor com friso, etiqueta, bloco de terminais e resistor de descarga; chave NH Fupact com base, tampa porta-fusíveis, janelas e punho; contatora TeSys escalonada com bornes, janela de indicação e A1/A2; reator com núcleo laminado, quadros em U zincados, tirantes, bobinas com enfaixamento, saídas em barra de cobre e caixa do termostato.
+- **Arranjo revisado como montador**:
+  - fileiras com folgas IGUAIS em toda a altura da placa (sem vazio concentrado);
+  - chaves e contatoras espalhadas por igual na largura (ar e ferramenta);
+  - capacitores espalhados na largura toda, no máx. 2 fileiras na profundidade (3ª fileira não dá acesso ao terminal);
+  - reatores afastados por igual e prateleiras distribuídas na altura;
+  - placa posicionada pela profundidade que o reator precisa atrás.
+- **Barras, cabos e canaletas montáveis**: barramento sobre isoladores, cordoalhas barra→chave, cabos chave→contatora pela canaleta, passa-cabos na placa, cabos amarrados no verso da placa até as saídas do reator (rota ortogonal), canaletas horizontais entre fileiras e verticais nas laterais.
+- **Verificações de montagem com Check**: folga entre fileiras, afastamento lateral, profundidade dos capacitores, ocupação da placa (50–90 %), profundidade e afastamento dos reatores.
+- **Biblioteca de painéis aprovados (motor de experiência)**: botão "Aprovar painel" na tela do banco/sintonizado. O arranjo vai para BIBLIOTECA_PAINEIS no Drive e o próximo projeto parte do último aprovado compatível. O layout_painel.json de cada projeto registra de onde partiu.
+- Gestão de requisitos: REQ-PNL-011…014, REQ-GER-008/009, REQ-SEG-007/008 registrados; verificador com os testes novos de montagem e da biblioteca.
+
 ## v1.24.1 – 2026-11-22 (gestão de requisitos do engenheiro + painel na concepção AGCO)
 - **Gestão de requisitos (pasta gestao/)**: tudo que o engenheiro ensina vira registro, não fica solto no chat.
   - REQUISITOS.yaml / Registro_Requisitos.xlsx: 67 requisitos com palavras, fonte, onde a plataforma atende, teste e Check.

@@ -328,6 +328,16 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
         if rb.get("zip") and os.path.exists(rb["zip"]):
             with open(rb["zip"], "rb") as fh:
                 st.download_button("Baixar tudo (.zip)", fh.read(), file_name=os.path.basename(rb["zip"]))
+        with st.expander("✅ Aprovar o painel deste projeto (biblioteca de painéis aprovados)", expanded=False):
+            st.caption("Depois de conferir as folhas do painel (05_Desenhos/4_Painel_3D), aprove: o arranjo vai para a biblioteca "
+                       "e os próximos projetos partem dele em vez do zero. Correções suas entram como nova versão aprovada.")
+            obs_ap = st.text_input("Observação da aprovação (o que ficou bom / o que corrigir)", key="bc_aprov_obs")
+            if st.button("Aprovar painel", key="bc_aprov_btn"):
+                try:
+                    from fsen import biblioteca_paineis as _BPN
+                    st.success(f"Painel aprovado e salvo na biblioteca: {_BPN.aprovar(rb['pasta'], obs_ap)}")
+                except Exception as _ex:
+                    st.error(f"Não aprovou: {type(_ex).__name__}: {_ex}")
         resumo = os.path.join(rb["pasta"], "RESUMO.md")
         if os.path.exists(resumo):
             st.markdown(open(resumo, encoding="utf-8").read())

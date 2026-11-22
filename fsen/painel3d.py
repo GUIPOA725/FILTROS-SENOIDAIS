@@ -348,24 +348,33 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         yr = yp + CHAPA / 2 + prm["folga_reator_placa_mm"]
         por_niv = max(1, int((xb - xa - FOLGA) // (rL + FOLGA)))
         niveis = math.ceil(n_est / por_niv)
-        passo_niv = rA + 30 + prm["folga_vertical_reatores_mm"]
+        # prateleiras distribuídas por igual na altura (mais ar entre os reatores; nada de vazio concentrado em cima)
+        h_niv = PERFIL + rA + 40
+        zs_r, gap_r, _ = _dist_vertical(BASE + 40, zp1 - 250, [h_niv] * niveis, prm["folga_vertical_reatores_mm"])
+        gap_r = min(gap_r, 2.5 * prm["folga_vertical_reatores_mm"])          # não espalhar demais: ar sobe para o exaustor
+        zs_r = [BASE + 40 + k * (h_niv + gap_r) for k in range(niveis)]
+        passo_niv = h_niv + gap_r
         for nv in range(niveis):
-            _prateleira(p, xa, yr - 10, BASE + 40 + nv * passo_niv, xb - xa, rP + 30)
+            _prateleira(p, xa, yr - 10, zs_r[nv], xb - xa, rP + 30)
         for j in range(n_est):
             nv, pos = divmod(j, por_niv)
             usado = min(por_niv, n_est - nv * por_niv)
             sobra = (xb - xa) - usado * rL
             esp = sobra / (usado + 1)                                   # reatores afastados por igual (ar entre eles)
             xr = xa + esp + pos * (rL + esp)
-            zr = BASE + 40 + PERFIL + nv * passo_niv
+            zr = zs_r[nv] + PERFIL
             _reator(p, xr, yr, zr, rL, rP, rA)
             xm = xu0 + passo * (j % n_est + 0.5)
             zpass = z_dut[0] + dut / 2
-            for f in range(3):                                          # cabo: passagem na placa → saída do reator
+            zt_r = zr + rA + 45
+            yb_ = yp + CHAPA / 2 + 16                                   # cabos amarrados no verso da placa (folga placa–reator)
+            for f in range(3):                                          # rota ortogonal: passa-cabo → verso da placa → topo do reator → saída
                 xt = xr + rL * (0.17 + 0.33 * f)
-                _tubo(p, "tras", [(xm + (f - 1) * 25, yp, zpass), (xm + (f - 1) * 25, yr + rP + 30, zpass),
-                                  (xt, yr + rP + 30, zr + rA + 60), (xt, yr + rP * 0.2, zr + rA + 30)], 12, C_CABO)
-        alt_nec = BASE + 40 + niveis * passo_niv
+                dz = (f - 1) * 14
+                xv = xm + (f - 1) * 18
+                _tubo(p, "tras", [(xv, yp, zpass), (xv, yb_, zpass), (xv, yb_, zt_r + dz), (xt, yb_, zt_r + dz),
+                                  (xt, yr + rP * 0.09, zt_r + dz), (xt, yr + rP * 0.09, zr + rA - 5)], 11, C_CABO)
+        alt_nec = zs_r[-1] + h_niv
         ver.append(["Reatores", f"{n_est} reator(es) {rL:.0f}×{rP:.0f}×{rA:.0f} mm atrás da placa ({por_niv} por prateleira, "
                     f"{niveis} prateleira(s)) – {c['funcao']}", f"{alt_nec:.0f} mm de altura", f"≤ {zp1:.0f} mm",
                     CK.texto(CK.check(alt_nec <= zp1, CK.utilizacao(alt_nec, zp1)))])

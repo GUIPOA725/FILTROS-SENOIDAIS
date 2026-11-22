@@ -234,6 +234,31 @@ def t_reator_vs_referencia(projs):
     return ok, "; ".join(ev)
 
 
+def t_painel_montagem(projs):
+    """Arranjo montável: verificações de montagem do painel (distribuição, afastamentos, cabos) no layout_painel.json."""
+    if not projs:
+        return None, "sem projeto para conferir"
+    ok, ev = True, []
+    for p in projs:
+        f = glob.glob(os.path.join(p, "**", "layout_painel.json"), recursive=True)
+        if not f:
+            ok = False; ev.append(f"{os.path.basename(p)}: SEM layout_painel.json"); continue
+        j = json.load(open(f[0], encoding="utf-8"))
+        rep = [v[1][:60] for v in j.get("verificacoes", []) if "REPROVADO" in str(v[-1])]
+        o = not rep and "_tubo" in _ler("fsen/painel3d.py") and "_canaleta" in _ler("fsen/painel3d.py")
+        ok &= o
+        ev.append(f"{os.path.basename(p)}: {len(j.get('verificacoes', []))} verificações de arranjo, reprovadas: {len(rep)}" + (f" ({'; '.join(rep[:3])})" if rep else ""))
+    return ok, "; ".join(ev)
+
+
+def t_biblioteca_paineis(projs):
+    s = _ler("fsen/biblioteca_paineis.py")
+    itens = {"aprovar": "def aprovar" in s, "partir do aprovado": "def ultimo_aprovado" in s and "ultimo_aprovado" in _ler("fsen/painel3d.py"),
+             "botão na tela": "Aprovar painel" in _ler("telas_banco.py")}
+    falta = [k for k, v in itens.items() if not v]
+    return (not falta), ("aprovar + partir do último aprovado + botão na tela" if not falta else "falta: " + ", ".join(falta))
+
+
 TESTES = {k[2:]: v for k, v in globals().items() if k.startswith("t_")}
 
 
