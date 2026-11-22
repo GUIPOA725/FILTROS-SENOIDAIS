@@ -1,5 +1,18 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.24.1 – 2026-11-22 (gestão de requisitos do engenheiro + painel na concepção AGCO)
+- **Gestão de requisitos (pasta gestao/)**: tudo que o engenheiro ensina vira registro, não fica solto no chat.
+  - REQUISITOS.yaml / Registro_Requisitos.xlsx: 67 requisitos com palavras, fonte, onde a plataforma atende, teste e Check.
+  - REFERENCIAS_PROJETOS.yaml: AGCO, CVI, Pirelli, PLASBIL, Panatlântica 2024, Cootrans, TECHNIP, ALCAST, Google Fotos, ABB/Schneider – lições e requisitos ligados.
+  - REVISOES.md com a análise de cada versão; verificador automático (gestao/verificar_requisitos.py) que bloqueia a publicação quando um requisito crítico marcado como atendido falha ou regride.
+  - CLAUDE.md: qualquer sessão de IA é obrigada a ler e atualizar o registro.
+  - Cópia em ATUALIZACOES-MELHORIAS\GESTAO.
+- **Painel 3D refeito na concepção do layout AGCO (SolidWorks) e do painel real da Panatlântica**:
+  - placa de montagem ÚNICA no meio, dupla face: frente com capacitores, contatoras, chaves NH e barramento; trás com reatores em prateleiras pretas e cabos subindo;
+  - portas frontais e traseiras, venezianas, exaustores no teto, controlador e sinaleiros na porta;
+  - 6 folhas A3 com grade: fechado frente/fundo com cotas → portas abertas → topo com abertura das portas → sem chapas → placa frente/trás → vistas frontal/lateral/traseira + verificações com Check.
+- **Achado (registrado em REQ-REA-002)**: o reator de 50 kvar sai maior que o Cootrans instalado na Panatlântica porque nenhum candidato passa no teto de perdas e a escolha cai no de menor perda (o maior). A correção vem na próxima versão.
+
 ## v1.24.0 – 2026-11-22 (painel 3D com medidas reais e gabinete pelo tamanho do reator)
 - **Gabinete dimensionado pelo reator real**: a largura das colunas agora sai das medidas do reator Electric calculado por elementos finitos (largura × profundidade × altura). Se os reatores não cabem em colunas de 800 mm, a plataforma escolhe a menor largura total entre colunas de 800/1000/1200 mm e avisa. No teste Panatlântica (reator 412 × 284 × 357 mm) o painel passou de 1600 para 2000 mm (2 × 1000) – antes os reatores não cabiam.
 - **Painel 3D (novo, 05_Desenhos/4_Painel_3D)**: 2 folhas A3 com carimbo Electric e 8 vistas – fechado frente e fundo, portas abertas, sem chapas (estrutura), placa de montagem com componentes e reatores atrás, vistas frontal, lateral e traseira – e as dimensões gerais. Componentes só com medida de catálogo (dados/dimensoes_componentes.yaml) ou do FEM do reator; o que não tem medida confirmada sai em vermelho e listado como "a confirmar", nunca chutado.

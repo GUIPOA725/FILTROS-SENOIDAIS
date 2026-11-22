@@ -304,7 +304,7 @@ requisitos:
   verificacao: "auto:reator_vs_referencia"
   status: PENDENTE
   desde: "-"
-  nota: "Plataforma deu 412×284×357 mm (não cabe 2 por coluna de 800); Cootrans cabe. Meta de forma (caber em 800 mm) e uso do limite classe F a implementar."
+  nota: "Plataforma deu 412×284×357 mm (não cabe 2 por coluna de 800); Cootrans cabe. CAUSA ACHADA (22/11): na triagem do reator NENHUM candidato passou (perdas acima de 6 W/kvar × folga 0,92) e a regra de escolha então pega o de MENOR PERDA – o maior. Correção planejada: (1) restrição de envelope (largura ≤ 315 mm p/ 2 por coluna de 800); (2) teto de perdas calibrado em reatores reais de 50 kvar (pedir perdas medidas à Cootrans – MELHORIAS); (3) se nada passar, avisar em vez de escolher o maior em silêncio."
 - id: REQ-REA-003
   data: "2026-11-20"
   area: REATOR

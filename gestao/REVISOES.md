@@ -19,10 +19,15 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 
 
 
-## Revisão – v1.24.1 – 2026-11-22 15:59
-- Requisitos: 67 | APROVADO 51 | ATENÇÃO 5 | REPROVADO 11
-- Projetos conferidos: fogo, BCD-FD8,16-400kvar-415V_Schneider_20261122_1530
+
+## Revisão – v1.24.1 – 2026-11-22 16:02
+- Requisitos: 67 | APROVADO 54 | ATENÇÃO 6 | REPROVADO 7
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261122_1600
 - Mudanças: nenhuma
-- Críticos que diziam ATENDIDO e falharam (bloqueiam): REQ-PNL-003, REQ-PNL-004, REQ-PNL-005 | regredidos: nenhum
-- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-REA-002, REQ-PNL-001, REQ-PNL-002, REQ-REF-001
-- Decisão: NÃO PUBLICAR
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-REA-002, REQ-PNL-002, REQ-REF-001
+- Decisão: pode publicar
+- Análise v1.24.1: projeto completo gerado com o código novo – painel 3D com 6 folhas e todos os requisitos marcados como
+  atendidos passaram. Pendentes críticos (prioridade): REQ-REA-002 (reator × Cootrans – causa achada), REQ-GER-003 (painel 3D
+  no senoidal), REQ-PNL-002 (3 componentes sem medida de catálogo), REQ-REF-001 (PLASBIL, Panatlântica histórico, ALCAST e
+  Google Fotos ainda não usados). Aguardando o engenheiro aprovar as folhas do painel.
