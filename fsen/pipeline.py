@@ -445,6 +445,14 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                                                     os.path.join(sub["02_Cliente"], f"{cod}_Questionario_Tecnico.docx"))
         arqs["sensibilidade"] = DF.salvar_sensibilidade(proj.dados_faltantes,
                                                         os.path.join(sub["01_Engenharia"], f"{cod}_Sensibilidade_Dados_Faltantes.xlsx"))
+    try:                                            # v1.23.2: mesmo padrão do banco – folha de dados + verificação de normas com Check
+        from . import normas_senoidal as NS
+        from .versao import info as _vin
+        arqs["normas"], _ = NS.gerar_pdf(proj, arr, cod, os.path.join(sub["01_Engenharia"], "5_Normas_Folha_de_Dados"),
+                                         versao=f"FSEN v{_vin().get('versao')}", log=log)
+        shutil.copy(arqs["normas"], os.path.join(sub["02_Cliente"], os.path.basename(arqs["normas"])))
+    except Exception as e:
+        log(f"   (folha de dados / verificação de normas não gerada: {type(e).__name__}: {e})")
     # dados brutos
     ped.salvar(os.path.join(pasta, "pedido.json"))
     proj.salvar(os.path.join(sub["01_Engenharia"], "projeto.json"))
@@ -613,6 +621,7 @@ def _email_cliente(proj, orc, cat):
 
 
 def resumo_texto(proj, arr, orc, similares, pasta):
+    from . import checagem as _CK
     ped = proj.pedido
     b = proj.banco
     am = proj.amortecimento
@@ -624,7 +633,10 @@ def resumo_texto(proj, arr, orc, similares, pasta):
            f"- Capacitores: **{b.n_total} × {b.uf_unit:g} µF {b.v_unit:g} V** ({b.fabricante}) em **{b.ligacao}**, {b.n_por_ramo}/ramo → {b.c_y_uf:g} µF Y",
            f"- fr = **{proj.fr_hz:.0f} Hz**" + (f"; amortecimento {am.r_ramo_ohm:.3f} Ω / {am.p_nominal_w:g} W por ramo" if am else "; sem resistor de amortecimento"),
            f"- Caixa {arr.caixa_id}, perdas {arr.perda_total_w:.0f} W, {arr.n_ventiladores} ventiladores, massa ≈ {arr.massa_total_kg:.0f} kg", "",
-           "## Verificações"] + [f"- {'✅' if v.ok else ('❌' if v.critico else '⚠️')} {v.item}: {v.valor} (limite {v.limite})" for v in proj.verificacoes] + [
+           "## Verificações (check)", "", "| Verificação | Valor | Limite | Utilização | Check |", "|---|---|---|---|---|"] + [
+               (lambda c, u: f"| {v.item.replace('|', '/')} | {v.valor} | {v.limite} | {'–' if u is None else f'{u:.0f} %'} | {_CK.texto(c)} |")(
+                   *_CK.de_verificacao(v.ok, v.critico, v.valor, v.limite)) for v in proj.verificacoes] + ["",
+               "Check: APROVADO (< 90 % do limite), ATENÇÃO (90–100 % ou aviso), REPROVADO (acima do limite obrigatório)."] + [
            ""] + texto_atp(getattr(proj, "dupla_checagem_atp", None)) + ["## Comercial", f"- Custo por filtro: {rs(orc.custo_unit_total)}  (material {rs(orc.custo_material)} + montagem {rs(orc.custo_montagem)})",
            f"- Preço unitário: **{rs(orc.preco_unit)}** | total {rs(orc.preco_total)} (impostos {orc.impostos_pct:g} %, margem {orc.margem_pct:g} %)", ""]
     if proj.avisos:

@@ -191,28 +191,33 @@ def verificacao_md(L):
     return out
 
 
-def gerar_pdf(ped, res, gab, prot, cod, pasta, trans=None, inds=None, versao="", log=print):
-    """Folha de dados + verificação IEC num PDF (01_Engenharia/5_Normas) – devolve (pdf, linhas_verificacao)."""
+def pdf_padrao(arq, cod, cliente, FD, L, versao=""):
+    """PDF padrão da plataforma (mesmo formato nos 3 filtros): folha de dados + verificação de normas com Check."""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
     from . import consolidado as CONS
-    os.makedirs(pasta, exist_ok=True)
     f, fb = CONS._fonte()
     E = CONS._estilos(f, fb)
-    L = verificacao(ped, res, gab, prot, trans)
-    FD = folha_dados(ped, res, gab, prot, trans, inds, getattr(ped, "marca", ""))
-    arq = os.path.join(pasta, f"Folha_de_Dados_e_Verificacao_IEC_{cod}.pdf")
-    h = [Paragraph("FOLHA DE DADOS – VALORES GARANTIDOS", E["h1"]), Paragraph(CONS._limpa(f"{cod} – {ped.cliente}"), E["h2"]),
+    h = [Paragraph("FOLHA DE DADOS – VALORES GARANTIDOS", E["h1"]), Paragraph(CONS._limpa(f"{cod} – {cliente}"), E["h2"]),
          CONS._tabela([["Característica", "Valor"]] + [list(x) for x in FD], E, larg=[50 * mm, 130 * mm]), PageBreak(),
-         Paragraph("VERIFICAÇÃO DE PROJETO – IEC 61439-1/2 e IEC 61921", E["h1"]),
-         Paragraph("Itens calculados neste projeto e itens exigidos da montadora (ensaio/declaração). Check: APROVADO "
+         Paragraph("VERIFICAÇÃO DE PROJETO E DE NORMAS (CHECK)", E["h1"]),
+         Paragraph("Itens calculados neste projeto e itens exigidos do fornecedor/montadora (ensaio/declaração). Check: APROVADO "
                    "(< 90 % do limite), ATENÇÃO (90–100 %, aviso ou comprovação pendente), REPROVADO (acima do limite).",
                    E["peq"]), Spacer(1, 4),
          CONS._tabela([["Cláusula", "Verificação", "Projeto", "Requisito", "Check", "Método"]] + L, E,
                       larg=[22 * mm, 58 * mm, 26 * mm, 28 * mm, 22 * mm, 24 * mm])]
     doc = SimpleDocTemplate(arq, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=15 * mm, bottomMargin=15 * mm,
-                            title=f"Folha de dados e verificação IEC {cod}", author=f"Electric Service – {versao}")
+                            title=f"Folha de dados e verificação {cod}", author=f"Electric Service – {versao}")
     doc.build(h)
+    return arq
+
+
+def gerar_pdf(ped, res, gab, prot, cod, pasta, trans=None, inds=None, versao="", log=print):
+    """Folha de dados + verificação IEC num PDF (01_Engenharia/5_Normas_Folha_de_Dados) – devolve (pdf, linhas)."""
+    os.makedirs(pasta, exist_ok=True)
+    L = verificacao(ped, res, gab, prot, trans)
+    FD = folha_dados(ped, res, gab, prot, trans, inds, getattr(ped, "marca", ""))
+    arq = pdf_padrao(os.path.join(pasta, f"Folha_de_Dados_e_Verificacao_IEC_{cod}.pdf"), cod, ped.cliente, FD, L, versao)
     log(f"   Folha de dados e verificação IEC 61439/61921: {os.path.basename(arq)}")
     return arq, L

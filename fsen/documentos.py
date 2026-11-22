@@ -379,9 +379,11 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
     _kv(d, linhas)
 
     d.add_heading("4. Verificações", 1)
-    _tabela(d, ["Verificação", "Valor", "Limite", "Status", "Referência"],
-            [(v.item, v.valor, v.limite, ("OK" if v.ok else ("NÃO OK" if v.critico else "ATENÇÃO")), v.referencia)
-             for v in proj.verificacoes], [4.6, 2.8, 2.4, 1.5, 5.7], tam=8)
+    from . import checagem as CK                  # v1.23.2: coluna Check padrão da plataforma (3 filtros)
+    _ck = [CK.de_verificacao(v.ok, v.critico, v.valor, v.limite) for v in proj.verificacoes]
+    _tabela(d, ["Verificação", "Valor", "Limite", "Utilização", "Check", "Referência"],
+            [(v.item, v.valor, v.limite, "–" if u is None else f"{u:.0f} %", c, v.referencia)
+             for v, (c, u) in zip(proj.verificacoes, _ck)], [4.2, 2.6, 2.2, 1.3, 1.7, 5.0], tam=8)
 
     d.add_heading("5. Simulação por ponto de operação", 1)
     cab = ["Grandeza"] + [p["nome"] for p in proj.pontos]
@@ -418,7 +420,8 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
     d.add_paragraph("O filtro senoidal LC atua entre fases. A tensão de modo comum do inversor (degraus de Vcc/3 em cada comutação) "
                     "passa praticamente inalterada para o motor; ela circula pela capacitância do cabo e do enrolamento para a carcaça "
                     "e volta pelo PE/blindagem. Por isso o filtro senoidal sozinho não elimina correntes de mancal (IEC TS 60034-25).")
-    _tabela(d, ["Verificação", "Valor", "Limite", "Status"], [(v.item, v.valor, v.limite, "OK" if v.ok else "ATENÇÃO")
+    from . import checagem as CK
+    _tabela(d, ["Verificação", "Valor", "Limite", "Check"], [(v.item, v.valor, v.limite, CK.de_verificacao(v.ok, False, v.valor, v.limite)[0])
             for v in proj.verificacoes if any(k in v.item for k in ("modo comum", "terra", "mancal"))], [6.5, 4.0, 3.0, 2.0], tam=8)
     _bullets(d, ["Se a tensão no mancal passar do limite: rolamento isolado no lado oposto ao acionamento e/ou escova de aterramento do eixo.",
                  "Alternativas no filtro: banco em estrela com centro ligado ao barramento CC (filtro 'all-pole') ou núcleo de modo comum "
@@ -484,10 +487,12 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
                         f"{tm['n_ventiladores']} ventilador(es) – {tm['vazao_livre_m3h']} m³/h livres, {tm['vazao_efetiva_m3h']} m³/h efetivos "
                         f"com filtros; {100 * tm['fracao_paredes']:.0f} % do calor sai pelas paredes. Ar na saída: {tm['t_saida_C']} °C. "
                         f"Arranjo escolhido: {'capacitores na entrada de ar (embaixo), indutor acima' if tm['arranjo_escolhido'] == 'capacitores_embaixo' else 'indutor embaixo, capacitores acima'}.")
-        _tabela(d, ["Componente", "Perdas W", "Ar local °C", "Componente °C", "Limite", "OK"],
-                [(c["componente"], c["perdas_W"], c["t_ar_local_C"], c["t_componente_C"], c["limite"], "sim" if c["ok"] else "NÃO")
+        from . import checagem as CK
+        _tabela(d, ["Componente", "Perdas W", "Ar local °C", "Componente °C", "Limite", "Check"],
+                [(c["componente"], c["perdas_W"], c["t_ar_local_C"], c["t_componente_C"], c["limite"],
+                  CK.de_verificacao(c["ok"], True, c["t_componente_C"], c["limite"])[0])
                  for c in tm["componentes"]], [5.5, 1.8, 2.0, 2.2, 3.8, 1.2], tam=8)
-        _tabela(d, ["Verificação", "Valor", "Limite", "Status"], [(v["item"], v["valor"], v["limite"], "OK" if v["ok"] else "NÃO OK")
+        _tabela(d, ["Verificação", "Valor", "Limite", "Check"], [(v["item"], v["valor"], v["limite"], CK.de_verificacao(v["ok"], True, v["valor"], v["limite"])[0])
                 for v in tm["verificacoes"] if not v["item"].startswith("Térmico – Indutor") and not v["item"].startswith("Térmico – Capacitores")],
                 [6.5, 4.0, 3.5, 2.0], tam=8)
         _tabela(d, ["Arranjo", "Aprovado", "Ventiladores", "Ar saída °C", "Capacitor °C"],
@@ -1004,12 +1009,13 @@ def planilha_custos(proj, arr, orc, cat, pasta):
     wt.column_dimensions["B"].width = 34
     # Verificações
     wv = wb.create_sheet("Verificações")
-    wv.append(["Verificação", "Valor", "Limite", "OK", "Referência"])
+    from . import checagem as CK
+    wv.append(["Verificação", "Valor", "Limite", "Utilização (%)", "Check", "Referência"])
     for v in proj.verificacoes:
-        wv.append([v.item, v.valor, v.limite, "OK" if v.ok else "NÃO", v.referencia])
-        if not v.ok:
-            wv.cell(wv.max_row, 4).font = Font(bold=True, color="C01E1E")
-    for k, w in enumerate([55, 26, 22, 6, 55], 1):
+        c_, u_ = CK.de_verificacao(v.ok, v.critico, v.valor, v.limite)
+        wv.append([v.item, v.valor, v.limite, None if u_ is None else round(u_, 1), c_, v.referencia])
+    CK.colorir_planilha(wv)
+    for k, w in enumerate([55, 26, 22, 12, 14, 55], 1):
         wv.column_dimensions[get_column_letter(k)].width = w
     p = os.path.join(pasta, f"{proj_codigo(proj)}_BOM_Custos_Preco.xlsx")
     wb.save(p)

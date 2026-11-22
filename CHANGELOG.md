@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.23.2 – 2026-11-22 (identidade Electric nos 3 filtros – senoidal igualado)
+- Filtro senoidal com o mesmo padrão do banco/sintonizado: **folha de dados + verificação de normas com Check** no mesmo PDF e na mesma pasta (01_Engenharia/5_Normas_Folha_de_Dados, cópia em 02_Cliente) – verificações do dimensionamento (motor NEMA MG1 Pt.30/31 e IEC TS 60034-25, inversor, capacitor IEC 60831/61071, térmico) + painel IEC 61439 (isolação calculada; IP/IK/dielétrico/rotina comprovados no recebimento).
+- Coluna **Check com utilização %** em todas as tabelas de verificação do senoidal: memorial, RESUMO (agora tabela, igual ao banco), planilha BOM (aba Verificações pintada), térmico e modo comum.
+- Relatório consolidado: decks ATP da dupla checagem do senoidal e scripts .bat transcritos; desenhos .xml do ATPDraw apontam para a figura do circuito – conferência sem nenhum "NÃO INCLUÍDO" (teste A&W 269 A: 219 páginas).
+
 ## v1.23.1 – 2026-11-22 (biblioteca de referências)
 - "📚 Biblioteca de referências (projetos antigos)": informe a pasta de um projeto antigo (mesmo bem funda no Drive) e a plataforma copia só os documentos (PDF, Word, Excel, e-mail, CAD, ATP/PTW; até 25 MB; sem fotos e vídeos) para %LOCALAPPDATA%\FSEN\referencias, com o caminho original no nome do arquivo e um índice – para a IA estudar os projetos reais (CVI, PLASBIL, Pirelli, AGCO). Botão para apagar as cópias e liberar espaço. O Drive não é alterado.
 

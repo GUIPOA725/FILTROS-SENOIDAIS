@@ -295,6 +295,8 @@ ORDEM_CONTEUDO = [
     (r"(verificacao|avancado)_.*\.json$", "Resultados numéricos do reator/indutor"),
     (r"Email_.*\.txt$", "E-mails gerados (fornecedores, montadora, cliente)"),
     (r"trans_.*\.atp$", "Deck ATP-EMTP do caso de transitório (mesmos dados da plataforma)"),
+    (r"\.atp$", "Deck ATP-EMTP (dupla checagem – mesmos dados da plataforma)"),
+    (r"\.bat$", "Script de execução"),
     (r"(pedido|banco_resultado|indutor_projeto|resultado).*\.json$", "Dados de entrada e resultados do projeto"),
     (r"\.json$", "Dados do projeto (JSON)"),
     (r"\.txt$", "Texto"),
@@ -399,7 +401,7 @@ def _conteudo_arquivo(a, E):
             return _conteudo_xlsx(a, E)
         if nome.endswith(".docx"):
             return _conteudo_docx(a, E)
-        if nome.endswith(".atp"):
+        if nome.endswith((".atp", ".bat")):
             txt = open(a, encoding="latin-1", errors="replace").read()
             return [Paragraph(_limpa(l).replace(" ", "&nbsp;") or "&nbsp;", E["mono"]) for l in txt.splitlines()]
         if nome.endswith(".txt"):
@@ -417,7 +419,7 @@ def _conteudo_arquivo(a, E):
 def _conteudos(arqs):
     """(título, arquivo) dos documentos não-PDF a transcrever, em ordem de leitura, sem cópias repetidas."""
     vistos, out = set(), []
-    cand = [a for a in arqs if re.search(r"\.(xlsx|docx|txt|json|atp)$", a, re.I)]
+    cand = [a for a in arqs if re.search(r"\.(xlsx|docx|txt|json|atp|bat)$", a, re.I)]
     for pad, tit in ORDEM_CONTEUDO:
         for a in cand:
             b = os.path.basename(a)
@@ -483,6 +485,11 @@ def gerar(pasta, cod, titulo, versao, cliente="", projeto="", tipo="", leitura=N
                 if re.search(r"Transitorios_.*\.xlsx$", os.path.basename(k)):
                     return f"resultado do ATP – comparado na tabela Plataforma × ATP, pág. {p_}"
             return "resultado do ATP"
+        if bl.endswith(".xml") and "desenho" in bl:
+            for k, p_ in M["ant"].items():
+                if os.path.basename(k).lower().startswith("rede_"):
+                    return f"desenho do ATPDraw (abrir no ATPDraw) – circuito em figura, pág. {p_}"
+            return "desenho do ATPDraw (abrir no ATPDraw)"
         if bl.endswith(".lua"):
             return "script do FEMM (geometria para abrir no FEMM – não é texto de leitura)"
         return "NÃO INCLUÍDO"

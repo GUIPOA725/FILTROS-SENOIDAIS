@@ -88,3 +88,29 @@ def selo(ax, st, texto_extra="", loc=(1.0, 1.015)):
     ax.text(loc[0], loc[1], f"{SIMBOLO.get(st, '')} {st}" + (f" – {texto_extra}" if texto_extra else ""),
             transform=ax.transAxes, ha="right", va="bottom", fontsize=8, weight="bold", color="white",
             bbox=dict(boxstyle="round,pad=0.3", fc=COR[st], ec="none"))
+
+
+_NUM = re.compile(r"[-+]?\d+(?:[.,]\d+)?")
+
+
+def _num(s):
+    m = _NUM.search(str(s or "").replace(" ", ""))
+    return float(m.group(0).replace(",", ".")) if m else None
+
+
+def util_de_textos(valor, limite):
+    """Utilização a partir dos textos 'valor' e 'limite' (ex.: '842 V' e '≤ 1000 V'; '0,95' e '≥ 0,90')."""
+    v, l = _num(valor), _num(limite)
+    if v is None or l is None:
+        return None
+    lim = str(limite).strip()
+    tipo = "min" if lim.startswith(("≥", ">", ">=")) else "max"
+    if tipo == "max" and not lim.startswith(("≤", "<", "<=")) and "%" not in lim and "≤" not in lim:
+        return None                                   # limite que não é "≤ x" (texto livre) – sem utilização
+    return utilizacao(v, l, tipo)
+
+
+def de_verificacao(ok, critico=True, valor=None, limite=None):
+    """(check, utilização) para as verificações do filtro senoidal (Verificacao: ok/critico/valor/limite)."""
+    u = util_de_textos(valor, limite)
+    return check(bool(ok), u, "crit" if critico else "aviso"), u
