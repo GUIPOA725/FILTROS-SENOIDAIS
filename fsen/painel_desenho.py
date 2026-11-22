@@ -398,7 +398,7 @@ def material_gabinete(ped, res, gab):
     v = gab["ventilacao"]
     n_col, n = len(gab["colunas"]), len(res["estagios"])
     return [
-        ("Gabinete autoportante modular, chapa 2,0 mm, pintura RAL 7035, IP 31, com soleira 100 mm",
+        ("Gabinete autoportante modular, chapa 2,0 mm, pintura RAL 7035, IP 42 (padrão das propostas Electric), com soleira 100 mm",
          f"{D['altura']}×{gab['colunas'][0]['largura']}×{D['profundidade']} mm", n_col, "pç"),
         ("Porta frontal com fecho, venezianas inferiores (entrada de ar) e filtro", "", n_col, "pç"),
         ("Porta traseira com fecho e venezianas inferiores", "", n_col, "pç"),

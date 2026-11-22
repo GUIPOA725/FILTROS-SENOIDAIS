@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.17.1 – 2026-11-22 (teste prático Panatlântica TR 1500 kVA 415 V)
+- Leitura do pedido: quando a IA traz o montante total necessário e um banco existente que já cobre esse montante, a plataforma trata como SUBSTITUIÇÃO (painel novo do mesmo porte) e avisa para confirmar o escopo – antes descontava o existente e caía em 50 kvar.
+- Lista de material do gabinete: IP 42 (padrão das propostas Electric).
+
 ## v1.17.0 – 2026-11-22 (módulo de painel – banco dessintonizado e sintonizado)
 - **Gabinete no padrão Electric/AGCO** (`fsen/painel_gabinete.py`): capacitores NA FRENTE, reatores ATRÁS, compartimentos separados por chapa divisória vertical (como AGCO Ibirubá e filtros CVI); colunas de 800 mm com até 4 estágios, profundidade 800, altura 2000. Calibrado com o painel AGCO 300 kVAr 380 V (IFG: 2000 × 1600 × 800).
 - Regras dos fabricantes (guia Schneider de cubículos de correção de FP / EN 61921): reator nunca abaixo do capacitor; ar entra embaixo (venezianas das portas, área calculada: 100 cm² até 100 kvar) e sai pelos exaustores no teto, sobre os reatores; termostatos -B0 35 °C (liga exaustores) e -BT2 55 °C (desliga o banco); folgas de 30 mm entre capacitores/fases e 100 mm do exaustor.

@@ -149,7 +149,15 @@ def decidir(dados, tipo_forcado=None):
         fp1 = float(fp1)
         kvar = P * (math.tan(math.acos(min(fp1, 0.999))) - math.tan(math.acos(min(fp2, 0.999))))
         j.append(f"kvar pelo FP: P = {P:.0f} kW, FP {fp1:.3f} → {fp2:.2f}: Q = P·(tanφ1 − tanφ2) = {kvar:.0f} kvar.")
-    kvar -= float(dados.get("kvar_existente") or 0)
+    kex = float(dados.get("kvar_existente") or 0)
+    if kex and kvar and kvar <= kex:
+        # v1.17.1 (teste Panatlântica): a IA traz o MONTANTE TOTAL necessário na barra e o banco existente; quando o total
+        # não passa do existente, o projeto é de SUBSTITUIÇÃO (painel novo do mesmo porte) – não subtrair (antes dava 0 → 50 kvar)
+        j.append(f"Banco existente de {kex:g} kvar cobre o necessário ({kvar:g} kvar): painel novo dimensionado para SUBSTITUIR o "
+                 f"existente ({kvar:g} kvar) – se for ampliação, informe o kvar adicional.")
+        lac.append("Escopo: substituição do banco existente (premissa) × ampliação – confirmar com o cliente.")
+    else:
+        kvar -= kex
     est = [float(x) for x in (dados.get("estagios_kvar") or []) if x]
     if not est:
         est = estagios_padrao(kvar or 50, V)
