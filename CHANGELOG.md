@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.6 – 2026-11-22 (teste de fogo Panatlântica: substituição no mesmo porte)
+- Quando já existe banco e o reativo calculado pelo FP cabe nele, o projeto é de **substituição no mesmo porte do banco existente** (antes usava o kvar calculado pelo FP com a potência P95). Em carga pulsante, como o gerador de solda da Panatlântica, o cálculo pelo FP deu 174 kvar, mas o banco de 300 kvar em operação é o reativo real da carga (257–292 kvar indutivos na entrada). Agora: reativo medido = 300 kvar; com folga Electric = 8 × 50 = 400 kvar, igual ao projeto real.
+
 ## v1.18.5 – 2026-11-22 (atalho sempre abre a versão mais nova)
 - Correção achada no teste de fogo: o atalho **"FSEN Filtros"** apontava para a pasta da versão em que foi criado (ex.: FSEN_plataforma_v1.18.2) e continuava abrindo aquela versão. Agora o ABRIR_FSEN.bat, de qualquer pasta de versão, passa sempre para a pasta atualizada `PROGRAMAS\FSEN_v1.7.1` e refaz o atalho apontando para ela. Quem já tem o atalho antigo passa a abrir a versão nova sem fazer nada.
 

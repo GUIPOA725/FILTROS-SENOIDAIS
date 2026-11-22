@@ -1,5 +1,5 @@
 {
-  "versao": "1.18.5",
+  "versao": "1.18.6",
   "data": "2026-11-22",
-  "resumo": "Atalho e ABRIR_FSEN.bat sempre abrem a versão mais nova do Drive"
+  "resumo": "Substituição de banco existente no mesmo porte (teste de fogo Panatlântica)"
 }
