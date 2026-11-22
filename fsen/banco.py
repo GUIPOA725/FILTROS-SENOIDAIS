@@ -74,6 +74,10 @@ class PedidoBanco:
     classe: str = "F"                     # especificação Electric: classe F (155 °C), isolação 1 kV, IP00
     condutor: str = "AL"                  # "AL" (padrão Electric: chapa/barra de alumínio) | "CU"
     monofasico: bool = False              # sintonizado: 3 reatores monofásicos de 2 colunas em vez de 1 trifásico
+    # v1.16.0 – Plataforma de Estudos: cenários de curto da barra (estudo de proteção) e origem de cada dado
+    cenarios_rede: List[dict] = field(default_factory=list)
+    origem_dados: Dict[str, str] = field(default_factory=dict)
+    barra_ligacao: str = ""
 
     @property
     def p_pct(self):

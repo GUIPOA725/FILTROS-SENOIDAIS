@@ -1,5 +1,5 @@
 {
-  "versao": "1.15.0",
+  "versao": "1.16.0",
   "data": "2026-11-21",
-  "resumo": "Esquema elétrico estilo EPLAN (força, comando, bornes, cabos, lista de material) para banco dessintonizado e filtro sintonizado"
+  "resumo": "Esquema elétrico no padrão AGCO/EPLAN gerado no modelo do QElectroTech (.qet + PDF + DXF + XLSX) e leitura da medição (ícone QEE) e do estudo de proteção da Plataforma de Estudos"
 }

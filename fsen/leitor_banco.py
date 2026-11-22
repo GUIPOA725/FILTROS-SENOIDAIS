@@ -166,8 +166,11 @@ def decidir(dados, tipo_forcado=None):
         j.append(f"Tipo pedido pelo cliente: {tipo}.")
     else:
         tipo = "sintonizado" if (dhti >= 40 or dhtv >= 5 or hv.get(5, 0) >= 3.5) else "dessintonizado"
-        j.append(f"Tipo escolhido pela medição: DHTi {dhti:.0f} %, DHTv {dhtv:.1f} % → {tipo} "
-                 "(sintonizado quando DHTi ≥ 40 %, DHTv ≥ 5 % ou V5 ≥ 3,5 %; senão dessintonizado).")
+        if not (dhti or dhtv or hv):
+            j.append("Sem medição de harmônicas: dessintonizado (padrão Electric) – carregar a medição para confirmar o tipo.")
+        else:
+            j.append(f"Tipo escolhido pela medição: DHTi {dhti:.0f} %, DHTv {dhtv:.1f} % → {tipo} "
+                     "(sintonizado quando DHTi ≥ 40 %, DHTv ≥ 5 % ou V5 ≥ 3,5 %; senão dessintonizado).")
     ped = B.PedidoBanco(cliente=dados.get("cliente") or "", projeto=dados.get("projeto") or dados.get("local_instalacao") or "",
                         tipo=tipo, tensao_v=V, freq_hz=f, estagios_kvar=est, dhti_carga_pct=dhti or 50.0)
     for k in ("trafo_kva", "trafo_z_pct", "scc_rede_mva", "amb_c"):

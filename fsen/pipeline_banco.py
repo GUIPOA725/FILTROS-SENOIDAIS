@@ -112,11 +112,18 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     # v1.15.0: esquema elétrico estilo EPLAN (força, comando, bornes, cabos, lista de material) em PDF + DXF + XLSX
     anexos_pnl = [arqs["et_painel"], arqs["et_painel_xlsx"]]
     try:
-        from .eplan import banco_eletrico as BE
+        from .eplan import banco_qet as BQ      # v1.16.0: padrão AGCO/EPLAN no modelo do QElectroTech
         desq = os.path.join(sub["05_Desenhos"], "1_Esquema_Eletrico")
         os.makedirs(desq, exist_ok=True)
-        esq = BE.gerar(ped, res, desq, cod, versao, n_bancos, log=log)
-        for k_ in ("pdf", "dxf", "xlsx"):
+        try:
+            esq = BQ.gerar(ped, res, desq, cod, versao, n_bancos, log=log)
+        except Exception as ex_q:
+            log(f"   (esquema QET falhou: {type(ex_q).__name__}: {ex_q} – usando o esquema 1.15)")
+            from .eplan import banco_eletrico as BE
+            esq = BE.gerar(ped, res, desq, cod, versao, n_bancos, log=log)
+        for k_ in ("pdf", "dxf", "xlsx", "qet"):
+            if not esq.get(k_):
+                continue
             arqs[f"esquema_{k_}"] = esq[k_]
             shutil.copy(esq[k_], pnl)
             anexos_pnl.append(os.path.join(pnl, os.path.basename(esq[k_])))

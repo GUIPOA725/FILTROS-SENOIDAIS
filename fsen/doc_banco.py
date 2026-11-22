@@ -250,6 +250,20 @@ def memorial(ped, res, grupos, inds, arq, figs, versao=""):
         R.tab(["Grandeza", "Valor"], lin, [2, 4])
         if d.get("avisos_avancado"):
             R.bul(d["avisos_avancado"])
+    if getattr(ped, "cenarios_rede", None) or getattr(ped, "origem_dados", None):
+        R.h1("Dados da Plataforma de Estudos (medição e estudo de proteção)")
+        if ped.origem_dados:
+            R.p("Origem dos dados usados no projeto (digitado > medição QEE / estudo de proteção > IA > premissa):")
+            R.tab(["Dado", "Origem"], [(k, v) for k, v in sorted(ped.origem_dados.items()) if not k.startswith("_")], [3, 3])
+        if ped.cenarios_rede:
+            from . import integracao as _IN
+            R.p(f"Potência de curto da barra de ligação{(' ' + ped.barra_ligacao) if ped.barra_ligacao else ''} em cada cenário do "
+                "estudo de proteção e verificação de ressonância do banco projetado (Scc da barra aplicada ao modelo de rede):")
+            lin = []
+            for c in _IN.verificar_cenarios(ped, ped.cenarios_rede):
+                lin.append((c["nome"], f"{c.get('scc_mva', 0):.1f}", f"{c.get('hr_sem_reator', 0):.2f}",
+                            "; ".join(c.get("avisos") or []) or "sem ressonância próxima de harmônica presente"))
+            R.tab(["Cenário", "Scc (MVA)", "h ress. (sem reator)", "Verificação com o reator"], lin, [2.6, 0.9, 1.1, 2.4])
     R.h1("Conferência com as planilhas da Electric")
     R.p("O mesmo código recalcula casos reais das planilhas de engenharia (valores da planilha entre parênteses):")
     R.tab(["Caso (planilha)", "L (µH)", "I60 (A)", "I projeto (A)"], conferencia_planilhas(), [3.5, 1.6, 1.4, 1.6])

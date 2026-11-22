@@ -141,9 +141,11 @@ class ProjetoEletrico:
 
     # ---------------------------------------------------------------- renderização
     def _prims(self, f):
-        return f._moldura(len(self.folhas)) + f.prim
+        return f._moldura(getattr(self, "total_override", None) or len(self.folhas)) + f.prim
 
-    def pdf(self, arq, png_dir=None):
+    def pdf(self, arq, png_dir=None, total_override=None):
+        if total_override:
+            self.total_override = total_override
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt

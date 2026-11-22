@@ -308,7 +308,7 @@ def construir(ped, res, cod, versao, n_banco=1):
     return P
 
 
-def listas_folhas(P):
+def listas_folhas(P, conexoes=None):
     """Folhas de tabela: régua de bornes, lista de cabos, lista de material (no próprio PDF do esquema)."""
     def tabela(titulo, cab, larg, linhas, funcao):
         porf = 38
@@ -333,10 +333,13 @@ def listas_folhas(P):
             f.ret(x, y - (min(porf, len(linhas) - k0) + 1) * h, sum(larg), (min(porf, len(linhas) - k0) + 1) * h, lw=0.4)
     tabela("Régua de bornes", ["Régua", "Borne", "Fio", "De", "Para", "Função"], [20, 18, 22, 60, 60, 200],
            [(b["regua"], b["n"], b["fio"], b["de"], b["para"], b["funcao"]) for b in P.bornes], "=BORNES")
+    if conexoes:
+        tabela("Lista de conexão", ["De (tag:borne)", "Para (tag:borne)", "Fio", "Cor", "Seção (mm²)", "Folha"], [70, 70, 30, 30, 40, 30],
+               conexoes, "=CONEXOES")
     tabela("Lista de cabos", ["Cabo", "De", "Para", "Tipo", "Seção (mm²)", "Condutores", "Comprimento (m)", "Função"],
            [18, 34, 34, 120, 26, 24, 32, 90],
            [(c["id"], c["de"], c["para"], c["tipo"], c["secao"], c["n_cond"] or "–", f"{c['comp_m']:.1f}", c["funcao"]) for c in P.cabos], "=CABOS")
-    tabela("Lista de material", ["Item", "Tag", "Descrição", "Fabricante", "Código", "Qtd", "Un.", "Grupo"],
+    tabela("Lista de peças", ["Item", "Tag", "Descrição", "Fabricante", "Código", "Qtd", "Un.", "Grupo"],
            [12, 20, 185, 50, 38, 14, 14, 47], lista_material(P), "=MATERIAL")
 
 
@@ -364,7 +367,7 @@ def lista_consolidada(P):
     return list(acc.values())
 
 
-def planilha(P, arq):
+def planilha(P, arq, conexoes=None):
     """Lista de material, bornes e cabos em XLSX (para cotação e para a montadora)."""
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill
@@ -398,6 +401,9 @@ def planilha(P, arq):
     aba(ws, "Lista de cabos", ["Cabo", "De", "Para", "Tipo", "Seção (mm²)", "Condutores", "Comprimento (m)", "Função"],
         [(c["id"], c["de"], c["para"], c["tipo"], c["secao"], c["n_cond"], c["comp_m"], c["funcao"]) for c in P.cabos],
         (8, 14, 14, 50, 12, 11, 15, 22))
+    if conexoes:
+        ws = wb.create_sheet("Lista de conexão")
+        aba(ws, "Lista de conexão", ["De (tag:borne)", "Para (tag:borne)", "Fio", "Cor", "Seção (mm²)", "Folha"], conexoes, (22, 22, 8, 8, 12, 8))
     wb.save(arq)
     return arq
 

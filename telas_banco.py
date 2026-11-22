@@ -20,26 +20,101 @@ def _harm_editor(chave, padrao, rotulo, unidade):
     return {int(r["h"]): float(r["valor"]) for _, r in ed.dropna().iterrows() if r["valor"] > 0}
 
 
+def _plataforma_estudos():
+    """Medição do GeradorQEE e estudo do GeradorProtecao (Plataforma de Estudos) – cada um opcional e independente."""
+    from fsen import integracao as IN
+    from seletor import seletor_pasta
+    out = {}
+    with st.expander("Medição (QEE) e estudo de proteção da Plataforma de Estudos – opcional, cada um sozinho ou os dois",
+                     expanded=bool(st.session_state.get("bc_usar_qee") or st.session_state.get("bc_usar_prot"))):
+        c1, c2 = st.columns(2)
+        if c1.checkbox("Usar medição do ícone QEE", key="bc_usar_qee"):
+            pq = seletor_pasta("Pasta 'relatorios' do ponto medido", "bc_qee", "", container=c1,
+                               ajuda="onde estão resumo - *.json, ficha - *.json e anexo - *.xlsx")
+            if IN.e_pasta_qee(pq):
+                out["qee"] = pq
+                c1.success("Medição reconhecida.")
+                out["no_ponto"] = c1.radio("A medição foi feita na barra onde o filtro será ligado?", ["Sim", "Não"],
+                                           horizontal=True, key="bc_no_ponto") == "Sim"
+            elif pq:
+                c1.warning("Esta pasta não tem 'resumo - *.json' do gerador de QEE.")
+        if c2.checkbox("Usar estudo de proteção / curto", key="bc_usar_prot"):
+            pp = seletor_pasta("Pasta do estudo de proteção", "bc_prot", "", container=c2,
+                               ajuda="pasta com o PDF do estudo (Estudo de Proteção / curto-circuito)")
+            pdfs = IN.pdfs_protecao(pp)
+            if pdfs:
+                arq = c2.selectbox("Estudo", pdfs, format_func=os.path.basename, key="bc_prot_pdf")
+                cache = st.session_state.get("_bc_rede")
+                if not cache or cache[0] != arq:
+                    with st.spinner("Lendo o estudo de proteção..."):
+                        st.session_state["_bc_rede"] = cache = (arq, IN.ler_protecao(arq))
+                rede = cache[1]
+                bts = IN.barras_bt(rede)
+                if bts:
+                    out["rede"] = rede
+                    txt = c2.text_input("Barra/equipamento onde o filtro será ligado (como no estudo)", key="bc_barra_txt",
+                                        placeholder="ex.: QDF-03, TF-02, banco do QDF-03")
+                    sug = IN.achar_barra(rede, txt) if txt else bts[0]
+                    idx = bts.index(sug) if sug in bts else 0
+                    out["barra"] = c2.selectbox("Barra do estudo (confira)", bts, index=idx, key=f"bc_barra_{sug}")
+                    cen = IN.cenarios_barra(rede, out["barra"])
+                    c2.caption(f"{rede.get('cliente', '')} – {len(rede['trafos'])} trafo(s), {len(cen)} cenário(s) de curto nesta barra: "
+                               + "; ".join(f"{c['scc_mva']:.1f} MVA" for c in cen))
+                else:
+                    c2.warning("Não achei as tabelas de curto por barra neste PDF.")
+            elif pp:
+                c2.warning("Nenhum PDF de estudo de proteção nesta pasta.")
+    return out
+
+
 def _leitura(tipo, provedor, nome_ia):
     st.markdown("#### 1. Solicitação – cole o e-mail e solte os arquivos (igual ao filtro senoidal)")
     texto = st.text_area("E-mail / pedido do cliente", height=150, key="bc_email")
     arquivos = st.file_uploader("Anexos: pedido, unifilar, placa do trafo, fotos, relatório de QEE, medições (xlsx, csv, txt, pdf, docx, imagens)",
                                 accept_multiple_files=True, key="bc_anexos")
+    integ = _plataforma_estudos()
     if st.button("🔎 Ler solicitação e medições", type="primary", key="bc_ler"):
         caminhos, tmp = [], tempfile.mkdtemp()
         for f in arquivos or []:
             c = os.path.join(tmp, f.name)
             open(c, "wb").write(f.getbuffer())
             caminhos.append(c)
-        if not caminhos and not texto.strip():
-            st.error("Cole o e-mail e/ou anexe os arquivos antes de ler.")
+        if not caminhos and not texto.strip() and not (integ.get("qee") or integ.get("rede")):
+            st.error("Cole o e-mail, anexe arquivos ou escolha a medição (QEE) / o estudo de proteção antes de ler.")
             return
         from fsen import leitor_banco as LB
+        from fsen import integracao as IN
         import time
         t0 = time.time()
-        with st.spinner(f"Lendo e-mail e {len(caminhos)} anexo(s) com {nome_ia}..."):
-            dados = LB.ler(texto, caminhos, provedor)
+        dados_ia = {}
+        if caminhos or texto.strip():
+            with st.spinner(f"Lendo e-mail e {len(caminhos)} anexo(s) com {nome_ia}..."):
+                dados_ia = LB.ler(texto, caminhos, provedor)
+        evid, avisos_int = list(dados_ia.get("evidencias") or []), []
+        dq = dp = None
+        if integ.get("qee"):
+            dq, ev = IN.ler_qee(integ["qee"])
+            dq, ev2 = IN.ponto_de_ligacao(dq, integ.get("no_ponto", True))
+            evid += ev + ev2
+        if integ.get("rede"):
+            dp, ev = IN.dados_de_protecao(integ["rede"], integ.get("barra"))
+            evid += ev
+        dados, origem, avisos_int = IN.mesclar(qee=dq, protecao=dp, ia=dados_ia)
+        dados["evidencias"] = evid
+        dados["_fonte"] = dados_ia.get("_fonte") or ("Plataforma de Estudos (" + ", ".join(
+            x for x, y in (("QEE", dq), ("Proteção", dp)) if y) + ")")
+        precisa, motivos = IN.necessidade(dados)
         ped, just, lac = LB.decidir(dados)
+        IN.aplicar_rede(ped, dados)
+        ped.cenarios_rede = dados.get("_cenarios_rede") or []
+        ped.origem_dados = {k: v for k, v in origem.items() if not k.startswith("_") and k not in ("evidencias", "lacunas")}
+        ped.barra_ligacao = dados.get("_barra") or ""
+        cen = IN.verificar_cenarios(ped, dados.get("_cenarios_rede")) if dados.get("_cenarios_rede") else []
+        if ped.tipo == "dessintonizado" and ped.nr > 3 and any("3ª" in x for c in cen for x in c.get("avisos") or []):
+            just.append("Em algum cenário do estudo de proteção a ressonância cai perto da 3ª harmônica: avaliar FD 14 % (Nr 2,67), "
+                        "que sintoniza abaixo da 3ª – troque o fator de dessintonia abaixo e confira a tabela de cenários.")
+        st.session_state["bc_integ"] = dict(precisa=precisa, motivos=motivos, avisos=avisos_int, cenarios=cen,
+                                            origem=origem, barra=dados.get("_barra"))
         st.session_state["bc_dados"] = dados
         st.session_state["bc_ped"] = ped.__dict__.copy()
         st.session_state["bc_just"] = just
@@ -76,6 +151,21 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
             ev = (st.session_state.get("bc_dados") or {}).get("evidencias") or []
             if ev:
                 st.caption("De onde saíram os números: " + " | ".join(ev))
+        ig = st.session_state.get("bc_integ")
+        if ig:
+            if not ig["precisa"]:
+                st.success("**Pela medição não há necessidade de banco nem de filtro:** " + " ".join(ig["motivos"])
+                           + " Se o cliente quer assim mesmo (expansão, nova carga), siga ajustando os dados abaixo.")
+            elif ig["motivos"]:
+                st.info("Necessidade: " + " ".join(ig["motivos"]))
+            for a_ in ig["avisos"]:
+                st.warning(a_)
+            if ig["cenarios"]:
+                st.markdown(f"**Ressonância em cada cenário do estudo de proteção – barra {ig.get('barra')}**")
+                st.dataframe(pd.DataFrame([dict(Cenário=c["nome"], **{"Scc (MVA)": c.get("scc_mva"),
+                                                                       "h ress. sem reator": c.get("hr_sem_reator"),
+                                                                       "Avisos": "; ".join(c.get("avisos") or []) or "ok"})
+                                           for c in ig["cenarios"]]), hide_index=True, width="stretch")
         for x in st.session_state.get("bc_lac", []):
             st.info(x)
     base.tipo = tipo
