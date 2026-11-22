@@ -72,45 +72,81 @@ def _cl(lst, g, xc, yc, z, D, A, cor, eixo="z", op=1.0):
     lst.append(dict(t="cil", g=g, x=xc, y=yc, z=z, D=D, A=A, cor=cor, eixo=eixo, op=op))
 
 
-def _capacitor(p, xc, yc, z, d, a, ok):
+def _tubo(lst, g, pts, D, cor):
+    """Cabo/condutor flexível por pontos (rota de montagem)."""
+    lst.append(dict(t="tubo", g=g, pts=[tuple(map(float, q)) for q in pts], D=D, cor=cor))
+
+
+# ---- componentes com a forma do catálogo (medidas externas do catálogo; detalhes proporcionais dentro do envelope)
+def _capacitor(p, xc, yc, z, d, a, ok, term=45):
+    """Capacitor cilíndrico (VarPlus Can / PhiCap): lata de alumínio com friso, tampa com bloco de terminais e capa."""
     cor = C_CAP if ok else C_VERM
     op = 1.0 if ok else 0.6
-    _cl(p, "frente", xc, yc, z, d, a, cor, op=op)
-    _cl(p, "frente", xc, yc, z + a, d * 0.92, 6, "#bdbdbd", op=op)                     # tampa
-    for k in range(3):                                                                  # 3 terminais
-        ang = 2 * math.pi * k / 3
-        _cl(p, "frente", xc + d * 0.22 * math.cos(ang), yc + d * 0.22 * math.sin(ang), z + a + 6, 14, 26, "#3a3a3a")
+    _cl(p, "frente", xc, yc, z, d, a * 0.86, cor, op=op)
+    _cl(p, "frente", xc, yc, z + a * 0.86, d * 0.95, a * 0.03, "#c9c9c9", op=op)              # friso (rebordo)
+    _cl(p, "frente", xc, yc, z + a * 0.89, d, a * 0.11, cor, op=op)
+    _cl(p, "frente", xc, yc, z + a * 0.25, d * 1.004, a * 0.22, "#d2d8de", op=op)             # etiqueta
+    _cl(p, "frente", xc, yc, z + a, d * 0.62, term * 0.55, "#2b2b2b")                         # bloco de terminais
+    for k in range(3):
+        ang = 2 * math.pi * k / 3 + math.pi / 2
+        _cl(p, "frente", xc + d * 0.18 * math.cos(ang), yc + d * 0.18 * math.sin(ang), z + a + term * 0.55, 12, term * 0.3, "#b0b0b0")
+    _cl(p, "frente", xc, yc, z + a + term * 0.55, d * 0.2, term * 0.2, "#1a1a1a")             # resistor de descarga (topo)
 
 
 def _secc(p, x, y_face, z, d, ok):
-    """Chave seccionadora-fusível NH (corpo + tampa com 3 porta-fusíveis) presa na face frontal da placa (y_face)."""
+    """Chave seccionadora-fusível NH (Fupact ISFT): base, tampa frontal articulada com punho, protetores de terminais."""
     L, A, P = d["L"], d["A"], d["P"]
-    _cx(p, "frente", x, y_face - P, z, L, P, A, C_SEC if ok else C_VERM, 1.0 if ok else 0.6)
-    for k in range(3):
-        _cx(p, "frente", x + L * (0.08 + 0.3 * k), y_face - P - 6, z + A * 0.18, L * 0.24, 6, A * 0.64, C_SEC_F)
-    _cx(p, "frente", x + L * 0.3, y_face - P - 12, z + A * 0.86, L * 0.4, 12, A * 0.08, "#c62828")   # puxador
+    cb = "#d9d9d9" if ok else C_VERM
+    op = 1.0 if ok else 0.6
+    _cx(p, "frente", x, y_face - P * 0.45, z, L, P * 0.45, A, cb, op)                        # base
+    _cx(p, "frente", x + L * 0.04, y_face - P, z + A * 0.14, L * 0.92, P * 0.55, A * 0.72, "#55595e", op)   # tampa (porta-fusíveis)
+    for k in range(3):                                                                       # janelas de indicação dos fusíveis
+        _cx(p, "frente", x + L * (0.12 + 0.28 * k), y_face - P - 2, z + A * 0.5, L * 0.18, 2, A * 0.12, "#d0d0d0")
+    _cx(p, "frente", x + L * 0.30, y_face - P - 22, z + A * 0.26, L * 0.40, 22, A * 0.08, "#1c1c1c")   # punho
+    for zz in (z, z + A * 0.86):                                                             # protetores de terminais
+        _cx(p, "frente", x + L * 0.06, y_face - P * 0.55, zz, L * 0.88, P * 0.12, A * 0.14, "#9c9c9c")
 
 
 def _contatora(p, x, y_face, z, d, ok):
+    """Contatora (TeSys D / AF): corpo escalonado, frente com janela de indicação, bornes em cima e embaixo, bobina A1/A2."""
     L, A, P = d["L"], d["A"], d["P"]
-    _cx(p, "frente", x, y_face - P, z, L, P, A, C_KM if ok else C_VERM, 1.0 if ok else 0.6)
-    _cx(p, "frente", x + L * 0.12, y_face - P - 4, z + A * 0.3, L * 0.76, 4, A * 0.4, C_KM_F)
-    for zz in (z - 8, z + A):                                                          # bornes em cima e embaixo
-        _cx(p, "frente", x + 4, y_face - P * 0.7, zz, L - 8, P * 0.5, 8, "#8d8d8d")
+    cb = "#34373a" if ok else C_VERM
+    op = 1.0 if ok else 0.6
+    _cx(p, "frente", x, y_face - P * 0.55, z, L, P * 0.55, A, cb, op)                        # corpo (trilho/placa)
+    _cx(p, "frente", x + L * 0.08, y_face - P * 0.85, z + A * 0.14, L * 0.84, P * 0.30, A * 0.72, "#43474b", op)
+    _cx(p, "frente", x + L * 0.2, y_face - P, z + A * 0.32, L * 0.6, P * 0.15, A * 0.36, "#4f5458", op)   # frente (porta-etiqueta)
+    _cx(p, "frente", x + L * 0.38, y_face - P - 2, z + A * 0.44, L * 0.24, 2, A * 0.12, "#e6e6e6")          # janela de indicação
+    for zz in (z + A * 0.02, z + A * 0.86):                                                  # bornes de potência
+        for k in range(3):
+            _cl(p, "frente", x + L * (0.2 + 0.3 * k), y_face - P * 0.68, zz + A * 0.06, 9, A * 0.05, "#c0c0c0", eixo="y")
+    _cx(p, "frente", x + L * 0.78, y_face - P * 0.9, z + A * 0.78, L * 0.16, P * 0.08, A * 0.08, "#b0b0b0")   # A1/A2
 
 
 def _reator(p, x, y, z, L, P, A):
-    """Reator trifásico Electric (FEM): culatras em cima/embaixo, 3 bobinas, pés e terminais – medidas do projeto."""
-    hy = A * 0.13
-    _cx(p, "tras", x, y + P * 0.2, z, L, P * 0.6, hy, C_NUC)
-    _cx(p, "tras", x, y + P * 0.2, z + A - hy, L, P * 0.6, hy, C_NUC)
-    db = min(L / 3.05, P)
+    """Reator trifásico Electric (FEM): núcleo laminado (colunas + culatras), 3 bobinas com enfaixamento, quadros em U
+    zincados com tirantes, pés, saídas em barra de cobre por fase e caixa do termostato – medidas externas do projeto FEM."""
+    hy = A * 0.14
+    pn = P * 0.42                                                                              # espessura do pacote do núcleo
+    yn = y + (P - pn) / 2
+    _cx(p, "tras", x + L * 0.03, yn, z + 14, L * 0.94, pn, hy, C_NUC)                          # culatra inferior
+    _cx(p, "tras", x + L * 0.03, yn, z + A - hy - 30, L * 0.94, pn, hy, C_NUC)                 # culatra superior
+    for yy in (yn - 6, yn + pn):                                                               # quadros em U (frente/trás)
+        for zz in (z + 10, z + A - hy - 34):
+            _cx(p, "tras", x, yy, zz, L, 6, hy + 8, "#a9adb2")
+    db = min(L / 3.1, P * 0.95)
+    hb = A - 2 * hy - 60
     for k in range(3):
-        _cl(p, "tras", x + db / 2 + k * (L - db) / 2, y + P / 2, z + hy, db, A - 2 * hy, C_BOB)
-    for xx in (x - 15, x + L - 25):                                                    # pés (cantoneira)
-        _cx(p, "tras", xx, y, z - 12, 40, P, 12, "#2f2f2f")
-    for k in range(6):                                                                 # terminais no alto
-        _cx(p, "tras", x + L * (0.06 + 0.16 * k), y + P * 0.08, z + A, 22, 10, 30, "#b87333")
+        xc = x + db / 2 + 6 + k * (L - db - 12) / 2
+        _cl(p, "tras", xc, y + P / 2, z + hy + 22, db, hb, C_BOB)
+        _cl(p, "tras", xc, y + P / 2, z + hy + 22 + hb * 0.45, db * 1.01, hb * 0.07, "#8f6f3c")   # faixa/enfaixamento
+        _cx(p, "tras", xc - 12, y + P * 0.05, z + A - hy - 30 + hy + 6, 24, 8, 54, "#b87333")    # saída (barra Cu)
+        _cx(p, "tras", xc - 12, y + P * 0.05, z + A - hy - 30 + hy + 50, 24, 30, 8, "#b87333")
+    for k in range(2):                                                                         # tirantes nos vãos entre fases
+        xt = x + db + 6 + k * (L - db - 12) / 2 + (L - 3 * db - 12) / 4
+        _cl(p, "tras", xt, yn - 10, z + 10, 10, A - 30, "#8a8a8a")
+    for xx in (x - 20, x + L - 30):                                                            # pés (cantoneira com furos)
+        _cx(p, "tras", xx, y, z, 50, P, 12, "#2f2f2f")
+    _cx(p, "tras", x + L * 0.72, yn - 40, z + A - hy - 20, 50, 34, 40, "#e0e0e0")              # caixa do termostato
 
 
 def _prateleira(p, x, y, z, L, P):
@@ -118,13 +154,47 @@ def _prateleira(p, x, y, z, L, P):
         _cx(p, "tras", x, yy, z, L, PERFIL, PERFIL, C_PRAT)
     for xx in (x, x + L - PERFIL):
         _cx(p, "tras", xx, y, z, PERFIL, P, PERFIL, C_PRAT)
-    for xx in (x, x + L - PERFIL):                                                     # montantes
-        for yy in (y, y + P - PERFIL):
-            _cx(p, "tras", xx, yy, z - 2, PERFIL, PERFIL, 2, C_PRAT)
+    for k in range(1, 3):                                                                      # travessas de apoio
+        _cx(p, "tras", x, y + P * k / 3 - 15, z, L, 30, 25, C_PRAT)
 
 
-def modelo(ped, res, gab, prot, inds=None, caps_cod=None):
-    """Arranjo físico (peças com posição e medida, mm; x largura, y profundidade 0 = frente, z altura) + verificações."""
+def _canaleta(p, g, x, y_face, z, L, A, P=60, vertical=False):
+    """Canaleta recortada (cinza) com tampa – percurso dos cabos de força/comando."""
+    _cx(p, g, x, y_face - P, z, L, P, A, "#8f9499")
+    if vertical:
+        _cx(p, g, x + 4, y_face - P - 3, z, L - 8, 3, A, "#b4b8bc")
+    else:
+        _cx(p, g, x, y_face - P - 3, z + 4, L, 3, A - 8, "#b4b8bc")
+
+
+def _barramento(p, x0, x1, y_face, z, n=3, esp=45):
+    """Barramento de cobre (L1/L2/L3) sobre isoladores."""
+    for f in range(n):
+        zz = z + f * esp
+        _cx(p, "frente", x0, y_face - 95, zz, x1 - x0, 10, 30, C_BARRA)
+        for xx in (x0 + 40, (x0 + x1) / 2, x1 - 40):
+            _cl(p, "frente", xx, y_face - 45, zz + 15, 26, 85, "#7a1d1d", eixo="y")
+
+
+# ---- arranjo
+def _dist_vertical(z0, z1, blocos, gap_min):
+    """Distribui os blocos (altura) entre z0 e z1 com folgas IGUAIS ≥ gap_min (sem espaço vazio concentrado)."""
+    soma = sum(blocos)
+    livre = (z1 - z0) - soma
+    n = len(blocos) + 1
+    gap = max(livre / n, gap_min if livre >= gap_min * n else livre / n)
+    zs, z = [], z0 + gap
+    for h in blocos:
+        zs.append(z)
+        z += h + gap
+    return zs, gap, livre
+
+
+def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
+    """Arranjo físico (peças com posição e medida, mm; x largura, y profundidade 0 = frente, z altura) + verificações.
+    `base` = parâmetros do último painel APROVADO compatível (biblioteca de painéis) – parte dele em vez do zero."""
+    from . import biblioteca_paineis as BP
+    prm = BP.parametros(base)
     dim = gab["dimensoes_mm"]
     H, W, D = dim["altura"], dim["largura"], dim["profundidade"]
     p, faltam, ver = [], [], []
@@ -138,14 +208,17 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None):
     for nome, x in (("capacitor", capd), ("contatora", ctt), ("seccionadora-fusível", sec), ("reator (FEM)", rL)):
         if not x:
             faltam.append(nome)
-    cd = capd or dict(D=116, A=291)
+    cd = capd or dict(D=116, A=291, terminal=45)
     sd = sec or dict(L=106, A=194, P=80)
     kd = ctt or dict(L=70, A=110, P=108)
     rL, rP, rA = rL or 320, rP or 240, rA or 320
     n_cap = e0["cap"][0]
     cols = gab["colunas"]
-    yp = D / 2                                                       # placa no meio (dupla face)
-    zt = H - 40                                                      # topo da estrutura
+    folga = prm["folga_componentes_mm"]
+    # placa posicionada pela profundidade que os reatores precisam atrás (com cabos e ar) – resto fica na frente
+    prof_tras = CHAPA / 2 + prm["folga_reator_placa_mm"] + rP + prm["folga_cabos_tras_mm"]
+    yp = min(D / 2 + 60, max(D / 2 - 60, D - PERFIL - prof_tras))
+    zt = H - 40
     # ---------- estrutura, base, teto, chapas, portas
     _cx(p, "base", 0, 0, 0, W, D, BASE, C_BASE)
     xs = [0]
@@ -180,83 +253,130 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None):
                     _cx(p, lado, xv + 8, yv + (-3 if lado == "porta_f" else 3), BASE + 135 + s * 24, 134, 3, 8, "#9a9a9a")
             xm = x0 + Lc - 80 if i % 2 == 0 else x0 + 50              # puxador
             _cx(p, lado, xm, yv + (-14 if lado == "porta_f" else 4), BASE + (H - BASE) * 0.5 - 100, 30, 14, 200, "#2a2a2a")
-        p.append(dict(t="dobradica", g="porta", x0=x0, Lc=Lc, esq=(i % 2 == 0)))
-    # controlador + sinaleiros + emergência na porta frontal da 1ª coluna
-    x0c = cols[0]["largura"] * 0.5 - 72
+    x0c = cols[0]["largura"] * 0.5 - 72                               # controlador, sinaleiros e emergência na porta
     _cx(p, "porta_f", x0c, -24, H * 0.62, 144, 6, 144, "#20384e")
     _cx(p, "porta_f", x0c + 14, -27, H * 0.62 + 50, 116, 3, 70, "#3fa7d6")
     n_est_tot = len(res["estagios"])
     for k in range(n_est_tot):
         _cl(p, "porta_f", x0c - 120 + k * 50, -30, H * 0.55, 22, 12, "#2e7d32", eixo="y")
     _cl(p, "porta_f", x0c + 230, -32, H * 0.62 + 30, 40, 16, "#d32f2f", eixo="y")
-    # ---------- por coluna: placa dupla face, frente (manobra + capacitores), trás (reatores)
+    # ---------- por coluna: placa dupla face; frente distribuída sem vazio; trás reatores; cabos e barras montáveis
     for i, c in enumerate(cols):
         x0, Lc = xs[i], c["largura"]
         n_est = len(c["estagios"])
         zp0, zp1 = BASE + 60, H - 140
-        _cx(p, "placa", x0 + 40, yp - CHAPA / 2, zp0, Lc - 80, CHAPA, zp1 - zp0, C_PLACA)
-        for k in range(5):                                           # furos de passagem de cabos (placa)
-            _cl(p, "placa", x0 + 40 + (Lc - 80) * (k + 0.5) / 5, yp, zp0 + 520, 36, 8, "#f5f5f5", eixo="y")
-        yf = yp - CHAPA / 2                                          # face frontal
-        # capacitores (embaixo, em fileiras na profundidade, sobre trilho)
-        dcap, acap = cd.get("D", 116), cd.get("A", 291)
+        xa, xb = x0 + 40, x0 + Lc - 40                               # placa útil
+        _cx(p, "placa", xa, yp - CHAPA / 2, zp0, xb - xa, CHAPA, zp1 - zp0, C_PLACA)
+        yf = yp - CHAPA / 2
+        cv = prm["canaleta_vertical_mm"]
+        _canaleta(p, "frente", xa + 10, yf, zp0 + 20, cv, zp1 - zp0 - 40, vertical=True)   # canaletas verticais laterais
+        _canaleta(p, "frente", xb - 10 - cv, yf, zp0 + 20, cv, zp1 - zp0 - 40, vertical=True)
+        xu0, xu1 = xa + 10 + cv + folga, xb - 10 - cv - folga        # largura útil entre canaletas
+        # capacitores: fileiras na largura, no máx. N fileiras na profundidade; o resto vai para um 2º nível (prateleira)
+        dcap, acap, tcap = cd.get("D", 116), cd.get("A", 291), cd.get("terminal", 45)
         n_tot = n_cap * n_est
-        por_linha = max(1, int((Lc - 80 - FOLGA) // (dcap + 12)))
-        linhas = math.ceil(n_tot / por_linha)
-        _cx(p, "frente", x0 + 40, yf - linhas * (dcap + 15) - 20, BASE + 20, Lc - 80, linhas * (dcap + 15) + 20, 20, C_PRAT)
-        for k in range(n_tot):
-            lin, ck = divmod(k, por_linha)
-            _capacitor(p, x0 + 40 + FOLGA / 2 + dcap / 2 + ck * (dcap + 12), yf - dcap / 2 - 15 - lin * (dcap + 15),
-                       BASE + 40, dcap, acap, bool(capd))
-        prof_frente = linhas * (dcap + 15) + 20
-        # contatoras e chaves NH (fileiras acima dos capacitores)
-        z_km = BASE + 40 + acap + 45 + 200
-        z_sc = z_km + kd["A"] + 160
-        passo = max(sd["L"], kd["L"]) + FOLGA
-        larg_f = n_est * passo - FOLGA
-        x_ini = x0 + Lc / 2 - larg_f / 2
+        passo_c = dcap + prm["folga_capacitores_mm"]
+        por_linha = max(1, int((xu1 - xu0 + prm["folga_capacitores_mm"]) // passo_c))
+        nprof_max = max(1, int((yf - PERFIL - 30) // (dcap + 15)))
+        nprof = min(prm["capacitores_fileiras_prof_max"], nprof_max)
+        por_nivel = por_linha * nprof
+        niveis_c = math.ceil(n_tot / por_nivel)
+        h_cap = acap + tcap + 25
+        # contatoras e chaves NH: fileira única por coluna, passo distribuído por toda a largura útil (afastadas = ar e ferramenta)
+        passo = (xu1 - xu0) / n_est
+        blocos = [h_cap] * niveis_c + [kd["A"], sd["A"], 3 * 45 + 30]   # capacitores (níveis), contatoras, chaves, barramento
+        nomes = [f"capacitores nível {k + 1}" for k in range(niveis_c)] + ["contatoras", "chaves NH", "barramento"]
+        dut = prm["canaleta_horizontal_mm"]
+        # canaleta horizontal entre cada fileira (acima dos capacitores, entre contatoras e chaves, abaixo do barramento)
+        blocos_c = []
+        for k, b in enumerate(blocos):
+            blocos_c.append(b)
+            if k < len(blocos) - 1:
+                blocos_c.append(dut)
+        zs, gap, livre = _dist_vertical(zp0 + 40, zp1 - 30, blocos_c, prm["folga_vertical_min_mm"])
+        z_blk = zs[0::2]
+        z_dut = zs[1::2]
+        for zd in z_dut:
+            _canaleta(p, "frente", xu0 - folga, yf, zd, xu1 - xu0 + 2 * folga, dut)
+        # capacitores
+        k = 0
+        z_caps = z_blk[:niveis_c]
+        for nv, zc in enumerate(z_caps):
+            yprat = yf - nprof * (dcap + 15) - 20
+            _cx(p, "frente", xu0 - 10, yprat, zc - 22, xu1 - xu0 + 20, nprof * (dcap + 15) + 20, 22, C_PRAT)   # prateleira/trilho
+            larg_l = min(por_linha, n_tot) * passo_c - prm["folga_capacitores_mm"]
+            xc0 = (xu0 + xu1) / 2 - larg_l / 2 + dcap / 2
+            for _ in range(por_nivel):
+                if k >= n_tot:
+                    break
+                lin, ck = divmod(k - nv * por_nivel, por_linha)
+                _capacitor(p, xc0 + ck * passo_c, yf - dcap / 2 - 15 - lin * (dcap + 15), zc, dcap, acap, bool(capd), tcap)
+                k += 1
+        z_km, z_sc, z_bb = z_blk[niveis_c], z_blk[niveis_c + 1], z_blk[niveis_c + 2]
         for j in range(n_est):
-            xx = x_ini + j * passo
-            _contatora(p, xx + (passo - FOLGA - kd["L"]) / 2, yf, z_km, kd, bool(ctt))
-            _secc(p, xx + (passo - FOLGA - sd["L"]) / 2, yf, z_sc, sd, bool(sec))
-        for f in range(3):                                           # barramento (cobre) no alto da face frontal
-            _cx(p, "frente", x0 + 50, yf - 60, zp1 - 110 - f * 45, Lc - 100, 10, 30, C_BARRA)
-        ver.append(["Placa de montagem", f"Fileira de {n_est} chaves NH / contatoras ({c['funcao']})", f"{larg_f:.0f} mm",
-                    f"≤ {Lc - 80} mm", CK.texto(CK.check(larg_f <= Lc - 80, CK.utilizacao(larg_f, Lc - 80)))])
-        alt_frente = z_sc + sd["A"] + 60
-        ver.append(["Placa de montagem", f"Altura ocupada na frente: capacitores + contatoras + chaves NH ({c['funcao']})",
-                    f"{alt_frente:.0f} mm", f"≤ {zp1 - 150:.0f} mm (abaixo do barramento)",
-                    CK.texto(CK.check(alt_frente <= zp1 - 150, CK.utilizacao(alt_frente, zp1 - 150)))])
-        ver.append(["Placa de montagem", f"Profundidade dos capacitores na frente ({linhas} fileira(s))", f"{prof_frente:.0f} mm",
-                    f"≤ {yp - 40:.0f} mm", CK.texto(CK.check(prof_frente <= yp - 40, CK.utilizacao(prof_frente, yp - 40)))])
-        # trás: reatores em prateleiras pretas
-        yr = yp + CHAPA / 2 + 40
-        por_niv = max(1, int((Lc - 80 - FOLGA) // (rL + FOLGA)))
+            xm = xu0 + passo * (j + 0.5)
+            _contatora(p, xm - kd["L"] / 2, yf, z_km, kd, bool(ctt))
+            _secc(p, xm - sd["L"] / 2, yf, z_sc, sd, bool(sec))
+            # rotas de montagem por fase: barra → chave (cordoalha) | chave → contatora (pela canaleta) | contatora → passa-cabo
+            for f in range(3):
+                dx = (f - 1) * sd["L"] * 0.28
+                ycab = yf - 35
+                _tubo(p, "frente", [(xm + dx, yf - 70, z_bb + f * 45 + 15), (xm + dx, yf - 70, z_sc + sd["A"] + 10)], 10, "#b87333")
+                _tubo(p, "frente", [(xm + dx, ycab, z_sc), (xm + dx, ycab, z_dut[niveis_c] + dut / 2),
+                                    (xm + dx * 0.8, ycab, z_km + kd["A"])], 12, "#1e1e1e")
+                _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[niveis_c - 1] + dut / 2),
+                                    (xm + dx * 0.8, yp, z_dut[niveis_c - 1] + dut / 2)], 12, "#1e1e1e")
+            _cl(p, "placa", xm, yp, z_dut[niveis_c - 1] + dut / 2, 50, 8, "#f2f2f2", eixo="y")   # passa-cabos (prensa) na placa
+        _barramento(p, xu0 - folga + 10, xu1 + folga - 10, yf, z_bb + 15)
+        # verificações de montagem (Check)
+        ocup = sum(blocos_c) / (zp1 - zp0 - 70)
+        ver.append(["Placa – frente", f"Distribuição vertical sem vazio concentrado ({c['funcao']}): folga igual entre fileiras",
+                    f"{gap:.0f} mm", f"≥ {prm['folga_vertical_min_mm']} mm (cabos e ar)",
+                    CK.texto(CK.check(gap >= prm["folga_vertical_min_mm"], CK.utilizacao(prm["folga_vertical_min_mm"], max(gap, 1))))])
+        esp_lat = passo - max(kd["L"], sd["L"])
+        ver.append(["Placa – frente", f"Afastamento lateral entre chaves/contatoras ({n_est} por coluna, passo {passo:.0f} mm) – {c['funcao']}",
+                    f"{esp_lat:.0f} mm", f"≥ {prm['afastamento_lateral_min_mm']} mm (ar e ferramenta)",
+                    CK.texto(CK.check(esp_lat >= prm["afastamento_lateral_min_mm"],
+                                      CK.utilizacao(prm["afastamento_lateral_min_mm"], max(esp_lat, 1))))])
+        prof_frente = nprof * (dcap + 15) + 20
+        ver.append(["Placa – frente", f"Capacitores: {n_tot} em {niveis_c} nível(is) × {nprof} fileira(s) na profundidade – {c['funcao']}",
+                    f"{prof_frente:.0f} mm", f"≤ {yf - PERFIL - 30:.0f} mm",
+                    CK.texto(CK.check(prof_frente <= yf - PERFIL - 30, CK.utilizacao(prof_frente, yf - PERFIL - 30)))])
+        ver.append(["Placa – frente", f"Ocupação da altura útil da placa ({c['funcao']})", f"{ocup * 100:.0f} %",
+                    "50–90 % (nem vazia, nem apertada)",
+                    CK.texto(CK.check(0.5 <= ocup <= 0.9, ocup * 100 / 90 * 100 if ocup > 0.5 else 95))])
+        # trás: reatores em prateleiras, cabos pela passagem da placa
+        yr = yp + CHAPA / 2 + prm["folga_reator_placa_mm"]
+        por_niv = max(1, int((xb - xa - FOLGA) // (rL + FOLGA)))
         niveis = math.ceil(n_est / por_niv)
-        passo_niv = rA + 30 + 110
+        passo_niv = rA + 30 + prm["folga_vertical_reatores_mm"]
         for nv in range(niveis):
-            zz = BASE + 40 + nv * passo_niv
-            _prateleira(p, x0 + 40, yr - 10, zz, Lc - 80, rP + 30)
+            _prateleira(p, xa, yr - 10, BASE + 40 + nv * passo_niv, xb - xa, rP + 30)
         for j in range(n_est):
             nv, pos = divmod(j, por_niv)
             usado = min(por_niv, n_est - nv * por_niv)
-            larg_niv = usado * rL + (usado - 1) * FOLGA
-            xr = x0 + Lc / 2 - larg_niv / 2 + pos * (rL + FOLGA)
-            _reator(p, xr, yr, BASE + 40 + PERFIL + 12 + nv * passo_niv, rL, rP, rA)
-        for k in range(3):                                           # cabos subindo (vermelhos) no meio da coluna
-            _cl(p, "tras", x0 + Lc / 2 - 30 + k * 30, yr + rP + 50, BASE + 20, 24, zp1 - BASE - 60, C_CABO)
+            sobra = (xb - xa) - usado * rL
+            esp = sobra / (usado + 1)                                   # reatores afastados por igual (ar entre eles)
+            xr = xa + esp + pos * (rL + esp)
+            zr = BASE + 40 + PERFIL + nv * passo_niv
+            _reator(p, xr, yr, zr, rL, rP, rA)
+            xm = xu0 + passo * (j % n_est + 0.5)
+            zpass = z_dut[niveis_c - 1] + dut / 2
+            for f in range(3):                                          # cabo: passagem na placa → saída do reator
+                xt = xr + rL * (0.17 + 0.33 * f)
+                _tubo(p, "tras", [(xm + (f - 1) * 25, yp, zpass), (xm + (f - 1) * 25, yr + rP + 30, zpass),
+                                  (xt, yr + rP + 30, zr + rA + 60), (xt, yr + rP * 0.2, zr + rA + 30)], 12, C_CABO)
         alt_nec = BASE + 40 + niveis * passo_niv
         ver.append(["Reatores", f"{n_est} reator(es) {rL:.0f}×{rP:.0f}×{rA:.0f} mm atrás da placa ({por_niv} por prateleira, "
                     f"{niveis} prateleira(s)) – {c['funcao']}", f"{alt_nec:.0f} mm de altura", f"≤ {zp1:.0f} mm",
                     CK.texto(CK.check(alt_nec <= zp1, CK.utilizacao(alt_nec, zp1)))])
-        prof_tras = CHAPA / 2 + 40 + rP + 50 + 24
         ver.append(["Reatores", f"Profundidade atrás da placa: folga + reator + cabos ({c['funcao']})", f"{prof_tras:.0f} mm",
-                    f"≤ {D - yp - 40:.0f} mm", CK.texto(CK.check(prof_tras <= D - yp - 40, CK.utilizacao(prof_tras, D - yp - 40)))])
-        larg_r = por_niv * rL + (por_niv + 1) * FOLGA
-        ver.append(["Reatores", f"Largura da prateleira: {por_niv} reator(es) lado a lado + folgas ({c['funcao']})",
-                    f"{larg_r:.0f} mm", f"≤ {Lc - 80} mm", CK.texto(CK.check(larg_r <= Lc - 80, CK.utilizacao(larg_r, Lc - 80)))])
+                    f"≤ {D - PERFIL - yp:.0f} mm", CK.texto(CK.check(prof_tras <= D - PERFIL - yp, CK.utilizacao(prof_tras, D - PERFIL - yp)))])
+        esp_r = ((xb - xa) - por_niv * rL) / (por_niv + 1)
+        ver.append(["Reatores", f"Afastamento entre reatores na prateleira ({por_niv} lado a lado) – {c['funcao']}", f"{esp_r:.0f} mm",
+                    f"≥ {FOLGA} mm (ar)", CK.texto(CK.check(esp_r >= FOLGA, CK.utilizacao(FOLGA, max(esp_r, 1))))])
     return dict(H=H, W=W, D=D, base=BASE, pecas=p, faltam=faltam, verificacoes=ver, colunas=cols, xs=xs,
-                reator=(rL, rP, rA), cap=(cd.get("D"), cd.get("A")), n_est=n_est_tot)
+                reator=(rL, rP, rA), cap=(cd.get("D"), cd.get("A")), n_est=n_est_tot, params=prm, base_aprovada=prm.get("_origem"))
 
 
 # ----------------------------------------------------------------------------------------------- cena / vistas
@@ -283,8 +403,12 @@ TITULOS = {
 
 
 def _add(pl, pc):
+    import numpy as np
     import pyvista as pv
-    if pc["t"] == "caixa":
+    if pc["t"] == "tubo":
+        ln = pv.lines_from_points(np.array(pc["pts"]))
+        pl.add_mesh(ln.tube(radius=pc["D"] / 2, n_sides=12), color=pc["cor"], smooth_shading=True)
+    elif pc["t"] == "caixa":
         m = pv.Box(bounds=(pc["x"], pc["x"] + pc["L"], pc["y"], pc["y"] + pc["P"], pc["z"], pc["z"] + pc["A"]))
         pl.add_mesh(m, color=pc["cor"], opacity=pc.get("op", 1.0), show_edges=True, edge_color="#3d3d3d", line_width=0.5)
     elif pc["t"] == "cil":
@@ -463,7 +587,10 @@ def gerar(ped, res, gab, prot, inds, pasta, cod, versao="", log=print):
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas
 
-    m = modelo(ped, res, gab, prot, inds)
+    from . import biblioteca_paineis as BP
+    base = BP.ultimo_aprovado(tipo=getattr(ped, "tipo", "banco"), n_estagios=len(res["estagios"]))
+    m = modelo(ped, res, gab, prot, inds, base=base)
+    BP.salvar_layout(m, pasta, cod, ped)
     png = renders(m, os.path.join(pasta, "vistas"), cod)
     arq = os.path.join(pasta, f"Painel_3D_{cod}.pdf")
     W_, H_ = landscape(A3)
