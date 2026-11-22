@@ -171,11 +171,15 @@ def montar(ped, res, gab, prot, ext=None):
         add("5 Comando", tag, desc, r.get("codigo"), 1, "pç", o, stt(r), "")
     add("5 Comando", "-T1", f"Transformador de comando {ped.tensao_v:g}/220 V {trc['Sn']} VA", f"Trafo de comando monofásico {ped.tensao_v:g}/220 V {trc['Sn']} VA",
         1, "pç", "ELECTRIC", "calculado", f"carga: retenção {trc['S_ret']} VA; pior manobra {trc['S_inst']} VA")
-    r, o = item(d, mc, "disjuntor_comando", ped)
-    add("5 Comando", "-F02", trc["dj_pri"], r.get("codigo"), 1, "pç", o, stt(r), "proteção do primário")
-    add("5 Comando", "-F03", trc["dj_sec"], r.get("codigo"), 1, "pç", o, stt(r), "proteção do secundário")
-    add("5 Comando", "-F01", "Disjuntor tripolar 2 A curva C (alimentação do relé de falta de fase / medição)", r.get("codigo"), 1, "pç", o, stt(r), "")
-    add("5 Comando", "-X1/-X2", "Bornes de passagem 2,5/4 mm² + bornes PE + tampas, separadores e marcadores", "bornes trilho DIN",
+    from . import fabricantes as _FBd
+    _mk = getattr(ped, "marca", "") or _FBd.PADRAO
+    _real = any(x in _mk.lower() for x in ("abb", "schneider"))
+    _st = "catálogo" if _real else "CONFERIR código"
+    add("5 Comando", "-F02", trc["dj_pri"], _FBd.dj_comando(_mk, 2, "D", trc["dj_pri_A"]), 1, "pç", _mk, _st, "proteção do primário")
+    add("5 Comando", "-F03", trc["dj_sec"], _FBd.dj_comando(_mk, 2, "C", trc["dj_sec_A"]), 1, "pç", _mk, _st, "proteção do secundário")
+    add("5 Comando", "-F01", "Disjuntor tripolar 2 A curva C (alimentação do relé de falta de fase / medição)", _FBd.dj_comando(_mk, 3, "C", 2),
+        1, "pç", _mk, _st, "")
+    add("5 Comando", "-X1", "Bornes de passagem 2,5/4 mm² + bornes PE + tampas, separadores e marcadores", "bornes trilho DIN",
         40, "pç", "ELECTRIC", "calculado", "comando e sinais")
     add("5 Comando", "", "Cabo flexível 750 V 1,5 mm² (comando, cores conforme NBR 5410) + 2,5 mm² (alimentação do comando)",
         "1,5/2,5 mm²", 60 + 8 * n, "m", "ELECTRIC", "estimado pelo esquema", "conferir no DE/PARA")
@@ -185,16 +189,19 @@ def montar(ped, res, gab, prot, ext=None):
                        ("-H0/-H1…-H%d" % n, "Sinaleiro LED Ø22 220 V (energizado + estágio ligado)", n + 1),
                        ("-B0", "Termostato de painel NA (liga os exaustores a 35 °C)", 1),
                        ("-BT2", "Termostato de painel NF (55 °C desliga o banco)", 1),
-                       ("-M1…-M%d" % nm, f"Exaustor 220 V com grelha e filtro", nm)):
+                       ("-M1…-M%d" % nm, "Ventilador com filtro 230 V IP54 (porta traseira) – vazão/consumo do catálogo", nm)):
         from . import fabricantes as _FB
         _m_ = _FB._m(getattr(ped, "marca", "") or _FB.PADRAO)
         _bt, _tm = _m_.get("botoes") or {}, _m_.get("termostato") or {}
         _cod = {"-S0": _bt.get("emergencia"), "-S1": _bt.get("seletor"), "-H0": _bt.get("sinaleiro"),
                 "-B0": _tm.get("na"), "-BT2": _tm.get("nf"),
-                "-M1": (_FB.item(getattr(ped, "marca", "") or _FB.PADRAO, "ventilador", m3h="≥ 230") if _m_.get("ventilador") else None)
+                "-M1": __import__("fsen.painel_gabinete", fromlist=["x"]).EXAUSTOR_REAL["codigo"]
                 }.get(t.split("/")[0].split("…")[0])
         add("5 Comando", t, desc, _cod or "linha da marca do projeto", q, "pç", mc,
-            ("CONFERIR código" if (not _cod or (_bt.get("conferir") if t[:2] in ("-S", "-H") else _tm.get("conferir"))) else "catálogo"), "")
+            ("CONFERIR código" if (not _cod or (_bt.get("conferir") if t[:2] in ("-S", "-H") else (False if t.startswith("-M") else _tm.get("conferir")))) else "catálogo"), "")
+    from . import painel_gabinete as _PGl
+    add("5 Comando", "", "Grelha de entrada com filtro (porta, embaixo) – uma por ventilador", _PGl.EXAUSTOR_REAL["grelha"], nm, "pç", "Schneider",
+        "catálogo", "IEC 60890 – entrada de ar")
     # ------------------------------------------------ PE e segurança
     s_pe = 16 if cb["secao"] <= 16 else (cb["secao"] / 2 if cb["secao"] > 35 else 16)
     add("6 Aterramento e segurança", "-PE2", "Barra PE Cu 30 × 5 mm sobre isoladores, por coluna", "barra 30 × 5", len(pn["gabinete"]["colunas"]),

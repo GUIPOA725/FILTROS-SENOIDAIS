@@ -31,9 +31,9 @@ marcas:
                          fonte: "Schneider LV480801 – catálogo Fupact (CVI 2021)", status: A_VERIFICAR, conferir: true}
     chave_fusivel_nh2: {codigo: "LV480806 (Fupact ISFT400 NH2 3P)", L: 210, A: 306, P: 130, fonte: "Schneider LV480806 – catálogo Fupact + STEP (CVI 2021)", status: A_VERIFICAR, conferir: true}
     controlador: {codigo: "VarPlus Logic VL12 (VPL12N)", L: 144, A: 144, fonte: "Schneider – VarPlus Logic", status: A_VERIFICAR, conferir: true}
-    rele_falta_fase: {codigo: "RM22TR33 (Zelio Control – falta/sequência de fase)", L: 22.5, fonte: "Schneider Zelio RM22", status: A_VERIFICAR, conferir: true}
+    rele_falta_fase: {codigo: "RM22TG20 (Zelio Control 208–480 V CA, 2 NAF)", L: 35, A: 90, P: 73, fonte: "se.com/br RM22TG20 (22/11/2026)", status: ATIVO, conferir: false}
     disjuntor_comando: {codigo: "Acti9 iC60N (curva conforme cálculo)", L_polo: 18, A: 85, P: 78.5, fonte: "Schneider Acti9 iC60N – folha de dados", status: ATIVO, conferir: true}
-    disjuntor_geral: {codigo: "Linha ComPact (NSX até 630 A / NS ou sucessora acima) – escolher pela corrente calculada", fonte: "site Schneider: ComPact NS800N 3P (INA_3P33466D) DESCONTINUADO em 29/09/2025", status: A_VERIFICAR, conferir: true}
+    disjuntor_geral: {codigo: "ComPacT NSX até 630 A; 800 A = ComPacT NS800N nova geração C080N350FM (210 × 327 × 147 mm)", fonte: "se.com/br C080N350FM (22/11/2026); o NS800N antigo 33466 foi descontinuado em 29/09/2025", status: ATIVO, conferir: false}
   ABB:
     contatora_capacitor: {codigo: "UA75-30-00 (contatora para capacitor) ou AF50-30-00 (estágio com reator)", fonte: "ABB – contatoras UA/AF para manobra de capacitores", status: A_VERIFICAR, conferir: true,
                           bobina: {partida_VA: 23, retencao_VA: 2.5}}
@@ -41,9 +41,9 @@ marcas:
     contatora_a50: {codigo: "A50-30-00", L: 70, A: 110, P: 108, kg: 1.16, fonte: "ABB – folha de dados A50-30-00 (1SBL351001R)", status: A_VERIFICAR, conferir: true}
     chave_fusivel_nh00: {codigo: "XLP00 (chave seccionadora-fusível NH00 160 A)", fonte: "ABB XLP – catálogo", status: A_VERIFICAR, conferir: true}
     controlador: {codigo: "RVC-12 (controlador de FP 12 estágios)", L: 144, A: 144, fonte: "ABB RVC", status: A_VERIFICAR, conferir: true}
-    rele_falta_fase: {codigo: "CM-PFE (monitor de sequência/falta de fase)", fonte: "ABB CM-series", status: A_VERIFICAR, conferir: true}
+    rele_falta_fase: {codigo: "CM-PFS.S 1SVR730824R9300 (200–500 V CA, 2 c/o)", L: 22.5, A: 85.6, P: 103.7, fonte: "new.abb.com (22/11/2026) – CM-PFE só até 440 V", status: ATIVO, conferir: false}
     disjuntor_comando: {codigo: "S202/S203 (curva conforme cálculo)", L_polo: 17.5, fonte: "ABB System pro M compact", status: A_VERIFICAR, conferir: true}
-    disjuntor_geral: {codigo: "Tmax XT (XT5 até 630 A / XT7 800–1600 A) com manopla rotativa RHE", fonte: "ABB Tmax XT – catálogo", status: A_VERIFICAR, conferir: true}
+    disjuntor_geral: {codigo: "Tmax XT5 até 630 A; 800 A = XT7S 800 Ekip Dip LS/I 3p F F 1SDA100826R1 (210 × 268 × 166 mm) + manopla RHE", fonte: "new.abb.com 1SDA100826R1 Active (22/11/2026)", status: ATIVO, conferir: false}
 
 # Ferragens e montagem (iguais para todas as marcas) – valores normalizados
 ferragens:

@@ -40,7 +40,78 @@ def _norm(cod):
     return " ".join(re.findall(r"[a-z]+\d*[a-z0-9]*", s)[:3])
 
 
-def conferir(pasta):
+def _num(x):
+    try:
+        return float(str(x).replace(",", "."))
+    except Exception:
+        return None
+
+
+def _kv(txt):
+    """'… 25 kvar / 525 V …' → (25.0, 525.0)."""
+    m = re.search(r"(\d+(?:[.,]\d+)?)\s*k[vV][aA]?[rR]\s*/?\s*(\d{3,4})\s*V", str(txt or ""))
+    return (_num(m.group(1)), _num(m.group(2))) if m else (None, None)
+
+
+def capacitores_por_estagio(pasta, tags_esq, tags_lc, dp, lay, res=None):
+    """REQ-GER-011 – regra para TODOS os filtros: nº de capacitores por estágio/indutor, kvar e tensão da lata iguais em todos os
+    documentos. Devolve linhas [item, referência (cálculo), encontrado, Check, obs]."""
+    out = []
+    try:
+        if res is None:
+            res = json.load(open(os.path.join(pasta, "01_Engenharia", "banco_resultado.json"), encoding="utf-8"))
+        calc = [tuple(e["cap"][:3]) for e in res["estagios"]]
+    except Exception as ex:
+        return [["Capacitores por estágio – cálculo", "-", "-", CK.texto(CK.REPROVADO), f"sem resultado do cálculo: {ex}"]]
+    ref = "; ".join(f"E{i + 1}: {n}×{q:g} kvar/{v:g} V" for i, (n, q, v) in enumerate(calc))
+    falhas = {k: [] for k in ("esquema", "DE/PARA", "lista completa", "2D/3D", "ET do reator")}
+    for i, (n, q, v) in enumerate(calc, start=1):
+        r = tags_esq.get(f"-C{i}")
+        if not r:
+            falhas["esquema"].append(f"-C{i} ausente")
+        else:
+            qe, ve = _kv(r.get("Descrição"))
+            if int(_num(r.get("Qtd")) or 0) != n or (qe and abs(qe - q) > 0.05) or (ve and abs(ve - v) > 0.5):
+                falhas["esquema"].append(f"-C{i}: {r.get('Qtd')}× {qe} kvar/{ve} V")
+        nd = len({t for row in dp for t in [str(row.get("PARA (tag:borne)") or "").split(":")[0],
+                                             str(row.get("DE (tag:borne)") or "").split(":")[0]] if re.match(rf"^-C{i}\.\d+$", t)})
+        if nd and nd != n:
+            falhas["DE/PARA"].append(f"-C{i}: {nd} latas ligadas")
+    # lista completa: soma das linhas -C… e kvar/V da descrição
+    lcs = {id(r): r for t, r in tags_lc.items() if re.match(r"^-C\d+$", t)}.values()
+    n_lc = sum(int(_num(r.get("Qtd")) or 0) for r in lcs)
+    for r in lcs:
+        ql, vl = _kv(str(r.get("Descrição")) + " " + str(r.get("Código")))
+        if ql and not any(abs(ql - q) < 0.05 for _, q, _ in calc) or vl and not any(abs(vl - v) < 0.5 for *_, v in calc):
+            falhas["lista completa"].append(f"lata {ql} kvar/{vl} V")
+    if n_lc != sum(n for n, _, _ in calc):
+        falhas["lista completa"].append(f"total {n_lc} ≠ {sum(n for n, _, _ in calc)}")
+    cg = lay.get("contagem") or {}
+    pe3 = cg.get("capacitores_por_estagio")
+    if pe3 is not None and list(pe3) != [n for n, _, _ in calc]:
+        falhas["2D/3D"].append(f"por estágio {pe3}")
+    if cg.get("capacitores") is not None and cg["capacitores"] != sum(n for n, _, _ in calc):
+        falhas["2D/3D"].append(f"total {cg['capacitores']}")
+    try:                                                         # ET do reator: "Capacitor Associado: 75 kVAr/525 V (3 × 25 kVAr/525 V)"
+        import docx
+        ets = glob.glob(os.path.join(pasta, "03_Fornecedores", "*Reator*", "*.docx"))
+        for f in ets:
+            d = docx.Document(f)
+            t = "\n".join(p_.text for p_ in d.paragraphs) + "\n".join(c.text for tb in d.tables for rw in tb.rows for c in rw.cells)
+            m = re.search(r"\((\d+)\s*[×x]\s*(\d+(?:[.,]\d+)?)\s*kVAr\s*/\s*(\d+)\s*V\)", t)
+            if not m:
+                falhas["ET do reator"].append(f"{os.path.basename(f)}: sem 'n × kvar/V'")
+            elif (int(m.group(1)), _num(m.group(2)), _num(m.group(3))) not in [(n, q, v) for n, q, v in calc]:
+                falhas["ET do reator"].append(f"{os.path.basename(f)}: {m.group(0)}")
+    except Exception as ex:
+        falhas["ET do reator"].append(f"não lida ({type(ex).__name__})")
+    for k, f in falhas.items():
+        out.append([f"Capacitores por estágio/indutor: cálculo × {k} (REQ-GER-011)", ref if k == "esquema" else "= cálculo",
+                    "igual" if not f else "; ".join(dict.fromkeys(f))[:300], CK.texto(CK.APROVADO if not f else CK.REPROVADO), ""])
+    return out
+
+
+def conferir(pasta, res=None):
     pnl = os.path.join(pasta, "03_Fornecedores", "2_Painel_Montadora")
     L, err = [], []
 
@@ -86,6 +157,9 @@ def conferir(pasta):
     faltlc = sorted(t for t in tags_esq if t not in tags_lc and t not in ignorar_3d and not t.startswith("-X1"))
     lin("Componentes do esquema presentes na lista de material completa", f"{len(tags_esq)}", f"{len(tags_lc)}", not faltlc,
         obs=("faltam na lista: " + ", ".join(faltlc)) if faltlc else "todos presentes")
+    sobra_lc = sorted(t for t in tags_lc if t not in tags_esq and t not in ("-R2", "-S2", "-T2", "-PE2") and not t.startswith(("-W", "-X0")))
+    lin("Componentes da lista de material completa que não estão no esquema", "-", f"{len(sobra_lc)}", not sobra_lc,
+        obs=("sobram na lista: " + ", ".join(sobra_lc)) if sobra_lc else "nenhum")
     # 3) mesmo código no esquema e na lista completa
     dif = []
     for t, r in tags_esq.items():
@@ -95,10 +169,9 @@ def conferir(pasta):
                 dif.append(f"{t}: esquema '{str(r.get('Código'))[:40]}' × lista '{str(tags_lc[t].get('Código'))[:40]}'")
     lin("Mesmo código/modelo no esquema e na lista completa", "esquema", "lista completa", not dif, nivel=CK.ATENCAO,
         obs="; ".join(dif[:8]) if dif else "códigos coerentes")
-    # 4) quantidade de capacitores esquema × 3D
-    n_c_esq = sum(int(r.get("Qtd") or 0) for t, r in tags_esq.items() if re.match(r"^-C\d+$", t))
-    n_c_3d = (lay.get("contagem") or {}).get("capacitores")
-    lin("Quantidade de capacitores esquema × 3D", str(n_c_esq), str(n_c_3d), n_c_3d is None or n_c_esq == n_c_3d)
+    # 4) REQ-GER-011: capacitores POR ESTÁGIO/INDUTOR (quantidade × kvar × V) iguais em cálculo, esquema, DE/PARA, lista, 3D e ET do reator
+    lin_cap = capacitores_por_estagio(pasta, tags_esq, tags_lc, dp, lay, res=res)
+    L.extend(lin_cap)
     # 5) seção dos cabos de força esquema × lista completa
     sec_esq = sorted({str(r.get("Seção (mm²)")) for r in cabos_esq if str(r.get("Cabo") or "").startswith("W") and r.get("Seção (mm²)")})
     sec_lc = sorted({m.group(1) for r in lc for m in [re.search(r"(\d+) mm² (?:preto|classe)", str(r.get("Descrição") or "") + " " + str(r.get("Código") or ""))] if m})

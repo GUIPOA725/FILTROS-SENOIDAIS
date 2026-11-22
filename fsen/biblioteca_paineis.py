@@ -74,8 +74,8 @@ def salvar_layout(m, pasta, cod, ped):
              reator_mm=m["reator"], capacitor_mm=m["cap"], parametros={k: v for k, v in m["params"].items() if not k.startswith("_")},
              partiu_de=m.get("base_aprovada"), verificacoes=m["verificacoes"],
              tags=sorted({str(pc.get("txt", "")).split()[0] for pc in m["pecas"] if pc.get("t") == "rotulo" and str(pc.get("txt", "")).startswith("-")}),
-             contagem={"capacitores": sum(1 for pc in m["pecas"] if pc.get("t") == "cil" and pc.get("g") == "frente" and pc.get("D", 0) >= 60
-                                          and pc.get("A", 0) > 100)})
+             terra=m.get("terra", []),
+             contagem={"capacitores_por_estagio": m.get("caps_por_estagio"), "capacitores": m.get("n_caps_desenhados")})
     arq = os.path.join(pasta, "layout_painel.json")
     json.dump(j, open(arq, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     return arq

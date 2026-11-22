@@ -5,8 +5,23 @@
 # terminal (mm acima da tampa); kg; fixacao (texto); fonte; conferir (true = medida a confirmar no catálogo atual).
 
 capacitores:
-  "Schneider BLRCH250A300B52":      {tipo: cilindro, D: 116, A: 242, terminal: 45, kg: 2.5, fixacao: "M12 no fundo",
-                                     fonte: "Schneider – datasheet BLRCH250A300B52 (VarPlus Can HDuty 25 kvar 525 V 50 Hz / 30 kvar 60 Hz)", conferir: false}
+  "Schneider BLRCH250A300B52":      {tipo: cilindro, D: 116, A: 212, terminal: 30, kg: 2.5, fixacao: "pino M12 no fundo, 10 N·m",
+                                     borne: "ClampTite (M5, 2,5 N·m)", borne_max_mm2: 16, dist_min_mm: 20, perdas_W_kvar: 0.5,
+                                     fonte: "se.com/br BLRCH250A300B52 (30 kvar 525 V 60 Hz, Ø116 × 242 mm c/ borne, caixa TC h 212 + t 30, 22/11/2026); torques catálogo VarplusCan", conferir: false,
+                                     conferir_borne: "seção máx. do ClampTite – confirmar na instrução NVE45179"}
+  "Schneider BLRCH200A240B52":      {tipo: cilindro, D: 116, A: 212, terminal: 30, kg: 2.5, fixacao: "pino M12 no fundo, 10 N·m",
+                                     borne: "ClampTite (M5, 2,5 N·m)", borne_max_mm2: 16, dist_min_mm: 20, perdas_W_kvar: 0.5,
+                                     fonte: "se.com/br BLRCH200A240B52 – CAPACITOR VARPLUSCAN 24 kvar 525 V 60 Hz 3F (Ø116 × 242 mm, 2,5 kg, 22/11/2026)", conferir: false,
+                                     conferir_borne: "seção máx. do ClampTite – confirmar na instrução NVE45179"}
+  "Schneider BLRCH125A150B52":      {tipo: cilindro, D: 90, A: 212, terminal: 30, fixacao: "pino M12 no fundo, 10 N·m", borne: "ClampTite (M5, 2,5 N·m)",
+                                     fonte: "se.com BLRCH125A150B52 (15 kvar 525 V 60 Hz) – diâmetro a confirmar", conferir: true}
+  "ABB CLMD43":                     {tipo: caixa, L: 180, L_abas: 266, A: 275, P: 152, kg: 6, fixacao: "2 rasgos 26 × 12 mm nas abas (entre furos 226 mm)",
+                                     borne: "barras roscadas M6/M8/M10/M12 conforme a potência; terra M8 sob a tampa", entrada_cabo_mm: 37,
+                                     dist_min_mm: 50, fonte: "ABB 9AKK108472A1998 rev. A – CLMD Low-voltage capacitors (dimensões CLMD43: H 275, L1 266, L2 180, L3 226, D 152; 50 mm entre unidades e da parede)", conferir: false}
+  "ABB CLMD53":                     {tipo: caixa, L: 350, L_abas: 436, A: 310, P: 152, kg: 11, dist_min_mm: 50, entrada_cabo_mm: 37,
+                                     fonte: "ABB 9AKK108472A1998 rev. A (CLMD53: H 310, L1 436, L2 350, L3 396, D 152)", conferir: false}
+  "ABB CLMD63":                     {tipo: caixa, L: 350, L_abas: 436, A: 485, P: 152, kg: 15, dist_min_mm: 50, entrada_cabo_mm: 47,
+                                     fonte: "ABB 9AKK108472A1998 rev. A (CLMD63: H 485, L1 436, L2 350, L3 396, D 152)", conferir: false}
   "Epcos B32344E4401F080":          {tipo: cilindro, D: 116, A: 291, terminal: 45, fixacao: "M12 no fundo",
                                      fonte: "TDK/Epcos B32344E – General Datasheet (PhiCap 40 kvar 690 V, 116 × 291) – projeto CVI 2021", conferir: false}
 
@@ -17,11 +32,18 @@ contatoras:
                                      fonte: "ABB – folha de dados A50-30-00 (1SBL351001R)", conferir: false}
   "ABB AF30-30-00":                 {tipo: caixa, L: 45, A: 86, P: 86, kg: 0.31, fixacao: "trilho DIN / parafuso",
                                      fonte: "ABB – AF30-30-00-13 (1SBL277001R1300) product net dimensions", conferir: false}
-  "ABB AF50-30-00":                 {tipo: caixa, conferir: true, fonte: "a confirmar no catálogo ABB AF (1SBC101438D0201)"}
+  "ABB AF52-30-00-13":              {tipo: caixa, L: 55, A: 125.5, P: 111, kg: 0.95, fixacao: "trilho DIN 35 / parafuso", bobina_VA: "retenção 4 VA (60 Hz)",
+                                     fonte: "new.abb.com/products/1SBL367001R1300 (22/11/2026) – AC-1 100 A 40 °C", conferir: false}
+  "ABB AF65-30-00-13":              {tipo: caixa, L: 55, A: 125.5, P: 111, kg: 0.95, fixacao: "trilho DIN 35 / parafuso", bobina_VA: "retenção 4 VA (60 Hz)",
+                                     fonte: "new.abb.com/products/1SBL387001R1300 (22/11/2026) – AC-1 105 A 40 °C", conferir: false}
+  "ABB AF80-30-00-13":              {tipo: caixa, L: 70, A: 125.5, P: 116, kg: 1.17, fixacao: "trilho DIN 35 / parafuso", bobina_VA: "retenção 4 VA (60 Hz)",
+                                     fonte: "new.abb.com/products/1SBL397001R1300 (22/11/2026) – AC-1 125 A 40 °C", conferir: false}
   "Epcos B44066S7410":              {tipo: caixa, L: 60, A: 145, P: 128.5, fixacao: "parafuso M4 / trilho DIN",
                                      fonte: "TDK/Epcos B44066S…J230 – desenho dimensional (contatora p/ capacitor 75 kvar 400 V) – projeto CVI 2021", conferir: true}
 
 seccionadoras_fusivel:
+  "ABB OS160GD03":                  {tipo: caixa, L: 147, A: 140, P: 130, kg: 1.845, fixacao: "base (placa de montagem)", manopla: "não inclusa (OHB…)",
+                                     fonte: "new.abb.com/products/1SCA114221R1001 OS160GD03 – 160 A NH000/00 3P, operação frontal, status Active (22/11/2026)", conferir: false}
   "Schneider Fupact ISFT160 (LV480801)": {tipo: caixa, L: 106, A: 194, P: 80, fixacao: "placa de montagem, terminais M8",
                                           fonte: "Schneider LV480801 – Fupact ISFT160 NH00 3P (catálogo + 3D simplificado) – projeto CVI 2021", conferir: false}
   "Schneider Fupact ISFT400 (LV480806)": {tipo: caixa, L: 210, A: 306, P: 130, fixacao: "placa de montagem",
@@ -46,7 +68,17 @@ gabinete_padrao_electric:     # padrão dos projetos Electric (CVI, AGCO): autop
 disjuntores_modulares:
   "Schneider Acti9 iC60N 1P":       {tipo: caixa, L: 18, A: 85, P: 78.5, fixacao: "trilho DIN 35",
                                      fonte: "Schneider Acti9 iC60N – folha de dados (18 mm por polo × 85 × 78,5 mm)", conferir: true}
-disjuntores: {}
+disjuntores:
+  "ABB 1SDA100826R1":               {tipo: caixa, L: 210, A: 268, P: 166, kg: 9.7, nome_cat: "Tmax XT7S 800 Ekip Dip LS/I 3p F F",
+                                     fonte: "new.abb.com/products/1SDA100826R1 – Active (22/11/2026)", conferir: false}
+  "Schneider C080N350FM":           {tipo: caixa, L: 210, A: 327, P: 147, kg: 14, passo_polos_mm: 70, nome_cat: "ComPacT NS800N 50 kA 3P fixo MicroLogic 5.0",
+                                     fonte: "se.com/br/pt/product/C080N350FM (22/11/2026)", conferir: false}
+
+reles:
+  "ABB 1SVR730824R9300":            {tipo: caixa, L: 22.5, A: 85.6, P: 103.7, kg: 0.127, nome_cat: "CM-PFS.S 200–500 V CA",
+                                     fonte: "new.abb.com/products/1SVR730824R9300 (22/11/2026)", conferir: false}
+  "Schneider RM22TG20":             {tipo: caixa, L: 35, A: 90, P: 73, nome_cat: "Zelio Control RM22TG20 208–480 V CA",
+                                     fonte: "se.com/br/pt/product/RM22TG20 (22/11/2026)", conferir: false}
 
 # Consumo de bobinas/cargas de comando (para dimensionar o trafo de comando) – VA em 220 V CA 60 Hz
 cargas_comando:

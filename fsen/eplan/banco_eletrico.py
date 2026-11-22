@@ -42,7 +42,7 @@ def construir(ped, res, cod, versao, n_banco=1):
     # --------------------------------------------------------------------------- dispositivos gerais
     P.dispositivo("-Q0", f"Disjuntor geral caixa moldada tripolar {pn['geral_A']} A com manopla rotativa externa, intertravamento "
                   f"da porta e bloqueio por cadeado (NR-10)", "ABB/Schneider/WEG (conforme marca do projeto)", "", 1, grupo="Proteção geral")
-    P.dispositivo("-F01", "Disjuntor tripolar 10 A curva C (relé falta de fase / medição)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
+    P.dispositivo("-F01", "Disjuntor tripolar 2 A curva C (relé falta de fase / medição)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-F02", "Disjuntor bipolar 10 A curva C (primário do trafo de comando)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     P.dispositivo("-F03", "Disjuntor bipolar 10 A curva C (secundário 220 V)", "WEG/Siemens (equiv.)", "", 1, grupo="Comando")
     try:                                                   # v1.25.1: trafo de comando pela CARGA (mesmo cálculo da lista – fonte única)
@@ -50,6 +50,8 @@ def construir(ped, res, cod, versao, n_banco=1):
         _nv = int(_PGB.gabinete(ped, res)["ventilacao"]["n_exaustores"])
         _trc = B.trafo_comando(ped, res, n_exaust=_nv)
         kva = _trc["Sn"]
+        P.disp["-F02"]["descr"] = f"Disjuntor bipolar {_trc['dj_pri_A']} A curva D (primário do trafo de comando – inrush)"
+        P.disp["-F03"]["descr"] = f"Disjuntor bipolar {_trc['dj_sec_A']} A curva C (secundário 220 V)"
     except Exception:
         kva = 500 if n <= 6 else 1000
     P.dispositivo("-T1", f"Transformador de comando {V:g}/220 V {kva} VA", "ELECTRIC", f"Trafo de comando monofásico {V:g}/220 V {kva} VA", 1,
@@ -68,7 +70,10 @@ def construir(ped, res, cod, versao, n_banco=1):
     except Exception:
         nvent = 2 if n <= 4 else 4
     for k in range(1, nvent + 1):
-        P.dispositivo(f"-M{k}", "Ventilador com filtro 220 V 50/60 Hz, ≥ 230 m³/h (ver cálculo térmico)", "Rittal/Mundial (equiv.)", "", 1,
+        from .. import painel_gabinete as _PGx
+        _ex = _PGx.EXAUSTOR_REAL
+        P.dispositivo(f"-M{k}", f"Ventilador com filtro 230 V IP54, {_ex['q60']:.0f} m³/h c/ filtro a 60 Hz, {_ex['W60']} W (porta traseira)",
+                      "Schneider", _ex["codigo"], 1,
                       grupo="Ventilação")
     P.dispositivo("-H0", "Sinaleiro LED verde Ø22 mm 220 V (painel energizado)", "WEG/Schneider (equiv.)", "", 1, grupo="Comando")
     # --------------------------------------------------------------------------- dispositivos por estágio

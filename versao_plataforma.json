@@ -1,5 +1,5 @@
 {
-  "versao": "1.25.1",
+  "versao": "1.25.2",
   "data": "2026-11-22",
-  "resumo": "Conferência cruzada esquema × 2D/3D × lista (zero diferença), entrada dos cabos por cima/baixo calculada, cabos barramento→seccionadoras, 1 terminal por fase de cada capacitor, fonte única de exaustores/trafo de comando/códigos"
+  "resumo": "Componentes reais de catálogo (ABB CLMD, AF52, OS160GD03, XT7S; Schneider VarPlus 24 kvar, NS800N nova geração, RM22TG20; ventilador ClimaSys), gabinete que cabe o arranjo real, cabos naturais com terminal no reator, aterramento de todas as massas, conferência de capacitores por estágio"
 }

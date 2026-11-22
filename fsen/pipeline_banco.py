@@ -107,6 +107,24 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             res["reator_mm"] = max(_dims, key=lambda x: x.get("largura", 0) * x.get("altura", 0))
     except Exception:
         pass
+    try:                                            # v1.25.2: distâncias de montagem do reator pelo campo FEM (REQ-REA-010)
+        from . import reator_montagem as _RMt
+        _d0 = next((d for d in inds if d), None)
+        if _d0:
+            res["reator_montagem"] = _RMt.especificacao(_d0)
+            _dm = res["reator_montagem"]["dmin_mm"]
+            log(f"   Montagem do reator (campo FEM): aço ≥ {_dm['aco']} mm, entre reatores ≥ {_dm['entre_reatores']} mm, cabos de força ≥ "
+                f"{_dm['forca']} mm, comando ≥ {_dm['comando']} mm, porta/pessoas ≥ {_dm['pessoas']} mm")
+    except Exception as _ex:
+        log(f"   (campo externo do reator não calculado: {type(_ex).__name__}: {_ex})")
+    try:                                            # v1.25.2: gabinete FINAL = o que cabe o arranjo real (fonte única p/ lista, normas, 3D)
+        from . import painel3d as _P3f, painel_gabinete as _PGf
+        _gf, _mf = _P3f.gabinete_final(ped, res, _PGf.gabinete(ped, res), B.protecao_estagio(ped, res["estagios"][0]), inds)
+        res["_gab_final"] = _gf
+        log(f"   Gabinete final: {_gf['dimensoes_mm']['largura']} × {_gf['dimensoes_mm']['altura']} × {_gf['dimensoes_mm']['profundidade']} mm, "
+            f"{len(_gf['colunas'])} coluna(s)")
+    except Exception as _ex:
+        log(f"   (gabinete final não calculado: {type(_ex).__name__}: {_ex})")
     log("4/5 Especificações e e-mails aos fornecedores...")
     for gi, (grp, d) in enumerate(zip(grupos, inds)):
         e = res["estagios"][grp[0]]
@@ -187,7 +205,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         from . import conferencia_projeto as CPJ
         _dc = os.path.join(sub["01_Engenharia"], "6_Conferencia_Projeto")
         os.makedirs(_dc, exist_ok=True)
-        _Lc = CPJ.conferir(pasta)
+        _Lc = CPJ.conferir(pasta, res=res)
         arqs["conferencia"] = CPJ.planilha(_Lc, os.path.join(_dc, f"Conferencia_Esquema_x_Painel_x_Lista_{cod}.xlsx"))
         shutil.copy(arqs["conferencia"], pnl)
         res["conferencia"] = _Lc
@@ -236,6 +254,12 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             fh.write("\n" + trans["resumo"])
         if ver_iec:
             fh.write("\n".join(NB.verificacao_md(ver_iec)) + "\n")
+        if res.get("reator_montagem"):
+            _rm = res["reator_montagem"]
+            fh.write("\n## Montagem do reator pelo campo magnético (FEM) – REQ-REA-010\n\n" + _rm["nota"] + "\n\n| Critério | B ef. máx. | Distância mínima |\n|---|---|---|\n")
+            for k_, nm_ in (("aco", "Aço (prateleira, estrutura, placa, quadro do vizinho)"), ("entre_reatores", "Entre reatores"),
+                            ("forca", "Cabos de força"), ("comando", "Cabos de comando/sinal"), ("pessoas", "Pessoas (porta) – ICNIRP 2010")):
+                fh.write(f"| {nm_} | {_rm['criterios_mT'].get(k_, _rm['criterios_mT']['aco'])} mT | {_rm['dmin_mm'][k_]} mm |\n")
         if res.get("conferencia"):
             fh.write("\n## Conferência esquema elétrico × painel 2D/3D × lista de material (REQ-PNL-028)\n\n| Item | Esquema | Painel/Lista | Check | Obs. |\n|---|---|---|---|---|\n")
             for r in res["conferencia"]:

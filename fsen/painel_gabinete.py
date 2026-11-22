@@ -22,6 +22,11 @@ PROF_1COL, PROF_NCOL = 600, 800
 LARG_COL = (600, 800)                     # larguras comerciais de coluna
 VAZOES_EXAUSTOR = (55, 105, 160, 230, 300, 550, 850)   # m³/h livres (série comercial 230 V com grelha/filtro)
 K_FILTRO = 0.70                           # perda de vazão do filtro de saída/entrada
+# v1.25.2 (REQ-PNL-033): ventilador REAL de catálogo – a vazão já é "com filtro padrão" (60 Hz); K_GRELHA = perda da grelha de entrada
+EXAUSTOR_REAL = dict(codigo="Schneider ClimaSys NSYCVF850M230PF", desc="Ventilador com filtro 230 V IP54 (porta)", q60=803.0, W60=195,
+                     A60=0.85, L=316, A=336, P=162, recorte=291, grelha="Schneider ClimaSys NSYCAG291LPF (grelha de entrada com filtro, recorte 291 × 291)",
+                     fonte="se.com/br NSYCVF850M230PF: 803 m³/h c/ filtro a 60 Hz, 195 W, 0,85 A, 316 × 336 × 162 mm, recorte 291 × 291 (22/11/2026)")
+K_GRELHA = 0.85
 DT_MAX = 10.0                             # K – elevação interna máxima admitida (ar interno ≤ amb + 10 K)
 W_CAP_POR_KVAR = 0.45                     # perdas típicas de capacitor de potência (W/kvar)
 W_CONTATOR = 12.0                         # bobina + contatos por contatora de capacitor
@@ -49,19 +54,13 @@ def perdas(res):
 
 
 def ventilacao(P_w, amb_c=40.0, dt_max=DT_MAX):
-    """Vazão necessária (IEC 60890, ventilação forçada) e escolha de exaustores."""
+    """Vazão necessária (IEC 60890, ventilação forçada) e nº de ventiladores REAIS (catálogo, vazão com filtro a 60 Hz)."""
     V = 3.1 * P_w / dt_max                                   # m³/h
-    V_proj = V / K_FILTRO
-    for q in VAZOES_EXAUSTOR:                                # menor exaustor que resolve com até 2 unidades
-        n = max(1, math.ceil(V_proj / q))
-        if n <= 2:
-            break
-    else:
-        q = VAZOES_EXAUSTOR[-1]
-        n = math.ceil(V_proj / q)
-    return dict(vazao_necessaria_m3h=round(V), vazao_projeto_m3h=round(V_proj), exaustor_m3h=q, n_exaustores=n,
-                vazao_instalada_m3h=round(n * q * K_FILTRO), dt_k=round(3.1 * P_w / (n * q * K_FILTRO), 1),
-                t_interna_c=round(amb_c + 3.1 * P_w / (n * q * K_FILTRO), 1))
+    q = EXAUSTOR_REAL["q60"] * K_GRELHA
+    n = max(1, math.ceil(V / q))
+    return dict(vazao_necessaria_m3h=round(V), vazao_projeto_m3h=round(V / K_GRELHA), exaustor_m3h=round(EXAUSTOR_REAL["q60"]),
+                n_exaustores=n, exaustor=dict(EXAUSTOR_REAL), vazao_instalada_m3h=round(n * q), dt_k=round(3.1 * P_w / (n * q), 1),
+                t_interna_c=round(amb_c + 3.1 * P_w / (n * q), 1))
 
 
 ESTAGIOS_POR_COLUNA = 4                   # AGCO Ibirubá: 7 estágios em 2 colunas de 800 (2000×1600×800)
@@ -76,6 +75,9 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
     separados por chapa divisória vertical; colunas de 800 mm, profundidade 800, altura 2000.
     Ar entra embaixo (venezianas da porta frontal e traseira), sobe e sai pelos exaustores no teto, sobre os reatores.
     Termostatos: T1 liga a ventilação a 35 °C, T2 desliga o banco a 55 °C (no topo, longe dos reatores)."""
+    if res.get("_gab_final") and altura is None and estagios_por_coluna is None:   # v1.25.2: gabinete FINAL (cabe o arranjo real)
+        import copy as _cp
+        return _cp.deepcopy(res["_gab_final"])
     est = res["estagios"]
     n = len(est)
     Q = float(res.get("Q_total_kvar") or sum(e["Q_kvar"] for e in est))
@@ -127,9 +129,9 @@ def gabinete(ped, res, altura=None, estagios_por_coluna=None):
                             tras=[f"REATOR {k + 1}" for k in lote] + ["EXAUSTOR (teto)"],
                             zonas=["EXAUSTOR"]))
     prof = 400 if acesso == "frontal" else 800
-    vent["n_exaustores"] = max(vent["n_exaustores"], 2 * n_col)    # ≥ 2 exaustores por coluna, sobre os reatores (padrão Electric)
+    vent["n_exaustores"] = max(vent["n_exaustores"], n_col)        # ≥ 1 ventilador por coluna (porta traseira, sobre os reatores)
     vent["n_exaustores"] = -(-vent["n_exaustores"] // n_col) * n_col    # mesmo nº em cada coluna (FONTE ÚNICA: esquema, 3D e lista)
-    vent["vazao_instalada_m3h"] = round(vent["n_exaustores"] * vent["exaustor_m3h"] * K_FILTRO)
+    vent["vazao_instalada_m3h"] = round(vent["n_exaustores"] * EXAUSTOR_REAL["q60"] * K_GRELHA)
     vent["dt_k"] = round(3.1 * perd["total"] / vent["vazao_instalada_m3h"], 1)
     vent["t_interna_c"] = round(ped.amb_c + vent["dt_k"], 1)
     vent["area_entrada_cm2"] = int(max(100, math.ceil(Q * AREA_ENTRADA_CM2_POR_KVAR / 50) * 50))

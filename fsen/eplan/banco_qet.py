@@ -284,7 +284,11 @@ def construir(ped, res, cod, versao, P_lista=None):
     fsn.fio(rL[700].term("n"), b0.term("n"), marca="VM", secao="1,5")
     nv = fsn.no(700, 260)
     fsn.fio(b0.term("s"), nv.term("n"), marca="VM", secao="1,5")
-    nvent = 2 if n <= 4 else 4
+    try:                                                   # FONTE ÚNICA = cálculo térmico do gabinete (igual esquema, 3D e lista)
+        from .. import painel_gabinete as _PGq
+        nvent = int(_PGq.gabinete(ped, res)["ventilacao"]["n_exaustores"])
+    except Exception:
+        nvent = 2 if n <= 4 else 4
     prev = nv
     for k in range(nvent):
         x = 760 + 60 * k

@@ -1,5 +1,39 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.25.2 – 2026-11-22 (componentes reais de catálogo, cabos naturais, aterramento, campo do reator na montagem)
+- **Componentes reais (REQ-CMP-002/003)**: códigos, medidas e status conferidos nos sites ABB e Schneider (22/11/2026). Erros corrigidos:
+  - ABB: capacitor **CLMD43 (caixa metálica, fabricado no Brasil)** 60525025000BR, 275 × 180 (266 com abas) × 152 mm, 50 mm entre unidades;
+    o banco ABB passa a usar 1 × CLMD63 75 kvar (60525075000BR) por estágio, que ocupa menos placa;
+  - ABB: contatora **AF52-30-00-13** (a AF50 foi substituída), 55 × 125,5 × 111 mm; seccionadora **OS160GD03** (1SCA114221R1001), 147 × 140 × 130 mm;
+    disjuntor geral **XT7S 800 Ekip Dip LS/I 1SDA100826R1** (210 × 268 × 166 mm); relé **CM-PFS.S 1SVR730824R9300** (o código CM-PFE
+    antigo não existia e a CM-PFE só vai até 440 V);
+  - Schneider: **não existe** VarPlus Can 25 kvar 525 V 60 Hz – passa a **BLRCH200A240B52 (24 kvar 525 V 60 Hz, se.com/br)**, Ø116 × 242 mm;
+    BLRCH100A120B52 descontinuado (04/2024); disjuntor geral **ComPacT NS800N nova geração C080N350FM** (210 × 327 × 147 mm);
+    relé **RM22TG20** (35 × 90 × 73 mm);
+  - disjuntores de comando com código real pela corrente/curva calculada (Acti9 iC60N A9F7…, ABB S200 2CDS25…).
+- **Gabinete que cabe o arranjo real**: a plataforma procura o menor gabinete (colunas, largura, profundidade, altura) em que os
+  componentes de catálogo cabem sem reprovação, e esse gabinete passa a ser a fonte única para lista, normas e 3D.
+- **Cabos naturais (REQ-PNL-030)**:
+  - um cabo por fase de **cada** capacitor, calculado pela NBR 5410 para a corrente da lata, subindo pelo vão atrás das latas até a canaleta;
+  - reatores com os bornes virados para a **porta traseira** (acesso para aperto e termografia), com terminal de compressão 2 furos aparafusado
+    e os n cabos da fase num terminal só;
+  - canaletas no verso da placa;
+  - raio de curvatura em todos os cabos;
+  - faixa própria com perfilado e abraçadeiras para os cabos do cliente subirem até o -Q0.
+- **Aterramento (REQ-PNL-031)**:
+  - barra PE na frente e atrás;
+  - condutor verde-amarelo ou cordoalha para todas as massas: placa, montantes, portas, prateleiras, quadro de cada reator e chapa do compartimento do barramento;
+  - PE do cliente;
+  - prisioneiro com etiqueta ⏚ em cada ponto (NBR IEC 61439-1 8.4.3).
+- **Exaustão real (REQ-PNL-033)**:
+  - ventilador ClimaSys NSYCVF850M230PF: 803 m³/h com filtro a 60 Hz, 195 W, recorte 291 × 291 mm, no alto da porta traseira;
+  - grelhas de entrada NSYCAG291LPF embaixo;
+  - quantidade pelo cálculo térmico;
+  - consumo real entra no trafo de comando (antes eram 45 VA por exaustor).
+- **Montagem do reator pelo campo magnético FEM (REQ-REA-010)**: distâncias mínimas para aço, cabos de força, comando, outros reatores e porta, com os critérios declarados (ICNIRP 2010 para pessoas). Os valores são aplicados no arranjo e saem no RESUMO.
+- **Conferência de capacitores por estágio (REQ-GER-011)**: quantidade, kvar e tensão iguais no cálculo, esquema, DE/PARA, lista, 3D e ET do reator; a conferência também acusa item que sobra na lista.
+- Tags só nas vistas da placa, não nas portas abertas (REQ-PNL-029).
+
 ## v1.25.1 – 2026-11-22 (conferência cruzada esquema × painel × lista, entrada de cabos, cabos de força do padrão Electric)
 - **Conferência cruzada obrigatória (REQ-PNL-028)**: a cada projeto a plataforma confere o esquema elétrico (lista de material e de cabos), o DE/PARA, o painel 2D/3D e a lista de material completa:
   - toda tag do esquema tem que estar no 3D e na lista, e vice-versa;

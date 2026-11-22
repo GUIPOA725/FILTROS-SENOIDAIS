@@ -136,7 +136,10 @@ def escolher_capacitor(ped, Q_alvo, nr, Vcap=None):
         from . import fabricantes as FB
         uc = FB.unidades_cap(ped.marca, Vcap)
         if uc:
-            Vcap, serie = uc[0], tuple(sorted(uc[1], reverse=True))   # prefere unidades maiores (menos capacitores por estágio)
+            if (FB._m(ped.marca).get("capacitores") or {}).get("preferir") == "maior":
+                Vcap, serie = uc[0], tuple(sorted(uc[1], reverse=True))
+            else:
+                Vcap, serie = uc[0], tuple(sorted(uc[1], key=lambda u: (abs(u - 25), -u)))   # unidade usual Electric ≈ 25 kvar (Panatlântica 2024)
     fq = fator_q(ped.tensao_v, Vcap, nr)
     melhor = None
     for rk, u in enumerate(serie):
@@ -439,10 +442,13 @@ def protecao_estagio(ped, e):
     from .painel_gabinete import ESTAGIOS_POR_COLUNA as _EPC
     n_ag = _EPC                                               # nº de CIRCUITOS (estágios) na mesma canaleta – NBR 5410 tab. 42
     cb = cabo_nbr5410(e["requisitos"]["In"], n_ag)
-    cc = cabo_nbr5410(e["I_cap_rms"] * 0.7, n_ag)              # reator → cada capacitor (corrente dividida entre as latas)
+    n_c = max(1, int(e["cap"][0]))                             # REQ-PNL-027: UM cabo por fase de CADA capacitor até o reator
+    I_unid = (e.get("I_cap_rms") or e["I60"]) / n_c * 1.10     # corrente da lata (+10 % tolerância de capacitância, IEC 60831)
+    cc = cabo_nbr5410(I_unid, n_ag * n_c)                      # agrupamento: todos os circuitos das latas na mesma canaleta
+    cc["I_unid"] = round(I_unid, 1)
     return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cb["secao"],
                 contator_pico=cont_pico, contator_tipo=cont_tipo, cabo_calc=cb, cabo_cap_calc=cc,
-                cabo_ind_cap_mm2=cc["secao"])
+                cabo_ind_cap_mm2=cc["secao"], cabo_cap_unid_mm2=cc["secao"], n_cabos_cap_fase=n_c)
 
 
 TRAFO_VA = (100, 250, 400, 630, 1000, 1600, 2500)
@@ -459,18 +465,22 @@ def _cargas_cat():
         return {}
 
 
-def trafo_comando(ped, res, prot=None, n_exaust=2):
+def trafo_comando(ped, res, prot=None, n_exaust=None):
     """REQ-PNL-020: trafo de comando pela CARGA – soma das retenções (tudo ligado) e pior instante de manobra
     (bobinas partindo ao mesmo tempo + retenção do resto). Critério: S_n ≥ ΣS_ret / 0,8 e S_n ≥ S_inst / 3
     (sobrecarga momentânea admissível ~3×S_n com queda ≤ 5 % – prática dos catálogos de trafos de comando)."""
     cat = _cargas_cat()
+    from . import painel_gabinete as _PGt
+    if n_exaust is None:
+        n_exaust = _PGt.gabinete(ped, res)["ventilacao"]["n_exaustores"]
+    va_ex = round(_PGt.EXAUSTOR_REAL["A60"] * 220)                # consumo REAL do ventilador de catálogo (0,85 A × 220 V)
     prot = prot or protecao_estagio(ped, res["estagios"][0])
     n = len(res["estagios"])
     bob = next((v for k, v in cat.items() if k.lower() in str(prot.get("contator", "")).lower()), {"partida_VA": 245, "retencao_VA": 26})
     sim = 2                                                    # o controlador manobra 1 estágio por vez; 2 = folga (religamento)
     itens = [(f"Bobinas das contatoras ({prot.get('contator')}) – retenção", n, bob.get("retencao_VA", 26)),
              ("Controlador de fator de potência", 1, cat.get("controlador", {}).get("retencao_VA", 15)),
-             ("Exaustores 220 V", n_exaust, cat.get("exaustor", {}).get("retencao_VA", 45)),
+             (f"Ventiladores 220 V ({_PGt.EXAUSTOR_REAL['codigo']}, {_PGt.EXAUSTOR_REAL['A60']} A)", n_exaust, va_ex),
              ("Sinaleiros LED (estágio ligado + energizado)", n + 1, cat.get("sinaleiro_led", {}).get("retencao_VA", 1.5)),
              ("Relé falta de fase", 1, cat.get("rele_falta_fase", {}).get("retencao_VA", 3))]
     S_ret = sum(q * va for _, q, va in itens)
@@ -478,7 +488,9 @@ def trafo_comando(ped, res, prot=None, n_exaust=2):
     S_req = max(S_ret / 0.8, S_inst / 3.0)
     Sn = next(x for x in TRAFO_VA if x >= S_req)
     I2 = Sn / 220.0
-    return dict(itens=itens, S_ret=round(S_ret), S_inst=round(S_inst), S_req=round(S_req), Sn=Sn, sim=sim,
+    a_sec = next(x for x in (2, 4, 6, 10, 16) if x >= 1.25 * I2)
+    a_pri = next(x for x in (2, 4, 6, 10, 16) if x >= 2.0 * Sn / ped.tensao_v)
+    return dict(dj_sec_A=a_sec, dj_pri_A=a_pri, dj_rele=(3, "C", 2),itens=itens, S_ret=round(S_ret), S_inst=round(S_inst), S_req=round(S_req), Sn=Sn, sim=sim,
                 bobina=bob, I_sec_A=round(I2, 2), I_pri_A=round(Sn / ped.tensao_v, 2),
                 dj_sec=f"Disjuntor bipolar {next(x for x in (2, 4, 6, 10, 16) if x >= 1.25 * I2)} A curva C (secundário 220 V)",
                 dj_pri=f"Disjuntor bipolar {next(x for x in (2, 4, 6, 10, 16) if x >= 2.0 * Sn / ped.tensao_v)} A curva D (primário – 2·In p/ o inrush do trafo)")
@@ -544,7 +556,7 @@ def painel(ped, res):
              (trc["dj_pri"], 1, "pç"), (trc["dj_sec"], 1, "pç"), ("Disjuntor tripolar 2 A DIN curva C (relé falta de fase)", 1, "pç"),
              (f"Transformador de comando {ped.tensao_v:.0f}/220 V – {trc['Sn']} VA (carga calculada: retenção {trc['S_ret']} VA, "
               f"pior manobra {trc['S_inst']} VA)", 1, "pç"),
-             (f"Exaustor 220 V {gab['ventilacao']['exaustor_m3h']} m³/h com grelha e filtro (teto, sobre os reatores)",
+             (f"Ventilador {gab['ventilacao']['exaustor']['codigo']} ({gab['ventilacao']['exaustor_m3h']} m³/h c/ filtro, porta traseira) + grelha de entrada",
               gab["ventilacao"]["n_exaustores"], "pç"),
              ("Termostato do painel -B0 35 °C (liga exaustores) e -BT2 55 °C (desliga o banco)", 2, "pç"),
              ("Botoeira de emergência c/ trava Ø22 mm 1NF+1NA", 1, "pç"), ("Sinaleiro LED vermelho Ø22 mm 220 V (estágio ligado)", n, "pç"),

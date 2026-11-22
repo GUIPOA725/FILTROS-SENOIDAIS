@@ -81,13 +81,28 @@ def item(marca, chave, **fmt):
     return x
 
 
+def dj_comando(marca, polos, curva, A):
+    """Disjuntor DIN com código REAL de catálogo (padrões conferidos no site do fabricante em 22/11/2026:
+    Schneider Acti9 iC60N A9F7{4=C,5=D}{polos}{A:02d} – ex. A9F75202 2P D2; ABB S200 2CDS25{polos}001R0{A:02d}{4=C,1=D} – ex. S202-D2)."""
+    m = (marca or "").lower()
+    if "schneider" in m:
+        return f"Schneider Acti9 iC60N {polos}P {curva}{A} – A9F7{4 if curva == 'C' else 5}{polos}{A:02d}"
+    if "abb" in m:
+        return f"ABB S20{polos}-{curva}{A} – 2CDS25{polos}001R0{A:02d}{4 if curva == 'C' else 1}"
+    return f"Disjuntor DIN {polos}P curva {curva} {A} A (marca do projeto)"
+
+
 def disjuntor_geral(marca, A):
     """Disjuntor GERAL caixa moldada pela faixa de corrente da linha atual de cada marca (v1.25.1). Linhas/carcaças a conferir no site."""
     m = (marca or "").lower()
     if "abb" in m:
+        if A == 800:                                             # new.abb.com 22/11/2026: ativo, 210 × 268 × 166 mm, 9,7 kg
+            return "ABB Tmax XT7S 800 Ekip Dip LS/I In=800A 3p F F – 1SDA100826R1 + manopla rotativa RHE"
         f = "XT4" if A <= 250 else ("XT5" if A <= 630 else "XT7")
         return f"ABB Tmax {f} {A} A 3P, Ekip LSI, manopla rotativa RHE (conferir código)"
     if "schneider" in m:
+        if A == 800:                                             # se.com/br 22/11/2026: nova geração ComPacT NS, 210 × 327 × 147 mm, 14 kg
+            return "Schneider ComPacT NS800N 50 kA 3P 800 A fixo MicroLogic 5.0 – C080N350FM + manopla rotativa estendida"
         if A <= 630:
             return f"Schneider ComPacT NSX{A} 3P, MicroLogic LSI, manopla rotativa estendida (conferir código)"
         return (f"Schneider – carcaça ≥ {A} A (ComPacT NS{A} DESCONTINUADO em 2025: usar a sucessora atual da linha "
@@ -120,8 +135,14 @@ def aplicar_projeto(P, ped, res):
                 D[tag]["descr"] = D[tag]["descr"] + descr_extra
     pn = B.painel(ped, res)
     put("-Q0", disjuntor_geral(marca, pn["geral_A"]) + " + intertravamento de porta e cadeado")   # v1.25.1: DJ geral (NR-10)
-    for t in ("-F01", "-F02", "-F03"):
-        put(t, item(marca, "disjuntor_comando"))
+    try:
+        _trc = B.trafo_comando(ped, res)
+        put("-F01", dj_comando(marca, 3, "C", 2))
+        put("-F02", dj_comando(marca, 2, "D", _trc["dj_pri_A"]))
+        put("-F03", dj_comando(marca, 2, "C", _trc["dj_sec_A"]))
+    except Exception:
+        for t in ("-F01", "-F02", "-F03"):
+            put(t, item(marca, "disjuntor_comando"))
     put("-K0", item(marca, "rele_falta_fase"))
     bt = _m(marca).get("botoes") or {}
     put("-S0", bt.get("emergencia"))

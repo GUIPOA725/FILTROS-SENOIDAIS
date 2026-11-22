@@ -15,22 +15,29 @@ ABB:
   descricao: "Tudo ABB (exceto o reator, Electric)"
   fonte_geral:
     - "ABB 1SBC101140C0203 – Contactors for capacitor switching (tabelas A/AF e UA..RA)"
-    - "ABB CLMD – LV capacitors (CLMD43/53/63/83; 500/525 V 60 Hz)"
+    - "ABB 9AKK108472A1998 rev. A – CLMD Low-voltage capacitors (SKU Brasil 60525xxxxxxBR, 525 V 60 Hz) – conferido 22/11/2026"
+    - "new.abb.com (22/11/2026): AF52/AF65/AF80-30-00-13 ativas; OS160GD03 (1SCA114221R1001) ativa, manopla não inclusa"
   capacitores:
-    serie: "CLMD (dielétrico seco, autorregenerativo)"
-    unidades:          # V nominal: [kvar a 60 Hz]
-      525: [15, 20, 25, 27.5]
-      480: [15, 20, 25, 27.5]
+    serie: "CLMD (caixa metálica, dielétrico seco, fabricação Brasil)"
+    preferir: maior    # caixa metálica: 1 unidade maior por estágio ocupa menos placa que várias CLMD43
+    unidades:          # V nominal: [kvar a 60 Hz] – só os que têm medida de catálogo (CLMD43/53/63; CLMD13 sem desenho)
+      525: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
       690: [20, 25, 30, 40, 50]
       800: [25, 40, 50]
-    codigo: "CLMD43 {kvar} kvar {V} V 60 Hz (2GCA…A0030)"
+    codigos:           # 9AKK108472A1998: SKU = 60 + V + kvar×1000 (6 dígitos) + BR
+      525: {20: "CLMD43 20 kvar – 60525020000BR", 25: "CLMD43 25 kvar – 60525025000BR", 30: "CLMD43 30 kvar – 60525030000BR",
+            35: "CLMD53 35 kvar – 60525035000BR", 40: "CLMD53 40 kvar – 60525040000BR", 45: "CLMD53 45 kvar – 60525045000BR",
+            50: "CLMD63 50 kvar – 60525050000BR", 55: "CLMD63 55 kvar – 60525055000BR", 60: "CLMD63 60 kvar – 60525060000BR",
+            65: "CLMD63 65 kvar – 60525065000BR", 70: "CLMD63 70 kvar – 60525070000BR", 75: "CLMD63 75 kvar – 60525075000BR",
+            80: "CLMD63 80 kvar – 60525080000BR"}
+    codigo: "CLMD {kvar} kvar {V} V 60 Hz (690/800 V: conferir no catálogo CLMD)"
     conferir: true
   contatora_preferida: comum
   contatoras:
     comum:             # [tipo, ie_ac1 (A), pico_max (A)] – A/AF, pico < 30·In do capacitor (tabela ABB)
-      - ["ABB AF50-30-00", 100, 2300]
-      - ["ABB AF63-30-00", 115, 2500]
-      - ["ABB AF75-30-00", 125, 2600]
+      - ["ABB AF52-30-00-13", 100, 2300]   # new.abb.com 22/11/2026: AC-1 100 A (40 °C); AF50 foi substituída
+      - ["ABB AF65-30-00-13", 105, 2500]   # AC-1 105 A (40 °C)
+      - ["ABB AF80-30-00-13", 125, 2600]   # AC-1 125 A (40 °C)
       - ["ABB AF96-30-00", 145, 4000]
       - ["ABB AF116-30-00", 160, 4000]
       - ["ABB AF146-30-00", 225, 4000]
@@ -42,15 +49,15 @@ ABB:
       - ["ABB UA75-30-00RA", 50]
       - ["ABB UA95-30-00RA", 60]
       - ["ABB UA110-30-00RA", 70]
-  seccionadora_fusivel: {codigo: "ABB OS{A}GD (OS160/OS250) – chave seccionadora-fusível NH", conferir: true}
+  seccionadora_fusivel: {codigo: "ABB OS160GD03 (1SCA114221R1001) – seccionadora-fusível 160 A NH000/00 3P + manopla frontal OHB (acessório)", conferir: false}
   fusivel_gG: {codigo: "ABB OFAF{tam}H{A} gG {A} A", conferir: false}
   disjuntor: {codigo: "ABB Tmax XT2/XT4 {A} A (termomagnético)", conferir: true}
-  disjuntor_comando: {codigo: "ABB S203-C10 / S202-C10", conferir: false}
+  disjuntor_comando: {codigo: "ABB S200 (código pela corrente/curva: fabricantes.dj_comando)", conferir: false}
   controlador: {6: "ABB RVC-6 (2GCA288096A0050)", 8: "ABB RVC-8", 10: "ABB RVC-10", 12: "ABB RVC-12", conferir: true}
-  rele_falta_fase: {codigo: "ABB CM-PFE (1SVR550824R9300)", conferir: true}
+  rele_falta_fase: {codigo: "ABB CM-PFS.S 200–500 V CA, 2 c/o – 1SVR730824R9300", conferir: false}   # new.abb.com 22/11/2026 (CM-PFE só até 440 V)
   botoes: {emergencia: "ABB MPMT3-11R (cogumelo c/ trava)", seletor: "ABB M2SS1-10B", sinaleiro: "ABB CL2-523G / CL2-523R", conferir: true}
   termostato: {nf: "ABB/Rittal SK 3110.000 (NF, 0–60 °C)", na: "Rittal SK 3110.000 (NA)", conferir: true}
-  ventilador: {codigo: "Rittal TopTherm SK 3243 / ABB (equiv.) {m3h} m³/h", conferir: true}
+  ventilador: {codigo: "Schneider ClimaSys NSYCVF850M230PF (ABB não fabrica ventilador de painel)", conferir: false}
 
 Schneider:
   descricao: "Tudo Schneider Electric (exceto o reator, Electric)"
@@ -61,11 +68,10 @@ Schneider:
   capacitores:
     serie: "VarPlus Can HDuty"
     unidades:          # 525 V: 10/12, 12,5/15, 20,8/25, 25/30 kvar (50/60 Hz)
-      525: [12, 15, 25, 30]
-      480: [12, 15, 20, 25]
+      525: [15, 24, 30, 48]   # se.com 22/11/2026: 12/15/24/30/48 kvar a 60 Hz; 25 kvar 60 Hz NÃO existe; BLRCH100A120B52 descontinuado (04/2024)
       690: [15, 25, 30]
     codigos:
-      525: {12: "BLRCH100A120B52", 30: "BLRCH250A300B52"}
+      525: {15: "BLRCH125A150B52", 24: "BLRCH200A240B52", 30: "BLRCH250A300B52", 48: "BLRCH400A480B52"}
     codigo: "VarPlus Can HDuty {kvar} kvar {V} V 60 Hz (BLRCH…B52)"
     conferir: true
   contatora_preferida: comum
@@ -89,10 +95,10 @@ Schneider:
   disjuntor: {codigo: "Schneider ComPacT NSX{A} (Micrologic 2.2)", conferir: true}
   disjuntor_comando: {codigo: "Schneider Acti9 iC60N C10 2P/3P", conferir: false}
   controlador: {6: "Schneider VarLogic NR6 (52448)", 12: "Schneider VarLogic NR12 (52449)", conferir: false}
-  rele_falta_fase: {codigo: "Schneider Zelio RM22TG20", conferir: false}
+  rele_falta_fase: {codigo: "Schneider Zelio RM22TG20 208–480 V CA, 2 NAF", conferir: false}   # se.com/br 22/11/2026: 35 × 90 × 73 mm
   botoes: {emergencia: "Schneider XB5AS8444 (cogumelo c/ trava)", seletor: "Schneider XB5AD21", sinaleiro: "Schneider XB7NVB3 / XB7NVB4", conferir: false}
   termostato: {nf: "Schneider ClimaSys NSYCCOTHC (NF)", na: "Schneider ClimaSys NSYCCOTHO (NA)", conferir: false}
-  ventilador: {codigo: "Schneider ClimaSys NSYCVF{m3h}M230PF", conferir: true}
+  ventilador: {codigo: "Schneider ClimaSys NSYCVF850M230PF", conferir: false}
 
 Siemens:
   descricao: "Siemens (capacitores Epcos/TDK – antiga Siemens Matsushita)"

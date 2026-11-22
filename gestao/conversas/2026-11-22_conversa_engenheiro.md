@@ -56,3 +56,40 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 17:09 "O ideal seria seguir todas as normas para montagem pois ele pode ser auditado em algum momento por cliente exigente, os 3 filtros na verdade isso vale para os 3" [REQ-SEG-014]
 - 17:03 "O barramento geral não fica mais seguro atrás da placa de montagem junto com indutores?…" [REQ-PNL-023] / 17:04 energia incidente simplificada [REQ-SEG-013] / 17:06 "O meu painel que é montagem livre é um 2b?" [REQ-PNL-024]
 - 17:10 "Sei que dá trabalho mas na época que fiz esse da panatlantica manualmente isso não foi exigido" [contexto do REQ-SEG-014: exigência nova dos clientes]
+
+### 18:17
+"Não usar as etiquetas dos equipamentos na imagem de portas abertas fica muito ruim. Ainda não gostei dos cabos de força dos indutores e capacitores. Nós capacires ao invés de ter cabos só um cabo, no indutor não parecem conectados. Ainda não ficou não gostei, eles não parecem naturais ninguém vai montar dessa forma. Não vi o ponto de aterramento dos componentes metálicos? A norma exige aterramento do s componentes metálicos? Cadê a barra de aterramento? Acho que melhorou muito, mas pode ficar melhor e mais realista mais natural isso vale para o 2 d e 3d. Vc concorda?"
+→ REQ-PNL-029, 030, 031, 032.
+
+### 18:20
+"Outra coisa nos projetos vc conferiu que são 3 capacitores de 25kvar 525 V por indutor? Isso sempre precisa se checado quantos capacitores por estágio ou indutor vamos ter . Isso é verificado? Deve ser verificado para todos os filtros? Concorda coloca como regra"
+→ REQ-GER-011.
+
+### 18:23
+"Vc precisa fazer conferência cruza do projeto elétrico diagrama de comando diagrama de força lista de material desenhos 2d e 3d, tem que bater os componentes não pode faltar sobrar nada, consegue fazer? Salvar isso na tua lista de tarefas , e implementar no código. Consegue fazer ? Concorda"
+→ REQ-PNL-028 (reforço): acrescentado "sobra na lista" (tag da lista que não está no esquema).
+
+### 18:27
+"Pq o capacitor da abb é vermelho? E a contadora vermelha. Vc pegou esse compontes do catálogo da abb? Só para vc saber o nível de exigência, esse projeto vai para cotação com fornecedores e montador, então não posso mandar com componente fictícios criado por vc, vc precisa pesquisar na internet no catálogos técnicos atuais dos fabricantes e usar componentes reais e que estão em fabricação, pegar os desenhos deles os tamanhos reais e desenhar dessa forma, tudo real tem que existir, entendeu minha preocupação com isso? Vc concorda?"
+### 18:30
+"Se vc não achar de forma alguma claro sinaliza e coloca em vermelho, boa ideia. Mas muito difícil vc não achar abb, ela é o principal fornecedor como Weg Siemens Schneider, se você se esforçar vai achar no site dos fabricantes, isso existe em muitos lugares , mas começa pelo site dos fabricantes. Eles querem vender então sempre tá tudo atualizado lá, não pode não ter achado, nesses casos gasta mais tempo faz uma pesquisa realmente profunda, do depois de muita tentativa coloca em vermelho como vc fez"
+→ REQ-CMP-002. Achado na pesquisa: ABB não tem 25 kvar 525 V 60 Hz (CLMD43 = 24 kvar, 2GCA280868A0030); AF50 substituída pela AF52.
+
+### 18:32
+"Não precisa me perguntar para a acessar os sites tá liberado se não vai atrás o trabalho e ficar confirmado toda hora não acha?"
+### 18:35
+"Acho que não entendeu não me pergunta mais para abrir site, tá liberado eu liberei"
+### 18:37
+"Sim importante para cada componente ver as especificações de montagem distância calor, torque ligação. Vê TB se o cabo de força que vc cálculou entra no equipamento né no catálogo dele tem essa informação."
+→ REQ-CMP-003.
+
+### 18:38
+"O sistema de exaustão forçado do painel foi calculado para o calor produzido? Os componentes de ventilação forçada são reais?"
+→ REQ-PNL-033.
+
+### 18:40
+"Salva tudo isso para saber o que falei e coloca na lista de coisas para fazer"
+→ tudo registrado (REQ-GER-011, REQ-PNL-029..033, REQ-CMP-002/003) e na lista de tarefas.
+### 18:42
+"E os indutores vc tem a simulação dos campos magnético então consegue especificar como montar eles? As distância s um do outro, das partes metálica dos cabos de força, isso é importante na especiação de montagem nos desenhos da especificação técnica eu não fazia isso era no chute na forma manual nunca calculado"
+→ REQ-REA-010.
