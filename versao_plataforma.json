@@ -1,5 +1,5 @@
 {
-  "versao": "1.14.0",
+  "versao": "1.15.0",
   "data": "2026-11-21",
-  "resumo": "Dessintonizado e sintonizado no padrão Electric (planilhas ESTAGIO, cartas Cootrans, ET IFG, propostas) com leitura por IA igual ao filtro senoidal"
+  "resumo": "Esquema elétrico estilo EPLAN (força, comando, bornes, cabos, lista de material) para banco dessintonizado e filtro sintonizado"
 }

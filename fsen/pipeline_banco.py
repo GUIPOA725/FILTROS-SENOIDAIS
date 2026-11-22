@@ -109,8 +109,21 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     pnl = os.path.join(sub["03_Fornecedores"], "2_Painel_Montadora")
     os.makedirs(pnl, exist_ok=True)
     arqs["et_painel"], arqs["et_painel_xlsx"] = DB.et_painel(ped, res, pnl, cod, cat, n_bancos)
+    # v1.15.0: esquema elétrico estilo EPLAN (força, comando, bornes, cabos, lista de material) em PDF + DXF + XLSX
+    anexos_pnl = [arqs["et_painel"], arqs["et_painel_xlsx"]]
+    try:
+        from .eplan import banco_eletrico as BE
+        desq = os.path.join(sub["05_Desenhos"], "1_Esquema_Eletrico")
+        os.makedirs(desq, exist_ok=True)
+        esq = BE.gerar(ped, res, desq, cod, versao, n_bancos, log=log)
+        for k_ in ("pdf", "dxf", "xlsx"):
+            arqs[f"esquema_{k_}"] = esq[k_]
+            shutil.copy(esq[k_], pnl)
+            anexos_pnl.append(os.path.join(pnl, os.path.basename(esq[k_])))
+    except Exception as ex:
+        log(f"   (esquema elétrico não gerado: {type(ex).__name__}: {ex})")
     with open(os.path.join(pnl, "Email_Montadora.txt"), "w", encoding="utf-8") as fh:
-        fh.write(DB.email_fornecedor("IFG", ped, res, grupos, [arqs["et_painel"], arqs["et_painel_xlsx"]], cod, tipo="painel"))
+        fh.write(DB.email_fornecedor("IFG", ped, res, grupos, anexos_pnl, cod, tipo="painel"))
     arqs["proposta"] = DB.proposta(ped, res, sub["02_Cliente"], cod, cat, inds, n_bancos)
     log("5/5 Dados e carimbo de versão...")
     ped_d = ped.__dict__.copy()
