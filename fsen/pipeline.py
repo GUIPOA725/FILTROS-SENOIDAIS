@@ -308,6 +308,16 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     _atp_dupla_checagem(proj, cat, sub["01_Engenharia"], cod, log)
     log("5/7 Desenhos 2D/3D e diagrama elétrico...")
     pdf_des, pngs = gerar_desenhos(proj, arr, cat, sub["05_Desenhos"])
+    esq_sen = {}
+    try:        # v1.16.1: esquema elétrico no modelo QElectroTech + lista DE/PARA + etiquetas (fios, componentes, cabos)
+        from .eplan import senoidal_qet as SQ
+        from .versao import info as _vinfo
+        desq = os.path.join(sub["05_Desenhos"], "1_Esquema_Eletrico")
+        esq_sen = SQ.gerar(proj, arr, desq, cod, f"FSEN v{_vinfo().get('versao', '')}", log=log)
+        for k_ in ("pdf", "qet", "dxf", "etq_xlsx", "etq_pdf"):
+            shutil.copy(esq_sen[k_], sub["04_Montadora"])
+    except Exception as e:
+        log(f"   (esquema elétrico / etiquetas não gerados: {type(e).__name__}: {e})")
     log("6/7 Documentos (memorial, proposta, ETs, montagem, planilha)...")
     arqs = {
         "memorial": D.memorial(proj, arr, orc, graf, pngs, cat, sub["01_Engenharia"]),
@@ -316,6 +326,9 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         "folha_dados": D.folha_dados(proj, arr, cat, sub["02_Cliente"], pngs),
         "desenhos_pdf": pdf_des,
     }
+    for k_ in ("pdf", "qet", "dxf", "etq_xlsx", "etq_pdf"):
+        if esq_sen.get(k_):
+            arqs[f"esquema_{k_}"] = esq_sen[k_]
     try:                                            # v1.9.11: estudo de ponto ótimo de mercado + robustez + referências
         from . import ponto_otimo as PO
         proj.estudo_mercado = PO.estudo(proj, cat, log=log)

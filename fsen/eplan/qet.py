@@ -198,7 +198,11 @@ class Elemento:
                 cand.append((rx if lado in "ns" else ry, i, rx, ry))
         cand.sort()
         _, i, rx, ry = cand[k]
-        return (self.tid[i], self.x + rx, self.y + ry, self, NOMES_TERM.get(self.d.nome, {}).get((lado, k), ""))
+        # nome do borne pela posição ORIGINAL no símbolo (vale também para elemento girado)
+        o = self.d.terms[i][2]
+        mesmos = sorted((tx if o in "ns" else ty, j) for j, (tx, ty, oj) in enumerate(self.d.terms) if oj == o)
+        k0 = [j for _, j in mesmos].index(i)
+        return (self.tid[i], self.x + rx, self.y + ry, self, NOMES_TERM.get(self.d.nome, {}).get((o, k0), ""))
 
 
 class Folio:
@@ -214,8 +218,13 @@ class Folio:
             self.proj.registra(label, e)
         return e
 
-    def no(self, x, y):
-        return self.el("no", x, y, chave=len(self.elems))
+    def no(self, x, y, barra="", pot="", pe_de=""):
+        """Ponto de ligação. barra = barramento de cobre (-R2, -PE2…); pot = nome de potencial que continua em outra folha
+        (L220, N220…); pe_de = tag do componente cuja carcaça vai ao PE neste ponto (lista DE/PARA e etiquetas)."""
+        info = {k: v for k, v in dict(barra=barra, pot=pot, pe_de=pe_de).items() if v}
+        e = self.el("no", x, y, chave=len(self.elems))
+        e.info.update(info)
+        return e
 
     def fio(self, ta, tb, num="", secao="", cor="", potencia=False, marca="", ym=None):
         """Fio borne a borne. secao em mm² (texto), marca = cor do cabo (ex. 'VM', 'PT', 'VD/AM') – como no EPLAN Electric."""

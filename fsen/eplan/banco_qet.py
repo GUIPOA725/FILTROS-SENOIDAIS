@@ -25,7 +25,7 @@ def _barras(f, xs_tap, nomes=("-R2", "-S2", "-T2")):
         pts = sorted({30} | {x + 20 * (k - 1) for x in xs_tap} | {W_PX - 30})
         prev = None
         for x in pts:
-            n = f.no(x, y)
+            n = f.no(x, y, barra=nm)
             nos[(k, x)] = n
             if prev is not None:
                 f.fio(prev.term("n"), n.term("n"), potencia=True)
@@ -34,11 +34,30 @@ def _barras(f, xs_tap, nomes=("-R2", "-S2", "-T2")):
     return nos
 
 
+def _secao_geral(I):
+    """Seção do cabo/barra da chave geral (cobre 90 °C, fator 0,62 do painel – mesma regra dos estágios)."""
+    from .. import banco as B
+    for s_, cap in B.CABO_90C:
+        if cap * 0.62 >= I:
+            return f"{s_:g}"
+    return "barra"
+
+
+def _secao_pe(I):
+    """Condutor de proteção (NBR 5410 tab. 58): S ≤ 16 → S; 16 < S ≤ 35 → 16; S > 35 → S/2."""
+    s_ = _secao_geral(I)
+    try:
+        s_ = float(s_)
+    except ValueError:
+        return "50"
+    return f"{s_ if s_ <= 16 else 16 if s_ <= 35 else s_ / 2:g}"
+
+
 def _barra_pe(f, xs):
     pts = sorted({30} | set(xs) | {W_PX - 30})
     nos, prev = {}, None
     for x in pts:
-        n = f.no(x, Y_PE)
+        n = f.no(x, Y_PE, barra="-PE2")
         nos[x] = n
         if prev is not None:
             f.fio(prev.term("n"), n.term("n"), cor="#2e7d32", marca="VD/AM", potencia=True)
@@ -80,11 +99,11 @@ def construir(ped, res, cod, versao, P_lista=None):
     fa.texto(xq - 60, 268, f"ALIMENTAÇÃO {V:g} V 3F+PE {ped.freq_hz:g} Hz – cabo do cliente", 7, "#c62828")
     q0 = fa.el("sectionneur_3_fusibles", xq, 420, "-Q0", inf("-Q0", f"{pn['geral_A']} A NH"))
     for k in range(3):
-        fa.fio(bx[k].term("s"), q0.term("n", k), potencia=True, secao="", marca="PT")
+        fa.fio(bx[k].term("s"), q0.term("n", k), potencia=True, secao=_secao_geral(pn["geral_A"]), marca="PT")
     nos = _barras(fa, [340, 520, 760])
     for k in range(3):
         n_ = fa.no(xq + 20 * (k - 1), 520 - 10 * k)
-        fa.fio(q0.term("s", k), n_.term("n"), potencia=True, marca="PT")
+        fa.fio(q0.term("s", k), n_.term("n"), potencia=True, marca="PT", secao=_secao_geral(pn["geral_A"]))
         nb = fa.no(320 + 20 * k, 520 - 10 * k)
         fa.fio(n_.term("n"), nb.term("n"), potencia=True)
         fa.fio(nb.term("n"), nos[(k, 320 + 20 * k)].term("n"), potencia=True)
@@ -102,6 +121,9 @@ def construir(ped, res, cod, versao, P_lista=None):
     t1 = fa.el("transfo_mono", 760, 300, "-T1", inf("-T1", f"{V:g}/220 V"))
     fa.fio(f02.term("s", 0), t1.term("n", 0), marca="VM", secao="1,5")
     fa.fio(f02.term("s", 1), t1.term("n", 1), marca="VM", secao="1,5")
+    for k_, pt_ in enumerate(("L220", "N220")):        # secundário do -T1 → potenciais 220 V do comando (folhas 6 e 7)
+        n220 = fa.no(t1.term("s", k_)[1], 380, pot=pt_)
+        fa.fio(t1.term("s", k_), n220.term("n"), marca="VM" if k_ == 0 else "AZ", secao="1,5", num=pt_)
     fa.texto(800, 360, "220 V → comando (folha do controlador)", 7, "#555555")
     # ------------------------------------------------------------------ estágios (2 por folha)
     bobinas = {}
@@ -119,7 +141,7 @@ def construir(ped, res, cod, versao, P_lista=None):
         fs = Q.folio(f"Estágios do filtro {k0_+1}" + (f"-{grupo[-1]+1}" if len(grupo) > 1 else ""), "ESTAGIOS")
         xs = [X_STG[j] for j in range(len(grupo))]
         nos = _barras(fs, xs)
-        pe_x = []
+        pe_x, pe_tag = [], {}
         for j, i in enumerate(grupo):
             e = E[i]
             pr = B.protecao_estagio(ped, e)
@@ -146,6 +168,7 @@ def construir(ped, res, cod, versao, P_lista=None):
                            inf(f"-C{tg}", f"{_f(e['cap'][1])}kVAr {e['cap'][2]}V"), chave=c)
                 caps.append(cp)
                 pe_x.append(cx)
+                pe_tag[cx] = cp.label
             yt = caps[0].term("n", 0)[2]
             for k in range(3):
                 fs.fio(ln.term("s", k), caps[0].term("n", k), potencia=True, secao=sec2, marca="PT", ym=yt - 34 + 7 * k)
@@ -156,7 +179,7 @@ def construir(ped, res, cod, versao, P_lista=None):
                      "#555555")
         nos_pe = _barra_pe(fs, pe_x)
         for cx in pe_x:
-            nc = fs.no(cx + 28, 548)
+            nc = fs.no(cx + 28, 548, pe_de=pe_tag.get(cx, ""))
             fs.fio(nc.term("n"), nos_pe[cx].term("n") if cx in nos_pe else nc.term("n"), cor="#2e7d32", marca="VD/AM", secao="1,5")
     # ------------------------------------------------------------------ controlador
     fc = Q.folio("CFP – controlador BR6000", "COMANDO")
@@ -166,10 +189,10 @@ def construir(ped, res, cod, versao, P_lista=None):
     for rail, y, nm in ((railL, yL, "L 220 V (-T1)"), (railN, yN, "N 220 V (-T1)")):
         prev = None
         for x in xs_ctrl:
-            nd = fc.no(x, y)
+            nd = fc.no(x, y, pot="L220" if rail is railL else "N220")
             rail[x] = nd
             if prev is not None:
-                fc.fio(prev.term("n"), nd.term("n"), marca="VM", secao="1,5")
+                fc.fio(prev.term("n"), nd.term("n"), marca="VM" if rail is railL else "AZ", secao="1,5")
             prev = nd
         fc.texto(8, y - 4, nm, 8, "#c62828")
     s0 = fc.el("arret_urgence_verrou", 60, 110, "-S0", inf("-S0"))
@@ -190,7 +213,7 @@ def construir(ped, res, cod, versao, P_lista=None):
     fc.fio(xk1.term("s"), ctrl.term("n", 1), marca="PT", secao="2,5")
     fc.fio(xk2.term("s"), ctrl.term("n", 2), marca="PT", secao="2,5")
     fc.texto(ctrl.term("n", 1)[1] - 10, 70, "TC externo …/5 A (cliente)", 7, "#555555")
-    fc.fio(ctrl.term("s", 0), railN[260].term("n") if 260 in railN else railN[200].term("n"), marca="VM", secao="1,5")
+    fc.fio(ctrl.term("s", 0), railN[260].term("n") if 260 in railN else railN[200].term("n"), marca="AZ", secao="1,5")
     fc.fio(nh.term("n"), ctrl.term("s", 1), marca="VM", secao="1,5")
     lampadas = []
     for i in range(n):
@@ -202,7 +225,7 @@ def construir(ped, res, cod, versao, P_lista=None):
         bo = fc.el("bobine3", x, 460, f"-K{tg}", dict(designation=f"Contator estágio {tg}", contato=""))
         bobinas[tg] = bo
         fc.fio(b.term("s"), bo.term("n"), marca="VM", secao="1,5", num=f"{tg}1")
-        fc.fio(bo.term("s"), railN[x].term("n"), marca="VM", secao="1,5")
+        fc.fio(bo.term("s"), railN[x].term("n"), marca="AZ", secao="1,5")
         km = contatos_pot.get(tg)
         if km:
             km.info["contato"] = "1-2/3-4/5-6"
@@ -214,10 +237,10 @@ def construir(ped, res, cod, versao, P_lista=None):
     for rail, y, nm in ((rL, yL, "L 220 V"), (rN, yN, "N 220 V")):
         prev = None
         for x in xs2:
-            nd = fsn.no(x, y)
+            nd = fsn.no(x, y, pot="L220" if rail is rL else "N220")
             rail[x] = nd
             if prev is not None:
-                fsn.fio(prev.term("n"), nd.term("n"), marca="VM", secao="1,5")
+                fsn.fio(prev.term("n"), nd.term("n"), marca="VM" if rail is rL else "AZ", secao="1,5")
             prev = nd
         fsn.texto(8, y - 4, nm, 8, "#c62828")
     for i in range(n):
@@ -228,7 +251,7 @@ def construir(ped, res, cod, versao, P_lista=None):
         fsn.fio(rL[x].term("n"), ca.term("n"), marca="VM", secao="1,5")
         h = fsn.el("lampe2", x, 380, f"-H{tg}", inf(f"-H{tg}"))
         fsn.fio(ca.term("s"), h.term("n"), marca="VM", secao="1,5")
-        fsn.fio(h.term("s"), rN[x].term("n"), marca="VM", secao="1,5")
+        fsn.fio(h.term("s"), rN[x].term("n"), marca="AZ", secao="1,5")
     b0 = fsn.el("thermostat_01", 700, 160, "-B0", inf("-B0", "35 °C"))
     fsn.fio(rL[700].term("n"), b0.term("n"), marca="VM", secao="1,5")
     nv = fsn.no(700, 260)
@@ -271,7 +294,8 @@ def gerar(ped, res, pasta, cod, versao, n_banco=1, log=print):
     arq_qet = Q.salvar_qet(os.path.join(pasta, f"Esquema_Eletrico_{cod}.qet"))
     # folhas de lista (bornes, conexões, peças) pelo renderizador de listas
     P.folhas = []
-    con = lista_conexao(Q)
+    from . import etiquetas as ET
+    con = [(l["de"], l["para"], l["fio"], l["cor"], l["secao"], str(l["folha_de"])) for l in ET.de_para(Q)]
     BE.listas_folhas(P, conexoes=con)
     for f in P.folhas:
         f.n += len(Q.folios)
@@ -282,5 +306,25 @@ def gerar(ped, res, pasta, cod, versao, n_banco=1, log=print):
     os.remove(tmp_listas)
     arq_dxf = render_dxf(Q, os.path.join(pasta, f"Esquema_Eletrico_{cod}.dxf"))
     arq_xlsx = BE.planilha(P, os.path.join(pasta, f"Lista_Material_Bornes_Cabos_{cod}.xlsx"), conexoes=con)
+    V = ped.tensao_v
+    cabos = [dict(tag="-W0", de="-X0:L1/L2/L3/PE", para="Alimentação (QGBT do cliente)", formacao=f"3F+PE {V:g} V – conforme ET",
+                  funcao="Alimentação do painel"),
+             dict(tag="-W1", de="-X1:1/2", para="TC do cliente (fase L1)", formacao="2×2,5 mm² (blindado recomendado)",
+                  funcao="Sinal de corrente do controlador")]
+    n_est = len(res["estagios"])
+    from .. import banco as B
+    pn = B.painel(ped, res)
+    funcoes = {f"-H{i + 1}": f"ESTÁGIO {i + 1} LIGADO" for i in range(n_est)}
+    funcoes.update({"-S0": "EMERGÊNCIA", "-S1": "MANUAL – 0 – AUTOMÁTICO", "-U1": "CONTROLADOR DE FATOR DE POTÊNCIA",
+                    "-Q0": "CHAVE GERAL", "-B0": "TERMOSTATO DO PAINEL"})
+    for i in range(n_est):
+        funcoes[f"-FF{i + 1}"] = f"PROTEÇÃO ESTÁGIO {i + 1}"
+        funcoes[f"-K{i + 1}"] = f"CONTATOR ESTÁGIO {i + 1}"
+        funcoes[f"-L{i + 1}"] = f"REATOR ESTÁGIO {i + 1}"
+    massas = [f"-L{i + 1}" for i in range(n_est)] + ["-X0", "PORTA", "PLACA DE MONTAGEM", "ESTRUTURA DO PAINEL"]
+    et = ET.gerar(Q, pasta, cod, cabos_externos=cabos, versao=versao, titulo=Q.titulo, funcoes=funcoes, pe_massas=massas,
+                  secao_pe=_secao_pe(pn["geral_A"]),
+                  extra_componentes=[(f"=FILTRO {cod}", Q.titulo, "Porta (placa de identificação do painel)")])
     log(f"   Esquema elétrico (padrão AGCO/EPLAN): {total} folhas – .qet (QElectroTech) + PDF + DXF + planilha")
-    return dict(pdf=arq_pdf, dxf=arq_dxf, xlsx=arq_xlsx, qet=arq_qet, projeto=Q)
+    log(f"   Lista DE/PARA: {et['n_fios']} fios, {et['n_etq_fios']} etiquetas de fio, {et['n_componentes']} plaquetas de componente")
+    return dict(pdf=arq_pdf, dxf=arq_dxf, xlsx=arq_xlsx, qet=arq_qet, projeto=Q, etq_xlsx=et["xlsx"], etq_pdf=et["pdf"])

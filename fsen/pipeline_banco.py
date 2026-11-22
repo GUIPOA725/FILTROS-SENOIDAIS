@@ -121,7 +121,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             log(f"   (esquema QET falhou: {type(ex_q).__name__}: {ex_q} – usando o esquema 1.15)")
             from .eplan import banco_eletrico as BE
             esq = BE.gerar(ped, res, desq, cod, versao, n_bancos, log=log)
-        for k_ in ("pdf", "dxf", "xlsx", "qet"):
+        for k_ in ("pdf", "dxf", "xlsx", "qet", "etq_xlsx", "etq_pdf"):
             if not esq.get(k_):
                 continue
             arqs[f"esquema_{k_}"] = esq[k_]

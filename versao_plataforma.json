@@ -1,5 +1,5 @@
 {
-  "versao": "1.16.0",
+  "versao": "1.16.1",
   "data": "2026-11-21",
-  "resumo": "Esquema elétrico no padrão AGCO/EPLAN gerado no modelo do QElectroTech (.qet + PDF + DXF + XLSX) e leitura da medição (ícone QEE) e do estudo de proteção da Plataforma de Estudos"
+  "resumo": "Lista DE/PARA e etiquetas de todos os fios (força, comando, PE), cabos externos e componentes, para os três filtros; esquema do filtro senoidal no modelo QElectroTech"
 }
