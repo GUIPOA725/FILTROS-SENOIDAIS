@@ -7,7 +7,7 @@ Engenheiro responsável: Guilherme (Electric Service). Responder em português.
 2. Ler a última revisão em `gestao/REVISOES.md`.
 
 ## Durante a conversa
-- TODA instrução, dica, exemplo, crítica ou referência nova do engenheiro entra NA HORA no `gestao/REQUISITOS.yaml`
+- SEM PEDIR AUTORIZAÇÃO (REQ-GER-007): TODA instrução, dica, exemplo, crítica ou referência nova do engenheiro entra NA HORA no `gestao/REQUISITOS.yaml`
   (novo REQ-<área>-<nº>, com as palavras dele, data, fonte, status PENDENTE) – antes de programar. Nada fica solto no chat.
 - Referência nova (projeto antigo, foto, medição) entra em `gestao/REFERENCIAS_PROJETOS.yaml` com as lições e os REQ ligados.
 - Ao implementar: atualizar `atende`, `status`, `desde` e `nota` do requisito.
