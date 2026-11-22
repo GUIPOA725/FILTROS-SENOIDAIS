@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
 DIR_ELEM = os.path.join(os.path.dirname(__file__), "qet_elementos")
-COLS, COLW, ROWS, ROWH = 17, 60, 8, 80
+COLS, COLW, ROWS, ROWH = 10, 102, 8, 80          # 10 colunas como as folhas EPLAN da Electric (estilo aprendido)
 W_PX, H_PX = COLS * COLW, ROWS * ROWH
 ORI = {"n": 0, "e": 1, "s": 2, "w": 3}
 
@@ -321,7 +321,7 @@ class ProjetoQet:
                 usados[e.d.nome] = e.d
         L = [f'<project title="{escape(self.titulo)}" version="0.100" uuid="{_uuid_det(self.codigo)}">',
              '<properties><property name="saveddate" show="1">' + escape(self.data) + '</property></properties>',
-             '<newdiagrams><border cols="17" colsize="60" rows="8" rowsize="80" displaycols="true" displayrows="true"/>'
+             '<newdiagrams><border cols="10" colsize="102" rows="8" rowsize="80" displaycols="true" displayrows="true"/>'
              '<inset author="" date="null" title="" folio="%id/%total" filename=""/>'
              '<conductors type="multi" num="" numsize="7" condsize="1" displaytext="1"/></newdiagrams>']
         for f in self.folios:
@@ -458,8 +458,8 @@ def primitivas_elemento(e):
                 out.append(("lbl", min(xs) + 2, max(ys) + 11, e.label, 8.0, 0))
                 if e.info.get("dados"):
                     out.append(("dad", min(xs) + 2, max(ys) + 19, e.info["dados"], 6.5, 0))
-            elif e.d.nome == "borne_continuite":
-                out.append(("lbl", min(xs) - 1, min(ys) - 3, e.label.split(":")[-1], 6.5, 0))
+            elif e.d.nome == "borne_continuite":   # nº do borne à direita do fio, acima do círculo (não fica sobre o fio)
+                out.append(("lbl", (min(xs) + max(xs)) / 2 + 3, min(ys) + 2, e.label.split(":")[-1], 6.5, 0))
             elif e.d.nome in ("reator3", "ctrl6", "ctrl12", "inversor", "motor3", "cabo3") or e.d.nome.startswith("ctrl") or e.d.nome == "rele_ff":
                 out.append(("lbl", max(xs) + 4, (min(ys) + max(ys)) / 2 + 3, e.label, 10.0, 0))
                 if e.info.get("dados"):
@@ -612,6 +612,41 @@ def _pinos(e):
     return out
 
 
+def _textos_sobrepostos(fig, ax, f):
+    """Conferência automática do desenho: textos que se encostam/sobrepõem na folha (o que o desenhista corrigiria)."""
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    caixas = []
+    for t in ax.texts:
+        if not t.get_text().strip() or t.get_position()[1] < 32:     # carimbo/nota de rodapé ficam fora
+            continue
+        bb = t.get_window_extent(r)
+        caixas.append((bb.x0 + 0.5, bb.y0 + 0.5, bb.x1 - 0.5, bb.y1 - 0.5, t.get_text()))
+    out = []
+    for i in range(len(caixas)):
+        a = caixas[i]
+        for b in caixas[i + 1:]:
+            if a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]:
+                out.append(dict(folha=f.n, titulo=f.titulo, a=a[4], b=b[4]))
+    # texto atravessado por condutor (fio passando por cima de letra)
+    tr = ax.transData
+    segs = []
+    for c in f.conds:
+        pts = [tr.transform(_mm(x, y)) for x, y in rota(c["a"][1:3], c["b"][1:3], c.get("ym"))]
+        segs += list(zip(pts, pts[1:]))
+    for (x0, y0, x1, y1, txt) in caixas:
+        for (p, q) in segs:
+            if abs(p[0] - q[0]) < 0.5:          # vertical
+                if x0 < p[0] < x1 and min(p[1], q[1]) < y1 and max(p[1], q[1]) > y0:
+                    out.append(dict(folha=f.n, titulo=f.titulo, a=txt, b="(fio)"))
+                    break
+            elif abs(p[1] - q[1]) < 0.5:
+                if y0 < p[1] < y1 and min(p[0], q[0]) < x1 and max(p[0], q[0]) > x0:
+                    out.append(dict(folha=f.n, titulo=f.titulo, a=txt, b="(fio)"))
+                    break
+    return out
+
+
 def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
     """Folhas A3 no padrão gráfico do EPLAN (gabarito Electric): traço fino uniforme (0,25 mm), barramentos em azul com
     pontos de derivação vazados, seção marcada por traço oblíquo + texto vermelho só no último condutor do grupo, número de
@@ -621,11 +656,16 @@ def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
     import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
     from matplotlib.patches import Circle
+    from . import estilo as _E
+    E = _E.carregar()                       # estilo aprendido dos PDFs do EPLAN (dados/estilo_eplan.json)
     pt = 72 / 25.4
-    LW = 0.25 * pt                          # 0,25 mm em pontos
+    LW = E["traco_mm"] * pt
+    F_TAG, F_BOR, F_SEC = _E.pt(E["alt_tag_mm"]), _E.pt(E["alt_borne_mm"]), _E.pt(E["alt_secao_mm"])
+    AZ, VM, VD, XR = E["cor_tag"], E["cor_secao"], E["cor_pe"], E["cor_xref"]
     xr = _xrefs(proj)
     tmp = arq if not pdf_extra else arq + ".tmp.pdf"
-    rc = {"font.family": ["Arial", "Liberation Sans", "DejaVu Sans"], "pdf.fonttype": 42}
+    rc = {"font.family": [E["fonte"], "Tahoma", "Arial", "Liberation Sans", "DejaVu Sans"], "pdf.fonttype": 42}
+    conferencia = []
     with matplotlib.rc_context(rc), PdfPages(tmp) as pdf:
         for f in proj.folios:
             fig = plt.figure(figsize=(420 / 25.4, 297 / 25.4))
@@ -639,18 +679,18 @@ def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
             for c in f.conds:
                 for t in (c["a"], c["b"]):
                     grau[t[0]] = grau.get(t[0], 0) + 1
-            marcas, cmd_sec = [], {}
+            marcas, cmd_sec, todos_segs = [], {}, []
             for c in f.conds:
                 pts = [_mm(x, y) for x, y in rota(c["a"][1:3], c["b"][1:3], c.get("ym"))]
                 ea, eb = c["a"][3], c["b"][3]
                 barra = ea.d.nome == "no" and eb.d.nome == "no" and ea.info.get("barra") and eb.info.get("barra")
                 mc = (c.get("marca") or "").upper()
                 if barra and not ea.info["barra"].startswith("-PE"):
-                    cor, lw = AZUL_EPLAN, LW * 1.4
+                    cor, lw = AZ, LW * 1.4
                 elif c["cor"] == "#2e7d32" or "VD" in mc:
-                    cor, lw = "#2e7d32", LW
+                    cor, lw = VD, LW
                 elif mc == "AZ":
-                    cor, lw = AZUL_EPLAN, LW
+                    cor, lw = AZ, LW
                 else:
                     cor, lw = "k", LW
                 ax.plot([p[0] for p in pts], [p[1] for p in pts], color=cor, lw=lw, solid_capstyle="butt", zorder=2)
@@ -658,36 +698,76 @@ def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
                 (x0, y0), (x1, y1) = max(segs, key=lambda sg: abs(sg[0][0] - sg[1][0]) + abs(sg[0][1] - sg[1][1]))
                 xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
                 vert = abs(x0 - x1) < 0.2
+                todos_segs.extend(segs)
                 if c["secao"] and not barra and c["pot"] and abs(x0 - x1) + abs(y0 - y1) > 6:
-                    marcas.append((xm, ym, vert, c["secao"]))
+                    marcas.append((xm, ym, vert, c["secao"], (x0, y0, x1, y1)))
                 elif c["secao"] and not c["pot"]:
                     cmd_sec[(c["secao"], (c.get("marca") or "").upper())] = cmd_sec.get((c["secao"], (c.get("marca") or "").upper()), 0) + 1
                 if c["num"] and not barra:
-                    ax.text(xm + (0.9 if vert else 0), ym + (2.2 if vert else 0.7), c["num"], fontsize=4.0, rotation=90 if vert else 0,
+                    ax.text(xm + (0.9 if vert else 0), ym + (2.2 if vert else 0.7), c["num"], fontsize=F_BOR * 0.85, rotation=90 if vert else 0,
                             ha="left" if vert else "center", va="bottom", color="k", zorder=3)
             if cmd_sec:                              # comando: nota geral (como no EPLAN), sem marcar fio a fio
                 cores = {"VM": "vermelho", "AZ": "azul", "PT": "preto", "CZ": "cinza", "VD/AM": "verde/amarelo"}
                 secs = sorted({k[0] for k in cmd_sec})
                 cs = sorted({cores.get(k[1], k[1]) for k in cmd_sec if k[1]})
                 ax.text(16, 30.5, f"Fiação de comando: {' / '.join(x + ' mm²' for x in secs)} – cabo flexível 750 V, cores: "
-                        f"{', '.join(cs)} (fase vermelho, neutro azul, sinal/alarme cinza), salvo indicação.", fontsize=4.6, color="0.25", zorder=5)
-            for (xm, ym, vert, sec) in marcas:      # traço oblíquo em todos; texto só no último do grupo (à direita/abaixo)
-                d = 0.8
-                ax.plot([xm - d, xm + d], [ym - d, ym + d], color="k", lw=LW, zorder=3)
+                        f"{', '.join(cs)} (fase vermelho, neutro azul, sinal/alarme cinza), salvo indicação.", fontsize=F_BOR, color="0.25", zorder=5)
+            ocupados, sem_lugar = [], []            # caixas de texto já colocadas (mm) – evita colisão entre marcas
+
+            def livre(bx):
+                x0_, y0_, x1_, y1_ = bx
+                for (p_, q_) in todos_segs:
+                    if abs(p_[0] - q_[0]) < 0.05:
+                        if x0_ < p_[0] < x1_ and min(p_[1], q_[1]) < y1_ and max(p_[1], q_[1]) > y0_:
+                            return False
+                    elif y0_ < p_[1] < y1_ and min(p_[0], q_[0]) < x1_ and max(p_[0], q_[0]) > x0_:
+                        return False
+                return not any(x0_ < o[2] and o[0] < x1_ and y0_ < o[3] and o[1] < y1_ for o in ocupados)
+            ch_mm = E["alt_secao_mm"]
+            for (xm, ym, vert, sec, sg) in marcas:  # traço oblíquo em todos; texto só no último do grupo, em lugar livre
+                txt = f"{sec} mm²" if sec != "barra" else "barra"
+                w = 0.62 * ch_mm * len(txt)
                 vizinho = any(abs(o[1] - ym) < 4 and 0 < o[0] - xm < 9 and o[3] == sec for o in marcas) if vert else \
                     any(abs(o[0] - xm) < 9 and 0 < ym - o[1] < 9 and o[3] == sec for o in marcas)
-                if not vizinho:
-                    ax.text(xm + 1.6, ym + 0.2, f"{sec} mm²" if sec != "barra" else "barra", fontsize=4.2, color=VERM_SEC,
-                            va="center", ha="left", zorder=3)
+                x0, y0, x1, y1 = sg
+                pos = (0.5, 0.35, 0.65, 0.2, 0.8)
+                escolhido = None
+                for t_ in pos:
+                    tx, ty = x0 + (x1 - x0) * t_, y0 + (y1 - y0) * t_
+                    cand = [(tx + 1.4, ty - ch_mm / 2), (tx - 1.4 - w, ty - ch_mm / 2)] if vert else \
+                        [(tx + 1.2, ty + 0.4), (tx + 1.2, ty - 0.4 - ch_mm)]
+                    for (cx_, cy_) in cand:
+                        if vizinho or livre((cx_, cy_, cx_ + w, cy_ + ch_mm)):
+                            escolhido = (tx, ty, cx_, cy_)
+                            break
+                    if escolhido:
+                        break
+                if not escolhido and not vizinho:   # sem lugar livre: escreve no fio mais à direita/abaixo do grupo
+                    continue_txt = False
+                else:
+                    continue_txt = True
+                tx, ty, cx_, cy_ = escolhido or (xm, ym, xm + 1.4, ym - ch_mm / 2)
+                d = 0.8
+                ax.plot([tx - d, tx + d], [ty - d, ty + d], color="k", lw=LW, zorder=3)
+                if not vizinho and continue_txt:
+                    ax.text(cx_, cy_, txt, fontsize=F_SEC, color=VM, va="bottom", ha="left", zorder=3)
+                    ocupados.append((cx_, cy_, cx_ + w, cy_ + ch_mm))
+                elif not vizinho:
+                    sem_lugar.append((tx, ty, txt))
+            for (tx, ty, txt) in sem_lugar:         # seção sem lugar livre: vai numa legenda no rodapé da folha
+                pass
+            if sem_lugar:
+                ax.text(16, 284.5, "Seções não indicadas no desenho por falta de espaço: " + "; ".join(sorted({t for _, _, t in sem_lugar}))
+                        + " – ver lista DE/PARA.", fontsize=F_SEC * 1.2, color=VM, zorder=5)
             for e in f.elems:
                 if e.d.nome == "no":                 # ponto de derivação: só onde há derivação (3+ condutores)
                     g = sum(grau.get(t, 0) for t in e.tid)
                     if g >= 3:
                         x, y = _mm(e.x, e.y)
                         if e.info.get("barra") and not e.info["barra"].startswith("-PE"):
-                            ax.add_patch(Circle((x, y), 0.75, fc="white", ec=AZUL_EPLAN, lw=LW, zorder=6))
+                            ax.add_patch(Circle((x, y), 0.75, fc="white", ec=AZ, lw=LW, zorder=6))
                         else:
-                            ax.add_patch(Circle((x, y), 0.5, fc="k", ec="k", lw=0, zorder=6))
+                            ax.add_patch(Circle((x, y), 0.55, fc="k", ec="k", lw=0, zorder=6))
                     continue
                 for p in primitivas_elemento(e):
                     if p[0] == "lin":
@@ -703,38 +783,38 @@ def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
                         x, y = _mm(p[1], p[2])
                         ha = p[6] if len(p) > 6 else "left"
                         for k, ln in enumerate(str(p[3]).split("\n")):
-                            ax.text(x, y - k * 2.0, ln, fontsize=4.6, color="k", va="baseline", ha=ha, zorder=5)
+                            ax.text(x, y - k * 2.6, ln, fontsize=F_BOR, color="k", va="baseline", ha=ha, zorder=5)
                     elif p[0] in ("txt", "lbl"):
                         if p[0] == "txt" and str(p[3]).split() and all(_PINO.match(tk) for tk in str(p[3]).split()):
                             continue                # nº de borne do símbolo: redesenhado abaixo, junto do terminal
                         x, y = _mm(p[1], p[2])
                         if p[3]:
                             ha = p[6] if len(p) > 6 else "left"
-                            ax.text(x, y, p[3], fontsize=p[4] * S_MM * pt * (0.95 if p[0] == "txt" else 1.0), rotation=-p[5] if p[5] else 0,
-                                    ha=ha, va="baseline", color=AZUL_EPLAN if p[0] == "lbl" else "k", zorder=5)
+                            ax.text(x, y, p[3], fontsize=(p[4] * S_MM * pt * 0.95) if p[0] == "txt" else (F_TAG if p[4] > 7 else F_BOR), rotation=-p[5] if p[5] else 0,
+                                    ha=ha, va="baseline", color=AZ if p[0] == "lbl" else "k", zorder=5)
                 if e.d.nome not in ("borne_continuite",):
                     for (tx, ty, nm, lado) in _pinos(e):
                         X, Y = _mm(tx, ty)
                         if lado == "n":
-                            ax.text(X + 0.6, Y - 1.4, nm, fontsize=4.2, color="k", ha="left", va="top", zorder=5)
+                            ax.text(X + 0.6, Y - 1.4, nm, fontsize=F_BOR, color="k", ha="left", va="top", zorder=5)
                         elif lado == "s":
-                            ax.text(X + 0.6, Y + 1.4, nm, fontsize=4.2, color="k", ha="left", va="bottom", zorder=5)
+                            ax.text(X + 0.6, Y + 1.4, nm, fontsize=F_BOR, color="k", ha="left", va="bottom", zorder=5)
                         elif lado == "e":
-                            ax.text(X - 1.0, Y + 0.5, nm, fontsize=4.2, color="k", ha="right", va="bottom", zorder=5)
+                            ax.text(X - 1.0, Y + 0.5, nm, fontsize=F_BOR, color="k", ha="right", va="bottom", zorder=5)
                         else:
-                            ax.text(X + 1.0, Y + 0.5, nm, fontsize=4.2, color="k", ha="left", va="bottom", zorder=5)
+                            ax.text(X + 1.0, Y + 0.5, nm, fontsize=F_BOR, color="k", ha="left", va="bottom", zorder=5)
                 if e.uuid in xr and xr[e.uuid]:
                     lb = [p for p in primitivas_elemento(e) if p[0] == "lbl"]
                     if e.d.link == "slave":
                         off = 17 if e.info.get("dados") else 8
                         x, y = _mm(lb[0][1], lb[0][2] + off) if lb else _mm(e.x + 14, e.y + 14)
                         ha = lb[0][6] if lb and len(lb[0]) > 6 else "left"
-                        ax.text(x, y, " ".join(xr[e.uuid]), fontsize=4.4, color=VERDE_XR, ha=ha, zorder=5)
-                    else:                           # espelho de contatos sob a bobina
-                        x, y = _mm(e.x - 10, e.y + 26)
-                        ax.plot([x, x + 20], [y + 1.2, y + 1.2], color="k", lw=LW * 0.8, zorder=5)
+                        ax.text(x, y, " ".join(xr[e.uuid]), fontsize=F_BOR, color=XR, ha=ha, zorder=5)
+                    else:                           # espelho de contatos sob a bobina, à direita do fio que desce
+                        x, y = _mm(e.x + 5, e.y + 28)
+                        ax.plot([x, x + 16], [y + 1.4, y + 1.4], color="k", lw=LW * 0.8, zorder=5)
                         for k, t in enumerate(xr[e.uuid][:8]):
-                            ax.text(x, y - k * 2.1, t, fontsize=4.0, color=VERDE_XR, zorder=5)
+                            ax.text(x, y - k * 2.6, t, fontsize=F_BOR * 0.9, color=XR, zorder=5)
             for (x, y, w, h, rot) in f.retangulos:
                 (X0, Y0), (X1, Y1) = _mm(x, y), _mm(x + w, y + h)
                 ax.plot([X0, X1, X1, X0, X0], [Y0, Y0, Y1, Y1, Y0], color="0.35", lw=LW, ls=(0, (8, 2, 1, 2)), zorder=1)
@@ -742,11 +822,13 @@ def render_pdf(proj, arq, pdf_extra=None, png_dir=None):
                     ax.text(X1 - 1, Y0 - 1.2, rot, fontsize=5.5, color="0.35", va="top", ha="right", zorder=1)
             for (x, y, t, size, cor) in f.textos:
                 X, Y = _mm(x, y)
-                ax.text(X, Y, t, fontsize=size * S_MM * pt, color=AZUL_EPLAN if cor == "#1f4e8c" else cor, va="baseline", zorder=5)
+                ax.text(X, Y, t, fontsize=size * S_MM * pt, color=AZ if cor == "#1f4e8c" else cor, va="baseline", zorder=5)
+            conferencia.extend(_textos_sobrepostos(fig, ax, f))
             if png_dir and f.n <= 4:
                 fig.savefig(os.path.join(png_dir, f"esquema_folha_{f.n:02d}.png"), dpi=110)
             pdf.savefig(fig)
             plt.close(fig)
+    proj.conferencia_desenho = conferencia
     if pdf_extra:
         from pypdf import PdfWriter, PdfReader
         w = PdfWriter()

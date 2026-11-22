@@ -107,7 +107,7 @@ def construir(ped, res, cod, versao, P_lista=None):
         nb = fa.no(320 + 20 * k, 520 - 10 * k)
         fa.fio(n_.term("n"), nb.term("n"), potencia=True)
         fa.fio(nb.term("n"), nos[(k, 320 + 20 * k)].term("n"), potencia=True)
-    fa.texto(340, 470, "→ barramentos -R2/-S2/-T2 (folhas dos estágios)", 7, "#555555")
+    fa.texto(390, 470, "→ barramentos -R2/-S2/-T2 (folhas dos estágios)", 7, "#555555")
     # relé falta de fase e trafo de comando
     f01 = fa.el("disjonct-m_3f", 520, 160, "-F01", inf("-F01", "10 A"))
     for k in range(3):
@@ -184,7 +184,7 @@ def construir(ped, res, cod, versao, P_lista=None):
     # ------------------------------------------------------------------ controlador
     fc = Q.folio("CFP – controlador BR6000", "COMANDO")
     yL, yN = 40, 600
-    xs_ctrl = sorted({60, 120, 200, 260} | {400 + 60 * i for i in range(n)} | {W_PX - 40})
+    xs_ctrl = sorted({60, 120, 200, 260} | {400 + 60 * i for i in range(min(n, 6))} | {W_PX - 40})
     railL, railN = {}, {}
     for rail, y, nm in ((railL, yL, "L 220 V (-T1)"), (railN, yN, "N 220 V (-T1)")):
         prev = None
@@ -216,16 +216,40 @@ def construir(ped, res, cod, versao, P_lista=None):
     fc.fio(ctrl.term("s", 0), railN[260].term("n") if 260 in railN else railN[200].term("n"), marca="AZ", secao="1,5")
     fc.fio(nh.term("n"), ctrl.term("s", 1), marca="VM", secao="1,5")
     lampadas = []
+    fc2, railN2 = None, {}
+    if n > 6:       # saídas 7–12 numa segunda folha (como o EPLAN: não espreme 12 bobinas numa folha)
+        fc2 = Q.folio("CFP – saídas 7 a 12", "COMANDO")
+        xs_c2 = sorted({60} | {150 + 120 * (i - 6) for i in range(6, n)} | {W_PX - 40})
+        prev = None
+        for x in xs_c2:
+            nd = fc2.no(x, yN, pot="N220")
+            railN2[x] = nd
+            if prev is not None:
+                fc2.fio(prev.term("n"), nd.term("n"), marca="AZ", secao="1,5")
+            prev = nd
+        fc2.texto(8, yN - 4, "N 220 V (-T1)", 8, "#c62828")
     for i in range(n):
         tg = i + 1
-        x = 400 + 60 * i
         out = ctrl.term("s", 2 + i)
-        b = fc.el("thermostat_nc", x, 330, f"-B{tg}", inf(f"-B{tg}", "θ reator"))
-        fc.fio(out, b.term("n"), marca="VM", secao="1,5", num=f"{tg}0", ym=out[2] + 14 + 12 * i)
-        bo = fc.el("bobine3", x, 460, f"-K{tg}", dict(designation=f"Contator estágio {tg}", contato=""))
+        if i < 6:
+            fx, x, rN_ = fc, 400 + 60 * i, railN
+            b = fx.el("thermostat_nc", x, 330, f"-B{tg}", inf(f"-B{tg}"))
+            fx.fio(out, b.term("n"), marca="VM", secao="1,5", num=f"{tg}0", ym=out[2] + 14 + 12 * i)
+        else:
+            fx, x, rN_ = fc2, 150 + 120 * (i - 6), railN2
+            pot_ = f"U1:{tg}"
+            n_a = fc.no(out[1], out[2] + 8, pot=pot_)     # continua na folha seguinte (acima do roteamento das saídas 1–6)
+            fc.fio(out, n_a.term("n"), marca="VM", secao="1,5", num="")
+            if i == n - 1:
+                fc.texto(out[1] + 6, out[2] + 10, f"saídas 7…{n} → /{fc2.n}", 6, "#00a000")
+            n_b = fc2.no(x, 120, pot=pot_)
+            fc2.texto(x + 4, 116, f"saída {tg} do -U1 (/{fc.n})", 6, "#00a000")
+            b = fx.el("thermostat_nc", x, 330, f"-B{tg}", inf(f"-B{tg}"))
+            fx.fio(n_b.term("n"), b.term("n"), marca="VM", secao="1,5", num=f"{tg}0")
+        bo = fx.el("bobine3", x, 460, f"-K{tg}", dict(designation=f"Contator estágio {tg}", contato=""))
         bobinas[tg] = bo
-        fc.fio(b.term("s"), bo.term("n"), marca="VM", secao="1,5", num=f"{tg}1")
-        fc.fio(bo.term("s"), railN[x].term("n"), marca="AZ", secao="1,5")
+        fx.fio(b.term("s"), bo.term("n"), marca="VM", secao="1,5", num=f"{tg}1")
+        fx.fio(bo.term("s"), rN_[x].term("n"), marca="AZ", secao="1,5")
         km = contatos_pot.get(tg)
         if km:
             km.info["contato"] = "1-2/3-4/5-6"
@@ -326,5 +350,7 @@ def gerar(ped, res, pasta, cod, versao, n_banco=1, log=print):
                   secao_pe=_secao_pe(pn["geral_A"]),
                   extra_componentes=[(f"=FILTRO {cod}", Q.titulo, "Porta (placa de identificação do painel)")])
     log(f"   Esquema elétrico (padrão AGCO/EPLAN): {total} folhas – .qet (QElectroTech) + PDF + DXF + planilha")
+    _cf = getattr(Q, "conferencia_desenho", [])
+    log(f"   Conferência do desenho: {len(_cf)} sobreposição(ões) de texto" + (" – " + "; ".join(f"folha {c['folha']}: {c['a']} × {c['b']}" for c in _cf[:5]) if _cf else ""))
     log(f"   Lista DE/PARA: {et['n_fios']} fios, {et['n_etq_fios']} etiquetas de fio, {et['n_componentes']} plaquetas de componente")
     return dict(pdf=arq_pdf, dxf=arq_dxf, xlsx=arq_xlsx, qet=arq_qet, projeto=Q, etq_xlsx=et["xlsx"], etq_pdf=et["pdf"])

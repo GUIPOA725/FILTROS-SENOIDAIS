@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.16.3 – 2026-11-22 (motor de desenho próprio, treinado no EPLAN)
+- Decisão: os esquemas são desenhados pelo MOTOR DA PLATAFORMA (não dependem do QElectroTech instalado); o .qet continua sendo gerado como formato aberto para quem quiser editar no QET.
+- **Estilo aprendido dos PDFs do EPLAN** (`fsen/eplan/estilo.py`, `dados/estilo_eplan.json`): a plataforma mede os PDFs vetoriais exportados do EPLAN (traços, fonte, alturas de texto por função, cores, nº de colunas) e desenha com esses valores. Treinado com os 2 projetos AGCO Ibirubá (35 folhas): traço 0,25 mm (fino 0,13, grosso 0,35), fonte Tahoma, tag 3,11 mm, borne/dados/referência 2,24 mm, seção 1,61 mm, azul/vermelho/verde do EPLAN, 10 colunas. Mais projetos EPLAN lidos = padrão mais firme (`estilo.aprender([pdfs])`).
+- **Conferência automática do desenho** a cada folha: textos sobrepostos e fio passando por cima de texto; o resultado vai para o log ("Conferência do desenho: N sobreposições"). A colocação das seções procura lugar livre ao longo do fio (dos dois lados); sem lugar, a seção vai para uma legenda da folha (e está na DE/PARA).
+- Folha com 10 colunas (como as do EPLAN); nº dos bornes à direita do fio (não ficam sobre o fio); espelho de contatos à direita do fio da bobina.
+- Controlador de 12 saídas: saídas 7–12 numa segunda folha ("CFP – saídas 7 a 12"), com continuação indicada (→ /folha) – antes as 12 bobinas saíam da folha.
+- Filtro senoidal: PE do borne de entrada contornando o banco; descida do PE dos indutores fora da área do banco; nota do banco em duas linhas.
+
 ## v1.16.2 – 2026-11-21 (desenho no padrão gráfico do EPLAN)
 - PDF dos esquemas (três filtros) redesenhado no padrão gráfico dos projetos EPLAN da Electric (AGCO): traço fino uniforme de 0,25 mm; barramentos em azul com ponto de derivação vazado; ponto preto só onde há derivação real (3+ condutores); seção marcada com traço oblíquo e texto vermelho só no último condutor do grupo (sem texto ao longo de cada fio); número do borne junto de cada terminal (1/2, 3/4, 5/6, A1/A2…); tag à ESQUERDA do símbolo em azul, dados embaixo em preto, referência cruzada em verde; neutro em azul, PE em verde; fiação de comando com nota geral de seção e cores (como no EPLAN) em vez de marcar fio a fio; moldura tracejada de local (+PAINEL).
 - **Filtro senoidal: inversor (-U1), cabo blindado de entrada (-W1), cabo blindado de saída (-W2) e motor (-M) desenhados** na folha de força, fora da moldura do painel, com formação do cabo, comprimento, blindagem aterrada 360° e dados do motor; bornes PE de entrada/saída (-X1:PE, -X2:PE) ligados à barra PE. Os elementos externos não entram na DE/PARA nem nas plaquetas (vão na lista de cabos externos).

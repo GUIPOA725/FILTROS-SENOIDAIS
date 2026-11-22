@@ -1,5 +1,5 @@
 {
-  "versao": "1.16.2",
-  "data": "2026-11-21",
-  "resumo": "Desenho dos esquemas no padrão gráfico do EPLAN e filtro senoidal com inversor, cabos blindados e motor desenhados"
+  "versao": "1.16.3",
+  "data": "2026-11-22",
+  "resumo": "Motor de desenho próprio com estilo aprendido dos PDFs do EPLAN, conferência automática do desenho e controlador de 12 saídas em duas folhas"
 }

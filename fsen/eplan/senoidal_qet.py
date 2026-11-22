@@ -127,8 +127,8 @@ def construir(proj, arr, cod, versao):
         for c in range(1, nb):
             fp.fio(caps[c - 1].term("n", k), caps[c].term("n", k), potencia=True, secao=s_jmp, marca="PT", ym=yt - 8 - 5 * (2 - k))
     # barra PE
-    xpe1, xpe2 = 520, 690                     # descidas do PE das massas dos indutores (fora da área do banco)
-    pe_pts = sorted({110, 840, xpe1, 180, 820} | ({xpe2} if lcl else set()))
+    xpe1, xpe2 = 690, 715                     # descidas do PE das massas dos indutores (fora da área do banco)
+    pe_pts = sorted({110, 840, xpe1, 820} | ({xpe2} if lcl else set()))
     prev, nos_pe = None, {}
     for x in pe_pts:
         n_ = fp.no(x, 645, barra="-PE")
@@ -138,13 +138,13 @@ def construir(proj, arr, cod, versao):
         prev = n_
     fp.texto(76, 641, "-PE", 8, "#2e7d32")
     for xr, tg in ((xpe1, "-L1"),) + (((xpe2, "-L2"),) if lcl else ()):
-        nm = fp.no(xr, 410, pe_de=tg)
+        nm = fp.no(xr, 410 if tg == "-L1" else 395, pe_de=tg)
         fp.fio(nm.term("n"), nos_pe[xr].term("n"), marca="VD/AM", secao=s_pe, potencia=True)
-        fp.texto(xr + 4, 406, f"PE massa {tg}", 6, "#2e7d32")
-    fp.fio(x1pe.term("s"), nos_pe[180].term("n"), marca="VD/AM", secao=s_pe, potencia=True)
+        fp.texto(xr + 4, 406 if tg == "-L1" else 391, f"PE massa {tg}", 6, "#2e7d32")
+    fp.fio(x1pe.term("s"), nos_pe[110].term("n"), marca="VD/AM", secao=s_pe, potencia=True, ym=228)
     fp.fio(pe_x2, nos_pe[820].term("n"), marca="VD/AM", secao=s_pe, potencia=True)
-    fp.texto(160, 625, f"Banco: {b.n_total} × {b.uf_unit:g} µF / {b.v_unit:g} V {b.fabricante} ({b.pn}), ligação {lig}, "
-             f"C eq. Y = {b.c_y_uf:g} µF/fase; descarga {b.r_descarga_mohm * 1000:.0f} kΩ em cada capacitor", 6.5, "#555555")
+    fp.texto(160, 620, f"Banco: {b.n_total} × {b.uf_unit:g} µF / {b.v_unit:g} V {b.fabricante} ({b.pn}), ligação {lig}", 6.5, "#555555")
+    fp.texto(160, 630, f"C eq. Y = {b.c_y_uf:g} µF/fase; descarga {b.r_descarga_mohm * 1000:.0f} kΩ em cada capacitor", 6.5, "#555555")
     if proj.amortecimento:
         am = proj.amortecimento
         fp.texto(160, 634, f"Amortecimento: {am.tipo} – R {am.r_ramo_ohm:.2f} Ω {am.p_nominal_w:g} W por ramo (ver memorial)", 6.5, "#c62828")
@@ -210,6 +210,8 @@ def gerar(proj, arr, pasta, cod, versao, log=print):
                   pe_massas=[m for m in massas if m not in ("-L1", "-L2")],
                   secao_pe=_sec(arr.cabos, "terra", "16"),
                   extra_componentes=[(f"=FILTRO {cod}", Q.titulo, "Porta (placa de identificação do painel)")])
+    _cf = getattr(Q, "conferencia_desenho", [])
+    log(f"   Conferência do desenho: {len(_cf)} sobreposição(ões) de texto" + (" – " + "; ".join(f"folha {c['folha']}: {c['a']} × {c['b']}" for c in _cf[:5]) if _cf else ""))
     log(f"   Esquema elétrico (QElectroTech): {len(Q.folios)} folhas – .qet + PDF + DXF; DE/PARA {et['n_fios']} fios, "
         f"{et['n_etq_fios']} etiquetas de fio, {et['n_componentes']} plaquetas")
     return dict(pdf=arq_pdf, dxf=arq_dxf, qet=arq_qet, etq_xlsx=et["xlsx"], etq_pdf=et["pdf"], projeto=Q)

@@ -1,0 +1,46 @@
+{
+ "origem": "2 PDF(s) EPLAN, 35 folhas A3: Filtro AGCO 300kVAr_v3.pdf, Projeto Eletrico_Filtro AGCO 300kVAr_v2_GS.pdf",
+ "folha": "A3 420×297 mm",
+ "colunas": 10,
+ "traco_mm": 0.25,
+ "traco_fino_mm": 0.13,
+ "traco_grosso_mm": 0.35,
+ "fonte": "Tahoma",
+ "alt_tag_mm": 3.11,
+ "alt_borne_mm": 2.24,
+ "alt_secao_mm": 1.61,
+ "alt_titulo_mm": 3.11,
+ "cor_tag": "#0000ff",
+ "cor_barra": "#0000ff",
+ "cor_secao": "#ff0000",
+ "cor_xref": "#00a000",
+ "cor_fio": "#000000",
+ "cor_pe": "#00a000",
+ "cor_neutro": "#0000ff",
+ "amostras": {
+  "tracos": {
+   "0.25": 7134,
+   "0.13": 1154,
+   "0.35": 358,
+   "0.2": 188,
+   "0.18": 112,
+   "0.02": 71
+  },
+  "fontes": {
+   "Tahoma 2.24 mm": 30436,
+   "Tahoma 3.11 mm": 6767,
+   "Tahoma 1.61 mm": 1957,
+   "Tahoma 1.86 mm": 350,
+   "Tahoma 7.45 mm": 248,
+   "Tahoma 6.21 mm": 141
+  },
+  "cores_linhas": {
+   "#000000": 3365,
+   "#0000ff": 3082,
+   "#ff0000": 1687,
+   "#00ff00": 773,
+   "#ff7f00": 118,
+   "#007f7f": 32
+  }
+ }
+}
