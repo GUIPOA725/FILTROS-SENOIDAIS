@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.23.3 – 2026-11-22 (teste de fogo pela tela – Panatlântica com o relatório original)
+- **Bug corrigido**: com o relatório original (banco de 300 kvar em operação durante a medição, FP sem o banco não medido) a leitura dava "25 kvar" – o kvar pelo FP não era calculável e o banco existente era subtraído de zero. Agora é SUBSTITUIÇÃO no mesmo porte (300 kvar) e, com folga Electric, 8 × 50 = 400 kvar (igual ao projeto real).
+- A marca pedida no e-mail ("componentes todos Schneider") é lida pela IA e já vem selecionada em "Marca dos componentes".
+
 ## v1.23.2 – 2026-11-22 (identidade Electric nos 3 filtros – senoidal igualado)
 - Filtro senoidal com o mesmo padrão do banco/sintonizado: **folha de dados + verificação de normas com Check** no mesmo PDF e na mesma pasta (01_Engenharia/5_Normas_Folha_de_Dados, cópia em 02_Cliente) – verificações do dimensionamento (motor NEMA MG1 Pt.30/31 e IEC TS 60034-25, inversor, capacitor IEC 60831/61071, térmico) + painel IEC 61439 (isolação calculada; IP/IK/dielétrico/rotina comprovados no recebimento).
 - Coluna **Check com utilização %** em todas as tabelas de verificação do senoidal: memorial, RESUMO (agora tabela, igual ao banco), planilha BOM (aba Verificações pintada), térmico e modo comum.

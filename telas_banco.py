@@ -108,6 +108,13 @@ def _leitura(tipo, provedor, nome_ia):
         dados.update({k: v for k, v in _fg.items() if v is not None})
         ped, just, lac = LB.decidir(dados)
         ped.acesso_painel = st.session_state.get("bc_acesso", "frontal/traseiro")
+        _mc = str(dados.get("marca_componentes") or "").strip()      # v1.23.3: marca pedida no e-mail vai para o campo
+        if _mc:
+            from fsen import fabricantes as _FB2
+            _ok = next((m for m in _FB2.marcas() if m.lower().split()[0] == _mc.lower().split()[0]), None)
+            if _ok:
+                st.session_state["bc_marca"] = _ok
+                st.session_state["_marca_pend"] = _ok       # aplicado no seletor antes de ele ser desenhado (próxima rodada)
         ped.marca = st.session_state.get("bc_marca", "Padrão Electric")
         IN.aplicar_rede(ped, dados)
         ped.cenarios_rede = dados.get("_cenarios_rede") or []
@@ -156,6 +163,8 @@ def tela_banco(tipo, pasta_saida, provedor=None, nome_ia="IA"):
                 help="Perdendo k estágios o banco ainda entrega o necessário. Automático: 2 a partir de 250 kvar, senão 1.")],
             medido_bt=_c3.checkbox("Medição na BT (somar perdas reativas do trafo)", True, key="bc_mbt"))
         from fsen import fabricantes as _FB
+        if st.session_state.get("_marca_pend"):
+            st.session_state["bc_marca_s"] = st.session_state.pop("_marca_pend")
         st.session_state["bc_marca"] = st.selectbox(
             "Marca dos componentes", _FB.marcas(), key="bc_marca_s",
             help="Fabricante de capacitores, contatoras, fusíveis, controlador, botões e climatização (o reator é sempre Electric). "

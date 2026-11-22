@@ -19,6 +19,7 @@ CAMPOS = {
     "dhtv_pct": "number", "corrente_fundamental_a": "number", "harm_tensao_pct": "object", "harm_corrente_a": "object",
     "harm_corrente_pct": "object", "trafo_kva": "number", "trafo_z_pct": "number", "scc_rede_mva": "number",
     "amb_c": "number", "quantidade": "integer", "modulo_ou_painel": "string", "observacoes": "string",
+    "marca_componentes": "string",
 }
 
 INSTRUCAO = """Você é engenheiro de aplicação de correção de fator de potência e filtros de harmônicas em baixa tensão
@@ -37,6 +38,8 @@ Regras:
 - estagios_kvar: só se o cliente definiu os estágios (lista em kvar, ex. [25, 50, 50]). kvar_existente = banco já instalado.
 - fd_pct ou nr: só se pedido (ex. FD 7 %, 8,16 %, 14 %). ordens: harmônicas a sintonizar se pedidas (ex. [5, 7]).
 - trafo_kva, trafo_z_pct (impedância %), scc_rede_mva (potência de curto na MT) – da placa/unifilar.
+- marca_componentes: se o cliente pedir uma marca para os componentes do painel: "ABB", "Schneider", "Siemens", "WEG" ou
+  "Epcos (TDK)" (o reator é sempre Electric). Omita se não pedir.
 - modulo_ou_painel: "modulo" (cliente já tem painel/contatoras e quer só módulos) ou "painel" (painel completo).
 """
 
@@ -190,18 +193,19 @@ def decidir(dados, tipo_forcado=None):
         kvar = P * (math.tan(math.acos(min(fp1, 0.999))) - math.tan(math.acos(min(fp2, 0.999))))
         j.append(f"kvar pelo FP: P = {P:.0f} kW, FP {fp1:.3f} → {fp2:.2f}: Q = P·(tanφ1 − tanφ2) = {kvar:.0f} kvar.")
     kex = float(dados.get("kvar_existente") or 0)
-    if kex and kvar and kvar <= kex:
+    if kex and kvar <= kex:                       # v1.23.3: inclui kvar não calculável (FP sem banco não medido) → substituição
         # v1.17.1 (teste Panatlântica): a IA traz o MONTANTE TOTAL necessário na barra e o banco existente; quando o total
         # não passa do existente, o projeto é de SUBSTITUIÇÃO (painel novo do mesmo porte) – não subtrair (antes dava 0 → 50 kvar)
         # v1.18.6 (teste de fogo Panatlântica): substituição = MESMO PORTE do existente. O kvar pelo FP com P95 (174 kvar) subestima
         # carga pulsante (solda: 257–292 kvar indutivos na entrada) – o banco em operação é a melhor medida do reativo real.
-        j.append(f"Banco existente de {kex:g} kvar cobre o necessário pelo FP ({kvar:.0f} kvar): painel novo dimensionado para "
-                 f"SUBSTITUIR o existente, no MESMO PORTE ({kex:g} kvar – o banco em operação é o reativo medido da carga) – "
-                 "se for ampliação, informe o kvar adicional.")
+        j.append((f"Banco existente de {kex:g} kvar cobre o necessário pelo FP ({kvar:.0f} kvar)" if kvar else
+                  f"FP sem o banco não medido (o banco de {kex:g} kvar estava em operação na medição)")
+                 + f": painel novo dimensionado para SUBSTITUIR o existente, no MESMO PORTE ({kex:g} kvar – o banco em operação "
+                 "é o reativo medido da carga) – se for ampliação, informe o kvar adicional.")
         kvar = kex
         lac.append("Escopo: substituição do banco existente (premissa) × ampliação – confirmar com o cliente.")
     else:
-        kvar -= kex
+        kvar = max(kvar - kex, 0.0)
     est = [float(x) for x in (dados.get("estagios_kvar") or []) if x]
     if not est and kvar >= 100:
         # v1.17.3: o engenheiro escolhe – "medido" (reativo das medições, como Panatlântica 300 kvar) ou "folga"
