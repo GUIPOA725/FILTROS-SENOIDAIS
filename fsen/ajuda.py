@@ -178,6 +178,7 @@ DICAS = {
     "Projeto (mais recente primeiro)": "Projeto a abrir.",
     "🖥️ Abrir este ponto no PlotXY (ATP + Python) e no ATPDraw": "Gera os arquivos do ponto escolhido para conferir no ATP. "
         "Os programas não são abertos automaticamente – abra-os você.",
+    "🌙 Fundo escuro": "Deixa a tela com fundo escuro. O padrão é fundo branco; a escolha fica lembrada neste computador.",
     "Navegar": "Liga a navegação por pastas para escolher sem digitar o caminho.",
     "Entrar em": "Subpasta para entrar.",
     "…ou unidade": "Troca de unidade/drive (C:, G: …).",
@@ -363,12 +364,98 @@ def novidades(max_chars=900):
         return ""
 
 
+CSS_ESCURO = """<style>
+.stApp, [data-testid="stHeader"] {background:#0e1117 !important; color:#e6e6e6 !important;}
+[data-testid="stSidebar"] > div:first-child {background:#161a23 !important;}
+.stApp p, .stApp span, .stApp label, .stApp li, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp div[data-testid="stMarkdownContainer"],
+[data-testid="stSidebar"] * {color:#e6e6e6 !important;}
+.stApp input, .stApp textarea, .stApp [data-baseweb="select"] > div, .stApp [data-baseweb="input"] > div,
+.stApp [data-testid="stFileUploaderDropzone"], .stApp [data-testid="stExpander"] details {background:#1f2430 !important; color:#e6e6e6 !important; border-color:#3a4150 !important;}
+.stApp [data-baseweb="popover"] *, div[data-testid="stPopoverBody"] {background:#1f2430 !important; color:#e6e6e6 !important;}
+.stApp details summary, .stApp [data-testid="stExpander"] summary {background:#1f2430 !important; color:#e6e6e6 !important;}
+.stApp [data-testid="stAlert"], [data-testid="stSidebar"] [data-testid="stAlert"] {background:#262c38 !important;}
+.stApp [data-testid="stAlert"] * {color:#e6e6e6 !important;}
+.stApp button[kind="secondary"] {background:#262c38 !important; color:#e6e6e6 !important; border-color:#3a4150 !important;}
+</style>"""
+
+
+def _lembrado(chave, padrao=None):
+    try:
+        from seletor import lembrado
+        return lembrado(chave, padrao)
+    except Exception:
+        return padrao
+
+
+def _lembrar(chave, valor):
+    try:
+        from seletor import lembrado, lembrar
+        if lembrado(chave, None) != valor:
+            lembrar(chave, valor)
+    except Exception:
+        pass
+
+
+PACOTES = ("streamlit", "numpy", "scipy", "pandas", "matplotlib", "openpyxl", "python-docx", "ezdxf", "pdfplumber", "pypdf",
+           "cadquery", "ngsolve", "netgen-mesher", "anthropic", "openai", "pywebview", "playwright")
+
+
+def versoes_software():
+    """Programas e bibliotecas que a plataforma usa neste computador, com a versão instalada (para o 'Sobre')."""
+    import platform
+    import shutil
+    import subprocess
+    from importlib import metadata
+    out = [("Plataforma FSEN", _versao_fsen()), ("Python", f"{platform.python_version()} ({platform.architecture()[0]})"),
+           ("Sistema", f"{platform.system()} {platform.release()}")]
+    for p in PACOTES:
+        try:
+            out.append((p, metadata.version(p)))
+        except Exception:
+            out.append((p, "não instalado"))
+    try:
+        exe = shutil.which("claude") or shutil.which("claude.cmd")
+        v = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=15).stdout.strip() if exe else ""
+        out.append(("Claude Code (IA pela assinatura)", v or "não encontrado"))
+    except Exception:
+        out.append(("Claude Code (IA pela assinatura)", "não encontrado"))
+    try:
+        from .atp import achar_tpbig
+        out.append(("ATP (tpbig)", achar_tpbig() or "não encontrado"))
+    except Exception:
+        pass
+    return out
+
+
+def _versao_fsen():
+    try:
+        return json.load(open(os.path.join(RAIZ, "versao_plataforma.json"), encoding="utf-8")).get("versao", "?")
+    except Exception:
+        return "?"
+
+
+def sobre():
+    """Bloco discreto no fim da barra lateral: versões de tudo o que a plataforma usa."""
+    import streamlit as st
+    with st.sidebar.expander("ℹ️ Sobre / versões dos programas"):
+        if "ajuda_versoes" not in st.session_state:
+            st.session_state["ajuda_versoes"] = versoes_software()
+        st.markdown("\n".join(f"- **{n}**: {v}" for n, v in st.session_state["ajuda_versoes"]))
+        st.caption("Python recomendado: 3.12 ou 3.13 (Anaconda). Versões muito novas (ex.: 3.15) às vezes ainda não têm "
+                   "bibliotecas como NGSolve/onnxruntime/pythonnet.")
+
+
 def painel(tipo, contexto=None, provedor=None):
     """Bloco da barra lateral: passo a passo + pergunta ao assistente + explicar o último erro."""
     import streamlit as st
     st.session_state["ajuda_tela"] = tipo
     # v1.18.2: botão grande no TOPO da tela (canto direito) – na barra lateral ficava escondido lá embaixo
-    _, cdir = st.columns([5, 1])
+    _, cesc, cdir = st.columns([8, 2, 2])
+    escuro = cesc.toggle("🌙 Fundo escuro", key="tema_escuro", value=_lembrado("tema_escuro", False),
+                         help="Fundo escuro. O padrão é fundo branco; a escolha fica lembrada neste computador.")
+    _lembrar("tema_escuro", escuro)
+    if escuro:
+        st.markdown(CSS_ESCURO, unsafe_allow_html=True)
     pop = cdir.popover("🛟 Ajuda", use_container_width=True, help="Passo a passo desta tela, novidades da versão e assistente com IA")
     st.sidebar.info("🛟 **Ajuda**: botão no canto superior direito da tela (passo a passo, assistente, explicar erros).")
     with pop:

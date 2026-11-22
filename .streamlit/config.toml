@@ -1,0 +1,13 @@
+# v1.18.3: padrão FUNDO BRANCO (o botão 🌙 no topo da tela escurece, se a pessoa quiser)
+[theme]
+base = "light"
+primaryColor = "#c62828"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f4f6"
+textColor = "#1f2328"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

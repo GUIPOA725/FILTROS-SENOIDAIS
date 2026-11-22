@@ -115,6 +115,7 @@ _AJ.painel(tipo_filtro, dict(tela=pagina, tipo_filtro=tipo_filtro,
                              leitura_banco=st.session_state.get("bc_info"), pedido_banco=st.session_state.get("bc_ped"),
                              pedido_senoidal=st.session_state.get("pedido").__dict__ if hasattr(st.session_state.get("pedido"), "__dict__") else None),
            provedor=_prov)
+_AJ.sobre()   # v1.18.3: versões dos programas usados (discreto, no fim da barra lateral)
 
 
 def form_pedido(p: Pedido) -> Pedido:

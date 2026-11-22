@@ -1,5 +1,5 @@
 {
-  "versao": "1.18.2",
+  "versao": "1.18.3",
   "data": "2026-11-22",
-  "resumo": "Abre como programa (janela própria, sem navegador); botão Ajuda no topo da tela"
+  "resumo": "Fundo branco por padrão com botão para fundo escuro; lista discreta de versões dos programas"
 }

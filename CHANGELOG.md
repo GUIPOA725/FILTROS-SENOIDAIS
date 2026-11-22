@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.18.3 – 2026-11-22 (fundo branco padrão; versões dos programas)
+- **Fundo branco por padrão**; no topo da tela, ao lado da 🛟 Ajuda, a chave **🌙 Fundo escuro** (a escolha fica lembrada no computador).
+- **ℹ️ Sobre / versões dos programas** no fim da barra lateral: versão da plataforma, Python, sistema, bibliotecas (Streamlit, NumPy, SciPy, Matplotlib, ezdxf, NGSolve, CadQuery, pywebview…), Claude Code e ATP encontrados neste computador.
+
 ## v1.18.2 – 2026-11-22 (abre como programa; ajuda visível)
 - **Abre como PROGRAMA, não no navegador**: o ABRIR_FSEN.bat agora abre uma janela própria "FSEN v… – Filtros e Bancos" (janela nativa do Windows via pywebview; se não der, Edge/Chrome em modo aplicativo – sem abas e sem barra de endereço). A janela preta fecha sozinha e, ao fechar a janela do programa, tudo se encerra. Na primeira vez cria o atalho **"FSEN Filtros"** na área de trabalho.
 - **Botão 🛟 Ajuda no canto superior direito** de todas as telas (antes ficava escondido no fim da barra lateral): pergunta ao assistente, explicar erro, passo a passo da tela e novidades da versão.
