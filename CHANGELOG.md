@@ -1,5 +1,14 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.26.1 – 2026-11-22 (reator com folga de segurança e conferido contra reatores reais; módulos padrão de estágio)
+- **Reator de banco/filtro com mais folga (REQ-REA-013)**: indução de projeto 1,30 T (antes 1,45 T) no pico com as harmônicas coincidentes e verificação nova de linearidade – a indutância não pode cair mais de 10 % até 2,5 × a corrente fundamental (critério mais conservador dos fabricantes lidos; análise em gestao/analises/2026-11-22_reatores_fabricantes.md). Panatlântica 50 kvar 415 V: 53 → 59 kg, 260 W, elevação 41 K.
+- **Reator × reatores reais (REQ-REA-015)**: tabela nova no RESUMO comparando o reator projetado com o Cootrans instalado e com folha de dados de fabricante (dados/reatores_referencia.yaml), com Check. Critério: massa levada ao porte do projeto por (L·I²)^0,75; aprovado entre −15 % e +40 % do reator real.
+- **Módulos padrão de estágio (REQ-BCO-003)**: 12,5 – 25 – 50 – 75 – 100 kvar (25 e 50 por preferência; 100 kvar quando 50 passaria de 12 estágios). Estágio exigido pelo cliente fora do padrão é aceito, com aviso (REQ-GER-013). Corrigido: 600 kvar saía com 575.
+- **FD 8,16 % é o padrão (REQ-BCO-002)**: a IA não lista mais o FD como lacuna nem sugere 7 %.
+- **Verificação nova**: potência efetiva × pedida do estágio (±8 %) com Check – antes era só um aviso.
+- **Assistente IA**: a resposta do operador às perguntas agora é aplicada (antes só entendia "continuar"); "com folga Electric" escrito no pedido vale como a opção da tela.
+- **Ainda NÃO resolvido (REQ-BCO-004)**: banco com estágios de potências diferentes (ex.: 25 + 50 kvar) – proteção, lista e 2D/3D ainda usam o primeiro estágio para todos; a conferência cruzada reprova. Usar estágios iguais até a correção.
+
 ## v1.26.0 – 2026-11-22 (assistente que executa, memória no Drive, código protegido, biblioteca de componentes da equipe)
 - **🤖 Assistente IA – pergunta ou manda fazer (REQ-IA-010)**: novo item no menu. O operador escreve como num chat, por exemplo "faça um banco sintonizado com os dados da pasta … e salve em …". A plataforma lê a pasta, monta o pedido, roda o projeto inteiro pelo mesmo caminho das telas e informa a pasta do resultado.
   - Decisão que é do operador (pasta que falta, dado que o cliente não informou, tipo de filtro) vira pergunta, e o assistente espera a resposta.

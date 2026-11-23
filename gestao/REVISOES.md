@@ -127,3 +127,19 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-REA-012, REQ-REA-013, REQ-REA-014, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
 - Decisão: pode publicar
+
+## Revisão – v1.26.0 – 2026-11-22 23:44
+- Requisitos: 127 | APROVADO 78 | ATENÇÃO 31 | REPROVADO 18
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261122_2335
+- Mudanças: REQ-REA-013 MELHOROU (REPROVADO→ATENÇÃO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-REA-012, REQ-REA-014, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.26.1 – 2026-11-22 23:45
+- Requisitos: 127 | APROVADO 78 | ATENÇÃO 31 | REPROVADO 18
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261122_2335
+- Mudanças: nenhuma
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-REA-012, REQ-REA-014, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
