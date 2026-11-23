@@ -278,3 +278,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 07:52
 "Apaga a aew resultados e roda novamente"
 → rodar de novo a Panatlântica pela plataforma local (v1.26.3). Exclusão: confirmar com ele QUAIS resultados ("aew" pode ser "aí os" = Panatlântica v1.26.1, ou o cliente A & W) antes de apagar.
+
+### 23/11 08:07
+"A&w pronta?"
+→ ERRO MEU: "aew" das 07:52 era A&W (cliente do filtro senoidal), não Panatlântica. Corrigir: rodar a A&W pela plataforma local v1.26.3 e apagar os resultados antigos da A&W (confirmar se as pastas Indutor_Cootrans_v* entram).
