@@ -92,4 +92,4 @@ referencias:
     - "Power Magnetics ('Docta Reacta'): em filtros sintonizados os fabricantes preferem 3 reatores MONOFÁSICOS a 1 trifásico (durabilidade/BIL, reserva no painel) – confirma a construção Pirelli (monofásico 2 colunas)."
     - "Ainda não lidos: 'Understanding MV Harmonic Filter Reactors' (PMI), IEEE 1531-2003, 'dimensionamento cabos filtros harmonicas nepsi.pdf', pasta 'WEB nepsi - estudos e casos', McLyman (projeto de indutores), 'Comparison of ACR and ICR', catálogos Epcos/Schneider PB Guide/ABB."
   requisitos: [REQ-REF-008, REQ-REA-012, REQ-REA-011]
-  usada_em: "critério de indução/linearidade do reator (a implementar)"
+  usada_em: "gestao/analises/2026-11-22_reatores_fabricantes.md (comparação fabricantes × plataforma; propostas a aprovar)"
