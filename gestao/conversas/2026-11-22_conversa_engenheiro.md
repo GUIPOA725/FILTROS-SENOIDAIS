@@ -260,3 +260,9 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 00:51 (2)
 "Pode apagar as pastas"
 → apagar os seis testes superados em PROJETOS\\Panatlântica (22:32 e os cinco de 22/11: 1215, 1308, 1353 ABB, 1413, 1519) com os .zip; manter _Schneider_20261122_2353 e _ABB_20261123_0009.
+
+### 23/11 00:54
+"Se buscar no drive clientes tipo agco panatlantica e outros de filtros com cvi plasbil e outros , vc vai ver fotos de câmera térmica e pode ter uma ideia de onde vai a temperatura nos indutores na prática, tem da alcast TB, tem bastante foto térmica para sua análise"
+→ REQ-REF-009.
+
+(00:56) Apagados de PROJETOS\\Panatlântica, com autorização das 00:51: pastas _1215, _1308, _1413, ABB_1353, _1519, _2232 e os seis .zip. Ficaram _Schneider_20261122_2353 e _ABB_20261123_0009 com os .zip.
