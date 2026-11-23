@@ -240,3 +240,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 00:05
 "Me manda aqui os relatórios consolidados quando fechar"
 → enviar no chat os relatórios consolidados (Schneider e ABB) do teste real da v1.26.1.
+
+### 23/11 00:29
+"Vc acha que o fabricante é uma boa receber uma especificação tão detalhada do indutor?"
+→ pergunta sobre o nível de detalhe da ET do reator enviada ao fabricante (resposta no chat; decisão dele pendente).
