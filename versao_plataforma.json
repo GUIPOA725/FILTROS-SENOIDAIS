@@ -1,5 +1,5 @@
 {
-  "versao": "1.26.1",
-  "data": "2026-11-22",
-  "resumo": "Reator com folga de segurança (1,30 T e linearidade até 2,5 × a fundamental) e comparação com reatores reais (Cootrans/TDK); módulos padrão 12,5/25/50/75/100 kvar; FD 8,16 % como padrão também para a IA; Assistente aplica a resposta do operador"
+  "versao": "1.26.2",
+  "data": "2026-11-23",
+  "resumo": "Banco/sintonizado: ao fabricante do reator vai a especificação de desempenho completa (linearidade, indução, elevação, perdas, envelope, ensaios); o projeto detalhado fica em pasta interna de conferência"
 }

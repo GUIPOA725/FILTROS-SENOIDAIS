@@ -285,7 +285,7 @@ def _resumo_resultado(r, filtro):
         if cons:
             lin.append(f"📄 Relatório consolidado: `{cons[0]}`")
         res = open(os.path.join(pasta, "RESUMO.md"), encoding="utf-8").read()
-        nrep, nat = res.count("REPROVADO"), res.count("ATENÇÃO")
+        nrep, nat = res.count("✖ REPROVADO"), res.count("⚠ ATENÇÃO")     # v1.26.2: só as linhas com Check (antes contava as legendas)
         lin.append(f"Verificações no RESUMO: **{nrep} reprovada(s)**, {nat} em atenção." + (" ⚠️ Veja o RESUMO.md antes de enviar a alguém." if nrep else ""))
     except OSError:
         pass

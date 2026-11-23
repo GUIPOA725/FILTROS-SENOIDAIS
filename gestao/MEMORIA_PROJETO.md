@@ -31,7 +31,7 @@ com o engenheiro; componente novo só vale para todos depois da aprovação dele
 Todo resultado tem coluna **Check**: ✔ APROVADO, ⚠ ATENÇÃO (perto do limite ou a confirmar), ✖ REPROVADO, INFO. A planilha
 Conferencia_Esquema_x_Painel_x_Lista confere esquema elétrico × painel 2D/3D × lista de material: tem que dar zero reprovado.
 
-_Gerado em 22/11/2026 23:45 – plataforma v1.26.1 – 127 requisitos registrados._
+_Gerado em 23/11/2026 00:44 – plataforma v1.26.2 – 128 requisitos registrados._
 
 ## Regras e decisões do engenheiro (registro de requisitos – palavras dele)
 Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
@@ -156,6 +156,9 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 - REQ-REL-007 [ATENDIDO] E-mails/ETs aos fornecedores com contatos reais e o 'por quê' de cada pedido (Cootrans – Geraldo; IFG – André; Stampgraf – Thiago; IBT; Wise); protótipo e série cotados separados.
 - REQ-REL-008 [ATENDIDO] Relatório de Auditoria interno (entradas, origem de cada dado, verificações, rastreabilidade SHA-256, parecer do auditor).
 
+### RELATORIOS
+- REQ-REL-009 [ATENDIDO] Especificação do indutor para o fabricante: no FILTRO SENOIDAL deve ser MUITO detalhada. No dessintonizado/sintonizado: separar o que vai PARA O FABRICANTE (especificação de desempenho) do projeto detalhado, que fica INTERNO como conferência – mas a especificação tem que ser um BOM detalhamento, não somente indutância e corrente. — nota: critérios da plataforma a confirmar pelo engenheiro: elevação 80 K (classe F), envelope +5 %, massa −15 %
+
 ### SEGURANCA
 - REQ-SEG-001 ! [ATENDIDO] Nunca digitar senhas/credenciais; a chave da API é digitada pelo usuário e salva só em %USERPROFILE%\.fsen.
 - REQ-SEG-002 ! [ATENDIDO] "Não quero que use robô para simulação via ATPDraw" – não abrir ATPDraw/PlotXY automaticamente.
@@ -210,10 +213,10 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 - **Drive pessoal do engenheiro (guilando@gmail.com) – literatura em inglês sobre reatores de núcleo de ferro para bancos dessintonizados/filtros (NEPSI, Mangoldt, Power Magnetics, IEEE 1531, McLyman)**: NEPSI LV-AFB (1999, 'nepsi reator.pdf'): reator trifásico núcleo de ferro a seco, cobre, isolação 220 °C; NÃO satura abaixo de 250 % da corrente fundamental do banco; indução de PICO < 1,2–1,4 T supondo os picos das harmônicas 100 % coincidentes; capacitor esc | Mangoldt (HvM Ironcore Reactors 2011): critério de projeto BT – tolerância de L ±3 %; I1 = 1,10·Icn; distorção assumida U3 0,5 %, U5 6 %, U7 5 %, U11 = U13 3,5 % (THD 8 %); Ith = 1,0·Irms; limite de LINEARIDADE do núcleo I_lin = k·Icn com k função do FD (manob | Power Magnetics ('Docta Reacta'): em filtros sintonizados os fabricantes preferem 3 reatores MONOFÁSICOS a 1 trifásico (durabilidade/BIL, reserva no painel) – confirma a construção Pirelli (monofásico 2 colunas).
 
 ## Últimas versões (resumo do CHANGELOG)
+- **v1.26.2 – 2026-11-23 (especificação do reator: desempenho para o fabricante, projeto detalhado interno)**: Reator de banco dessintonizado e de filtro sintonizado (REQ-REL-009): a pasta 03_Fornecedores passa a ter só a especificação de DESEMPENHO e o e-mail. Especificação mais completa: linearidade (L ≥ 90 % até 2,5 × a fundamental; tolerância até 1,5 × a corrente de projeto), indução de pico ≤ 1,30 T pela Filtro senoidal: sem mudança – continua com o pacote detalhado (decisão do engenheiro). Assistente IA: a contagem de "reprovadas" da mensagem final contava as legendas (dizia 4 quando havia 1) – corrigida.
 - **v1.26.1 – 2026-11-22 (reator com folga de segurança e conferido contra reatores reais; módulos padrão de estágio)**: Reator de banco/filtro com mais folga (REQ-REA-013): indução de projeto 1,30 T (antes 1,45 T) no pico com as harmônicas coincidentes e verificação nov Reator × reatores reais (REQ-REA-015): tabela nova no RESUMO comparando o reator projetado com o Cootrans instalado e com folha de dados de fabricante Módulos padrão de estágio (REQ-BCO-003): 12,5 – 25 – 50 – 75 – 100 kvar (25 e 50 por preferência; 100 kvar quando 50 passaria de 12 estágios). Estágio FD 8,16 % é o padrão (REQ-BCO-002): a IA não lista mais o FD como lacuna nem sugere 7 %.
 - **v1.26.0 – 2026-11-22 (assistente que executa, memória no Drive, código protegido, biblioteca de componentes da equipe)**: 🤖 Assistente IA – pergunta ou manda fazer (REQ-IA-010): novo item no menu. O operador escreve como num chat, por exemplo "faça um banco sintonizado co Decisão que é do operador (pasta que falta, dado que o cliente não informou, tipo de filtro) vira pergunta, e o assistente espera a resposta. Sem IA configurada no computador, o comando ainda funciona por regras, desde que o texto traga o tipo de filtro e os caminhos. Limites: só roda o que a plataforma já faz. Não altera código, não apaga, não instala e não digita senha.
 - **v1.25.3 – 2026-11-22 (capacitores menores, trafo de comando Rasatronic/Wise)**: Capacitores menores (REQ-CMP-004): a escolha passa a preferir unidades de cerca de 25 kvar, 3 ou 4 por estágio, em todas as marcas – capacitor grande  Trafo de comando (REQ-CMP-005): fornecedor Rasatronic ou Wise, transformador isolador monofásico IP-00 sob encomenda, com a potência calculada pela ca
-- **v1.25.2 – 2026-11-22 (componentes reais de catálogo, cabos naturais, aterramento, campo do reator na montagem)**: Componentes reais (REQ-CMP-002/003): códigos, medidas e status conferidos nos sites ABB e Schneider (22/11/2026). Erros corrigidos: ABB: capacitor CLMD43 (caixa metálica, fabricado no Brasil) 60525025000BR, 275 × 180 (266 com abas) × 152 mm, 50 mm entre unidades; o banco ABB passa a usar 1 × CLMD63 75 kvar (60525075000BR) por estágio, que ocupa menos placa; ABB: contatora AF52-30-00-13 (a AF50 foi substituída), 55 × 125,5 × 111 mm; seccionadora OS160GD03 (1SCA114221R1001), 147 × 140 × 130 mm;
 
 ## Histórico literal
 As conversas completas do engenheiro com a IA estão em gestao/conversas/ (no programa e no Drive em ATUALIZACOES-MELHORIAS\GESTAO\conversas). Consulte lá quando precisar da frase exata.

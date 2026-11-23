@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.26.2 – 2026-11-23 (especificação do reator: desempenho para o fabricante, projeto detalhado interno)
+- **Reator de banco dessintonizado e de filtro sintonizado (REQ-REL-009)**: a pasta 03_Fornecedores passa a ter só a especificação de DESEMPENHO e o e-mail. Memorial, projeto de referência, desenho 2D e modelo 3D do reator vão para 01_Engenharia › …_Elementos_Finitos › Projeto_interno_conferencia_NAO_ENVIAR (servem para conferir a proposta).
+- **Especificação mais completa**: linearidade (L ≥ 90 % até 2,5 × a fundamental; tolerância até 1,5 × a corrente de projeto), indução de pico ≤ 1,30 T pela soma aritmética das harmônicas, elevação máxima (classe F: 80 K em ar a 50 °C), perdas totais máximas, envelope dimensional e massa esperada (proposta > 15 % mais leve deve ser justificada), construção e ensaios adicionais (L em três correntes, aquecimento na primeira peça). Saiu o parágrafo com chapa, coluna e espiras.
+- **Filtro senoidal**: sem mudança – continua com o pacote detalhado (decisão do engenheiro).
+- **Assistente IA**: a contagem de "reprovadas" da mensagem final contava as legendas (dizia 4 quando havia 1) – corrigida.
+
 ## v1.26.1 – 2026-11-22 (reator com folga de segurança e conferido contra reatores reais; módulos padrão de estágio)
 - **Reator de banco/filtro com mais folga (REQ-REA-013)**: indução de projeto 1,30 T (antes 1,45 T) no pico com as harmônicas coincidentes e verificação nova de linearidade – a indutância não pode cair mais de 10 % até 2,5 × a corrente fundamental (critério mais conservador dos fabricantes lidos; análise em gestao/analises/2026-11-22_reatores_fabricantes.md). Panatlântica 50 kvar 415 V: 53 → 59 kg, 260 W, elevação 41 K.
 - **Reator × reatores reais (REQ-REA-015)**: tabela nova no RESUMO comparando o reator projetado com o Cootrans instalado e com folha de dados de fabricante (dados/reatores_referencia.yaml), com Check. Critério: massa levada ao porte do projeto por (L·I²)^0,75; aprovado entre −15 % e +40 % do reator real.
