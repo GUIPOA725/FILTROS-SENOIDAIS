@@ -256,3 +256,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 00:51
 "Para os filtros sintonizados e dessintonziado sempre usei classe f cootrans. Classe f ou h diminui a temperatura ou só suporta mais?"
 → REQ-REA-016.
+
+### 23/11 00:51 (2)
+"Pode apagar as pastas"
+→ apagar os seis testes superados em PROJETOS\\Panatlântica (22:32 e os cinco de 22/11: 1215, 1308, 1353 ABB, 1413, 1519) com os .zip; manter _Schneider_20261122_2353 e _ABB_20261123_0009.
