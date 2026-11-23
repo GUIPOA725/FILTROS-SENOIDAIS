@@ -141,3 +141,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 21:57
 "Usa 400 kvar para comparar com o projeto original da panatlantica"
 → REQ-REF-007.
+
+### 21:57 (2)
+"Os outros vc segue o fluxo da plataforma"
+→ REQ-REF-007 (só o montante de 400 kvar é fixado; o resto é o padrão da plataforma).
