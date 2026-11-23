@@ -157,3 +157,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:00 (2)
 "Não precisa perder tempo com ela"
 → rodada de 7 % interrompida; nova rodada 400 kvar pelo fluxo padrão (FD 8,16 %).
+
+### 22:13
+"Na panatlantica são somente reatores se 50kvar, mas aceitoa opções diferentes são os padrão que uso 25kvar e 50kvar"
+→ REQ-BCO-003.
