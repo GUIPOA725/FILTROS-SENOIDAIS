@@ -45,6 +45,11 @@ LARGURA_REATOR_MAX_MM = 315.0      # (800 − 80 placa − 3 × 30 folgas) / 2 �
 P_W_POR_KVAR = 6.0                 # teto de perdas do reator (W/kvar efetivo) – catálogos de reatores dessintonizados
 P_W_POR_KVAR_SINT = 10.0           # sintonizado: corrente ≈ 1,8–2,5 × I60 com a harmônica sintonizada a 300 Hz (FQ ≥ 60 na fundamental)
 R_POR_KVAR_CAP = 45.0              # R$/kvar (ESTIMATIVA – confirmar com fornecedor)
+# REQ-REA-013 (engenheiro, 22/11/2026: "nunca no limite, boa folga, nem que fique um pouco maior") – critério mais conservador
+# dos fabricantes lidos (gestao/analises/2026-11-22_reatores_fabricantes.md): indução de pico ≤ 1,2–1,4 T com os picos das
+# harmônicas coincidentes e núcleo sem saturar (perda de L < 10 %) até 2,5 × a corrente fundamental (NEPSI; TDK ≈ 2,36 ×).
+B_PROJ_REATOR_T = 1.30
+K_LIN_FUND = 2.5
 LIM_CAP = dict(V_pico=1.20, V_rms=1.10, I_rms=1.35, kvar=1.35)   # IEEE 18 / planilha PTW "LIMITES BANCO CAPACITORES"
 
 
@@ -280,6 +285,7 @@ def requisitos_reator(ped, e):
                Vdc=math.sqrt(2) * ped.tensao_v * 1.1, classe=ped.classe,
                P_max=(P_W_POR_KVAR_SINT if ped.tipo == "sintonizado" else P_W_POR_KVAR) * e["Q_kvar"], k_Pmax=0.88,
                aplicacao=("reator de banco dessintonizado" if ped.tipo == "dessintonizado" else f"reator de filtro sintonizado ({e['ordem']:g}ª)"),
+               B_proj_T=B_PROJ_REATOR_T, Ilin=math.sqrt(2) * K_LIN_FUND * e["I60"],     # v1.26.1 (REQ-REA-013)
                linearidade=lin, tol_L_pct=ped.tol_l_pct, I_electric=I_el, I_fisica=I_fis, k_corrente=k, I_ajuste=e["I60"],
                V_ajuste_fase=e["V_ajuste_fase"], fq=e["fq"],
                L_env_max_mm=LARGURA_REATOR_MAX_MM)       # v1.24.3: 2 reatores lado a lado na coluna de 800 mm (Cootrans Panatlântica)

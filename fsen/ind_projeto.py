@@ -252,7 +252,7 @@ def pre_dimensionar(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev
     T = 40 + alvo
     rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
-    Bsat_d = 1.45
+    Bsat_d = float(r.get("B_proj_T") or 1.45)            # v1.26.1 (REQ-REA-013): reator de banco/filtro projeta com 1,30 T
     c = 15e-3
     melhor = None
     if fixo:
@@ -406,7 +406,7 @@ def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=Non
     T = 40 + alvo
     rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
-    Bsat_d, c = 1.45, 15e-3
+    Bsat_d, c = float(r.get("B_proj_T") or 1.45), 15e-3  # v1.26.1 (REQ-REA-013)
     iso, tcam = FIO_ISO_MM * 1e-3, FIO_T_CAM_MM * 1e-3
     Jmin, Jmax = (0.8e6, 3.0e6) if cond_id == "AL" else (1.2e6, 4.5e6)     # densidade de corrente admissível (A/m²)
     combos = [(t * 1e-3, h * 1e-3, npar, nd) for t in FIO_T_MM for h in FIO_H_MM if 1.4 <= h / t <= 8.0
@@ -885,7 +885,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     d["Lmat"] = Lm
     # ------------------------------------------------ 3) saturação: L aparente em Ipk, Isat e sobrecarga (não-linear)
     sat = []
-    for nome, I in (("Pico em operação", r["Ipk"]), ("Isat (exigido ≥ 90 %)", r["Isat"]), (("Sobrecarga 2,2×I1 (exigido ≥ 70 %)" if r.get("aplicacao") else "Sobrecarga 1,5×I inversor (exigido ≥ 70 %)"), r["Iovl"])):
+    for nome, I in (("Pico em operação", r["Ipk"]), ("Isat (exigido ≥ 90 %)", r["Isat"]), (("Sobrecarga 2,2×I1 (exigido ≥ 70 %)" if r.get("aplicacao") else "Sobrecarga 1,5×I inversor (exigido ≥ 70 %)"), r["Iovl"])) + (
+            (("Linearidade 2,5 × I fundamental (NEPSI – exigido ≥ 90 %)", r["Ilin"]),) if r.get("Ilin") else ()):
         Mn = modelo(d, gaps, ng)
         A = Mn.resolver([I, -I / 2, -I / 2])
         lam = Mn.lambda_fases(A) * d["b"]
@@ -903,6 +904,10 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         if nome.startswith("Pico"):
             d["campo_pico"] = (Mn, A)
     d["saturacao"] = sat
+    for s_ in sat:                                           # v1.26.1 (REQ-REA-013): folga de segurança contra saturação
+        if s_["caso"].startswith("Linearidade") and s_["L_lat_pct"] < 90.0:
+            d.setdefault("avisos", []).append(f"Linearidade: em 2,5 × a corrente fundamental ({s_['I']:.0f} A de pico) a indutância cai para "
+                                              f"{s_['L_lat_pct']:.0f} % (critério NEPSI ≥ 90 %) – aumentar o núcleo.")
     # ------------------------------------------------ 4) perdas: núcleo (por elemento), enrolamento (CC + CA + espraiamento)
     Mn, A = d["campo_pico"]
     Bpk_el = np.zeros(int(Mn.ferro.sum()))
