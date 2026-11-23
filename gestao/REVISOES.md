@@ -236,3 +236,16 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
   única nem com paralelos. Antes saía APROVADO. Decisão do engenheiro pendente: classe H com o cliente, indutor maior ou outra construção.
 - Em aberto: os modelos térmicos do indutor divergem (projeto 89 °C × avançado 153 °C na A&W; 120 × 132 °C no reator de 50 kvar) – calibrar
   com termografia/ensaio; composição da corrente de projeto do reator (espectro do local × k) e folga de 10 K a confirmar com o engenheiro.
+
+## Revisão – v1.27.0 – 2026-11-23 10:54
+- Requisitos: 138 | APROVADO 84 | ATENÇÃO 35 | REPROVADO 19
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261123_1039
+- Mudanças: REQ-GER-016 MELHOROU (REPROVADO→ATENÇÃO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+### Análise da revisão v1.27.0 (23/11/2026) – nível de maturidade dos projetos (REQ-GER-016)
+- Verificador com o projeto de teste do banco (BCD-FD8,16-400kvar-415V_ABB_20261123_1039): "pode publicar", nenhum crítico regredido.
+- O teste saiu no nível 1 (2 reprovados reais: borne da contatora × cabo, arco elétrico) – comportamento esperado; pasta 06_Evidencias,
+  maturidade.json e bloco no RESUMO gerados. A tela da Biblioteca (lista + perguntas) só foi conferida por sintaxe aqui – testar no notebook.
