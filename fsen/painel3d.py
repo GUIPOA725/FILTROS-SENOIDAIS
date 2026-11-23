@@ -34,9 +34,19 @@ CHAPA = 3             # mm (placa de montagem)
 # ----------------------------------------------------------------------------------------------- catálogo de medidas
 def catalogo_dim():
     try:
-        return yaml.safe_load(open(os.path.join(RAIZ, "dados", "dimensoes_componentes.yaml"), encoding="utf-8")) or {}
+        cat = yaml.safe_load(open(os.path.join(RAIZ, "dados", "dimensoes_componentes.yaml"), encoding="utf-8")) or {}
     except Exception:
-        return {}
+        cat = {}
+    try:                                                         # v1.26.0: + biblioteca compartilhada do Drive (REQ-CMP-006)
+        from . import biblioteca_componentes as BC
+        for g, tab in BC.catalogo_extra().items():
+            cat.setdefault(g, {})
+            if isinstance(cat[g], dict):
+                for k, v in tab.items():
+                    cat[g].setdefault(k, v)                      # o catálogo da plataforma tem prioridade
+    except Exception:
+        pass
+    return cat
 
 
 def achar_dim(codigo, grupo):
@@ -431,6 +441,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
     for nome, x in (("capacitor", capd), ("contatora", ctt), ("seccionadora-fusível", sec), ("reator (FEM)", rL)):
         if not x:
             faltam.append(nome)
+        elif isinstance(x, dict) and x.get("biblioteca") and x.get("conferir"):
+            faltam.append(f"{nome} {x.get('nome', '')} (biblioteca do Drive – A CONFERIR pelo engenheiro)")
     cd = capd or dict(D=116, A=291, terminal=45)
     sd = sec or dict(L=106, A=194, P=80)
     kd = ctt or dict(L=70, A=110, P=108)
@@ -658,6 +670,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             except Exception:
                 _cr = ""
             _comando(p, xu0 + 260, xu1, yf, z_topo, faltam, _cr)
+            if len(cols) == 1:                                    # painel de 1 coluna: a régua -X1 fica na mesma zona de comando
+                _bornes(p, xu0 + 270, xu1 - 170, yf, z_topo + 35, faltam)
         else:
             _bornes(p, xu0, xu1, yf, z_topo + H_TOPO * 0.4, faltam)
         _ncaps_tot += len(caps_pos)

@@ -18,7 +18,7 @@ except Exception:
     _v_disco = "?"
 if os.environ.get("FSEN_VER_CARREGADA") != _v_disco:
     for _m in list(sys.modules):
-        if _m in ("telas_ajuste", "telas_conferencia", "fsen") or _m.startswith("fsen."):
+        if _m in ("telas_ajuste", "telas_conferencia", "telas_ia", "telas_banco", "fsen") or _m.startswith("fsen."):
             del sys.modules[_m]
     os.environ["FSEN_VER_CARREGADA"] = _v_disco
 
@@ -45,9 +45,17 @@ TIPOS_FILTRO = {"senoidal": "Filtro senoidal (saída de inversor)", "dessintoniz
 tipo_filtro = st.sidebar.selectbox("Tipo de filtro", list(TIPOS_FILTRO), format_func=TIPOS_FILTRO.get, key="tipo_filtro",
                                    help="v1.13.0: o mesmo motor de projeto do reator (elementos finitos, 3D, térmico, desenhos, CAD) "
                                         "serve aos três tipos. O filtro senoidal continua exatamente como antes.")
-pagina = st.sidebar.radio("Menu", ["Nova solicitação", "Ajuste manual e ressimulação", "Conferir proposta de fornecedor",
-                                   "Critérios de projeto", "Histórico e clientes",
-                                   "Catálogo e preços", "Melhorias / atualizações"])
+pagina = st.sidebar.radio("Menu", ["Nova solicitação", "🤖 Assistente IA (perguntar ou mandar fazer)", "Ajuste manual e ressimulação",
+                                   "Conferir proposta de fornecedor", "Critérios de projeto", "Histórico e clientes",
+                                   "Catálogo e preços", "📚 Biblioteca de componentes (equipe)", "Melhorias / atualizações"],
+                          help="🤖 Assistente IA: escreva a dúvida ou mande fazer o projeto a partir de uma pasta. 📚 Biblioteca: componentes "
+                               "cadastrados pela equipe no Drive (pesquise antes de criar).")
+try:                                                   # v1.26.0: só o engenheiro edita o código; aviso de versão nova no Drive (REQ-GER-012)
+    from fsen import protecao as _PROT
+    _PROT.tela(st)
+except Exception as _ex_prot:
+    if type(_ex_prot).__name__ in ("StopException", "RerunException"):
+        raise
 from seletor import seletor_pasta
 with st.sidebar.expander("📂 Pasta de saída (PROJETOS)", expanded=False):
     pasta_saida = seletor_pasta("Pasta onde ficam os projetos", "pasta_saida",
@@ -120,6 +128,17 @@ _AJ.painel(tipo_filtro, dict(tela=pagina, tipo_filtro=tipo_filtro,
                              pedido_senoidal=st.session_state.get("pedido").__dict__ if hasattr(st.session_state.get("pedido"), "__dict__") else None),
            provedor=_prov)
 _AJ.sobre()   # v1.18.3: versões dos programas usados (discreto, no fim da barra lateral)
+
+if pagina.startswith("🤖"):                             # v1.26.0: assistente que responde E executa (REQ-IA-010)
+    from telas_ia import tela_assistente
+    tela_assistente(tipo_filtro, pasta_saida, provedor=_prov,
+                    contexto=dict(tela=pagina, tipo_filtro=tipo_filtro, leitura_banco=st.session_state.get("bc_info"),
+                                  pedido_banco=st.session_state.get("bc_ped")))
+    st.stop()
+if pagina.startswith("📚"):                             # v1.26.0: biblioteca compartilhada de componentes (REQ-CMP-006)
+    from telas_ia import tela_biblioteca
+    tela_biblioteca()
+    st.stop()
 
 
 def form_pedido(p: Pedido) -> Pedido:

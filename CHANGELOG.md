@@ -1,5 +1,23 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.26.0 – 2026-11-22 (assistente que executa, memória no Drive, código protegido, biblioteca de componentes da equipe)
+- **🤖 Assistente IA – pergunta ou manda fazer (REQ-IA-010)**: novo item no menu. O operador escreve como num chat, por exemplo "faça um banco sintonizado com os dados da pasta … e salve em …". A plataforma lê a pasta, monta o pedido, roda o projeto inteiro pelo mesmo caminho das telas e informa a pasta do resultado.
+  - Decisão que é do operador (pasta que falta, dado que o cliente não informou, tipo de filtro) vira pergunta, e o assistente espera a resposta.
+  - Sem IA configurada no computador, o comando ainda funciona por regras, desde que o texto traga o tipo de filtro e os caminhos.
+  - Limites: só roda o que a plataforma já faz. Não altera código, não apaga, não instala e não digita senha.
+- **Memória do projeto (REQ-IA-012)**: gestao/MEMORIA_PROJETO.md, um texto leve com o que é a plataforma, as regras e decisões do engenheiro (todos os requisitos), as lições dos projetos de referência e as últimas versões. É gerado a cada publicação e copiado para o Drive em MEMORIA_IA. O assistente lê esse texto a cada pergunta, então já conhece o histórico no computador de qualquer colega.
+- **Registro de uso no Drive**: toda pergunta, comando, execução e erro vai para MEMORIA_IA\uso, um arquivo por pessoa e por mês. As dúvidas recentes da equipe entram no contexto do assistente.
+- **Código protegido (REQ-GER-012)**: só o engenheiro edita.
+  - A plataforma confere os arquivos de programa contra o manifesto da versão publicada.
+  - Arquivo alterado por quem não está autorizado: tela de bloqueio, som no alto-falante, arquivo oficial restaurado do Drive e tentativa registrada.
+  - Autorização: arquivo PROGRAMAS\autorizados_edicao.txt no Drive.
+  - Com a plataforma aberta, aparece o aviso quando há versão nova no Drive. A atualização em si continua sendo feita a cada abertura pelo atalho.
+- **📚 Biblioteca de componentes da equipe (REQ-CMP-006)**: novo item no menu, com as fichas no Drive em BIBLIOTECA_COMPONENTES.
+  - Pesquisa no catálogo da plataforma, na biblioteca, nas pastas de PROJETOS e nos painéis aprovados antes de criar algo novo.
+  - Componente novo exige código e fonte do catálogo, entra como A CONFERIR e só vale para todos depois da aprovação do engenheiro.
+  - Componente a conferir pode ser usado, mas sai marcado no 3D e o projeto não fica liberado para cotação.
+- Painel de 1 coluna: a régua de bornes -X1 não aparecia no 3D (achado pela conferência cruzada num teste de 4 estágios); corrigido.
+
 ## v1.25.3 – 2026-11-22 (capacitores menores, trafo de comando Rasatronic/Wise)
 - **Capacitores menores (REQ-CMP-004)**: a escolha passa a preferir unidades de cerca de 25 kvar, 3 ou 4 por estágio, em todas as marcas – capacitor grande em PPM a seco esquenta muito (experiência de campo do engenheiro). O ABB volta para 3 × CLMD43 25 kvar 525 V (60525025000BR) por estágio.
 - **Trafo de comando (REQ-CMP-005)**: fornecedor Rasatronic ou Wise, transformador isolador monofásico IP-00 sob encomenda, com a potência calculada pela carga. O site da Rasatronic não publica medidas (fabricação sob encomenda): no 3D o trafo continua marcado até chegar o desenho do fornecedor.

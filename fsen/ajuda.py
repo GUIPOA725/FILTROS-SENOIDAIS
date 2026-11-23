@@ -23,6 +23,10 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ------------------------------------------------------------------------------------------------ 1. dicas por campo
 DICAS = {
+    "Pesquisar componente, projeto ou painel": "Procura no catálogo da plataforma, na biblioteca do Drive, nas pastas de PROJETOS e nos "
+                                               "painéis aprovados. Pesquise antes de cadastrar algo novo.",
+    "Fonte dos dados (catálogo / página do fabricante)": "Obrigatório: de onde saíram o código e as medidas (link da página do produto ou "
+                                                         "catálogo e edição). Sem fonte o componente não entra na biblioteca.",
     "Marca dos componentes": "Fabricante dos componentes do painel: Padrão Electric, ABB, Schneider, Siemens, WEG ou Epcos. O reator é "
                              "sempre Electric. Os capacitores da marca entram no cálculo da sintonia; a contatora (comum AC-3/AC-1 com "
                              "reator em série, ou AC-6b) é conferida no estudo de transitórios contra o pico de fechamento do catálogo.",

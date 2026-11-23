@@ -116,3 +116,16 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 20:38
 "Outra coisa , se o meu colega chat um chat no Claude, ele consegue comandar ou vc a plataforma no Claude dele? Existe alguma forma de ter um chat que eu possa passar para ele e se ele precisar digitar e vc assume em casos graves?"
 → REQ-IA-011.
+
+### ~20:45–21:00 (voz – transcrição automática, com cortes)
+"...quando alguém pedir ajuda você vai ajudar normalmente respondendo, mas se a pessoa pedir, solicitar para fazer alguma coisa, você também vai fazer, tem minha autorização. Entre na pasta tal, pegue os dados, e faça um banco sintonizado, e salve o resultado na pasta tal. Claro, se tiver alguma pergunta no meio do caminho que ele tem que decidir, você pergunta para ele, para tomada de decisão. Mas você vai agir. A IA local, a IA Claude que é a referência, ou a IA que ele tiver instalado no computador dele, que vai ser a parte de ajuda da plataforma, ela vai executar tarefas também. Você vai ter que fazer da mesma forma que você faz aqui no chat."
+
+"Quando ele rodar a plataforma no notebook dele e usar a IA da plataforma, ela não vai saber de todo o histórico do projeto que eu sei e que está escrito aqui nesse chat. Você vai salvar um texto que fica leve, todo esse chat, todas as nossas conversas, um arquivo de texto lá na plataforma do Drive, que vai servir para o meu colega: a IA já vai saber todo o histórico. E todas as dúvidas dele, todas as coisas que ele pedir para executar, tudo que ele fizer lá na IA dele, também salvar no Drive... fica muito mais rápido para uma tomada de decisão e assim você vai aprendendo também."
+
+"Quem pode editar essa plataforma, mexendo no código, sou somente eu. Ninguém mais dos meus colegas que vai usar pode, só com autorização minha. Eles vão ter a plataforma no computador deles instalada e rodando, e eu vou fazendo atualizações na plataforma no Drive. Toda vez que ele abrir a plataforma, ela vai ter que ver se tem alguma atualização no Drive e atualizar. Três, quatro pessoas usando ao mesmo tempo, sendo que só eu posso editar o código. Se tentar editar o código, abre uma tela falando que você não pode editar o código e um barulho no alto-falante do computador deles."
+
+"Eles vão estar criando filtros senoidal, banco dessintonizado, sintonizado, criando componentes, eu também. Isso tudo tem que ficar salvo no Drive para que todas as outras pessoas usem. Ex.: quero um filtro sintonizado de 30 kvar todo com componentes Siemens – não tem esse componente, vai ter que buscar, criar. Tudo salvo num único lugar, para quando alguém for fazer alguma coisa nova pesquisar lá e ver se já não está pronto. Não começar do zero toda vez." / "Ah, sim, tem que aprovar. Verdade." / "Senão isso vai virar uma bagunça."
+
+### 21:02
+"Pode fazer tudo isso"
+→ REQ-IA-010 (reforço), REQ-IA-012, REQ-GER-012, REQ-CMP-006.

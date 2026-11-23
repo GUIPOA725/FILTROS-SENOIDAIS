@@ -65,6 +65,7 @@ if not exist "%LOCALAPPDATA%\FSEN\webview_ok.txt" (
 )
 
 REM --- 5) atalho na area de trabalho (uma vez) e abertura como PROGRAMA (sem navegador, sem janela preta)
+set "FSEN_ORIGEM=%ORIGEM%"
 set "FSEN_PASTA_SAIDA=G:\Drives compartilhados\Engenharia\15 - TEMPLATES-PLANILHA ESTUDOS\PLATAFORMA FILTROS SENOIDAIS\PROJETOS"
 REM Chave da IA (opcional). Tire o REM e cole a chave para usar o Claude na leitura dos e-mails:
 REM set ANTHROPIC_API_KEY=sk-ant-...

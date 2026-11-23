@@ -1,0 +1,206 @@
+# Memória do projeto – Plataforma FSEN (Electric Service)
+
+## O que é
+Plataforma (Python/Streamlit, roda no computador de cada um) que projeta três produtos da Electric Service: **filtro senoidal**
+(saída de inversor), **banco de capacitores dessintonizado** e **filtro harmônico sintonizado** (padrão ou robusto). A partir do
+pedido do cliente (e-mail, medições de qualidade de energia, placa do trafo) ela dimensiona, simula, projeta o reator por
+elementos finitos, escolhe componentes reais de catálogo, desenha o painel (2D e 3D de montagem), gera esquema elétrico, lista de
+material até o parafuso, verificação por normas, especificações para fornecedores e um relatório consolidado.
+
+## Quem é quem
+- **Guilherme** – engenheiro responsável. Só ele altera o código e aprova componentes/painéis para a equipe. A experiência de campo
+  dele (projetos antigos feitos à mão e instalados) é a referência; os projetos antigos são ponto de partida, o novo tem que ser melhor.
+- **Colegas** – operam a plataforma; podem cadastrar componentes na biblioteca (entram "a conferir") e mandar a IA executar projetos.
+- **IA** – orquestra e executa; o engenheiro aprova. Nada de achismo: tudo calculado, com fonte, e com coluna Check.
+
+## Como a equipe usa
+- Abrir pelo atalho "FSEN Filtros": a cada abertura a plataforma se atualiza pela versão do Drive (PROGRAMAS\FSEN_v1.7.1).
+- Menu **Nova solicitação**: colar e-mail/anexos → ler → conferir → gerar. Menu **🤖 Assistente IA**: perguntar ou mandar fazer
+  ("faça um <filtro> com os dados da pasta <caminho> e salve em <caminho>").
+- Resultados em PROJETOS\<cliente>\<código>_<marca>_<data>: 00_RELATORIO_CONSOLIDADO, RESUMO.md, 01_Engenharia, 02_Cliente,
+  03_Fornecedores (reator e montadora do painel), 05_Desenhos.
+- Drive (PLATAFORMA FILTROS SENOIDAIS): PROGRAMAS (código oficial), PROJETOS, BIBLIOTECA_PAINEIS (painéis aprovados),
+  BIBLIOTECA_COMPONENTES (componentes da equipe), MEMORIA_IA (esta memória + registro de uso), ATUALIZACOES-MELHORIAS (CHANGELOG e gestão).
+
+## Regras de segurança da operação
+Nunca digitar senhas; não usar robô no ATPDraw; não instalar programas nem apagar projetos/tarefas sem o engenheiro; código só
+com o engenheiro; componente novo só vale para todos depois da aprovação dele; projeto com componente "a conferir" (vermelho no
+3D) NÃO está liberado para cotação.
+
+## Leitura do resultado
+Todo resultado tem coluna **Check**: ✔ APROVADO, ⚠ ATENÇÃO (perto do limite ou a confirmar), ✖ REPROVADO, INFO. A planilha
+Conferencia_Esquema_x_Painel_x_Lista confere esquema elétrico × painel 2D/3D × lista de material: tem que dar zero reprovado.
+
+_Gerado em 22/11/2026 21:25 – plataforma v1.26.0 – 115 requisitos registrados._
+
+## Regras e decisões do engenheiro (registro de requisitos – palavras dele)
+Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
+
+### BANCO
+- REQ-BCO-001 ! [ATENDIDO] Montante: reativo medido × folga Electric (crescimento + perdas do trafo + N-2), escolha do engenheiro; substituição de banco existente no MESMO porte.
+
+### CAMPO
+- REQ-CMP-001 [PARCIAL] Medições de campo (Fluke, Dranetz, fotos do Google Fotos) guardadas como base de melhoria contínua e ligadas aos clientes da Engenharia/Engenharia_Backup. — nota: ALCAST registrado; álbuns do Google Fotos aguardando links do engenheiro.
+
+### COMPONENTES
+- REQ-CMP-002 ! [PARCIAL] Projeto vai para cotação com fornecedores e montador: PROIBIDO componente fictício. Todo componente real, em fabricação, com código e medidas do catálogo técnico ATUAL do fabricante, desenhado com o tamanho real. Pesquisa começa SEMPRE pelo site do fabricante (ABB, WEG, Siemens, Schneider – eles mantêm atualizado); se não achar, pesquisa profunda e muitas tentativas; só depois disso sinalizar em VERMELHO (projeto não liberado para cotação). — nota: falta: trafo de comando (ABB/Schneider não vendem no Brasil – fornecedor nacional), botoeiras/sinaleiros/termostatos/controlador a conferir
+- REQ-CMP-003 ! [PARCIAL] Para CADA componente, tirar do catálogo as especificações de montagem: distâncias mínimas (entre unidades/parede), calor (perdas, temperatura), torque de aperto, tipo de ligação/terminal; e conferir se o cabo de força CALCULADO entra no borne do equipamento (seção máx. do terminal no catálogo). — nota: completar para todos os componentes
+- REQ-CMP-004 ! [ATENDIDO] Capacitores: preferir unidades MENORES (25 kvar 525 V), 3 ou 4 por estágio – capacitores grandes em PPM a seco esquentam muito (experiência de campo); é mais caro mas não esquentam tanto. Vale para todas as marcas. — nota: Panatlântica: ABB 3 × CLMD43 25 kvar; Schneider 3 × 24 kvar
+- REQ-CMP-005 ! [PARCIAL] Trafo de comando: fornecedor Rasatronic ou Wise (modelo real de catálogo). — nota: site Rasatronic não publica medidas – pedir desenho ao fornecedor para o 3D
+- REQ-CMP-006 ! [ATENDIDO] Tudo que eu e os colegas criarmos (componentes, projetos, filtros – ex.: sintonizado 30 kvar todo Siemens) fica salvo num ÚNICO lugar no Drive para todos; antes de criar algo novo, pesquisar se já existe. Componente/projeto novo de colega entra como 'a conferir' e só vale para todos depois da MINHA aprovação (senão vira bagunça). — nota: por enquanto cobre componentes com medidas (painel); códigos por marca (fabricantes.yaml) ainda são só do engenheiro
+
+### GERAL
+- REQ-GER-001 ! [PARCIAL] Melhor plataforma de simulação dos 3 tipos de filtros do mundo, sem software caro; igual ou melhor que ABB, Schneider, EPLAN e SolidWorks. — nota: Cálculo, simulação, ATP, normas e relatório no nível; desenho do painel ainda ABAIXO do padrão SolidWorks AGCO (REQ-PNL-*).
+- REQ-GER-002 ! [ATENDIDO] A IA é o maestro: tudo na plataforma usando ao máximo Python e softwares auxiliares gratuitos (ATP, FEM, CAD); o engenheiro aprova ou não o resultado final.
+- REQ-GER-003 ! [PARCIAL] Manter a identidade da plataforma Electric nos 3 filtros (senoidal, dessintonizado, sintonizado); só mudam as diferenças técnicas. — nota: Folha de normas, Check e consolidado iguais nos 3; painel 3D ainda só no banco/sintonizado – falta senoidal.
+- REQ-GER-004 [PARCIAL] Tudo que foi passado são ideias – a IA pode e deve fazer melhor, mais rápido que EPLAN/SolidWorks/ABB/Schneider (softwares manuais sem IA).
+- REQ-GER-005 ! [ATENDIDO] Tudo que o engenheiro fala deve ser salvo em documento/tabela como num software profissional, com gestão de requisitos, revisões e análise – nada solto no chat.
+- REQ-GER-006 [ATENDIDO] Responder sempre em português.
+- REQ-GER-012 ! [ATENDIDO] Só o engenheiro (Guilherme) edita o código; colegas só com autorização dele. 3–4 pessoas usando ao mesmo tempo: ao abrir, a plataforma verifica a versão no Drive e se atualiza sozinha. Se alguém tentar editar o código: tela avisando que não pode + barulho no alto-falante. — nota: o bloqueio de verdade é a permissão do Drive: PROGRAMAS só leitura para os colegas (configurar no Drive)
+- REQ-GER-007 ! [ATENDIDO] "Vc deve salvar tudo automaticamente, não precisa da minha autorização: eu escrevo aqui o que eu quero e vc salva para não perder nada de informação e executa essa melhoria." — nota: Processo: cada mensagem com instrução → REQ novo no mesmo turno, commit, cópia no Drive; depois implementar e atualizar o status.
+- REQ-GER-008 ! [ATENDIDO] Motor de experiência: depois que o engenheiro aprova um painel/projeto, as características ficam salvas na plataforma (Drive); projeto novo parte do último aprovado que se encaixa, não do zero, e cada projeto pode melhorar o próximo – experiência da equipe salva, não só na cabeça do engenheiro. — nota: fsen/biblioteca_paineis.py + botão 'Aprovar painel' na tela do banco/sintonizado; projeto novo parte do último aprovado (layout_painel.json registra de onde partiu). Biblioteca no Drive em BIBLIOTECA_PAINEIS.
+- REQ-GER-009 ! [PARCIAL] "Lembra que é para o Brasil" – normas, práticas e documentos para o mercado brasileiro: NR-10, ABNT NBR IEC 61439, NBR 5410, NBR 17227 (arco elétrico, nova), NBR 16384; componentes disponíveis no Brasil; textos em português.
+- REQ-GER-010 ! [PARCIAL] Banco de dados de componentes NA PLATAFORMA (códigos, medidas, modelo 3D, consumo, torques, acessórios), para não precisar buscar na internet; no máximo uma verificação rápida no site do fabricante se ainda é vendido.
+- REQ-GER-011 ! [ATENDIDO] REGRA: sempre conferir QUANTOS capacitores por estágio/indutor (ex.: 3 × 25 kvar 525 V por indutor na Panatlântica) – quantidade, kvar e tensão iguais no cálculo, esquema, DE/PARA, lista de material, 2D/3D e ET do reator. Vale para TODOS os filtros (senoidal, dessintonizado, sintonizado). — nota: banco (dessintonizado/sintonizado); senoidal: entra quando o painel senoidal for para o novo conceito (REQ-GER-003)
+
+### IA
+- REQ-IA-001 [ATENDIDO] Ler harmônicas que só existem em gráfico nos relatórios (figuras dos PDFs).
+- REQ-IA-002 [ATENDIDO] Marca dos componentes pedida no e-mail ("todos Schneider") já vem selecionada.
+- REQ-IA-010 ! [ATENDIDO] IA na plataforma além da ajuda: aceitar COMANDOS em texto do operador (ex.: 'faça o filtro senoidal, vá na pasta tal, lá tem todas as informações, gere os resultados e salve na pasta tal') e executar o projeto inteiro – quem opera não desenvolveu e não tem paciência para a tela. — nota: testado ponta a ponta sem IA (regras) com banco dessintonizado 4 × 50 kvar; com IA Claude falta o teste no notebook
+- REQ-IA-011 [PARCIAL] Colega usar a plataforma pelo Claude dele: um chat/receita que eu possa passar para ele, ele digita o pedido e a IA assume a operação nos casos graves. — nota: receita (skill) no Claude do colega: a verificar se o plano permite compartilhar
+- REQ-IA-012 ! [ATENDIDO] Memória do projeto no Drive: um arquivo de texto leve com todo o histórico (decisões, regras, conversas) que a IA da plataforma do colega lê ao abrir – ela já sabe o histórico. Tudo que cada pessoa perguntar/mandar executar na IA da plataforma também fica salvo no Drive (dúvidas e execuções), para todos e para decisões futuras. — nota: a IA relê a memória a cada uso; o engenheiro revisa o registro e transforma em regra
+- REQ-IA-003 ! [ATENDIDO] Aviso do usuário 'faz sempre o mesmo questionário': perguntar ao cliente só o que falta NESTE pedido; mostrar o que já recebemos.
+- REQ-IA-004 ! [ATENDIDO] Aviso do usuário 'não é 100 A o filtro': ler tabelas dos .docx; sem valor padrão escondido – faltou dado, avisa e bloqueia.
+- REQ-IA-005 [ATENDIDO] IA pela assinatura Claude (Claude Code), modelo e esforço selecionáveis; queda para regras com motivo visível.
+
+### LIMPEZA
+- REQ-LIM-001 [PENDENTE] Cuidado com espaço (notebook e Drive apertados): apagar versões antigas do programa (aprovado); salvar no Git o que importa. — nota: Versões antigas em PROGRAMAS ainda não apagadas (Drive pessoal não apaga em drive compartilhado).
+- REQ-LIM-002 ! [ATENDIDO] "Os projetos antigos de teste eu preciso ver eles antes de apagar" – só apagar depois que ele revisar; perguntar se já analisou, se não, aguardar e perguntar de novo.
+
+### PAINEL
+- REQ-PNL-001 ! [PARCIAL] Desenho 2D/3D do painel no padrão dos layouts Electric feitos no SolidWorks (AGCO Ibirubá 2022) ou melhor, mais leve, igual para os 3 filtros. — nota: v1.24.1: concepção AGCO (placa única dupla face, portas frente/trás, 6 folhas). Falta acabamento SolidWorks, cotas por vista, DXF/STEP do painel e aplicação no senoidal.
+- REQ-PNL-002 ! [PARCIAL] Componentes só com tamanho real retirado dos desenhos dos catálogos especificados – nada de desenho chutado sem equipamento real. — nota: Catálogo cobre Schneider/Epcos/ABB principais; faltam ABB AF50, NR12, Siemens, WEG. Sem medida → vermelho 'a confirmar'.
+- REQ-PNL-003 ! [ATENDIDO] Concepção do painel Electric: UMA placa de montagem laranja no meio (dupla face) – frente capacitores, contatoras, chaves NH; atrás reatores em prateleiras pretas e cabos subindo; portas frontais E traseiras; exaustores no teto; venezianas embaixo.
+- REQ-PNL-004 ! [ATENDIDO] Sequência de folhas do layout: fechado frente/fundo com cotas → portas abertas frente/fundo → topo com abertura das portas → sem chapas → só a placa (frente e trás) → vistas frontal/lateral/traseira.
+- REQ-PNL-005 ! [ATENDIDO] Gabinete dimensionado pelos componentes reais (reator FEM, capacitores, manobra) com verificação de arranjo físico com Check.
+- REQ-PNL-006 [ATENDIDO] Esquema elétrico no padrão EPLAN/AGCO (folhas A3, grade, carimbo, DE/PARA, etiquetas).
+- REQ-PNL-007 [PENDENTE] Balões do desenho ligados à lista de material; DXF e STEP leves do painel.
+- REQ-PNL-008 ! [ATENDIDO] Termostato -BT2 55 °C de sobretemperatura no esquema; termostato por reator; regras Schneider/EN 61921: reator nunca abaixo do capacitor, ar entra embaixo e sai pelo teto.
+- REQ-PNL-009 [ATENDIDO] Lista de plaquetas no modelo das montadoras (FEMSA/Novemp) e etiquetas de fio/componente/cabo (DE/PARA) para os 3 filtros.
+- REQ-PNL-010 [PARCIAL] Largura do gabinete calibrada pelos dimensionais IFG e projetos executados (Panatlântica 2024: 1600 × 2000 × 800, 2 colunas de 788) — nota: Com o reator maior que o Cootrans a plataforma vai para 2000 mm – depende de REQ-REA-002.
+- REQ-PNL-011 ! [PARCIAL] Equipamentos do 3D/2D iguais ao que ficará montado (não grosseiros) – o desenho é o documento para cobrar o montador: 'vou cobrar ele depois porque não ficou igual'. O mais realista e técnico possível para a montagem. — nota: Componentes com forma de catálogo (capacitor com friso/terminais, Fupact com tampa e punho, TeSys escalonada, reator com núcleo/quadros/tirantes/saídas). Falta: cabo reator→capacitor, régua de bornes/comando, trafo de co
+- REQ-PNL-012 ! [PARCIAL] A IA revisa o arranjo como montador/projetista: não precisa seguir exatamente os desenhos antigos; subir contatoras se precisar; nada que o montador não consiga montar (barra, cabo); sem espaço vazio feio na placa; equipamentos mais afastados para dissipar calor, montar melhor e ficar mais bonito – vale para TODOS os componentes. — nota: Distribuição vertical com folgas iguais, chaves/contatoras espalhadas na largura, capacitores espalhados, reatores afastados por igual, verificações de montagem com Check. Falta: otimizar ordem das fileiras automaticamen
+- REQ-PNL-013 ! [PARCIAL] Barras e cabos desenhados com rota montável (barramento → chaves NH → contatoras → reator → capacitores), canaletas, passagens na placa – o montador tem que conseguir ligar. — nota: Barramento sobre isoladores, cordoalhas barra→chave, cabos chave→contatora pela canaleta, passa-cabos na placa, cabos no verso da placa até as saídas do reator (rota ortogonal). Falta: retorno reator→capacitores e cabos 
+- REQ-SEG-007 ! [ATENDIDO] Energia incidente (arco elétrico) – muito pedida: aplicar no painel as boas práticas para EVITAR arco e REDUZIR energia incidente; calcular conforme IEEE 1584 usando o módulo de energia incidente da Plataforma de Estudos (cópia separada). — nota: Estudo_Energia_Incidente + Etiqueta_Arco_Eletrico por projeto (IEEE 1584-2018, módulo arcflash da Plataforma de Estudos); Panatlântica: barramento 2,0 cal/cm² com DJ geral × 19,9 sem. Tempo da proteção do cliente (500 ms
+- REQ-SEG-008 ! [PARCIAL] Painel deve seguir norma – pelo menos NR-10 (e o que o mercado exige: IEC 61439, NBR IEC 61439, IEC TR 61641, NFPA 70E/IEEE 1584) – com verificação e documentação.
+- REQ-PNL-014 [PENDENTE] Pesquisar na internet o que as empresas mais pedem na montagem de painéis de filtros/bancos e incorporar como padrão Electric.
+- REQ-PNL-015 ! [PENDENTE] Usar os modelos 3D REAIS dos componentes (fabricantes publicam STEP/CAD na internet: capacitores, contatoras, chaves, fusíveis, controlador, cabos) – o indutor já tem desenho real (FEM/STEP) – em vez de formas aproximadas. — nota: Plano: biblioteca 3D (STEP oficial do fabricante → malha leve STL convertida uma vez) em dados/modelos_3d + Drive BIBLIOTECA_3D; painel3d carrega a malha real quando existir, senão a forma de catálogo. Já temos: STEP do 
+- REQ-SEG-009 ! [PARCIAL] Energia incidente aplicada NA MONTAGEM dos componentes (pergunta 'o que muda na montagem?'): compartimento do barramento separado (forma 2b/3b), chave-fusível geral limitadora na entrada com punho na porta + intertravamento + cadeado, barramento isolado e protetores de borne/barreiras (IPXXB), torque marcado, operação e inspeção com porta fechada (controlador, janelas de termografia), ponto de aterramento temporário e de teste de ausência de tensão, sensores ópticos de arco (opcional), alívio de pressão para cima, zona de comando separada, etiqueta de arco e sinalização NR-10. — nota: No 3D/lista: compartimento do barramento, DJ geral c/ manopla, PE, pinos de aterramento temporário, indicador de tensão, etiqueta. Falta: torque marcado na lista, janelas de termografia, sensores ópticos (opcional).
+- REQ-PNL-016 ! [PENDENTE] 2D/3D com TUDO do projeto elétrico (força + comando), 100 % igual à montagem: etiquetas/plaquetas do projeto coladas nos componentes e nos fios, cabos de força até os capacitores, aterramento (barra PE e cabos verde-amarelo), trafo de comando, disjuntores e relés de comando, bornes.
+- REQ-PNL-017 ! [PARCIAL] Cabos na canaleta COM cálculo (NBR 5410: agrupamento, temperatura interna do painel, ocupação da canaleta) e recálculo de TODOS os componentes com o painel fechado, tudo ligado e aquecendo (derating de contatoras, fusíveis, chaves, cabos e capacitores pela temperatura interna – IEC 61439 §10.10 / IEC 60890). — nota: Cabos pela NBR 5410 (FCT ar interno 50 °C × FCA nº de circuitos na canaleta). Falta: ocupação de canaleta e derating térmico de cada componente com o painel fechado.
+- REQ-PNL-018 ! [ATENDIDO] Barramento geral de força ÚNICO (uma barra contínua atravessando as colunas). — nota: Barramento geral único atravessando as colunas, em compartimento com policarbonato (3D, lista de material).
+- REQ-PNL-019 ! [PARCIAL] TODOS os componentes com desenho realista e REAL (modelo do fabricante) – não pode ser caixa quadrada com tamanho chutado: 'se for assim eu faço eu mesmo no CAD'. — nota: Próximo: modelos 3D oficiais (STEP) de cada componente → malha leve; sem modelo oficial, não entra como 'real'.
+- REQ-PNL-020 ! [PARCIAL] Definir, especificar e CALCULAR o disjuntor geral (corrente, Icu × Icc da barra, ajustes) e o trafo de comando pela CARGA do comando (bobinas das contatoras – partida e retenção –, controlador, exaustores, sinaleiros, relés). — nota: Disjuntor geral calculado (1,30·ΣI, Icu ≥ Icc, LSI) e trafo de comando pela carga (retenção + pior manobra). Falta escolher o MODELO exato no banco de componentes (REQ-GER-010) e o 3D real.
+- REQ-PNL-021 ! [PENDENTE] Nada pendente e nada de achismo: dimensionar e especificar TUDO até o parafuso – torque dos terminais, tipo de parafuso, arruelas, terminais de cabo (olhal/compressão), conectores, isoladores e suportes de barra, barra isolada para montagem, tipo de disjuntor geral, relé falta de fase etc. Nenhum item pode faltar na lista de material.
+- REQ-PNL-022 ! [PARCIAL] Marca coerente em todos os componentes: projeto ABB → componentes ABB; Schneider → Schneider; padrão Electric → os que foram usados na Panatlântica 2024; se não houver, um do banco de dados da plataforma.
+- REQ-PNL-023 ! [PENDENTE] Posição do barramento geral: atrás da placa junto com os indutores (mais seguro?) ou na frente? Decidir com base em norma, prática dos fabricantes (ABB, Schneider, Siemens, Eaton…), internet e fóruns – e aplicar o que for mais seguro. — nota: Decisão (pesquisa 22/11): barramento geral no ALTO, ATRÁS da placa, em compartimento próprio (forma 2b) separado dos reatores por chapa horizontal; derivações para as chaves NH por barra flexível isolada através de passa
+- REQ-PNL-024 [PARCIAL] Classificar a forma de separação (NBR IEC 61439-2) de cada painel e declarar na folha de dados: o painel antigo de montagem livre (sem barreiras) é forma 1; o novo com barramento em compartimento próprio é forma 2b.
+- REQ-PNL-025 ! [ATENDIDO] Entrada dos cabos do cliente no disjuntor geral: por CIMA ou por BAIXO (cada cliente quer de um jeito) – opção no projeto, quantidade e seção dos cabos de entrada calculadas (cabos em paralelo), espaço de curvatura, flange/prensa-cabos no teto ou na base. — nota: Panatlântica: 3 × 240 mm² por fase
+- REQ-PNL-026 ! [ATENDIDO] Padrão Electric: CABO (não barra flexível) entre a entrada das seccionadoras e o barramento geral. — nota: cabo flexível calculado, não barra
+- REQ-PNL-027 ! [ATENDIDO] Capacitores do estágio (ex.: 4 × 18 kvar 480 V por indutor): um cabo por fase de CADA capacitor até a saída do indutor, com UM terminal para os n cabos por fase no borne do indutor; cabos do indutor e demais cabos de força sem encostar e afastados dos terminais. — nota: CONFERIR terminal duplo/múltiplo no catálogo
+- REQ-PNL-028 ! [ATENDIDO] Conferência cruzada OBRIGATÓRIA entre projeto elétrico (diagrama de força, diagrama de comando, DE/PARA, lista de material) e os desenhos de montagem 2D e 3D: tudo que está nos diagramas tem que estar no 2D/3D e na lista, e vice-versa – ZERO diferença (senão o montador diz que não tinha e não há como cobrar). Usar a IA para análise refinada se preciso. — nota: Panatlântica ABB e Schneider: 0 REPROVADO
+- REQ-PNL-029 ! [ATENDIDO] Não usar as etiquetas dos equipamentos na imagem de portas abertas (fica muito ruim) – tags só nas vistas da placa e no 2D.
+- REQ-PNL-030 ! [ATENDIDO] Cabos de força dos capacitores e indutores naturais, como montador faria: cada capacitor com seu cabo por fase (não um cabo só), e no indutor os cabos têm que aparecer CONECTADOS ao terminal (terminal único para os n cabos por fase). — nota: bornes do reator virados para a porta traseira: acesso p/ aperto e termografia
+- REQ-PNL-031 ! [ATENDIDO] Ponto de aterramento de todos os componentes metálicos (norma exige) e barra de aterramento PE visível no 2D e 3D. — nota: NBR IEC 61439-1 8.4.3
+- REQ-PNL-032 [PENDENTE] Melhorou muito mas pode ficar melhor, mais realista e mais natural – vale para o 2D e o 3D.
+- REQ-PNL-033 ! [ATENDIDO] Exaustão forçada calculada pelo calor produzido (IEC 60890) e com componentes REAIS: exaustor e grelha de saída com filtro de catálogo (código, vazão real com filtro, consumo, recorte); mesma vazão/modelo no cálculo, esquema, lista, 3D e no trafo de comando (consumo real). — nota: achado: cálculo 4×850 m³/h, mas esquema/lista diziam ≥230 m³/h e trafo considerava 45 VA/exaustor
+
+### PUBLICACAO
+- REQ-PUB-001 ! [ATENDIDO] Toda versão: commit+push no GitHub GUIPOA725/FILTROS-SENOIDAIS, zip em PROGRAMAS, arquivos em PROGRAMAS\FSEN_v1.7.1, CHANGELOG em ATUALIZACOES-MELHORIAS, cópia em %LOCALAPPDATA%\FSEN\programa.
+- REQ-PUB-002 ! [ATENDIDO] Mostrar a versão no app e em todos os arquivos gerados.
+- REQ-PUB-003 ! [ATENDIDO] Erro encontrado no uso pela tela = bug: corrigir, testar, publicar nova versão e continuar o projeto.
+
+### REATOR
+- REQ-REA-001 [ATENDIDO] Núcleo definido pela tensão da bobina (entrada − saída); notches têm pouco volt-segundo mas pesam em perdas parasitas e dv/dt.
+- REQ-REA-002 ! [PARCIAL] Comparar o reator calculado com o REAL que o engenheiro já instalou (ex.: Panatlântica 2024 – Cootrans 796 µH/95 A, ~55 kg, 2 por coluna de 788 mm) – comparação de REFERÊNCIA, com a diferença justificada (REQ-REF-003: não precisa ficar igual ao projeto antigo). — nota: Plataforma deu 412×284×357 mm (não cabe 2 por coluna de 800); Cootrans cabe. CAUSA ACHADA (22/11): na triagem do reator NENHUM candidato passou (perdas acima de 6 W/kvar × folga 0,92) e a regra de escolha então pega o de
+- REQ-REA-003 [ATENDIDO] Reator padrão Electric classe F alumínio; 2 entreferros por coluna + fio/barra retangular (padrão nacional, fotos Cootrans).
+- REQ-REA-004 [ATENDIDO] Indutor por elementos finitos + verificação independente (NGSolve) + script FEMM; desenhos padrão fábrica (ABNT, carimbo, balões=BOM), STEP/DXF; protocolo de ensaio e questionário ao fabricante.
+- REQ-REA-005 ! [ATENDIDO] Chapa do núcleo GO NOVA com certificado da usina (exigência, não orientação) na ET, protocolo, questionário e e-mail.
+- REQ-REA-010 ! [ATENDIDO] Usar a simulação de campo magnético (FEM) dos indutores para especificar a MONTAGEM: distâncias calculadas entre reatores, até partes metálicas (prateleira, estrutura, placa) e até os cabos de força – no desenho e na especificação técnica (antes era no chute, nunca calculado). — nota: Panatlântica: aço/entre reatores ≥ 100 mm, força ≥ 50 mm, comando/porta ≥ 150 mm
+
+### REFERENCIAS
+- REQ-REF-001 ! [PARCIAL] Projetos antigos (AGCO, CVI, PLASBIL, Pirelli, Panatlântica…) são referência para MELHORAR, não para copiar – e devem ser USADOS: cada lição registrada e ligada a um requisito.
+- REQ-REF-002 [ATENDIDO] Abrir pastas profundas do Drive sem o engenheiro mover nada (sem desculpa de pasta funda).
+- REQ-REF-003 ! [ATENDIDO] "Não precisa se adaptar ao meu projeto antigo – usa os projetos antigos somente como referência; vai fazer um novo com tamanhos diferentes, não tem como ser igual o seu projeto da Panatlântica com o meu manual."
+- REQ-REF-004 ! [PARCIAL] "Seu indutor é diferente, a contatora, os cabos. Os projetos anteriores são referência, ponto de partida, um padrão Electric, uma forma – quem olhar o projeto manual da Panatlântica e o seu deve pensar que foi feito pela mesma empresa, seguem as mesmas referências, mas o feito pela plataforma tem que estar muito melhor que o antigo."
+
+### RELATORIO
+- REQ-REL-001 ! [ATENDIDO] Relatório consolidado com TUDO que foi simulado e gerado, todas as etapas – pode ficar grande; conferido no próprio consolidado (nenhum "NÃO INCLUÍDO").
+- REQ-REL-002 ! [ATENDIDO] Pastas separadas por fornecedor, montadora e tipo de análise – cada um recebe só o que tem que fornecer/montar/cotar, de forma rápida e fácil.
+- REQ-REL-003 ! [ATENDIDO] Todo espectro de harmônicas (tensão, corrente, potência) SEMPRE com a coluna THD/DHT, para todos os casos.
+- REQ-REL-004 ! [ATENDIDO] Coluna de Check em toda tabela/gráfico de resultado: APROVADO / ATENÇÃO / REPROVADO (+ utilização %), forma mais usada.
+- REQ-REL-005 ! [ATENDIDO] Folha de dados com valores garantidos + verificação de normas (IEC 61439/61921/60831, IEEE 519/18) com Check, no nível ABB/Schneider.
+- REQ-REL-006 [ATENDIDO] Relatório técnico final no padrão RTM da Electric (Word + PDF).
+- REQ-REL-007 [ATENDIDO] E-mails/ETs aos fornecedores com contatos reais e o 'por quê' de cada pedido (Cootrans – Geraldo; IFG – André; Stampgraf – Thiago; IBT; Wise); protótipo e série cotados separados.
+- REQ-REL-008 [ATENDIDO] Relatório de Auditoria interno (entradas, origem de cada dado, verificações, rastreabilidade SHA-256, parecer do auditor).
+
+### SEGURANCA
+- REQ-SEG-001 ! [ATENDIDO] Nunca digitar senhas/credenciais; a chave da API é digitada pelo usuário e salva só em %USERPROFILE%\.fsen.
+- REQ-SEG-002 ! [ATENDIDO] "Não quero que use robô para simulação via ATPDraw" – não abrir ATPDraw/PlotXY automaticamente.
+- REQ-SEG-003 ! [ATENDIDO] Plataforma de Estudos: "só não roda direto lá, copia para uma pasta separada".
+- REQ-SEG-004 ! [ATENDIDO] Não apagar tarefas agendadas sem perguntar; não baixar/instalar programas no computador de ninguém sem confirmação (GPU/CUDA precisa autorização).
+- REQ-SEG-005 [ATENDIDO] guilando@gmail.com só para consulta técnica; não digitar senha do Google – ele entra ou manda link de álbum.
+- REQ-SEG-006 [ATENDIDO] "Quando vc acabar o uso da tela me avisa" – avisar sempre que terminar de usar mouse/teclado no notebook.
+- REQ-SEG-010 ! [ATENDIDO] Disjuntor geral (seccionamento geral) dentro do painel com manopla externa e intertravamento da porta – NR-10 não permite abrir painel energizado; hoje não se faz painel sem seccionador geral. — nota: -Q0 disjuntor geral com manopla rotativa externa, intertravamento e cadeado no esquema, na lista de material, no 3D e no checklist NR-10.
+- REQ-SEG-011 ! [PENDENTE] Ler TODAS as normas aplicáveis e aplicar nos painéis dos 3 filtros considerando o PIOR CASO (cliente exige tudo; painel auditado em segurança elétrica): NR-10, NBR IEC 61439-1/2, NBR 5410, norma de arco (ABNT/IEEE 1584), IEC 61921, IEC 60831, sinalização e prontuário – com checklist de auditoria e Check.
+- REQ-SEG-012 ! [PARCIAL] Aplicar a NOVA NR-10 (Portaria MTE 737/2026, vigência 01/06/2027) já nos projetos: 10.4.1 desligamento com impedimento de reenergização e sinalização; 10.4.2 seccionamento simultâneo; 10.4.3.1 circuitos de finalidades distintas separados; 10.4.4 aterramento; 10.4.5/10.4.6 aterramento temporário; 10.4.9 memorial descritivo (a–f); 10.4.12 estudo de energia incidente; 10.6.1/10.6.2 partes vivas inacessíveis (barreiras/invólucros); 10.6.5 medidas contra arco (distância segura, abertura sob carga, intertravamento, fechaduras não intercambiáveis, limitadores de corrente, tempo curto); 10.7.7/10.7.7.1 porta fechada e sinalização de tensão, choque e arco; 10.13 sequência de desenergização/reenergização prevista em projeto; Anexo II/IV (Rr 0,20 m, Rc 0,70 m, distância de trabalho 455 mm, 1,2 cal/cm²). — nota: Checklist NR-10 2026 (11 itens de projeto) na folha de normas. Falta memorial descritivo 10.4.9 completo e sequência 10.13 no manual.
+- REQ-SEG-013 [PENDENTE] "O estudo de energia incidente eu faço depois em outro software; vc só faz aqui de forma simplificada para ver os detalhes" – a etiqueta do painel sai como PRELIMINAR (valores dependem da proteção a montante e da Icc da instalação), a confirmar pelo estudo da instalação.
+- REQ-SEG-014 ! [PARCIAL] Seguir TODAS as normas de montagem nos painéis dos 3 FILTROS (senoidal, dessintonizado, sintonizado) – pode ser auditado a qualquer momento por cliente exigente (conversa 22/11 17:09). Matriz de conformidade COMPLETA do painel (NR-10 2026 + NBR IEC 61439-1/2 §10 verificação de projeto item a item e §11 ensaios de rotina + IEC 61921 + IEC 60831 + NBR 5410), com o método de cada item (cálculo, comparação com projeto de referência, avaliação ou ensaio) e Check – pergunta 'vc tá seguindo todas as normas da NR e IEC para este tipo de painel?'. — nota: Faltam por cálculo: suportabilidade do barramento ao curto (Icw – forças e vão dos isoladores, §10.11), circuito de proteção (§10.5), elevação de temperatura componente a componente com derating (§10.10), incorporação de
+
+### SENOIDAL
+- REQ-SEN-001 ! [ATENDIDO] Substituir a planilha 'Filtro Senoidal LC_Ver_1.0': leitura do pedido, otimização, simulação PWM, documentos e fornecedores.
+- REQ-SEN-002 ! [ATENDIDO] Padrão Electric: SÓ LC sem resistor; RC/LCL apenas por escolha na tela de comparação.
+- REQ-SEN-003 ! [ATENDIDO] fr mínima = 13 × f saída máx (calibrada nos filtros que funcionam em campo: 13,3–15×).
+- REQ-SEN-004 ! [ATENDIDO] Aviso do usuário: corrente do filtro saía menor que a da carga – manter a CORRENTE de carga na sobremodulação (só a tensão cai).
+- REQ-SEN-005 ! [ATENDIDO] Regra: 'o cobre vai pela carga, o ferro vai pelo inversor' – corrente do indutor definida pela Electric (carga × inversor), a do cliente é informativa.
+- REQ-SEN-006 [ATENDIDO] Indutor do senoidal classe H como padrão (compras Cootrans anteriores); capacitor de estoque TDK B32361A4206J080 20 µF 480 V IEC 61071 corrigido pela placa.
+- REQ-SEN-007 [ATENDIDO] Mínimo de capacitores com o capacitor que a empresa tem em estoque; alternativa de L com o MESMO capacitor.
+- REQ-SEN-008 [ATENDIDO] Calibração com as medições Dranetz (SENAI, IHR) – medições SEM motor; THD crítico calculado COM motor.
+
+### SIMULACAO
+- REQ-SIM-001 ! [ATENDIDO] Dupla checagem no ATP: Plataforma × ATP com tolerância (1 %) e alerta de divergência.
+- REQ-SIM-002 [PENDENTE] Caso S2: tensão na bobina do reator com notches (6 pulsos), plataforma + ATP dt 1 µs, validar com a medição ALCAST.
+- REQ-SIM-003 ! [ATENDIDO] ATP sempre visível: status (rodou/convergiu/divergiu/não rodou e por quê) na tela, RESUMO e memorial; não abrir ATPDraw/PlotXY ao terminar.
+- REQ-SIM-004 [ATENDIDO] Desenho da rede no ATPDraw (.xml) igual ao deck – conferido no ATPDraw 7.7 do PC.
+
+### SINTONIZADO
+- REQ-SIN-001 ! [PARCIAL] Sintonizado em 2 construções: PADRÃO = reator trifásico + capacitor trifásico seco PPM (ex. TDK série F); ROBUSTA = 3 reatores monofásicos de 2 colunas por ramo + capacitor trifásico impregnado em óleo (ex. Pirelli Gravataí). — nota: Opção existe; falta calibrar a robusta com os dados Pirelli e confirmar fornecedor/códigos do capacitor a óleo.
+
+### USO
+- REQ-USO-001 ! [ATENDIDO] Fazer os projetos sozinho pela plataforma desktop, como um engenheiro (mouse/teclado quando precisar) e informar só a pasta + resumo curto.
+- REQ-USO-002 [ATENDIDO] Ajuda embutida para usuários novos em todos os campos (dicas).
+- REQ-USO-003 [ATENDIDO] Uma pasta por cliente PROJETOS\<Cliente>\<data>_<código>; nunca sobrescrever (sufixo _hhmm); cliente obrigatório.
+- REQ-USO-004 [ATENDIDO] Escolher pastas por botão (sem digitar caminho); abrir projeto já feito e ressimular.
+- REQ-USO-005 [ATENDIDO] Abrir como programa (janela própria), atalho sempre na versão mais nova, fundo branco padrão, versões dos programas visíveis.
+
+## Projetos de referência (lições)
+- **AGCO Ibirubá – filtros/banco 300 e 500 kVAr (layout SolidWorks, 6 folhas A0) – Montebras/Stoll**: Placa de montagem ÚNICA no meio, dupla face: frente capacitores (embaixo), contatoras e chaves NH (fileiras), seccionadora geral e barramento no alto; trás reatores em prateleiras pretas, cabos vermelhos subindo. | Portas frontais E traseiras; venezianas embaixo; exaustores no teto; base preta; estrutura em perfil; controlador e sinaleiros na porta. | Folhas: fechado frente/fundo com cotas → portas abertas frente/fundo → topo com abertura das portas (0,99 m) → sem chapas frente/fundo → só a placa → frontal/lateral/traseira.
+- **CVI Santa Maria – filtro harmônico sintonizado 2021 (EPLAN + SolidWorks, células 2×2)**: Dimensional dos componentes (Epcos B32344E 116×291, Fupact ISFT160/400, BR6000, M221, Cootrans RTC125A 310×320×240 60 kg) → catálogo de dimensões. | Montagem interna em células 2×2; TAGs DE/PARA de cabos; biblioteca Electric_Lib_v9.1 (EPLAN). | Ensaios: relatório de painel PI-47127, ensaios Cootrans e de rotina dos capacitores → modelos de FAT/ensaio (pendente).
+- **Pirelli Gravataí – maior entrega de filtros sintonizados (reatores monofásicos 2 colunas + capacitores a óleo)**: Construção ROBUSTA do sintonizado: 3 reatores monofásicos de 2 colunas por ramo + capacitor trifásico impregnado em óleo. | Lições de campo: '14 - CAPACITOR VAZANDO' e seccionadoras danificadas (a analisar).
+- **PLASBIL – filtro sintonizado**: A ler pela biblioteca (pendente).
+- **Panatlântica Caxias do Sul – banco dessintonizado 400 kVAr 415 V (2024) – projeto real instalado**: 8 × 50 kVAr, capacitores 3×25 kVAr/525 V, FD 8,16 % (Nr 3,5), L 796 µH, I 95 A (planilha ESTAGIO 50KVAR 415V DHT 50%). | Reator Cootrans 796 µH/95 A, alumínio, classe F, IP00, R$ 1.950 (ORC 0413/2024); ~55 kg (planilha de peso); cabem 2 por prateleira na coluna de 788 mm, 2 prateleiras. | Painel 1600 × 2000 × 800 (2 colunas de 788), placa da frente com 16 capacitores em fileira, 8 chaves NH e 8 contatoras; reatores atrás; peso total ~801 kg.
+- **Panatlântica – histórico 2016–2026 (módulos 50 kVAr 380/415 V, problemas, termografia, troca de capacitores 2018, medições 2019/2023/2026)**: 2018: troca de 8 capacitores de 4 módulos 380 V danificados (termografia + corrente) – lição de campo a registrar (pendente).
+- **Cootrans – ETs, ajustes e propostas de indutores (2013–2021)**: Planilhas 'Ajuste Indutor Trifásico/Monofásico' e ETs por kvar/tensão – padrão Electric de especificação. | Fotos de montagem dos reatores (quadros em U, tirantes fora das bobinas, saídas em barra).
+- **TECHNIP – montagem de gabinetes BCD 220/460 V 100/400 kVAr (Electric 2016)**: Arranjos verticais (exaustor, comando, capacitores, rack de indutores) e 400 kVAr em 1600 × 2200 × 800.
+- **ALCAST – medições Fluke dos módulos (notches de 6 pulsos)**: Notches de retificador de 6 pulsos na tensão – caso S2 do reator.
+- **Google Fotos (guilando@gmail.com) – álbuns com fotos de filtros e dados de campo**: Aguardando links dos álbuns; relacionar com os clientes da Engenharia/Engenharia_Backup.
+- **ABB (Hitachi APCQ) e Schneider (VarSet) – catálogos internacionais de bancos dessintonizados**: Folha de dados com valores garantidos, verificação IEC 61439/61921 – nível exigido ('não admito abaixo').
+
+## Últimas versões (resumo do CHANGELOG)
+- **v1.26.0 – 2026-11-22 (assistente que executa, memória no Drive, código protegido, biblioteca de componentes da equipe)**: 🤖 Assistente IA – pergunta ou manda fazer (REQ-IA-010): novo item no menu. O operador escreve como num chat, por exemplo "faça um banco sintonizado co Decisão que é do operador (pasta que falta, dado que o cliente não informou, tipo de filtro) vira pergunta, e o assistente espera a resposta. Sem IA configurada no computador, o comando ainda funciona por regras, desde que o texto traga o tipo de filtro e os caminhos. Limites: só roda o que a plataforma já faz. Não altera código, não apaga, não instala e não digita senha.
+- **v1.25.3 – 2026-11-22 (capacitores menores, trafo de comando Rasatronic/Wise)**: Capacitores menores (REQ-CMP-004): a escolha passa a preferir unidades de cerca de 25 kvar, 3 ou 4 por estágio, em todas as marcas – capacitor grande  Trafo de comando (REQ-CMP-005): fornecedor Rasatronic ou Wise, transformador isolador monofásico IP-00 sob encomenda, com a potência calculada pela ca
+- **v1.25.2 – 2026-11-22 (componentes reais de catálogo, cabos naturais, aterramento, campo do reator na montagem)**: Componentes reais (REQ-CMP-002/003): códigos, medidas e status conferidos nos sites ABB e Schneider (22/11/2026). Erros corrigidos: ABB: capacitor CLMD43 (caixa metálica, fabricado no Brasil) 60525025000BR, 275 × 180 (266 com abas) × 152 mm, 50 mm entre unidades; o banco ABB passa a usar 1 × CLMD63 75 kvar (60525075000BR) por estágio, que ocupa menos placa; ABB: contatora AF52-30-00-13 (a AF50 foi substituída), 55 × 125,5 × 111 mm; seccionadora OS160GD03 (1SCA114221R1001), 147 × 140 × 130 mm;
+- **v1.25.1 – 2026-11-22 (conferência cruzada esquema × painel × lista, entrada de cabos, cabos de força do padrão Electric)**: Conferência cruzada obrigatória (REQ-PNL-028): a cada projeto a plataforma confere o esquema elétrico (lista de material e de cabos), o DE/PARA, o pai toda tag do esquema tem que estar no 3D e na lista, e vice-versa; código e modelo iguais; quantidade de capacitores;
+
+## Histórico literal
+As conversas completas do engenheiro com a IA estão em gestao/conversas/ (no programa e no Drive em ATUALIZACOES-MELHORIAS\GESTAO\conversas). Consulte lá quando precisar da frase exata.

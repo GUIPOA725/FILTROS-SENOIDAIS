@@ -9,7 +9,7 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RAIZ)
 from fsen.ajuda import DICAS  # noqa: E402
 
-TELAS = ["app.py", "telas_banco.py", "telas_ajuste.py", "telas_conferencia.py", "seletor.py", "fsen/ajuda.py"]
+TELAS = ["app.py", "telas_banco.py", "telas_ajuste.py", "telas_conferencia.py", "seletor.py", "fsen/ajuda.py", "telas_ia.py"]
 RX = re.compile(r'\.(number_input|text_input|text_area|selectbox|radio|checkbox|file_uploader|slider|multiselect|button|toggle)'
                 r'\(\s*"([^"]{2,120})"([^\n]*)')
 IGNORAR = {"Salvar", "Adicionar", "Importar", "Perguntar", "Explicar este erro", "Pergunte ao assistente"}

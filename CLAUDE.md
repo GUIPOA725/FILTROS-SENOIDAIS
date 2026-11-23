@@ -20,7 +20,12 @@ Engenheiro responsável: Guilherme (Electric Service). Responder em português.
 4. Publicação (REQ-PUB-001): commit+push, zip em PROGRAMAS, arquivos em PROGRAMAS\FSEN_v1.7.1, CHANGELOG em
    ATUALIZACOES-MELHORIAS, cópia em %LOCALAPPDATA%\FSEN\programa; versão visível no app e nos arquivos.
 
+   Antes do commit (v1.26.0): `python gestao/gerar_memoria.py` (memória que a IA da plataforma lê – copiar também para o Drive em
+   MEMORIA_IA\MEMORIA_PROJETO.md) e, por ÚLTIMO, `python -m fsen.protecao gerar` (manifesto do código – qualquer .py/.bat alterado
+   depois dele dispara o bloqueio "não pode editar o código" nos colegas). Publicar SEMPRE o manifesto_codigo.json junto.
+
 ## Regras que não podem ser esquecidas (resumo – o registro é a fonte)
+- Só o engenheiro edita o código (REQ-GER-012); colegas usam o Assistente IA e a Biblioteca de componentes (A CONFERIR até ele aprovar).
 - Nunca digitar senhas; não usar robô no ATPDraw; não instalar programas nem apagar tarefas/projetos de teste sem o engenheiro.
 - Consolidado com TUDO; THD em todo espectro; coluna Check em todo resultado; pastas por fornecedor/análise.
 - Desenho do painel só com medidas reais de catálogo/FEM, no padrão AGCO (SolidWorks) ou melhor, igual nos 3 filtros.
