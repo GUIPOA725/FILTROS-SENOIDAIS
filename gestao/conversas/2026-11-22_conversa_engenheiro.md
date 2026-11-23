@@ -206,3 +206,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:41
 "Faça uma análise mais profunda não rasa, compara com os outros fabricantes que são referencia. A nepsi não e fabricante de indutor ela monta filtros. O bom é usar as referências delas mas ver se os fabricantes falam a mesma coisa é bom vc entrar na internet desses fabricantes do drive e fazer uma pesquisa profunda no site deles, deve ter muita coisa para te ajudar a melhorar e projetar ainda melhor o indutor para filtro dessintonziado e filtro sintonizado"
 → REQ-REF-008 (complemento).
+
+### 22:50
+"Entreferros mais por coluna tipo multigap é complicado de fazer no Brasil . Bobina para esses indutores de dessintonziado e sintonizados é alumínio, já vi em folhas e barras, não sei o que fica melhor e mais barato, mas pelo que vi no geral muitos usam em folhas de alumínio acho que dá para usar eu já usei com a cootrans várias vezes. As outras decisões deixo para vc importante elas serem seguras e nunca gostou de trabalhar no limite sempre gosto de uma folga boa de segurança para o indutor não aquecer entendeu nem que fique um pouco maior"
+→ REQ-REA-013.
