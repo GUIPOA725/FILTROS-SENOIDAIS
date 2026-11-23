@@ -83,3 +83,13 @@ referencias:
   licoes: ["Folha de dados com valores garantidos, verificação IEC 61439/61921 – nível exigido ('não admito abaixo')."]
   requisitos: [REQ-REL-005, REQ-GER-001]
   usada_em: "normas_banco.py"
+- id: REF-DRIVE-PESSOAL-REATORES
+  nome: "Drive pessoal do engenheiro (guilando@gmail.com) – literatura em inglês sobre reatores de núcleo de ferro para bancos dessintonizados/filtros (NEPSI, Mangoldt, Power Magnetics, IEEE 1531, McLyman)"
+  caminho: "Google Drive guilando@gmail.com – pastas 'nepsi', 'WEB nepsi - estudos e casos' e outras (busca: nepsi, detuned reactor, iron core reactor, harmonic filter)"
+  licoes:
+    - "NEPSI LV-AFB (1999, 'nepsi reator.pdf'): reator trifásico núcleo de ferro a seco, cobre, isolação 220 °C; NÃO satura abaixo de 250 % da corrente fundamental do banco; indução de PICO < 1,2–1,4 T supondo os picos das harmônicas 100 % coincidentes; capacitor escolhido com picos coincidentes, +5 % de tensão e distorção no limite da IEEE 519; fusíveis no lado de linha de reator/capacitor/contatora; reatores ao lado dos capacitores (térmico); passos 25/50/100 kvar (400 kvar = 8 × 50 ou 4 × 100)."
+    - "Mangoldt (HvM Ironcore Reactors 2011): critério de projeto BT – tolerância de L ±3 %; I1 = 1,10·Icn; distorção assumida U3 0,5 %, U5 6 %, U7 5 %, U11 = U13 3,5 % (THD 8 %); Ith = 1,0·Irms; limite de LINEARIDADE do núcleo I_lin = k·Icn com k função do FD (manobra de estágio com carga harmônica cheia); ambiente 50 °C; ensaio de rotina de L na corrente nominal; termostato na bobina central (NF em série, NA em paralelo); núcleo PolyGap (vários entreferros), impregnação a vácuo classe H; FD usuais 7 % (Europa), 6 % (Ásia), 5–14 %."
+    - "Power Magnetics ('Docta Reacta'): em filtros sintonizados os fabricantes preferem 3 reatores MONOFÁSICOS a 1 trifásico (durabilidade/BIL, reserva no painel) – confirma a construção Pirelli (monofásico 2 colunas)."
+    - "Ainda não lidos: 'Understanding MV Harmonic Filter Reactors' (PMI), IEEE 1531-2003, 'dimensionamento cabos filtros harmonicas nepsi.pdf', pasta 'WEB nepsi - estudos e casos', McLyman (projeto de indutores), 'Comparison of ACR and ICR', catálogos Epcos/Schneider PB Guide/ABB."
+  requisitos: [REQ-REF-008, REQ-REA-012, REQ-REA-011]
+  usada_em: "critério de indução/linearidade do reator (a implementar)"
