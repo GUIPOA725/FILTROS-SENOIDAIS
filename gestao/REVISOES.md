@@ -159,3 +159,35 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-REA-012, REQ-REA-014, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
 - Decisão: pode publicar
+
+## Revisão – v1.26.2 – 2026-11-23 07:08
+- Requisitos: 130 | APROVADO 80 | ATENÇÃO 33 | REPROVADO 17
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261123_0701
+- Mudanças: REQ-REA-012 MELHOROU (REPROVADO→ATENÇÃO); REQ-REA-014 MELHOROU (REPROVADO→ATENÇÃO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.26.3 – 2026-11-23 07:08
+- Requisitos: 130 | APROVADO 80 | ATENÇÃO 33 | REPROVADO 17
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261123_0701
+- Mudanças: nenhuma
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.26.3 – 2026-11-23 07:08
+- Requisitos: 130 | APROVADO 78 | ATENÇÃO 32 | REPROVADO 20
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261123_0635
+- Mudanças: REQ-BCO-004 REGREDIU (ATENÇÃO→REPROVADO); REQ-GER-011 REGREDIU (APROVADO→REPROVADO); REQ-PNL-028 REGREDIU (APROVADO→REPROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): REQ-GER-011, REQ-PNL-028 | regredidos: REQ-BCO-004, REQ-GER-011, REQ-PNL-028
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-BCO-004, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: NÃO PUBLICAR
+
+## Revisão – v1.26.3 – 2026-11-23 07:08
+- Requisitos: 130 | APROVADO 80 | ATENÇÃO 33 | REPROVADO 17
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_Schneider_20261123_0701
+- Mudanças: REQ-BCO-004 MELHOROU (REPROVADO→ATENÇÃO); REQ-GER-011 MELHOROU (REPROVADO→APROVADO); REQ-PNL-028 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar

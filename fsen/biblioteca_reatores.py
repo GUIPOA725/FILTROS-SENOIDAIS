@@ -186,6 +186,13 @@ def buscar(ped, e, log=print):
     d = full.get("projeto")
     if not d:
         return None, None, "registro da biblioteca sem o modelo salvo"
+    try:                                                # o mapa de campo no pico não é gravado (objeto do FEM) – recalcula do modelo salvo
+        from .ind_projeto import modelo
+        Mn = modelo(d, d["gaps"], d["ng"])
+        I = float(d["requisitos"]["Ipk"])
+        d["campo_pico"] = (Mn, Mn.resolver([I, -I / 2, -I / 2]))
+    except Exception as ex:
+        return None, None, f"modelo salvo não pôde ser recalculado ({type(ex).__name__}: {ex})"
     return d, reg, lin
 
 

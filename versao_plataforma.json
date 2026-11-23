@@ -1,5 +1,5 @@
 {
-  "versao": "1.26.2",
+  "versao": "1.26.3",
   "data": "2026-11-23",
-  "resumo": "Banco/sintonizado: ao fabricante do reator vai a especificação de desempenho completa (linearidade, indução, elevação, perdas, envelope, ensaios); o projeto detalhado fica em pasta interna de conferência"
+  "resumo": "Biblioteca de reatores padrão (salvos, aprovados e reutilizados); banco com estágios de potências diferentes (lista, proteção e 3D por tipo de estágio); indução do reator conferida no NGSolve"
 }
