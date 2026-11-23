@@ -177,3 +177,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:16
 "Sabe que projeto tem que ser bem flexível para os 3 tipos de filtros"
 → REQ-GER-013.
+
+### 22:26
+"Deve ser na energização do estágio , vc tá usando as formas de onda do Atp?"
+→ sobre o pico de 2,26 T no núcleo do reator de 50 kvar; conferir de onde vêm as formas de onda da análise avançada.
