@@ -266,3 +266,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 → REQ-REF-009.
 
 (00:56) Apagados de PROJETOS\\Panatlântica, com autorização das 00:51: pastas _1215, _1308, _1413, ABB_1353, _1519, _2232 e os seis .zip. Ficaram _Schneider_20261122_2353 e _ABB_20261123_0009 com os .zip.
+
+### 23/11 06:30
+"Localizou"
+→ busca das termografias iniciada: pastas dos clientes localizadas no Drive Engenharia (ALCAST, PLASBIL, CVI, AGCO, Panatlântica); fotos térmicas ainda NÃO identificadas (nomes genéricos; pasta candidata PLASBIL\\10-COMISSIONAMENTO\\PLASBIL\\ENVIADAS PELO MARCIO funda demais para abrir daqui).
