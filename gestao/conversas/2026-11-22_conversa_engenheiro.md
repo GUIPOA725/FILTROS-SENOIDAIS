@@ -149,3 +149,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 21:58
 "Pode deixar só com 8.16 % 400kvar o resto que vc rodou diferente pode apagar"
 → REQ-REF-007: fica só o teste real de 400 kvar FD 8,16 %; a rodada de hoje com FD 7 % pode ser apagada (autorização dele, só para essa rodada).
+
+### 22:00
+"Pode interromper a de 7% agora"
+→ interromper a rodada FD 7 % na plataforma e rodar a de 8,16 %.
