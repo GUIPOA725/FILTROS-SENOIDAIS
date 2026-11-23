@@ -248,3 +248,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 00:31
 "Acho que para o filtro senoidal dever ser muito detalhado"
 → REQ-REL-009.
+
+### 23/11 00:34
+"Pode ser essa separação. Mas um bom detalhamento não somente indutância e corrente, vc não acha?"
+→ REQ-REL-009 (separar fabricante × interno no banco/sintonizado; ET de desempenho bem detalhada).
