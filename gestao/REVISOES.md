@@ -207,3 +207,32 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
 - Decisão: pode publicar
+
+## Revisão – v1.26.4 – 2026-11-23 10:32
+- Requisitos: 138 | APROVADO 79 | ATENÇÃO 30 | REPROVADO 29
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261123_1007, 2026-11-23_FSEN-LC-269A-440V
+- Mudanças: REQ-PNL-001 REGREDIU (ATENÇÃO→REPROVADO); REQ-PNL-003 REGREDIU (APROVADO→REPROVADO); REQ-PNL-004 REGREDIU (APROVADO→REPROVADO); REQ-PNL-005 REGREDIU (APROVADO→REPROVADO); REQ-BCO-004 REGREDIU (ATENÇÃO→REPROVADO); REQ-PNL-012 REGREDIU (ATENÇÃO→REPROVADO); REQ-PNL-013 REGREDIU (ATENÇÃO→REPROVADO); REQ-GER-011 REGREDIU (APROVADO→REPROVADO); REQ-PNL-028 REGREDIU (APROVADO→REPROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): REQ-PNL-003, REQ-PNL-004, REQ-PNL-005, REQ-GER-011, REQ-PNL-028 | regredidos: REQ-PNL-001, REQ-PNL-003, REQ-PNL-004, REQ-PNL-005, REQ-BCO-004, REQ-PNL-012, REQ-PNL-013, REQ-GER-011, REQ-PNL-028
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-001, REQ-PNL-002, REQ-REF-001, REQ-BCO-004, REQ-PNL-012, REQ-PNL-013, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: NÃO PUBLICAR
+
+## Revisão – v1.26.4 – 2026-11-23 10:33
+- Requisitos: 138 | APROVADO 84 | ATENÇÃO 34 | REPROVADO 20
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261123_1007
+- Mudanças: nenhuma
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+### Análise da revisão v1.26.4 (23/11/2026) – correções da auditoria independente (DeepSeek, lote 2)
+- Verificador: com o projeto de teste do BANCO (BCD-FD8,16-400kvar-415V_ABB_20261123_1007) → "pode publicar", nenhum crítico regredido.
+- A linha "NÃO PUBLICAR" das 10:32 acima NÃO vale como bloqueio: nela foi passado também o projeto do filtro SENOIDAL (A&W), e os testes
+  automáticos do verificador são específicos de banco (folha de normas do banco, painel, "Plataforma = ATP n/n") – num projeto senoidal eles
+  reprovam por construção. Pendência registrada: o verificador precisa de testes próprios para o filtro senoidal.
+- Banco Panatlântica (teste): térmica do reator de 50 kvar 164 °C → refeito sozinho → 132 °C (folga 23 K); status geral "NÃO LIBERAR" com 2
+  reprovados reais (borne da contatora AF52 × cabo 70 mm²; arco elétrico 19,79 cal/cm² nos terminais de entrada com a premissa de 500 ms).
+- A&W (teste): Status REPROVADO – ponto quente do indutor 165,9 °C no painel (com as perdas no limite contratual e o ar no topo do indutor)
+  contra 155 °C da classe F pedida; pelo pior método do indutor isolado 153–154 °C (folga 1–2 K). Sem solução com 10 K de folga com barra
+  única nem com paralelos. Antes saía APROVADO. Decisão do engenheiro pendente: classe H com o cliente, indutor maior ou outra construção.
+- Em aberto: os modelos térmicos do indutor divergem (projeto 89 °C × avançado 153 °C na A&W; 120 × 132 °C no reator de 50 kvar) – calibrar
+  com termografia/ensaio; composição da corrente de projeto do reator (espectro do local × k) e folga de 10 K a confirmar com o engenheiro.
