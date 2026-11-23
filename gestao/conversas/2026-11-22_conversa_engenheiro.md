@@ -270,3 +270,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 06:30
 "Localizou"
 → busca das termografias iniciada: pastas dos clientes localizadas no Drive Engenharia (ALCAST, PLASBIL, CVI, AGCO, Panatlântica); fotos térmicas ainda NÃO identificadas (nomes genéricos; pasta candidata PLASBIL\\10-COMISSIONAMENTO\\PLASBIL\\ENVIADAS PELO MARCIO funda demais para abrir daqui).
+
+### 23/11 06:32
+"Vc não pode ficar parado tem coisas para fazer da lista ainda?"
+→ seguir com a lista de pendências sem esperar: memória da IA (limite), termografias, estágios de potências diferentes (REQ-BCO-004), indução no 2º software (REQ-REA-012), biblioteca de reatores (REQ-REA-014).

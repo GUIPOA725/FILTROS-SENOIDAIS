@@ -119,7 +119,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         log(f"   (campo externo do reator não calculado: {type(_ex).__name__}: {_ex})")
     try:                                            # v1.25.2: gabinete FINAL = o que cabe o arranjo real (fonte única p/ lista, normas, 3D)
         from . import painel3d as _P3f, painel_gabinete as _PGf
-        _gf, _mf = _P3f.gabinete_final(ped, res, _PGf.gabinete(ped, res), B.protecao_estagio(ped, res["estagios"][0]), inds)
+        _gf, _mf = _P3f.gabinete_final(ped, res, _PGf.gabinete(ped, res), B.protecao_pior(ped, res), inds)
         res["_gab_final"] = _gf
         log(f"   Gabinete final: {_gf['dimensoes_mm']['largura']} × {_gf['dimensoes_mm']['altura']} × {_gf['dimensoes_mm']['profundidade']} mm, "
             f"{len(_gf['colunas'])} coluna(s)")
@@ -180,7 +180,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     try:                                            # v1.25.0: lista de material COMPLETA (até parafuso/terminal/torque) por marca
         from . import lista_material as LMC
         from . import painel_gabinete as _PG
-        _L = LMC.montar(ped, res, _PG.gabinete(ped, res), B.protecao_estagio(ped, res["estagios"][0]))
+        _L = LMC.montar(ped, res, _PG.gabinete(ped, res), B.protecao_pior(ped, res))
         arqs["lista_completa"] = LMC.planilha(_L, os.path.join(pnl, f"Lista_Material_Completa_{cod}.xlsx"), ped, cod, versao)
         log(f"   Lista de material completa: {len(_L)} itens ({sum(1 for r in _L if 'CONFERIR' in str(r[7]))} a conferir no catálogo)")
     except Exception as ex:
@@ -188,7 +188,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     try:                                            # v1.24.0: painel 3D com medidas reais (catálogo + reator FEM) e check
         from . import painel3d as P3
         from . import painel_gabinete as PG
-        p3 = P3.gerar(ped, res, PG.gabinete(ped, res), B.protecao_estagio(ped, res["estagios"][0]), inds,
+        p3 = P3.gerar(ped, res, PG.gabinete(ped, res), B.protecao_pior(ped, res), inds,
                       os.path.join(sub["05_Desenhos"], "4_Painel_3D"), cod, versao, log=log)
         arqs["painel3d"] = p3["pdf"]
         shutil.copy(p3["pdf"], pnl)
@@ -221,7 +221,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         from . import normas_banco as NB
         from . import painel_gabinete as PG
         _gab = PG.gabinete(ped, res)
-        _prot = B.protecao_estagio(ped, res["estagios"][0])
+        _prot = B.protecao_pior(ped, res)
         arqs["normas"], ver_iec = NB.gerar_pdf(ped, res, _gab, _prot, cod, os.path.join(sub["01_Engenharia"], "5_Normas_Folha_de_Dados"),
                                                trans=trans, inds=inds, versao=versao, log=log)
         shutil.copy(arqs["normas"], os.path.join(sub["02_Cliente"], os.path.basename(arqs["normas"])))

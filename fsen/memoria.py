@@ -90,7 +90,7 @@ def uso_recente(n=25, tipos=("pergunta", "comando", "execucao", "erro")):
     return regs[:n]
 
 
-def memoria_texto(max_chars=42000):
+def memoria_texto(max_chars=70000):
     """Memória do projeto: a do Drive (MEMORIA_IA\\MEMORIA_PROJETO.md) se for mais nova; senão a que veio com o programa."""
     cands = [os.path.join(PASTA_DRIVE, "MEMORIA_PROJETO.md"), ARQ_MEMORIA]
     cands = [c for c in cands if os.path.exists(c)]
@@ -103,7 +103,7 @@ def memoria_texto(max_chars=42000):
         return ""
 
 
-def contexto_ia(max_chars=46000):
+def contexto_ia(max_chars=76000):
     """Texto para o prompt da IA: memória do projeto + o que os colegas perguntaram/executaram por último."""
     partes = []
     m = memoria_texto(max_chars - 3500)

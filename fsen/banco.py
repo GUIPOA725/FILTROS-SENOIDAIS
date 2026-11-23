@@ -455,6 +455,32 @@ def protecao_estagio(ped, e):
                 cabo_ind_cap_mm2=cc["secao"], cabo_cap_unid_mm2=cc["secao"], n_cabos_cap_fase=n_c)
 
 
+def protecao_pior(ped, res):
+    """Proteção do estágio de MAIOR corrente (v1.26.3, REQ-BCO-004) – usada onde o painel precisa de UM valor para dimensionar
+    (medidas de contatora/chave no gabinete, cabo de terra, comando). Com estágios iguais é a mesma do estágio 1."""
+    return protecao_estagio(ped, max(res["estagios"], key=lambda e: e["requisitos"]["In"]))
+
+
+def grupos_estagio(ped, res):
+    """Estágios agrupados por TIPO (mesma chave, fusível, contatora, capacitor e cabos): [{pr, e, idx:[1,2,…]}] – REQ-BCO-004."""
+    g = {}
+    for i, e in enumerate(res["estagios"], 1):
+        pr = protecao_estagio(ped, e)
+        k = (pr["chave_A"], pr["fusivel_A"], pr["contator"], tuple(e["cap"][:3]), pr["cabo_calc"]["secao"], pr["cabo_cap_calc"]["secao"])
+        g.setdefault(k, dict(pr=pr, e=e, idx=[]))["idx"].append(i)
+    return list(g.values())
+
+
+def tags_estagio(pref, idx):
+    """'-Q1…-Q3' se contíguos; senão '-Q1, -Q4'."""
+    idx = sorted(idx)
+    if len(idx) == 1:
+        return f"{pref}{idx[0]}"
+    if idx == list(range(idx[0], idx[-1] + 1)):
+        return f"{pref}{idx[0]}…{pref}{idx[-1]}"
+    return ", ".join(f"{pref}{i}" for i in idx)
+
+
 TRAFO_VA = (100, 250, 400, 630, 1000, 1600, 2500)
 DJ_GERAL_A = (250, 400, 630, 800, 1000, 1250, 1600)
 ICU_KA = (25, 36, 50, 65, 70, 85, 100)
@@ -478,7 +504,7 @@ def trafo_comando(ped, res, prot=None, n_exaust=None):
     if n_exaust is None:
         n_exaust = _PGt.gabinete(ped, res)["ventilacao"]["n_exaustores"]
     va_ex = round(_PGt.EXAUSTOR_REAL["A60"] * 220)                # consumo REAL do ventilador de catálogo (0,85 A × 220 V)
-    prot = prot or protecao_estagio(ped, res["estagios"][0])
+    prot = prot or protecao_pior(ped, res)
     n = len(res["estagios"])
     bob = next((v for k, v in cat.items() if k.lower() in str(prot.get("contator", "")).lower()), {"partida_VA": 245, "retencao_VA": 26})
     sim = 2                                                    # o controlador manobra 1 estágio por vez; 2 = folga (religamento)

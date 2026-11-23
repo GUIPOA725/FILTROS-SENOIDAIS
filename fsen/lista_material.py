@@ -121,9 +121,13 @@ def montar(ped, res, gab, prot, ext=None):
         else "isolador 30 × 30 M6", n_iso, "pç", "ELECTRIC", "calculado", f"vão 400 mm, Icc {djg['Icc_kA']:.1f} kA")
     pf = "M10" if esp[0] >= 40 else "M8"
     n_deriv = 3 * n
-    add("2 Barramento", "W n.1", f"Derivação barramento → entrada da chave NH: CABO flexível {prot['cabo_calc']['secao']} mm² (padrão Electric), "
-        f"com terminal parafusado na barra e passa-cabo na placa", f"{prot['cabo_calc']['secao']} mm² classe 5", round(n_deriv * 0.9, 1), "m",
-        "ELECTRIC", "calculado", f"{n} estágios × 3 fases × ~0,9 m (mesmo cabo W n.1 do esquema)")
+    GR = B.grupos_estagio(ped, res)                              # v1.26.3 (REQ-BCO-004): um bloco por TIPO de estágio
+    for G in GR:
+        pr_, ng_ = G["pr"], len(G["idx"])
+        add("2 Barramento", "W n.1" if len(GR) == 1 else ", ".join(f"W{i}.1" for i in G["idx"]),
+            f"Derivação barramento → entrada da chave NH: CABO flexível {pr_['cabo_calc']['secao']} mm² (padrão Electric), "
+            f"com terminal parafusado na barra e passa-cabo na placa", f"{pr_['cabo_calc']['secao']} mm² classe 5", round(3 * ng_ * 0.9, 1), "m",
+            "ELECTRIC", "calculado", f"{ng_} estágio(s) × 3 fases × ~0,9 m (mesmo cabo W n.1 do esquema)")
     add("2 Barramento", "", f"Parafuso sextavado {pf} classe 8.8 zincado + arruela lisa + arruela de pressão + porca (derivações e emendas)",
         f"{pf}×35 8.8", 2 * n_deriv + 12, "cj", "ELECTRIC", "calculado", f"torque {tq[pf]} N·m (DIN 43673) – marcar com caneta de torque")
     add("2 Barramento", "", "Barreira de policarbonato transparente 4 mm do compartimento do barramento (IPXXB, forma 2b) + suportes",
@@ -131,36 +135,41 @@ def montar(ped, res, gab, prot, ext=None):
     add("2 Barramento", "", "Pino esférico para aterramento temporário (NR-10 10.4.6), Ø20 mm, fixado no barramento", "pino esférico Ø20",
         3, "pç", "ELECTRIC", "CONFERIR código", "1 por fase")
     # ------------------------------------------------ estágios
-    for chave, tag, q, desc in (("chave_fusivel_nh00", "-Q1…-Q%d" % n, n, f"Chave seccionadora-fusível tripolar NH00 {prot['chave_A']} A"),
-                                ("fusivel_nh00", "-F1…", 3 * n, f"Fusível NH00 gG {prot['fusivel_A']} A 500 V"),
-                                ("contatora_capacitor", "-K1…-K%d" % n, n, f"Contatora do estágio ({prot['contator']})"),
-                                ("capacitor_25kvar_525V", "-C1…-C%d" % n, n * n_cap, f"Capacitor {res['estagios'][0]['cap'][1]:g} kvar {res['estagios'][0]['cap'][2]:g} V")):
-        r, o = item(d, mc, chave, ped, A=prot["chave_A"] if "chave" in chave else prot["fusivel_A"], tam="00",
-                    kvar=res["estagios"][0]["cap"][1], V=res["estagios"][0]["cap"][2])
-        if chave == "contatora_capacitor":
-            r = dict(r, codigo=prot["contator"])                       # mesma contatora do esquema/proteção
-        add("3 Estágios", tag, desc, r.get("codigo"), q, "pç", o, stt(r), f"torque terminais: {r.get('torque_Nm') or 'CONFERIR catálogo'}")
-    _cr = " / ".join(dict.fromkeys(str(e.get("codigo", "")) for e in res["estagios"]))        # código do reator = o do esquema
-    add("3 Estágios", "-L1…-L%d" % n, "Reator de dessintonia – projeto Electric (FEM) – fornecimento Electric (ver ET do reator)", _cr, n, "pç",
-        "ELECTRIC", "projeto", "")
-    add("3 Estágios", "-B1…-B%d" % n, "Termostato NF na bobina de cada reator (desliga o estágio) – fornecido com o reator", f"no reator {_cr}",
-        n, "pç", "ELECTRIC", "projeto", "IEC 61921")
-    cb, cc = prot["cabo_calc"], prot["cabo_cap_calc"]
+    for G in GR:
+        pr_, e_, ix = G["pr"], G["e"], G["idx"]
+        ng_, nc_ = len(ix), int(e_["cap"][0])
+        for chave, tag, q, desc in (("chave_fusivel_nh00", B.tags_estagio("-Q", ix), ng_, f"Chave seccionadora-fusível tripolar {pr_['base']} {pr_['chave_A']} A"),
+                                    ("fusivel_nh00", B.tags_estagio("-F", ix), 3 * ng_, f"Fusível {pr_['base']} gG {pr_['fusivel_A']} A 500 V"),
+                                    ("contatora_capacitor", B.tags_estagio("-K", ix), ng_, f"Contatora do estágio ({pr_['contator']})"),
+                                    ("capacitor_25kvar_525V", B.tags_estagio("-C", ix), ng_ * nc_,
+                                     f"Capacitor {e_['cap'][1]:g} kvar {e_['cap'][2]:g} V ({nc_} iguais por estágio de {e_['Q_alvo']:g} kvar)")):
+            r, o = item(d, mc, chave, ped, A=pr_["chave_A"] if "chave" in chave else pr_["fusivel_A"], tam="00", kvar=e_["cap"][1], V=e_["cap"][2])
+            if chave == "contatora_capacitor":
+                r = dict(r, codigo=pr_["contator"])                    # mesma contatora do esquema/proteção
+            add("3 Estágios", tag, desc, r.get("codigo"), q, "pç", o, stt(r), f"torque terminais: {r.get('torque_Nm') or 'CONFERIR catálogo'}")
+        add("3 Estágios", B.tags_estagio("-L", ix), "Reator de dessintonia – projeto Electric (FEM) – fornecimento Electric (ver ET do reator)",
+            str(e_.get("codigo", "")), ng_, "pç", "ELECTRIC", "projeto", "")
+        add("3 Estágios", B.tags_estagio("-B", ix), "Termostato NF na bobina de cada reator (desliga o estágio) – fornecido com o reator",
+            f"no reator {e_.get('codigo', '')}", ng_, "pç", "ELECTRIC", "projeto", "IEC 61921")
     comp_est = 0.6 + 1.6 + 0.5                        # barra→chave (cordoalha à parte); chave→contatora; contatora→reator; folga
-    add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cb['secao']} mm² preto (fases do estágio: chave → contatora → reator)",
-        f"{cb['secao']} mm² classe 5", round(3 * n * comp_est, 1), "m", "ELECTRIC", "calculado",
-        f"NBR 5410: I0 {cb['I0']} A × FCT {cb['FCT']} × FCA {cb['FCA']} = {cb['Iz']:.0f} A ≥ {cb['I']:.0f} A")
-    add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cc['secao']} mm² preto (reator → cada capacitor)",
-        f"{cc['secao']} mm² classe 5", round(3 * n * n_cap * 1.2, 1), "m", "ELECTRIC", "calculado",
-        f"NBR 5410: Iz {cc['Iz']:.0f} A ≥ {cc['I']:.0f} A")
-    n_term_e = 3 * n * 4
-    add("4 Cabos de força", "", f"Terminal de compressão tubular Cu estanhado {cb['secao']} mm² (DIN 46235), furo conforme borne",
-        f"terminal {cb['secao']} mm²", n_term_e, "pç", "ELECTRIC", "calculado", "2 pontas × 2 trechos × 3 fases × estágio; prensagem hexagonal")
-    add("4 Cabos de força", "", f"Terminal de compressão/ponteira {cc['secao']} mm² no borne de cada capacitor", f"terminal {cc['secao']} mm²",
-        3 * n * n_cap, "pç", "ELECTRIC", "calculado", "1 cabo por fase de CADA capacitor (REQ-PNL-027)")
-    add("4 Cabos de força", "", f"Terminal de compressão ÚNICO para os {n_cap} cabos de {cc['secao']} mm² por fase no borne de saída do reator "
-        f"(seção equivalente {n_cap} × {cc['secao']} mm²)", f"terminal {n_cap}×{cc['secao']} mm²", 3 * n, "pç", "ELECTRIC", "CONFERIR modelo",
-        "cabos dos capacitores e do reator afastados entre si e dos terminais (sem encostar)")
+    for G in GR:
+        cb, cc = G["pr"]["cabo_calc"], G["pr"]["cabo_cap_calc"]
+        ng_, nc_ = len(G["idx"]), int(G["e"]["cap"][0])
+        est_ = f"estágio(s) {B.tags_estagio('', G['idx'])}"
+        add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cb['secao']} mm² preto (fases do estágio: chave → contatora → reator) – {est_}",
+            f"{cb['secao']} mm² classe 5", round(3 * ng_ * comp_est, 1), "m", "ELECTRIC", "calculado",
+            f"NBR 5410: I0 {cb['I0']} A × FCT {cb['FCT']} × FCA {cb['FCA']} = {cb['Iz']:.0f} A ≥ {cb['I']:.0f} A")
+        add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cc['secao']} mm² preto (reator → cada capacitor) – {est_}",
+            f"{cc['secao']} mm² classe 5", round(3 * ng_ * nc_ * 1.2, 1), "m", "ELECTRIC", "calculado",
+            f"NBR 5410: Iz {cc['Iz']:.0f} A ≥ {cc['I']:.0f} A")
+        add("4 Cabos de força", "", f"Terminal de compressão tubular Cu estanhado {cb['secao']} mm² (DIN 46235), furo conforme borne – {est_}",
+            f"terminal {cb['secao']} mm²", 3 * ng_ * 4, "pç", "ELECTRIC", "calculado", "2 pontas × 2 trechos × 3 fases × estágio; prensagem hexagonal")
+        add("4 Cabos de força", "", f"Terminal de compressão/ponteira {cc['secao']} mm² no borne de cada capacitor – {est_}", f"terminal {cc['secao']} mm²",
+            3 * ng_ * nc_, "pç", "ELECTRIC", "calculado", "1 cabo por fase de CADA capacitor (REQ-PNL-027)")
+        add("4 Cabos de força", "", f"Terminal de compressão ÚNICO para os {nc_} cabos de {cc['secao']} mm² por fase no borne de saída do reator "
+            f"(seção equivalente {nc_} × {cc['secao']} mm²) – {est_}", f"terminal {nc_}×{cc['secao']} mm²", 3 * ng_, "pç", "ELECTRIC", "CONFERIR modelo",
+            "cabos dos capacitores e do reator afastados entre si e dos terminais (sem encostar)")
+    cb = prot["cabo_calc"]                             # maior estágio (prot = pior caso) – usado no condutor de proteção abaixo
     add("4 Cabos de força", "", "Luva termocontrátil de identificação de fase (L1 marrom / L2 preto / L3 cinza) e anilhas DE/PARA",
         "termocontrátil + anilhas", 1, "cj", "ELECTRIC", "calculado", "conforme Lista DE/PARA")
     add("4 Cabos de força", "", "Prensa-cabo / passa-cabo de borracha na placa (passagem frente → reatores)", "passa-cabo Ø50", 2 * n,

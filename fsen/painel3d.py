@@ -425,10 +425,14 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
     dim = gab["dimensoes_mm"]
     H, W, D = dim["altura"], dim["largura"], dim["profundidade"]
     p, faltam, ver = [], [], []
-    d0 = (inds or [None])[0] or {}
+    # v1.26.3 (REQ-BCO-004): com estágios de potências diferentes o arranjo é dimensionado pelo MAIOR (reator e capacitor do
+    # estágio de maior potência) e cada estágio recebe o SEU número de capacitores
+    _ds = [d_ for d_ in (inds or []) if d_ and d_.get("dims_mm")]
+    d0 = (max(_ds, key=lambda d_: d_["dims_mm"].get("largura", 0) * d_["dims_mm"].get("altura", 0)) if _ds else ((inds or [None])[0] or {}))
     rd = d0.get("dims_mm") or (res.get("reator_mm") or {})
     rL, rP, rA = rd.get("largura"), rd.get("profundidade"), rd.get("altura")
-    e0 = res["estagios"][0]
+    e0 = max(res["estagios"], key=lambda e_: (e_.get("Q_alvo") or 0, e_["cap"][0]))
+    ncaps_est = [int(e_["cap"][0]) for e_ in res["estagios"]]
     capd = achar_dim(caps_cod or capacitor_codigo(ped, e0) or "", "capacitores")
     ctt = achar_dim(prot.get("contator", ""), "contatoras")
     try:
@@ -447,7 +451,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
     sd = sec or dict(L=106, A=194, P=80)
     kd = ctt or dict(L=70, A=110, P=108)
     rL, rP, rA = rL or 320, rP or 240, rA or 320
-    n_cap = e0["cap"][0]
+    n_cap = max(ncaps_est)
     cols = gab["colunas"]
     folga = prm["folga_componentes_mm"]
     # placa posicionada pela profundidade que os reatores precisam atrás (com cabos e ar) – resto fica na frente
@@ -593,6 +597,10 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             for _ in range(por_nivel):
                 if k >= n_tot:
                     break
+                if (k % n_cap) >= ncaps_est[min(_n_est_acum + k // n_cap, len(ncaps_est) - 1)]:   # este estágio tem menos latas
+                    caps_pos.append(None)
+                    k += 1
+                    continue
                 lin, ck = divmod(k - nv * por_nivel, por_linha)
                 lin, ck = divmod(k - nv * por_nivel, n_l)
                 _xc_, _yc_ = xc0 + ck * passo_r, yf - G_CAB - dy_u / 2 - 15 - lin * (dy_u + gy_)
@@ -674,12 +682,12 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 _bornes(p, xu0 + 270, xu1 - 170, yf, z_topo + 35, faltam)
         else:
             _bornes(p, xu0, xu1, yf, z_topo + H_TOPO * 0.4, faltam)
-        _ncaps_tot += len(caps_pos)
+        _ncaps_tot += len([c_ for c_ in caps_pos if c_])
         # retorno reator → capacitores (REQ-PNL-027/030): UM cabo por fase de CADA capacitor, terminal tubular (ponteira) no borne
         # da lata, sobe para a canaleta acima dos capacitores, corre na canaleta até a lateral do estágio e atravessa a placa
         for j in range(n_est):
             xm = xu0 + passo * (j + 0.5)
-            caps_j = caps_pos[j * n_cap:(j + 1) * n_cap]
+            caps_j = [c_ for c_ in caps_pos[j * n_cap:(j + 1) * n_cap] if c_]
             if caps_j:
                 q0 = caps_j[0]
                 p.append(dict(t="rotulo", g="frente", x=q0[0], y=q0[1] - 70, z=q0[2] - 120, txt=f"-C{_n_est_acum + j + 1}"))
@@ -856,7 +864,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             xl_ = x_lado[lado_est[j]]
             ent = sorted((k_, v_) for k_, v_ in term.items() if k_.endswith("1"))
             sai = sorted((k_, v_) for k_, v_ in term.items() if k_.endswith("2"))
-            for grupo, D_, ncab, zpz in ((ent, cab_d, 1, z_ps[j] + 12), (sai, cap_d, n_cap, z_ps[j] - 14)):
+            for grupo, D_, ncab, zpz in ((ent, cab_d, 1, z_ps[j] + 12), (sai, cap_d, ncaps_est[min(_est_base + j, len(ncaps_est) - 1)], z_ps[j] - 14)):
                 for f, (nome_t, bb) in enumerate(grupo):
                     xc_t = (bb[0] + bb[1]) / 2
                     cima = (bb[4] + bb[5]) / 2 > zr + rA / 2
@@ -922,7 +930,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 f"{len(terra)} pontos", "todas as massas (estrutura, placa, portas, prateleiras, reatores, teto, compartimento)",
                 CK.texto(CK.check(len(terra) >= 6 * len(cols) + n_est_tot, 60))])
     return dict(H=H, W=W, D=D, base=BASE, pecas=p, faltam=faltam, verificacoes=ver, colunas=cols, xs=xs, terra=terra,
-                caps_por_estagio=[n_cap] * n_est_tot, n_caps_desenhados=_ncaps_tot,
+                caps_por_estagio=(ncaps_est[:n_est_tot] if len(ncaps_est) >= n_est_tot else [n_cap] * n_est_tot), n_caps_desenhados=_ncaps_tot,
                 reator=(rL, rP, rA), cap=(cd.get("D"), cd.get("A")), n_est=n_est_tot, params=prm, base_aprovada=prm.get("_origem"))
 
 
