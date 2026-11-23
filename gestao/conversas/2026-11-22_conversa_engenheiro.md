@@ -284,3 +284,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 → ERRO MEU: "aew" das 07:52 era A&W (cliente do filtro senoidal), não Panatlântica. Corrigir: rodar a A&W pela plataforma local v1.26.3 e apagar os resultados antigos da A&W (confirmar se as pastas Indutor_Cootrans_v* entram).
 
 (23/11 08:30) A&W rodada pela plataforma local v1.26.3: PROJETOS\\A & W Suprimentos Industriais\\2026-11-23_FSEN-LC-269A-440V (L1 150 µH, 6 × 30 µF, 267 kg, APROVADO com 7 atenções). Exclusões pendentes da resposta dele sobre as pastas Indutor_Cootrans_v*. Rodada Panatlântica Schneider v1.26.3 interrompida por engano (pasta incompleta _20261123_0757 a apagar).
+
+(23/11 09:43) Engenheiro: "veja a auditoria que o deepseek fez vc concorda?" (anexo Auditoria_Lote2_Filtro_AW_e_BCD_v1.26.1_Rev00.pdf). Registrado REQ-GER-014. Resposta: concordo com o parecer (não liberar) e com a maioria dos achados; ressalvas em BCD-02 (1,625 T é pico local), BCD-05 (fusível de banco = curto), AW-10 (resistor de descarga existe), AW-01 (classe H atende quem pede F, mas folha e margem erradas).
