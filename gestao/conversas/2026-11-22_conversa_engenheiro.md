@@ -294,3 +294,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (23/11 ~11:00, voz) Engenheiro: "Você sabe que esses indutores, tanto para o filtro senoidal como para o filtro dessintonizado, eu vou eu posso talvez usar eles no futuro para projetos novos, né?" → REQ-REA-018 (PENDENTE: biblioteca também para o indutor do filtro senoidal).
 
 (23/11 ~11:15–11:25, voz) Engenheiro: "Sim" (incluir o indutor do senoidal na biblioteca) / "Pode incluir também" / "todos os componentes dos três filtros, todos eles, também ficam numa biblioteca para a gente acessar futuramente sem precisar refazer a consulta. Como é que isso é feito?" / "Eu acho que sim. Pode fazer esse cadastro sozinho como os reatores, porque a gente não vai ficar conferindo e vendo." → REQ-CMP-008 (PENDENTE); REQ-REA-018 já salva o indutor do senoidal (v1.26.4).
+
+(23/11 ~11:35, voz) Engenheiro: "você salva tudo lá, e na hora de montar um projeto novo, você já usa essa lista que já está lá feita de outros. E aí você faz um double check com a internet, se ele ainda existe, se ele ainda é produzido, se ele ainda é comercializado." / "Alô, voltei." → acrescentado ao REQ-CMP-008.
