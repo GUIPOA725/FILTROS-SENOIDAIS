@@ -36,7 +36,8 @@ Regras:
 - kw_carga = demanda ativa (P95 ou máxima) do ponto medido; fp_atual = fator de potência medido (sem o banco); fp_alvo
   padrão 0,95 se não informado (0,92 é o mínimo da ANEEL).
 - estagios_kvar: só se o cliente definiu os estágios (lista em kvar, ex. [25, 50, 50]). kvar_existente = banco já instalado.
-- fd_pct ou nr: só se pedido (ex. FD 7 %, 8,16 %, 14 %). ordens: harmônicas a sintonizar se pedidas (ex. [5, 7]).
+- fd_pct ou nr: só se o CLIENTE pedir um valor. O padrão Electric do dessintonizado é FD 8,16 % (Nr 3,5 – 210 Hz): se não
+  for pedido, NÃO liste como lacuna e NUNCA sugira 7 % como premissa (14 % só com 3ª harmônica relevante). ordens: harmônicas a sintonizar se pedidas (ex. [5, 7]).
 - trafo_kva, trafo_z_pct (impedância %), scc_rede_mva (potência de curto na MT) – da placa/unifilar.
 - marca_componentes: se o cliente pedir uma marca para os componentes do painel: "ABB", "Schneider", "Siemens", "WEG" ou
   "Epcos (TDK)" (o reator é sempre Electric). Omita se não pedir.

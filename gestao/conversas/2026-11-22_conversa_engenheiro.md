@@ -133,3 +133,11 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 21:41
 "Pode rodar novamente panatlantica via plataforma local e salvar teste real"
 → rodar ABB e Schneider pela plataforma no notebook (v1.26.0), salvar em PROJETOS\Panatlântica.
+
+### 21:56
+"O padrão de filtro dessintonziado é 8.16% não 7%"
+→ REQ-BCO-002 (FD 8,16 % é o padrão; a IA sugeriu 7 % no teste real e a resposta repetiu – corrigir a instrução da IA e refazer o projeto).
+
+### 21:57
+"Usa 400 kvar para comparar com o projeto original da panatlantica"
+→ REQ-REF-007.
