@@ -161,3 +161,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:13
 "Na panatlantica são somente reatores se 50kvar, mas aceitoa opções diferentes são os padrão que uso 25kvar e 50kvar"
 → REQ-BCO-003.
+
+### 22:14
+"Na verdade é o meu padrão mas , se tiver outros usar eu uso 12.5kvar 25 50 75 100"
+→ REQ-BCO-003 (complemento).
