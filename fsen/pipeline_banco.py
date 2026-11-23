@@ -116,7 +116,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             arqs.update(_docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar_ind, log))
             _teto_perdas(d, [res["estagios"][i] for i in grp], log)
             try:                                        # todo reator projetado fica salvo como proposta (A_CONFERIR) – a biblioteca cresce
-                _arq_b = _BR.propor(ped, e, d, projeto=cod)
+                _arq_b = _BR.propor(ped, e, d, projeto=cod, pasta=pasta)
                 log(f"   Reator salvo na biblioteca de reatores como proposta (aguarda aprovação do engenheiro): {os.path.basename(_arq_b)}")
             except Exception as _exb:
                 log(f"   (reator não salvo na biblioteca: {type(_exb).__name__}: {_exb})")
@@ -311,6 +311,13 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         log("   " + _blk[3].replace("**", ""))
     except Exception as ex:
         log(f"   (status geral não gerado: {type(ex).__name__}: {ex})")
+    try:                                            # v1.27.0 (REQ-GER-016): nível de maturidade + pasta de evidências
+        from . import maturidade as _MAT
+        _av = _MAT.iniciar(pasta, cod, DB.titulo_tipo(ped), ped.cliente or "", log)
+        with open(os.path.join(pasta, "RESUMO.md"), "a", encoding="utf-8") as fh:
+            fh.write("\n".join(_MAT.md(_av)) + "\n")
+    except Exception as ex:
+        log(f"   (maturidade do projeto não registrada: {type(ex).__name__}: {ex})")
     carimbar_pasta(pasta, log)
     try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
         from . import consolidado as CONS

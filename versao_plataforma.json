@@ -1,5 +1,5 @@
 {
-  "versao": "1.26.4",
+  "versao": "1.27.0",
   "data": "2026-11-23",
-  "resumo": "Correções da auditoria DeepSeek: térmica do reator/indutor pelo pior método com fechamento automático, status geral do projeto, classe térmica pedida pelo cliente, coordenação cabo × fusível × contatora"
+  "resumo": "Nível de maturidade dos projetos (0 a 5): calculado automático, vendido/TAF/campo por evidência na pasta 06_Evidencias; biblioteca de reatores usa primeiro o de maior maturidade"
 }

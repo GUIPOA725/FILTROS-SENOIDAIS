@@ -69,7 +69,7 @@ def _slug(f, e):
     return re.sub(r"[^A-Za-z0-9_,.-]+", "-", s.replace(" ", "-"))
 
 
-def propor(ped, e, d, projeto=""):
+def propor(ped, e, d, projeto="", pasta=""):
     """Grava o reator projetado como proposta (A_CONFERIR). Não duplica: se já existe proposta/aprovado igual, devolve o existente."""
     f = familia(ped, e)
     for it in listar():
@@ -86,7 +86,7 @@ def propor(ped, e, d, projeto=""):
                ponto_quente_C=float(_tf["ponto_quente_C"]), termica_status=_tf["status"], termica_metodo=_tf["metodo"],
                dims_mm=d.get("dims_mm"), resumo=dict(N=d.get("N"), coluna_mm=[round(d["a"] * 1e3), round(d["b"] * 1e3)], ng=d.get("ng"),
                                                      chapa=(d.get("chapa_dados") or {}).get("nome")),
-               codigo=e.get("codigo"), projeto_origem=projeto, proposto_por=_usuario(), proposto_em=f"{_dt.datetime.now():%Y-%m-%d %H:%M}",
+               codigo=e.get("codigo"), projeto_origem=projeto, pasta_origem=pasta, proposto_por=_usuario(), proposto_em=f"{_dt.datetime.now():%Y-%m-%d %H:%M}",
                projeto={k: v for k, v in d.items() if k not in ("campo_pico",)})
     arq = os.path.join(_base(), "propostas", f"{_slug(f, e)}_{_dt.datetime.now():%Y%m%d_%H%M}_{_usuario()}.json")
     with open(arq, "w", encoding="utf-8") as fh:
@@ -99,7 +99,7 @@ def propor(ped, e, d, projeto=""):
     return arq
 
 
-def propor_senoidal(d, cod="", cliente=""):
+def propor_senoidal(d, cod="", cliente="", pasta=""):
     """v1.26.4 (REQ-REA-018): o indutor do FILTRO SENOIDAL também fica salvo como proposta (A_CONFERIR), com o modelo completo,
     para poder ser reaproveitado em projetos novos depois de aprovado. (O reuso automático no projeto ainda não existe para o
     senoidal – por enquanto fica salvo, listado e aprovável na mesma página da biblioteca.)"""
@@ -118,7 +118,7 @@ def propor_senoidal(d, cod="", cliente=""):
                ponto_quente_C=float(_tf["ponto_quente_C"]), termica_status=_tf["status"], termica_metodo=_tf["metodo"],
                dims_mm=d.get("dims_mm"), resumo=dict(N=d.get("N"), coluna_mm=[round(d["a"] * 1e3), round(d["b"] * 1e3)], ng=d.get("ng"),
                                                      chapa=(d.get("chapa_dados") or {}).get("nome")),
-               codigo=cod, projeto_origem=f"{cod} – {cliente}".strip(" –"), proposto_por=_usuario(), proposto_em=f"{_dt.datetime.now():%Y-%m-%d %H:%M}",
+               codigo=cod, projeto_origem=f"{cod} – {cliente}".strip(" –"), pasta_origem=pasta, proposto_por=_usuario(), proposto_em=f"{_dt.datetime.now():%Y-%m-%d %H:%M}",
                projeto={k: v for k, v in d.items() if k not in ("campo_pico",)})
     nome = re.sub(r"[^A-Za-z0-9_,.-]+", "-", f"seno_{f['tensao_v']:g}V_{f['sintonia']}_{L_uH:.0f}uH_{r['In']:.0f}A")
     arq = os.path.join(_base(), "propostas", f"{nome}_{_dt.datetime.now():%Y%m%d_%H%M}_{_usuario()}.json")
@@ -183,6 +183,15 @@ def recusar(arquivo, motivo):
     return _mover(arquivo, "recusados", status="RECUSADO", recusado_por=_usuario(), motivo=motivo)
 
 
+def maturidade(reg):
+    """Nível de maturidade (0–5) do reator = o do projeto de origem (evidências em 06_Evidencias); None se a pasta não está acessível."""
+    try:
+        from . import maturidade as MAT
+        return MAT.nivel_de_origem(reg.get("pasta_origem"))
+    except Exception:
+        return None
+
+
 def conferir(reg, e):
     """Linhas [grandeza, reator padrão, este projeto, ok] – o padrão tem que COBRIR o caso."""
     rl, rp = reg["requisitos"], e["requisitos"]
@@ -218,7 +227,8 @@ def buscar(ped, e, log=print):
             return None, None, (f"reator padrão {os.path.basename(reg['_arquivo'])} NÃO cobre este caso: "
                                 + "; ".join(f"{n}: padrão {a if a is None else round(a, 1)} × caso {b:.1f}" for n, a, b, _ in falt[:4]))
         return None, None, "nenhum reator padrão aprovado para esta família"
-    _, reg, lin = min(cand, key=lambda x: x[0])                       # o mais leve que cobre
+    # v1.27.0 (REQ-GER-016): entre os que cobrem, o de MAIOR maturidade (ensaiado/medido em campo antes de só calculado); empate → mais leve
+    _, reg, lin = min(cand, key=lambda x: (-(maturidade(x[1]) or 0), x[0]))
     full = _ler(reg["_arquivo"], completo=True)
     d = full.get("projeto")
     if not d:
@@ -236,7 +246,8 @@ def buscar(ped, e, log=print):
 def tabela_md(reg, lin):
     md = ["", "## Reator PADRÃO da biblioteca (REQ-REA-014)", "",
           f"Usado o reator aprovado **{os.path.basename(reg['_arquivo'])}** (aprovado por {reg.get('aprovado_por')} em {reg.get('aprovado_em')}; "
-          f"projeto de origem: {reg.get('projeto_origem') or '—'}) – {reg['massa_kg']:.0f} kg, {reg['perdas_W']:.0f} W. O modelo de elementos "
+          f"projeto de origem: {reg.get('projeto_origem') or '—'}; maturidade nível {maturidade(reg) if maturidade(reg) is not None else '?'} de 5) – "
+          f"{reg['massa_kg']:.0f} kg, {reg['perdas_W']:.0f} W. O modelo de elementos "
           "finitos não foi refeito; conferido se o padrão cobre as correntes deste caso:", "",
           "| Grandeza | Reator padrão (projetado para) | Este projeto (exige) | Check |", "|---|---|---|---|"]
     for n, a, b, ok in lin:

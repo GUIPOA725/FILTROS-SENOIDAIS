@@ -111,6 +111,42 @@ def tela_biblioteca():
                        "Aprovado por": d.get("aprovado_por"), "Em": d.get("aprovado_em")} for d in apr], use_container_width=True, hide_index=True)
     st.divider()
     tela_biblioteca_reatores()
+    tela_maturidade()
+
+
+def tela_maturidade():
+    """Nível de maturidade dos projetos (REQ-GER-016): 1–2 automáticos; 3–5 só com evidência na pasta 06_Evidencias."""
+    import os
+    from fsen import maturidade as MAT
+    st.subheader("🏅 Maturidade dos projetos (nível 0 a 5)")
+    st.caption("**1** salvo/desenhado · **2** calculado e verificado · **3** vendido/fabricado · **4** testado em fábrica (TAF) · "
+               "**5** instalado e medido em campo. Os níveis 1 e 2 a plataforma dá sozinha; do 3 em diante basta colocar o documento "
+               "(pedido de compra, relatório de TAF, comissionamento, termografia) na pasta **06_Evidencias** do projeto – a plataforma lê "
+               "sozinha e sobe o nível. O que é reaproveitado (reator padrão) usa primeiro o de nível mais alto.")
+    base = st.session_state.get("_pasta_pasta_saida") or os.environ.get("FSEN_PASTA_SAIDA") or ""
+    if not base or not os.path.isdir(base):
+        st.info("Escolha a pasta de saída (PROJETOS) na barra lateral para listar os projetos.")
+        return
+    lst = MAT.listar(base)
+    if not lst:
+        st.info("Nenhum projeto com RESUMO nesta pasta.")
+        return
+    st.dataframe([{"Nível": f"{a['nivel']} – {a['nome']}", "Cliente": a.get("cliente"), "Projeto": a.get("projeto"), "Por quê": a.get("motivo"),
+                   "Evidências (3/4/5)": "/".join(str(len(a["evidencias"][k])) for k in (3, 4, 5)), "Resposta": a.get("resposta") or ""}
+                  for a in sorted(lst, key=lambda x: (-x["nivel"], str(x.get("cliente")), str(x.get("projeto"))))],
+                 use_container_width=True, hide_index=True)
+    pend = MAT.pendentes(lst, dias=14)
+    if pend:
+        st.markdown(f"**{len(pend)} projeto(s) há mais de 14 dias sem evidência e sem resposta – o que aconteceu com eles?**")
+        for i, a in enumerate(pend[:12]):
+            c1, c2, c3 = st.columns([4, 2, 2])
+            c1.write(f"{a.get('cliente')} › {a.get('projeto')} (nível {a['nivel']})")
+            _ops = ["—", "não foi vendido (só estudo/teste)", "em negociação", "vendido – vou colocar a evidência na pasta", "não usar em projetos novos"]
+            _hs = "Responda uma vez e a plataforma para de perguntar. 'Vendido' não sobe o nível sozinho: sobe quando o documento estiver na pasta 06_Evidencias."
+            r = c2.selectbox("Situação", _ops, key=f"mat_r_{i}", label_visibility="collapsed", help=_hs)
+            if c3.button("Registrar", key=f"mat_b_{i}", help="Grava a resposta no arquivo maturidade.json da pasta do projeto.") and r != "—":
+                MAT.responder(a["pasta"], r, nao_usar=(r if r.startswith("não usar") else None))
+                st.rerun()
 
 
 def tela_biblioteca_reatores():

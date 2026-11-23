@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.27.0 – 2026-11-23 (nível de maturidade dos projetos)
+- **Nível de maturidade 0 a 5 (REQ-GER-016)**: 0 não usar em projetos novos · 1 salvo/desenhado · 2 calculado e verificado · 3 vendido/fabricado · 4 testado em fábrica (TAF) · 5 instalado e medido em campo. Os níveis 1 e 2 a plataforma dá sozinha ao rodar o projeto (com item REPROVADO fica no 1). Do 3 em diante só sobe com evidência.
+- **Pasta 06_Evidencias em cada projeto**, com três subpastas (vendido/fabricado, TAF, campo) e um LEIA-ME. Basta colocar o documento lá (pedido de compra, relatório de TAF, comissionamento, termografia) – a plataforma lê sozinha e sobe o nível. O nível e a tabela de como subir aparecem no fim do RESUMO.
+- **Página 📚 Biblioteca › Maturidade dos projetos**: lista todos os projetos da pasta de saída com o nível e as evidências. Projeto há mais de 14 dias sem evidência e sem resposta vira pergunta ("não foi vendido", "em negociação", "vendido", "não usar") – ninguém precisa lembrar.
+- **Biblioteca de reatores**: cada reator guarda a pasta do projeto de origem; entre os aprovados que cobrem o caso, é usado primeiro o de maior maturidade (empate: o mais leve). Nível alto não dispensa a conferência contra as correntes do local novo.
+- Limitações: a evidência só é reconhecida dentro de 06_Evidencias; ainda não há nível por componente nem o módulo de estágio padrão completo (REQ-GER-015, REQ-CMP-008).
+
 ## v1.26.4 – 2026-11-23 (correções da auditoria independente: térmica pelo pior método, status geral, classe pedida pelo cliente)
 - **Térmica do reator/indutor pelo resultado mais severo (REQ-GER-014)**: perdas, elevação e ponto quente publicados no resumo, na verificação e na biblioteca passam a ser o PIOR entre o método de projeto e a análise avançada. Com menos de 10 K de folga até o limite vira ATENÇÃO; acima do limite, REPROVADO.
 - **Fechamento térmico automático (REQ-REA-017)**: depois do projeto, a plataforma roda a análise avançada e, se a folga for insuficiente, refaz o reator com meta de elevação menor (até 3 vezes) antes de gerar os documentos. Vale também para o indutor do filtro senoidal.

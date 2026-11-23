@@ -441,7 +441,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                             "diferenças (chapa, espiras, entreferros, condutor, isolação) para conferirmos.\n")
             try:                                    # v1.26.4 (REQ-REA-018): indutor salvo na biblioteca como proposta
                 from . import biblioteca_reatores as _BRs
-                _arq_b = _BRs.propor_senoidal(ind, cod, getattr(ped, "cliente", "") or "")
+                _arq_b = _BRs.propor_senoidal(ind, cod, getattr(ped, "cliente", "") or "", pasta=pasta)
                 log(f"   Indutor salvo na biblioteca de reatores como proposta (aguarda aprovação do engenheiro): {os.path.basename(_arq_b)}")
             except Exception as _exb:
                 log(f"   (indutor não salvo na biblioteca: {type(_exb).__name__}: {_exb})")
@@ -526,6 +526,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         organizar(pasta, arqs, log)
     except Exception as e:
         log(f"   (organização em subpastas não aplicada: {e})")
+    try:                                            # v1.27.0 (REQ-GER-016): nível de maturidade + pasta de evidências
+        from . import maturidade as _MAT
+        _av = _MAT.iniciar(pasta, cod, "Filtro senoidal", getattr(ped, "cliente", "") or "", log)
+        with open(os.path.join(pasta, "RESUMO.md"), "a", encoding="utf-8") as f:
+            f.write("\n".join(_MAT.md(_av)) + "\n")
+    except Exception as e:
+        log(f"   (maturidade do projeto não registrada: {type(e).__name__}: {e})")
     from .versao import carimbar_pasta
     carimbar_pasta(pasta, log)
     try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
