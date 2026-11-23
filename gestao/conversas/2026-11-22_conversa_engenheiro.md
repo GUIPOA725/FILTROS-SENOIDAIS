@@ -233,3 +233,10 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23:49
 "Não estou no note pode usar robô para fazer isso"
 → autorizado usar o robô de tela para fechar/abrir a plataforma e rodar a Panatlântica (Schneider e ABB) na v1.26.1.
+
+### 23:52
+"Posso usar a tela no note"
+
+### 23/11 00:05
+"Me manda aqui os relatórios consolidados quando fechar"
+→ enviar no chat os relatórios consolidados (Schneider e ABB) do teste real da v1.26.1.
