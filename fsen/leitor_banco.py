@@ -27,6 +27,8 @@ INSTRUCAO = """Você é engenheiro de aplicação de correção de fator de pot�
 anexos: pedido, unifilar, placa do transformador, relatório de qualidade de energia, planilhas/exportações de MEDIÇÃO) os dados
 e chame a ferramenta `registrar_banco`.
 Regras:
+- O texto do INÍCIO é o comando/resposta do operador (engenheiro): quando ele define um valor (kvar, estágios, FD, marca,
+  tensão), esse valor vale sobre o que está nos documentos.
 - Use somente o que está escrito ou medido; não invente. Campos ausentes: omita e liste em `lacunas` com a premissa sugerida.
 - tipo_pedido: "dessintonizado", "sintonizado" ou "indefinido" (o que o cliente pediu; 'filtro de harmônica dessintonizado'
   = dessintonizado; 'FHSBT', 'filtro sintonizado', 'filtro de 5ª' = sintonizado).
@@ -113,10 +115,19 @@ def _num_dict(x):
     return out
 
 
+MODULOS_PADRAO_KVAR = (12.5, 25.0, 50.0, 75.0, 100.0)   # REQ-BCO-003: módulos que o engenheiro usa em BT (dessintonizado e sintonizado)
+MODULOS_PREFERIDOS = (25.0, 50.0)                         # o padrão do dia a dia; 12,5 / 75 / 100 quando o porte pede
+MAX_ESTAGIOS = 12                                         # saídas de um controlador de FP comum
+
+
 def estagios_padrao(kvar, V=380):
-    """Módulos padrão Electric de 25 e 50 kvar; com 3+ estágios um deles é de 25 (degrau fino para o controlador)."""
+    """Módulos padrão Electric (REQ-BCO-003): 25 e 50 kvar por preferência; 12,5 kvar para bancos muito pequenos e 75/100 kvar
+    quando 50 kvar passaria de 12 estágios. Com 3+ estágios um deles é de 25 (degrau fino para o controlador).
+    Estágio definido pelo cliente NÃO passa por aqui – é aceito como veio (REQ-GER-013)."""
     if kvar <= 0:
         return [25.0]
+    if kvar < 18.75:
+        return [12.5]
     if kvar < 37.5:
         return [25.0]
     n = int(kvar // 50)
@@ -128,9 +139,18 @@ def estagios_padrao(kvar, V=380):
         est.append(25.0)
     if len(est) >= 3 and 25.0 not in est:
         est[-1] = 25.0
-        if sum(est) < kvar * 0.95:
+        if sum(est) < kvar - 12.4:                            # v1.26.1: não entregar menos que o montante (antes 600 → 575)
             est.append(25.0)
+    if len(est) > MAX_ESTAGIOS:                              # banco grande: módulos de 100 kvar (+ 75/50/25 para fechar o montante)
+        n = int(kvar // 100)
+        r = kvar - 100 * n
+        est = [100.0] * n + ([100.0] if r >= 87.5 else [75.0] if r >= 62.5 else [50.0] if r >= 37.5 else [25.0] if r >= 12.5 else [])
     return sorted(est)
+
+
+def fora_do_padrao(est):
+    """Estágios (kvar) que não são módulos padrão – aceitos quando o cliente exige, mas avisados."""
+    return sorted({float(x) for x in est if not any(abs(float(x) - m) < 0.01 for m in MODULOS_PADRAO_KVAR)})
 
 
 CRESCIMENTO_PCT = 15.0        # folga para crescimento de carga (critério Electric – Panatlântica 2024)
@@ -208,6 +228,9 @@ def decidir(dados, tipo_forcado=None):
     else:
         kvar = max(kvar - kex, 0.0)
     est = [float(x) for x in (dados.get("estagios_kvar") or []) if x]
+    if est and fora_do_padrao(est):                              # REQ-GER-013: o cliente pode exigir outro valor – aceito, com aviso
+        j.append("Estágio(s) de " + ", ".join(f"{x:g}" for x in fora_do_padrao(est)) + " kvar fora dos módulos padrão Electric "
+                 "(12,5 / 25 / 50 / 75 / 100 kvar) – mantido(s) como pedido (exigência do cliente).")
     if not est and kvar >= 100:
         # v1.17.3: o engenheiro escolhe – "medido" (reativo das medições, como Panatlântica 300 kvar) ou "folga"
         # (crescimento + perdas do trafo + N-k). A plataforma sempre calcula as duas e mostra a outra como referência.

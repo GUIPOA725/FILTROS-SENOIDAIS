@@ -169,3 +169,11 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:14 (2)
 "Esse é o padrão para os filtros dessintonziados e sintonizados na baixa tensao"
 → REQ-BCO-003 (vale para dessintonizado e sintonizado em BT).
+
+### 22:15
+"Pode salvar essas potências e nossas conversas e implementar na plataforma mas posso ter outros tipos pois o cliente pode exigir sim"
+→ REQ-BCO-003: implementar módulos padrão 12,5/25/50/75/100 kvar (preferência 25 e 50); valor exigido pelo cliente continua aceito.
+
+### 22:16
+"Sabe que projeto tem que ser bem flexível para os 3 tipos de filtros"
+→ REQ-GER-013.

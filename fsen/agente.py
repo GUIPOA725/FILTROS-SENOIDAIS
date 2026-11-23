@@ -108,7 +108,11 @@ def interpretar(texto, provedor=None, pendente=None):
     if pendente:                                                  # completa o comando anterior com o que veio agora
         for k in ("filtro", "pasta_entrada", "pasta_saida", "marca"):
             out[k] = out.get(k) or pendente.get(k) or ""
-        if out.get("continuar") or any(out.get(k) != pendente.get(k) for k in ("filtro", "pasta_entrada", "pasta_saida", "marca")):
+        dado = bool(re.search(r"\d\s*(kvar|%|v\b|a\b|hz|est[áa]gio|x\s*\d)|folga|contator|tiristor", texto.lower())) and "?" not in texto
+        if dado and re.search(r"\b(continuar|continue|pode seguir|pode rodar|pode continuar)\b", texto.lower()):
+            out["continuar"] = True
+        out["_complemento"] = dado                                # v1.26.1: o operador escreveu o dado que faltou → reler com ele
+        if dado or out.get("continuar") or any(out.get(k) != pendente.get(k) for k in ("filtro", "pasta_entrada", "pasta_saida", "marca")):
             out["intencao"] = "executar"
             out["observacoes"] = (str(pendente.get("observacoes") or "") + "\n" + str(texto)).strip()
     return out
@@ -210,6 +214,9 @@ def executar(cmd, provedor=None, pasta_saida_padrao=None, log=print, confirmado=
                 dados, origem, _av = IN.mesclar(qee=None, protecao=None, ia=dados_ia)
                 dados["evidencias"] = list(dados_ia.get("evidencias") or [])
                 dados["_fonte"] = dados_ia.get("_fonte") or ""
+                obs = str(cmd.get("observacoes") or "").lower()       # v1.26.1: "com folga Electric" escrito no pedido vale como a opção da tela
+                if re.search(r"\bcom folga\b|folga electric", obs) and "sem folga" not in obs and not dados.get("estagios_kvar"):
+                    dados["criterio_montante"] = "folga"
                 ped, just, lac = LB.decidir(dados, tipo_forcado=filtro)
                 if cmd.get("marca"):
                     from . import fabricantes as FB
@@ -293,7 +300,10 @@ def conversar(texto, estado_conversa, provedor=None, pasta_saida_padrao=None, ti
     if cmd["intencao"] != "executar" and not (pend and cmd.get("continuar")):
         return dict(resposta=responder(texto, tipo_tela, contexto, provedor), executou=False)
     ME.registrar_uso("comando", texto, json.dumps({k: cmd.get(k) for k in ("filtro", "pasta_entrada", "pasta_saida", "marca")}, ensure_ascii=False))
-    r = executar(cmd, provedor, pasta_saida_padrao, log, confirmado=bool(pend and cmd.get("continuar")), estado=estado_conversa.get("exec"))
+    est_exec = estado_conversa.get("exec")
+    if pend and cmd.get("_complemento") and est_exec:             # resposta com dado novo: o pedido lido antes não vale mais
+        est_exec = dict(est_exec, ped=None)
+    r = executar(cmd, provedor, pasta_saida_padrao, log, confirmado=bool(pend and cmd.get("continuar")), estado=est_exec)
     if r["status"] == "pergunta":
         estado_conversa["pendente"], estado_conversa["exec"] = {k: v for k, v in cmd.items() if not k.startswith("_")}, r.get("estado")
         resp = r["mensagem"] + "\n\n" + "\n".join(f"- {q}" for q in r["perguntas"]) + (("\n\n" + r["resumo"]) if r.get("resumo") else "")
