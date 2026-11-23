@@ -145,3 +145,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 21:57 (2)
 "Os outros vc segue o fluxo da plataforma"
 → REQ-REF-007 (só o montante de 400 kvar é fixado; o resto é o padrão da plataforma).
+
+### 21:58
+"Pode deixar só com 8.16 % 400kvar o resto que vc rodou diferente pode apagar"
+→ REQ-REF-007: fica só o teste real de 400 kvar FD 8,16 %; a rodada de hoje com FD 7 % pode ser apagada (autorização dele, só para essa rodada).
