@@ -58,8 +58,27 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
         for p in (eng, forn, des):
             os.makedirs(p, exist_ok=True)
         d = None
+        _usar_bib = None
+        try:                                            # v1.26.3 (REQ-REA-014): reator PADRÃO aprovado na biblioteca → não reprojeta
+            from . import biblioteca_reatores as _BR
+            _dl, _reg, _lin = _BR.buscar(ped, e)
+            if _dl:
+                _usar_bib = (_dl, _reg, _lin)
+                log(f"   {nome}: usando o reator PADRÃO da biblioteca ({os.path.basename(_reg['_arquivo'])}, aprovado por "
+                    f"{_reg.get('aprovado_por')}) – {_reg['massa_kg']:.0f} kg; cobre as {len(_lin)} grandezas deste caso")
+            else:
+                log(f"   {nome}: biblioteca de reatores – {_lin}; projetando")
+        except Exception as _exb:
+            log(f"   (biblioteca de reatores não consultada: {type(_exb).__name__}: {_exb})")
         try:
             log(f"   {nome}: estágio(s) {', '.join(str(i+1) for i in grp)}")
+            if _usar_bib:
+                d = _usar_bib[0]
+                d["_biblioteca"] = dict(arquivo=os.path.basename(_usar_bib[1]["_arquivo"]), linhas=_usar_bib[2], reg={k: v for k, v in _usar_bib[1].items() if k != "projeto"})
+                d["aplicacao"] = e["requisitos"]["aplicacao"]
+                arqs.update(_docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar_ind, log))
+                inds.append(d)
+                continue
             # sintonizado: enrolamento em CHAPA (folha) – padrão Electric "chapa ou barra de alumínio"; a corrente harmônica alta
             # (1,1·I1 na 5ª) torna a barra única pesada (pelicular/proximidade) – a folha resolve
             if ped.tipo == "sintonizado":
@@ -83,6 +102,11 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
                     log(f"   ({nomes[cnd]}: {ex} – tentando a próxima opção)")
             d["aplicacao"] = e["requisitos"]["aplicacao"]
             arqs.update(_docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar_ind, log))
+            try:                                        # todo reator projetado fica salvo como proposta (A_CONFERIR) – a biblioteca cresce
+                _arq_b = _BR.propor(ped, e, d, projeto=cod)
+                log(f"   Reator salvo na biblioteca de reatores como proposta (aguarda aprovação do engenheiro): {os.path.basename(_arq_b)}")
+            except Exception as _exb:
+                log(f"   (reator não salvo na biblioteca: {type(_exb).__name__}: {_exb})")
         except Exception as ex:
             log(f"   ({nome}: projeto não concluído – {type(ex).__name__}: {ex})")
         inds.append(d)
@@ -367,6 +391,13 @@ def resumo(ped, res, grupos, inds, cod):
             L.append(f"- Reator {gi+1} ({len(grp)} pç): {d['N']} esp., coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {d['perdas']['total']:.0f} W, "
                      f"{d['massa_kg']['total']:.0f} kg, ΔT {d['termico']['elev_bobina_K']:.0f} K")
     L += verificacoes_md(ped, res, grupos, inds)
+    try:                                                # v1.26.3 (REQ-REA-014): tabela do reator padrão da biblioteca
+        from . import biblioteca_reatores as _BRm
+        for d in inds:
+            if d and d.get("_biblioteca"):
+                L += _BRm.tabela_md(dict(d["_biblioteca"]["reg"], _arquivo=d["_biblioteca"]["arquivo"]), d["_biblioteca"]["linhas"])
+    except Exception as ex:
+        L += ["", f"(tabela do reator padrão não gerada: {type(ex).__name__}: {ex})"]
     try:                                                # v1.26.1 (REQ-REA-015): reator projetado × reatores reais (Cootrans, fabricantes)
         from . import reator_benchmark as _RB
         for gi, (grp, d) in enumerate(zip(grupos, inds)):

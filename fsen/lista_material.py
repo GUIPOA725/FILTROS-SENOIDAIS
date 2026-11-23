@@ -139,7 +139,7 @@ def montar(ped, res, gab, prot, ext=None):
         pr_, e_, ix = G["pr"], G["e"], G["idx"]
         ng_, nc_ = len(ix), int(e_["cap"][0])
         for chave, tag, q, desc in (("chave_fusivel_nh00", B.tags_estagio("-Q", ix), ng_, f"Chave seccionadora-fusível tripolar {pr_['base']} {pr_['chave_A']} A"),
-                                    ("fusivel_nh00", B.tags_estagio("-F", ix), 3 * ng_, f"Fusível {pr_['base']} gG {pr_['fusivel_A']} A 500 V"),
+                                    ("fusivel_nh00", "-F" + (f"{ix[0]}…" if len(ix) > 1 else f"{ix[0]}.x"), 3 * ng_, f"Fusível {pr_['base']} gG {pr_['fusivel_A']} A 500 V (nas chaves {B.tags_estagio('-Q', ix)})"),
                                     ("contatora_capacitor", B.tags_estagio("-K", ix), ng_, f"Contatora do estágio ({pr_['contator']})"),
                                     ("capacitor_25kvar_525V", B.tags_estagio("-C", ix), ng_ * nc_,
                                      f"Capacitor {e_['cap'][1]:g} kvar {e_['cap'][2]:g} V ({nc_} iguais por estágio de {e_['Q_alvo']:g} kvar)")):

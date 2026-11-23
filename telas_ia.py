@@ -109,3 +109,42 @@ def tela_biblioteca():
     with st.expander(f"Aprovados ({len(apr)})"):
         st.dataframe([{"Grupo": d.get("grupo"), "Fabricante": d.get("fabricante"), "Código": d.get("codigo"), "Descrição": d.get("nome"),
                        "Aprovado por": d.get("aprovado_por"), "Em": d.get("aprovado_em")} for d in apr], use_container_width=True, hide_index=True)
+    st.divider()
+    tela_biblioteca_reatores()
+
+
+def tela_biblioteca_reatores():
+    """Reatores padrão (REQ-REA-014): propostas gravadas a cada projeto → o engenheiro aprova → os próximos projetos reutilizam."""
+    from fsen import biblioteca_reatores as BR
+    st.subheader("🧲 Reatores padrão (modelados, salvos e confirmados)")
+    st.caption("Cada reator projetado fica salvo aqui como **A CONFERIR**. Depois de aprovado pelo engenheiro, os próximos projetos da mesma "
+               "família (tipo, tensão, FD/ordem, kvar do estágio, capacitor, condutor e classe) **usam o reator salvo** e só conferem se ele "
+               "cobre as correntes do caso – o projeto sai mais rápido e o reator fica padronizado.")
+    pend, apr, pode = BR.listar("A_CONFERIR"), BR.listar("APROVADO"), BR.pode_aprovar()
+
+    def _linha(r):
+        f = r["familia"]
+        return {"Família": f"{f['tipo']} {f['tensao_v']:g} V {f['sintonia']} – {f['kvar_estagio']:g} kvar", "Capacitor": f"{f['capacitor'][0]}×{f['capacitor'][1]:g} kvar/{f['capacitor'][2]:g} V",
+                "L (µH)": round(r["L_uH"]), "In (A)": round(r["requisitos"].get("In", 0), 1), "Massa (kg)": round(r["massa_kg"]), "Perdas (W)": round(r["perdas_W"]),
+                "Elev. (K)": round(r["elev_K"]), "Origem": r.get("projeto_origem"), "Por": r.get("proposto_por"), "Em": r.get("proposto_em")}
+    st.markdown(f"**Aguardando aprovação ({len(pend)})**")
+    if not pode and pend:
+        st.caption("Só o engenheiro responsável aprova. Enquanto não aprovar, cada projeto continua projetando o seu reator.")
+    for i, r in enumerate(pend):
+        with st.expander(f"{_linha(r)['Família']} – {r['L_uH']:.0f} µH / {r['requisitos'].get('In', 0):.0f} A – {r['massa_kg']:.0f} kg ({r.get('proposto_em')})"):
+            st.write(_linha(r))
+            st.write({"Projetado para (A)": {k: round(v, 1) for k, v in r["requisitos"].items() if k in BR.CAMPOS_REQ}, "Núcleo/enrolamento": r.get("resumo"),
+                      "Medidas (mm)": r.get("dims_mm")})
+            if pode:
+                a1, a2 = st.columns(2)
+                if a1.button("✅ Aprovar como reator padrão", key=f"br_ap_{i}", help="Confirma este reator como PADRÃO da família. Os próximos projetos iguais usam este modelo salvo em vez de projetar outro."):
+                    BR.aprovar(r["_arquivo"])
+                    st.rerun()
+                mot = a2.text_input("Motivo da recusa", key=f"br_mot_{i}", help="Por que este reator não serve como padrão (ex.: muito pesado, elevação alta, medidas não cabem).")
+                if a2.button("❌ Recusar", key=f"br_rc_{i}", help="Tira a proposta da fila e guarda em 'recusados' com o motivo.") and mot:
+                    BR.recusar(r["_arquivo"], mot)
+                    st.rerun()
+    with st.expander(f"Reatores padrão aprovados ({len(apr)})", expanded=bool(apr)):
+        st.dataframe([dict(_linha(r), **{"Aprovado por": r.get("aprovado_por"), "Aprovado em": r.get("aprovado_em")}) for r in apr],
+                     use_container_width=True, hide_index=True)
+
