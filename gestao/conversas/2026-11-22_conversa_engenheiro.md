@@ -222,3 +222,10 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23:00
 "Compara TB com o da cootrans. O que eu fazia manualmente, eu recebia o orçamento da cootrans só especificação da cootrans de L e Amps e dimensionamento com tamanho e peso, ia na internet e verificava se ele estava ok , hoje vc pode fazer tudo mais rápido e fazer uma pesquisa mais profunda na internet de fabricantes intencionais e ver se seu projeto fecha com o deles em tamanho peso e características isso é um fator TB de aprovação concorda? Se sim salva e já considera com parente do projeto"
 → REQ-REA-015.
+
+### 23:35
+"Como estão as coisas"
+
+### 23:37
+"Se vc criou as pastas panatlantica de testes e já usou pois tem versão nova, nosso combinado era vc apagar"
+→ apagar as pastas de teste da Panatlântica criadas por mim e já superadas (22/11: _2155 e _2202; as mais antigas do dia, confirmar a lista).
