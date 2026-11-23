@@ -229,3 +229,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23:37
 "Se vc criou as pastas panatlantica de testes e já usou pois tem versão nova, nosso combinado era vc apagar"
 → apagar as pastas de teste da Panatlântica criadas por mim e já superadas (22/11: _2155 e _2202; as mais antigas do dia, confirmar a lista).
+
+### 23:49
+"Não estou no note pode usar robô para fazer isso"
+→ autorizado usar o robô de tela para fechar/abrir a plataforma e rodar a Panatlântica (Schneider e ABB) na v1.26.1.
