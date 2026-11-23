@@ -720,6 +720,11 @@ def status(est, chk):
         else:
             tot = sum(len(x["comparacao"]) for x in casos)
             base = f"Plataforma = ATP em {tot}/{tot} grandezas (±{TOL_ATP:g} %)"
+            # v1.26.4 (auditoria BCD-08): dizer o que NÃO entrou na dupla checagem
+            s1 = [x for x in chk["casos"] if x["caso"] == "S1"]
+            if s1 and not s1[0].get("rodou"):
+                base += (" dos casos de MANOBRA (E, D, R); o regime permanente S1 não é rodado no ATP – é conferido pelo espectro e "
+                         "pela varredura em frequência da plataforma (dupla checagem PARCIAL)")
     if crit:
         return "REPROVADO – " + "; ".join(f"{c}: {x[0]} – {x[1]} {x[2]} ({x[3]})" for c, x in crit) + " | " + base
     return ("APROVADO – " + base) if base.startswith("Plataforma = ATP") else base

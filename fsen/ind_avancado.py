@@ -665,11 +665,43 @@ def avaliar(d, proj, cat, log=print, fazer_3d=True, iter_termica=4, wf=None):
     out["avisos"] = []
     if perdas["total"] > d["perdas"]["total"] * 1.05:
         out["avisos"].append(f"Método avançado prevê {perdas['total']:.0f} W, acima dos {d['perdas']['total']:.0f} W do projeto.")
-    if mb["Tmax"] > cl_lim - 20:
-        out["avisos"].append(f"Ponto quente da bobina {mb['Tmax']:.0f} °C – menos de 20 K abaixo do limite da classe ({cl_lim:.0f} °C).")
+    if mb["Tmax"] > cl_lim:
+        out["avisos"].append(f"Ponto quente da bobina {mb['Tmax']:.0f} °C – {mb['Tmax'] - cl_lim:.0f} K ACIMA do limite ({cl_lim:.0f} °C): NÃO atende.")
+    elif mb["Tmax"] > cl_lim - 20:
+        out["avisos"].append(f"Ponto quente da bobina {mb['Tmax']:.0f} °C – só {cl_lim - mb['Tmax']:.0f} K abaixo do limite ({cl_lim:.0f} °C).")
     log(f"     Avançado: perdas {perdas['total']:.0f} W (plataforma {d['perdas']['total']:.0f} W); bobina média {mb['Tmed_cobre']:.0f} °C, "
         f"ponto quente {mb['Tmax']:.0f} °C; núcleo máx. {mn['Tmax']:.0f} °C ({out['tempos']['total']:.0f} s)")
     return out
+
+
+def adotar_pior(d, av=None, gravar=True):
+    """v1.26.4 (REQ-GER-014): resultado térmico FINAL do indutor/reator = o MAIS SEVERO entre o método de projeto e a análise
+    avançada (perdas, elevação média e ponto quente). Status pela margem até o limite de temperatura (classe do reator ou a
+    pedida pelo cliente): REPROVADO acima do limite; ATENÇÃO com menos de MARGEM_TERMICA_K de folga; senão APROVADO.
+    Grava em d['termico_final'] – é o que o resumo, a folha de dados e a verificação mostram."""
+    from .ind_projeto import MARGEM_TERMICA_K
+    t = d["termico"]
+    amb = float(t.get("amb_painel_C", 50.0))
+    proj = dict(perdas_W=float(d["perdas"]["total"]), elev_K=float(t["elev_bobina_K"]), ponto_quente_C=float(t["ponto_quente_C"]))
+    fin = dict(proj)
+    avn = None
+    if av:
+        avn = dict(perdas_W=float(av["perdas"]["total"]), elev_K=float(av["termico"]["T_cobre_med_C"]) - amb,
+                   ponto_quente_C=float(av["termico"]["T_cobre_max_C"]))
+        fin = {k: max(proj[k], avn[k]) for k in proj}
+    lim = float(t.get("limite_temp_C", 155.0))
+    margem = lim - fin["ponto_quente_C"]
+    status = "REPROVADO" if margem < 0 else ("ATENÇÃO" if margem < MARGEM_TERMICA_K else "APROVADO")
+    out = dict(fin, projeto=proj, avancado=avn, limite_C=lim, margem_K=margem, margem_min_K=MARGEM_TERMICA_K, amb_C=amb, status=status,
+               metodo=("pior entre o método de projeto e a análise avançada" if av else "método de projeto (análise avançada não rodada)"))
+    if gravar:
+        d["termico_final"] = out
+    return out
+
+
+def final(d):
+    """Valores térmicos a publicar (perdas_W, elev_K, ponto_quente_C, status...) – o pior resultado, se já calculado."""
+    return d.get("termico_final") or adotar_pior(d, None, gravar=False)
 
 
 def figuras(av, pasta, cod):

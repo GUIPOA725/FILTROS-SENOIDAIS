@@ -252,17 +252,28 @@ def memorial(ped, res, grupos, inds, arq, figs, versao=""):
             continue
         from .ind_projeto import descr_condutor
         L3 = d.get("L3d")
+        from .ind_avancado import final as _fin
+        _tf = _fin(d)                                     # v1.26.4 (REQ-GER-014): publica o resultado mais severo
         lin = [("Indutância (projeto / 3D por fase)", f"{d['requisitos']['L']*1e6:.0f} µH / "
                 + (", ".join(f"{x*1e6:.0f}" for x in L3) if L3 is not None else "–") + " µH"),
                ("Núcleo", f"{d['chapa_dados']['nome']}; coluna {d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm; {d['ng']} entreferros por coluna"),
                ("Enrolamento", f"{d['N']} espiras de {descr_condutor(d, curto=True)}; bobina a {d['c']*1e3:.0f} mm do núcleo"),
-               ("Perdas (projeto)", f"{d['perdas']['total']:.0f} W ({d['perdas']['total']/e['Q_kvar']:.1f} W/kvar)"),
-               ("Elevação do enrolamento / ponto quente", f"{d['termico']['elev_bobina_K']:.0f} K / {d['termico']['ponto_quente_C']:.0f} °C (classe {ped.classe})"),
+               ("Perdas – valor adotado", f"{_tf['perdas_W']:.0f} W ({_tf['perdas_W']/e['Q_kvar']:.1f} W/kvar) – {_tf['metodo']}"),
+               ("Elevação média / ponto quente – valor adotado", f"{_tf['elev_K']:.0f} K / {_tf['ponto_quente_C']:.0f} °C; limite {_tf['limite_C']:.0f} °C "
+                f"(classe {ped.classe}), folga {_tf['margem_K']:.0f} K – {_tf['status']}"),
+               ("Método de projeto (referência)", f"{d['perdas']['total']:.0f} W; {d['termico']['elev_bobina_K']:.0f} K / {d['termico']['ponto_quente_C']:.0f} °C"),
                ("Massa", f"{d['massa_kg']['total']:.0f} kg")]
         av = d.get("avancado")
         if av:
             lin.append(("Análise avançada (espectro, 3D)", f"{av['perdas']['total']:.0f} W; bobina média {av['termico']['T_cobre_med_C']:.0f} °C, "
                         f"ponto quente {av['termico']['T_cobre_max_C']:.0f} °C"))
+        if d.get("avancado_extremo"):
+            x = d["avancado_extremo"]
+            lin.append(("Caso extremo (informativo)", f"harmônicas {x['k_h']:.1f} × as do local ({x['Ih_A']:.0f} A, limite do capacitor IEC 60831): "
+                        f"{x['perdas_W']:.0f} W, ponto quente {x['ponto_quente_C']:.0f} °C"))
+        if d.get("fechamento_termico"):
+            lin.append(("Fechamento térmico", "; ".join(f"meta {x['meta_K']:.0f} K → {x['ponto_quente_C']:.0f} °C, {x['massa_kg']:.0f} kg" for x in d["fechamento_termico"])
+                        + f" → final meta {d['alvo']:.0f} K"))
         if d.get("verificacao_resumo"):
             lin.append(("Verificação independente (NGSolve)", d["verificacao_resumo"]))
         R.tab(["Grandeza", "Valor"], lin, [2, 4])
@@ -441,11 +452,16 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
         doc.add_paragraph(t, style="List Bullet")
     doc.add_paragraph("Correntes harmônicas previstas pelo indutor (regime contínuo):")
     hs = sorted(e["Ih_projeto"])
+    _iht = r.get("Ih_termico") or e["Ih_projeto"]
     _tabela(doc, ["Harmônica", "60 Hz"] + [f"{h}ª ({h*ped.freq_hz:g} Hz)" for h in hs],
-            [["Corrente [A]", _f(r['I1'])] + [_f(e['Ih_projeto'][h]) for h in hs],
-             ["Tensão no indutor [V]", _f(r['I1'] * e['Xl'])] + [_f(e['Ih_projeto'][h] * h * e['Xl']) for h in hs]])
-    doc.add_paragraph(f"Valor eficaz do espectro: {_f(r['I_fisica'], 0)} A. Corrente RMS de projeto adotada: {_f(r['In'], 0)} A "
-                      f"(maior entre o padrão Electric {_f(r['k_corrente'], 2)} × I60 = {_f(r['I_electric'], 0)} A e o espectro).")
+            [["Corrente [A]", _f(r['I1'])] + [_f(_iht[h]) for h in hs],
+             ["Tensão no indutor [V]", _f(r['I1'] * e['Xl'])] + [_f(_iht[h] * h * e['Xl']) for h in hs]])
+    # v1.26.4 (REQ-GER-014): a tabela é o espectro DE PROJETO – o do local × k_t – e fecha com a corrente de projeto (antes a
+    # tabela somava a corrente física e o texto pedia uma corrente maior)
+    doc.add_paragraph(f"O valor eficaz da tabela é a corrente RMS de projeto, {_f(r['In'], 0)} A (maior entre o padrão Electric "
+                      f"{_f(r['k_corrente'], 2)} × I60 = {_f(r['I_electric'], 0)} A e o espectro do local, {_f(r['I_fisica'], 0)} A); "
+                      f"a tabela é o espectro do local multiplicado por {_f(r.get('k_termico', 1.0), 2)}. Perdas, elevação e indução devem "
+                      "ser garantidas com este espectro.")
     if sint or mono:
         doc.add_paragraph("Para a condição de corrente máxima da tabela acima, a temperatura no núcleo do indutor não deverá passar de "
                           "100 graus, bem como nos enrolamentos se possível. A Electric garante que esses limites de corrente não serão "

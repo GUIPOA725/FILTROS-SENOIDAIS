@@ -61,6 +61,18 @@ CLASSE = {
     "H": dict(temp=180, elev_media=125, nome="H (180 °C)"),
 }
 PONTO_QUENTE_ACRESCIMO_K = 15.0       # IEC 60076-11: θ_classe = 40 + elevação média + 15 K (ponto quente)
+MARGEM_TERMICA_K = 10.0               # v1.26.4 (REQ-GER-014/REQ-REA-013): folga mínima entre o ponto quente e o limite da classe
+ALVO_ELEV_EXT = None                  # v1.26.4: meta de elevação imposta de fora (fechamento térmico com a análise avançada)
+
+
+def meta_elevacao(r, amb_c):
+    """Meta de elevação média do enrolamento (K): a da classe, limitada para o PONTO QUENTE ficar MARGEM_TERMICA_K abaixo do
+    limite de temperatura (da classe ou do cliente – r['temp_max_C']) no ambiente real do painel."""
+    cl = CLASSE[r["classe"]]
+    t_lim = float(r.get("temp_max_C") or cl["temp"])
+    if ALVO_ELEV_EXT:
+        return float(ALVO_ELEV_EXT)
+    return max(min(cl["elev_media"], META_ELEV_MAX, t_lim - amb_c - PONTO_QUENTE_ACRESCIMO_K - MARGEM_TERMICA_K), 40.0)
 
 
 def sistema_isolacao(classe):
@@ -103,6 +115,15 @@ DIST = dict(separacao_mm=10.0, escoamento_mm=16.0, bobina_culatra_mm=25.0, entre
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+def _temp_classe_cliente(txt):
+    """Temperatura-limite da classe térmica pedida pelo cliente ('F (155 °C)' → 155). Sem pedido → classe F (padrão Electric)."""
+    t = str(txt or "F").strip().upper()
+    for letra, temp in (("H", 180.0), ("F", 155.0), ("B", 130.0)):
+        if t.startswith(letra) or f"CLASSE {letra}" in t:
+            return temp
+    return 155.0
+
+
 def requisitos(proj, cat=None):
     from .modelos import Pedido
     ped = Pedido.from_dict(proj.pedido) if isinstance(proj.pedido, dict) else proj.pedido
@@ -115,7 +136,8 @@ def requisitos(proj, cat=None):
                 Isat=max(float(l1.i_sat_a), math.sqrt(2) * i_inv + rpp / 2), Iinv=i_inv,
                 Iovl=1.5 * i_inv * math.sqrt(2) + rpp / 2, rpp=rpp, rrms=float(l1.ripple_rms_a), fs=float(proj.fs_hz),
                 f1=float(ped.freq_rede_hz), V=float(ped.tensao_v), Vdc=1.35 * float(ped.tensao_v) * 1.10,
-                classe="H")          # padrão Electric: sistema de isolação classe H com elevação limitada à de classe F (margem)
+                classe="H",          # padrão Electric: sistema de isolação classe H com elevação limitada à de classe F (margem)
+                temp_max_C=_temp_classe_cliente(getattr(ped, "classe_temp", None)))   # v1.26.4: ponto quente ≤ classe PEDIDA pelo cliente
 
 
 def _dowell(m, delta):
@@ -248,7 +270,7 @@ def pre_dimensionar(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev
     elevação média ≤ alvo e B(Isat) ≤ 1,45 T (garante L ≥ 90 % em Isat e ≥ 70 % na sobrecarga – conferido depois no FEM)."""
     ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
     cl = CLASSE[r["classe"]]
-    alvo = alvo_elev or min(cl["elev_media"], META_ELEV_MAX)   # meta: elevação de classe F mesmo com materiais classe H (margem)
+    alvo = alvo_elev or meta_elevacao(r, amb_c)   # meta: elevação de classe F mesmo com materiais classe H (margem)
     T = 40 + alvo
     rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
@@ -402,7 +424,7 @@ def _pre_fio_um(r, chapa="GO_M120-27S", cond_id="AL", h_conv=12.0, alvo_elev=Non
     dimensão do fio, nº de fios em paralelo e de camadas) que passam na estimativa térmica; o FEM escolhe entre eles."""
     ch, cond = CHAPAS[chapa], CONDUTORES[cond_id]
     cl = CLASSE[r["classe"]]
-    alvo = alvo_elev or min(cl["elev_media"], META_ELEV_MAX)
+    alvo = alvo_elev or meta_elevacao(r, amb_c)
     T = 40 + alvo
     rhoT = cond["rho20"] * (1 + cond["alfa"] * (T - 20))
     delta = math.sqrt(rhoT / (math.pi * r["fs"] * MU0))
@@ -823,8 +845,11 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
         d = avals[0][2]
         if avals[0][0]:
             d.setdefault("avisos_selecao", []).append(
-                f"Nenhum candidato passou em perdas/elevação/entreferro; escolhido o de menor perda que cabe na coluna "
-                f"(largura {d['_larg_env']:.0f} mm ≤ {r.get('L_env_max_mm') or 0:.0f} mm) – conferir teto de perdas com o fabricante.")
+                "Nenhum candidato passou em perdas/elevação/entreferro com a folga de projeto; escolhido o de menor perda"
+                + ((f" que cabe na coluna (largura {d['_larg_env']:.0f} mm ≤ {r['L_env_max_mm']:.0f} mm)" if avals[0][5] else
+                    f", que NÃO cabe 2 por coluna (largura {d['_larg_env']:.0f} mm > {r['L_env_max_mm']:.0f} mm) – painel com colunas maiores")
+                   if r.get("L_env_max_mm") else f" (largura {d['_larg_env']:.0f} mm)")
+                + " – projeto de COMPROMISSO: conferir o teto de perdas e a elevação com o fabricante.")
         elif not avals[0][5]:
             d.setdefault("avisos_selecao", []).append(
                 f"O melhor candidato não cabe 2 por coluna de 800 mm (largura {d['_larg_env']:.0f} mm) – painel com colunas maiores.")
@@ -966,7 +991,8 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
     cl = CLASSE[r["classe"]]
     d["termico"] = dict(h_conv=h_conv, A_bobina_m2=A_w, elev_bobina_K=dT_w, elev_nucleo_K=dT_fe,
                         ponto_quente_C=amb_c + dT_w + PONTO_QUENTE_ACRESCIMO_K, amb_painel_C=amb_c,
-                        limite_elev_K=cl["elev_media"], limite_temp_C=cl["temp"], meta_elev_K=d["alvo"])
+                        limite_elev_K=cl["elev_media"], limite_temp_C=float(r.get("temp_max_C") or cl["temp"]), meta_elev_K=d["alvo"],
+                        limite_classe_C=cl["temp"])
     # ------------------------------------------------ 6) forças no entreferro, dimensões, massa
     Bg = d["Bpk_coluna"]
     Ag = a * b

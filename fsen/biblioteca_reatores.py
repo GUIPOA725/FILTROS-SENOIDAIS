@@ -76,10 +76,14 @@ def propor(ped, e, d, projeto=""):
         if it["familia"] == f and abs(it["L_uH"] / e["L_uH"] - 1) * 100 <= 0.2 and abs(it["requisitos"].get("In", 0) - e["requisitos"]["In"]) < 0.5 \
                 and abs(it["massa_kg"] - d["massa_kg"]["total"]) < 0.5:
             return it["_arquivo"]
+    from .ind_avancado import final as _fin
+    _tf = _fin(d)
     reg = dict(status="A_CONFERIR", familia=f, L_uH=float(e["L_uH"]), requisitos={k: float(v) for k, v in e["requisitos"].items()
                                                                                  if isinstance(v, (int, float))},
-               espectro_A={str(h): float(i) for h, i in (e.get("Ih_projeto") or {}).items()},
-               massa_kg=float(d["massa_kg"]["total"]), perdas_W=float(d["perdas"]["total"]), elev_K=float(d["termico"]["elev_bobina_K"]),
+               # v1.26.4: espectro DE PROJETO (o do local × k_t) e térmica pelo PIOR método (REQ-GER-014)
+               espectro_A={str(h): float(i) for h, i in (e["requisitos"].get("Ih_termico") or e.get("Ih_projeto") or {}).items()},
+               massa_kg=float(d["massa_kg"]["total"]), perdas_W=float(_tf["perdas_W"]), elev_K=float(_tf["elev_K"]),
+               ponto_quente_C=float(_tf["ponto_quente_C"]), termica_status=_tf["status"], termica_metodo=_tf["metodo"],
                dims_mm=d.get("dims_mm"), resumo=dict(N=d.get("N"), coluna_mm=[round(d["a"] * 1e3), round(d["b"] * 1e3)], ng=d.get("ng"),
                                                      chapa=(d.get("chapa_dados") or {}).get("nome")),
                codigo=e.get("codigo"), projeto_origem=projeto, proposto_por=_usuario(), proposto_em=f"{_dt.datetime.now():%Y-%m-%d %H:%M}",
@@ -156,7 +160,7 @@ def conferir(reg, e):
         if rp.get(k) is None:
             continue
         lin.append((nomes[k], rl.get(k), rp[k], rl.get(k) is not None and rl[k] >= rp[k] * 0.995))
-    el, ep = reg.get("espectro_A") or {}, e.get("Ih_projeto") or {}
+    el, ep = reg.get("espectro_A") or {}, (e["requisitos"].get("Ih_termico") or e.get("Ih_projeto") or {})
     for h in sorted(ep, key=lambda x: int(float(x))):
         vl = el.get(str(h), el.get(str(int(float(h)))))
         lin.append((f"Harmônica {int(float(h))}ª (A)", vl, ep[h], vl is not None and vl >= float(ep[h]) * 0.995))

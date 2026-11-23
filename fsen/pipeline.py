@@ -111,6 +111,11 @@ def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs, cat=No
                 AV.salvar(av, os.path.join(pasta_eng, "avancado_indutor.json"))
                 arqs["indutor_avancado"] = AV.relatorio(ind, av, os.path.join(pasta_eng, f"Analise_Avancada_Indutor_{cod}.pdf"), figs)
                 ind["avancado"] = dict(perdas=av["perdas"], termico={k: v for k, v in av["termico"].items() if k != "iteracoes"})
+                tf = AV.adotar_pior(ind, av)               # v1.26.4 (REQ-GER-014): resultado final = o mais severo
+                if tf["status"] != "APROVADO":
+                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                        f"Indutor – térmica {tf['status']}: ponto quente {tf['ponto_quente_C']:.0f} °C (pior entre projeto e análise avançada) × "
+                        f"limite {tf['limite_C']:.0f} °C da classe pedida (folga {tf['margem_K']:.0f} K; mínimo {tf['margem_min_K']:.0f} K)."]
                 for a_ in av.get("avisos", []):
                     proj.avisos = list(getattr(proj, "avisos", []) or []) + [f"Indutor (análise avançada): {a_}"]
             except Exception as e:
@@ -255,18 +260,38 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                        "culatra": "2 por coluna nas culatras + folha (não recomendado)"}.get(construcao_gap, "distribuídos (multigap) + folha")
             log(f"   Indutor: projeto de referência por elementos finitos – entreferros {_nome_c} (alguns minutos)...")
             ind_pre = IP.projetar(proj, cat, log=log, construcao=construcao_gap, condutor=condutor_ind)
+            _tfp = None
+            if verificar_ind:                       # v1.26.4 (REQ-GER-014): fecha a térmica com a análise avançada ANTES do painel
+                try:
+                    from .pipeline_banco import _fechar_termica
+                    from . import ind_avancado as _AVp
+
+                    def _refazer(alvo):
+                        IP.ALVO_ELEV_EXT = alvo
+                        try:
+                            return IP.projetar(proj, cat, log=lambda *_a: None, construcao=construcao_gap, condutor=condutor_ind)
+                        finally:
+                            IP.ALVO_ELEV_EXT = None
+                    log("   Indutor: fechamento térmico com a análise avançada (formas de onda do circuito + mapa térmico)...")
+                    ind_pre = _fechar_termica(ind_pre, None, _refazer, log, proj=proj, cat=cat)
+                    _tfp = ind_pre.get("termico_final")
+                except Exception as _ext:
+                    log(f"   (fechamento térmico do indutor não concluído: {type(_ext).__name__}: {_ext})")
             _p_est = float(proj.l1.perdas_w or 0)
             _r = ind_pre["requisitos"]
             _p_lim = float(ind_pre["perdas"]["total"]) * 1.15
             if _r.get("P_max"):
                 _p_lim = min(_p_lim, float(_r["P_max"]) * float(_r.get("k_Pmax") or 1))
-            _p_lim = max(_p_lim, float(ind_pre["perdas"]["total"]))
+            _p_lim = max(_p_lim, float(ind_pre["perdas"]["total"]), float((_tfp or {}).get("perdas_W") or 0))
             _dm = ind_pre["dims_mm"]
             proj.l1.perdas_w = round(_p_lim, 0)
             proj.l1.dim_mm = [int(math.ceil(_dm["largura"] / 10) * 10), int(math.ceil(_dm["altura"] / 10) * 10),
                               int(math.ceil(_dm["profundidade"] / 10) * 10)]
             proj.l1.massa_kg = round(float(ind_pre["massa_kg"]["total"]), 0)
-            proj._ind_fem_termico = dict(elev=float(ind_pre["termico"]["elev_bobina_K"]), p=float(ind_pre["perdas"]["total"]))
+            proj._ind_fem_termico = dict(elev=float((_tfp or {}).get("elev_K") or ind_pre["termico"]["elev_bobina_K"]),
+                                         p=float((_tfp or {}).get("perdas_W") or ind_pre["perdas"]["total"]),
+                                         limite_c=float(ind_pre["termico"]["limite_temp_C"]),
+                                         metodo=(_tfp or {}).get("metodo") or "método de projeto")
             proj._ind_chapa = dict(nome=ind_pre["chapa_dados"]["nome"], esp=float(ind_pre["chapa_dados"]["esp_mm"]),
                                    massa_nucleo=float(ind_pre["massa_kg"]["nucleo"]))
             proj.avisos = list(getattr(proj, "avisos", []) or []) + [

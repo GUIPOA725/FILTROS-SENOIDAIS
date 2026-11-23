@@ -93,3 +93,15 @@ referencias:
     - "Ainda não lidos: 'Understanding MV Harmonic Filter Reactors' (PMI), IEEE 1531-2003, 'dimensionamento cabos filtros harmonicas nepsi.pdf', pasta 'WEB nepsi - estudos e casos', McLyman (projeto de indutores), 'Comparison of ACR and ICR', catálogos Epcos/Schneider PB Guide/ABB."
   requisitos: [REQ-REF-008, REQ-REA-012, REQ-REA-011]
   usada_em: "gestao/analises/2026-11-22_reatores_fabricantes.md (comparação fabricantes × plataforma; propostas a aprovar)"
+- id: REF-AUDITORIA-DEEPSEEK-LOTE2
+  nome: "Auditoria técnica independente (DeepSeek) – Lote 2 – filtro A&W 269 A/440 V (v1.26.3) e banco Panatlântica 400 kvar/415 V (v1.26.1), 23/11/2026"
+  caminho: "gestao/analises/2026-11-23_Auditoria_DeepSeek_Lote2_AW_BCD.pdf"
+  licoes:
+    - "A plataforma calculava o resultado mais severo e mesmo assim escrevia APROVADO no resumo e na folha de dados – o status tem que sair do PIOR resultado de cada grandeza."
+    - "Projeto e análise avançada do reator usavam correntes diferentes (espectro físico × toda a folga em harmônicas): 291 W × 483 W. Os dois têm que usar o mesmo espectro de projeto."
+    - "Classe térmica: conferir contra a classe PEDIDA pelo cliente, no ambiente real do painel, com folga – 1 K de margem não é aceitável."
+    - "Resumo parcial (IEC) dizendo 0 REPROVADO com arco elétrico reprovado em outra tabela engana quem lê – precisa de um status geral."
+    - "Conferências que faltavam: fusível × cabo (I²t e justificativa), borne da contatora × seção do cabo, desenho coerente da junta do núcleo."
+    - "Ressalvas à auditoria: 1,625 T é pico local de canto (coluna ≈ 1,0–1,2 T); o resistor de descarga do filtro senoidal existe na lista; fusível de banco protege contra curto, não sobrecarga."
+  requisitos: [REQ-GER-014, REQ-REA-017, REQ-SEN-020, REQ-BCO-005]
+  usada_em: "v1.26.4 – fsen/ind_avancado.py, pipeline_banco.py, pipeline.py, banco.py, termico.py, checagem.py"

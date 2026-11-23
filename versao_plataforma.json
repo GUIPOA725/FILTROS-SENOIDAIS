@@ -1,5 +1,5 @@
 {
-  "versao": "1.26.3",
+  "versao": "1.26.4",
   "data": "2026-11-23",
-  "resumo": "Biblioteca de reatores padrão (salvos, aprovados e reutilizados); banco com estágios de potências diferentes (lista, proteção e 3D por tipo de estágio); indução do reator conferida no NGSolve"
+  "resumo": "Correções da auditoria DeepSeek: térmica do reator/indutor pelo pior método com fechamento automático, status geral do projeto, classe térmica pedida pelo cliente, coordenação cabo × fusível × contatora"
 }

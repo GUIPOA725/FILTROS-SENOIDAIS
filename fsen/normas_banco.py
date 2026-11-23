@@ -223,7 +223,8 @@ def verificacao_md(L):
     out += ["| " + " | ".join(str(c).replace("|", "/") for c in r) + " |" for r in L]
     n = {k: sum(1 for r in L if k in r[4]) for k in (CK.APROVADO, CK.ATENCAO, CK.REPROVADO)}
     out += ["", f"Resumo: {n[CK.APROVADO]} APROVADO, {n[CK.ATENCAO]} ATENÇÃO (comprovar no recebimento ou conferir), "
-            f"{n[CK.REPROVADO]} REPROVADO."]
+            f"{n[CK.REPROVADO]} REPROVADO – SOMENTE desta tabela (IEC 61439/61921). O status do projeto é o 'Status geral' no início "
+            "do resumo, que soma todas as tabelas (verificações, arco elétrico IEEE 1584, transitórios, reator)."]
     return out
 
 

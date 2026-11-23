@@ -494,10 +494,16 @@ def folha_nucleo(F, g, d, fab):
     V.ret(0, 0, W, H, fc=C["ferro"], lw=LW_G)
     for i in range(2):
         V.ret(a + i * g["pitch"], a, ww, hw, fc="white", lw=LW_M)
-    # juntas a 45° nas culatras (step-lap)
-    for xx in (0, W):
-        s = 1 if xx == 0 else -1
-        V.lin([xx, xx + s * a], [0, a], lw=LW_F, color="k")
+    # v1.26.4 (auditoria BCD-09): com os entreferros nas culatras a junta é de TOPO (colunas inteiras sobre os calços) – o
+    # desenho não pode mostrar step-lap; juntas a 45° (step-lap) só na construção com entreferros distribuídos
+    _topo = d.get("pos_gap") == "culatra"
+    if _topo:
+        for yy in (a, a + hw):
+            V.lin([0, W], [yy, yy], lw=LW_F, color="k")
+    else:
+        for xx in (0, W):
+            s = 1 if xx == 0 else -1
+            V.lin([xx, xx + s * a], [0, a], lw=LW_F, color="k")
         V.lin([xx, xx + s * a], [H, H - a], lw=LW_F, color="k")
     xm = g["xc"][1]
     V.lin([xm - a / 2, xm, xm + a / 2], [a, 0, a], lw=LW_F)
@@ -534,16 +540,27 @@ def folha_nucleo(F, g, d, fab):
     V.cota_v(0, H, W, 16, f"{H:.0f}")
     V.balao(a / 2, a / 2, 1, -10, -10)
     V.balao(g["xc"][2], a + fab["pac_l"][0] + fab["gl"] / 2, 3, 14, 6)
-    # detalhe step-lap
-    F.texto(275, 265, "DETALHE E – JUNTA STEP-LAP (sem escala)", fontsize=7.4, weight="bold")
-    ax = F.ax
-    for k in range(3):
-        y0 = 248 - k * 3.2
-        ax.add_patch(Polygon([(272 + k * 5, y0), (310 + k * 5, y0), (318 + k * 5, y0 + 2.6), (280 + k * 5, y0 + 2.6)], closed=True,
-                             fc=C["ferro"], ec="k", lw=0.3))
-        ax.add_patch(Polygon([(318 + k * 5, y0), (360, y0), (360, y0 + 2.6), (326 + k * 5, y0 + 2.6)], closed=True, fc=C["ferro_esc"],
-                             ec="k", lw=0.3))
-    F.texto(272, 234, "3 degraus × 5 mm, corte a 45°, 2 lâminas por degrau – reduz perdas e ruído na junta", fontsize=5.8)
+    # detalhe da junta
+    if _topo:
+        F.texto(275, 265, "DETALHE E – JUNTA DE TOPO sobre o calço de entreferro (sem escala)", fontsize=7.4, weight="bold")
+        ax = F.ax
+        ax.add_patch(Polygon([(272, 252), (360, 252), (360, 258), (272, 258)], closed=True, fc=C["ferro_esc"], ec="k", lw=0.3))
+        ax.add_patch(Polygon([(296, 250.4), (336, 250.4), (336, 252), (296, 252)], closed=True, fc="#e8c36a", ec="k", lw=0.3))
+        ax.add_patch(Polygon([(296, 238), (336, 238), (336, 250.4), (296, 250.4)], closed=True, fc=C["ferro"], ec="k", lw=0.3))
+        F.texto(338, 254.2, "culatra", fontsize=5.6)
+        F.texto(338, 250.4, "calço EP GC 203", fontsize=5.6)
+        F.texto(338, 243, "coluna inteira (topo retificado)", fontsize=5.6)
+        F.texto(272, 234, "Colunas inteiras com as faces de topo retificadas; a junta com a culatra é de TOPO, sobre o calço (NÃO step-lap)", fontsize=5.8)
+    else:
+        F.texto(275, 265, "DETALHE E – JUNTA STEP-LAP (sem escala)", fontsize=7.4, weight="bold")
+        ax = F.ax
+        for k in range(3):
+            y0 = 248 - k * 3.2
+            ax.add_patch(Polygon([(272 + k * 5, y0), (310 + k * 5, y0), (318 + k * 5, y0 + 2.6), (280 + k * 5, y0 + 2.6)], closed=True,
+                                 fc=C["ferro"], ec="k", lw=0.3))
+            ax.add_patch(Polygon([(318 + k * 5, y0), (360, y0), (360, y0 + 2.6), (326 + k * 5, y0 + 2.6)], closed=True, fc=C["ferro_esc"],
+                                 ec="k", lw=0.3))
+        F.texto(272, 234, "3 degraus × 5 mm, corte a 45°, 2 lâminas por degrau – reduz perdas e ruído na junta", fontsize=5.8)
     # tabelas: corte, pacotes / calços
     yt = F.tabela(272, 228, ["Peça", "Largura", "Comprimento", "Quantidade"], fab["corte"], [36, 14, 26, 46], fs=5.4)
     F.texto(272, yt - 4, f"Chapa: {d['chapa_dados']['nome']}  ({d['chapa_dados']['norma']})", fontsize=5.6)

@@ -114,3 +114,30 @@ def de_verificacao(ok, critico=True, valor=None, limite=None):
     """(check, utilização) para as verificações do filtro senoidal (Verificacao: ok/critico/valor/limite)."""
     u = util_de_textos(valor, limite)
     return check(bool(ok), u, "crit" if critico else "aviso"), u
+
+
+def status_geral_md(texto):
+    """v1.26.4 (REQ-GER-014): status GERAL do projeto a partir de TODAS as tabelas com coluna Check do RESUMO (verificações,
+    arco elétrico, transitórios, IEC 61439, conferência) – nenhum resumo parcial pode dizer '0 REPROVADO' com item reprovado em
+    outra tabela. Devolve as linhas markdown do bloco (para inserir logo abaixo do título)."""
+    rep, at = [], 0
+    for ln in texto.splitlines():
+        if not ln.startswith("|"):
+            continue
+        if "✖ REPROVADO" in ln:
+            cel = [c.strip() for c in ln.strip().strip("|").split("|")]
+            rep.append(" – ".join(c for c in cel[:3] if c)[:230])
+        elif "⚠ ATENÇÃO" in ln:
+            at += 1
+    if rep:
+        cab = f"**✖ NÃO LIBERAR PARA FABRICAÇÃO – {len(rep)} item(ns) REPROVADO(S)** e {at} em ATENÇÃO (soma de todas as tabelas deste resumo)."
+    elif at:
+        cab = f"**⚠ SEM REPROVAÇÕES, {at} item(ns) em ATENÇÃO** – conferir cada um antes de liberar (soma de todas as tabelas deste resumo)."
+    else:
+        cab = "**✔ APROVADO** – nenhum item reprovado ou em atenção nas tabelas deste resumo."
+    out = ["", "## Status geral do projeto", "", cab]
+    if rep:
+        out += ["", "Reprovados:"] + [f"- {r}" for r in rep]
+    out += ["", "O status vale para o resultado MAIS SEVERO de cada grandeza (ex.: térmica do reator = pior entre o método de projeto e a "
+            "análise avançada). Itens 'A CONFERIR' de catálogo continuam obrigatórios antes da ordem de compra.", ""]
+    return out

@@ -510,7 +510,18 @@ def _completar(p: Pedido) -> Pedido:
         lac.append(f"Faixa de operação não informada – verificado {p.f_saida_min_hz:g}–{p.f_saida_max_hz or p.freq_rede_hz:g} Hz.")
     if not p.cabo_m:
         lac.append("Comprimento de cabo não informado – considerado ≤ 100 m.")
-    p.lacunas = list(dict.fromkeys(lac))
+    # v1.26.4 (auditoria AW-07): a premissa escrita pela IA não pode contradizer o campo usado no cálculo (ex.: 'adotar não
+    # blindado' com cabo_blindado = True) – vale o campo; a frase é reescrita
+    _bl = bool(getattr(p, "cabo_blindado", True))
+    lac2 = []
+    for t in lac:
+        tl = str(t).lower()
+        if "blindad" in tl and "cabo" in tl and ("não informad" in tl or "nao informad" in tl or "adot" in tl):
+            t = ("Tipo do cabo do motor não informado – adotado cabo "
+                 + ("blindado simétrico para inversor (aterramento 360° nas duas pontas)" if _bl else "NÃO blindado (unipolar em eletrocalha)")
+                 + "; confirmar com o cliente (muda a tensão de modo comum e a tensão no mancal).")
+        lac2.append(t)
+    p.lacunas = list(dict.fromkeys(lac2))
     return p
 
 

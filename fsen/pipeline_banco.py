@@ -77,6 +77,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
                 d["_biblioteca"] = dict(arquivo=os.path.basename(_usar_bib[1]["_arquivo"]), linhas=_usar_bib[2], reg={k: v for k, v in _usar_bib[1].items() if k != "projeto"})
                 d["aplicacao"] = e["requisitos"]["aplicacao"]
                 arqs.update(_docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar_ind, log))
+                _teto_perdas(d, [res["estagios"][i] for i in grp], log)
                 inds.append(d)
                 continue
             # sintonizado: enrolamento em CHAPA (folha) – padrão Electric "chapa ou barra de alumínio"; a corrente harmônica alta
@@ -100,8 +101,20 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
                     if k_ == len(ordem) - 1:
                         raise
                     log(f"   ({nomes[cnd]}: {ex} – tentando a próxima opção)")
+            if verificar_ind:                           # v1.26.4 (REQ-GER-014): fecha a térmica com a análise avançada ANTES dos documentos
+                def _refazer(alvo, _cons=cons, _cnd=cnd):
+                    IP.ALVO_ELEV_EXT = alvo
+                    try:
+                        if _cons == "distribuido":
+                            return IP.projetar_requisitos(e["requisitos"], e["espectro"], cat, log=lambda *_a: None, construcao=_cons, cond_id=_cnd)
+                        return IP.projetar_requisitos(e["requisitos"], e["espectro"], cat, log=lambda *_a: None, construcao=_cons, condutor=_cnd)
+                    finally:
+                        IP.ALVO_ELEV_EXT = None
+                d = _fechar_termica(d, lambda dd: B.wf_de_espectro(ped.freq_hz, dd["requisitos"]["I1"], dd["requisitos"]["Ih_termico"]),
+                                    _refazer, log)
             d["aplicacao"] = e["requisitos"]["aplicacao"]
             arqs.update(_docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar_ind, log))
+            _teto_perdas(d, [res["estagios"][i] for i in grp], log)
             try:                                        # todo reator projetado fica salvo como proposta (A_CONFERIR) – a biblioteca cresce
                 _arq_b = _BR.propor(ped, e, d, projeto=cod)
                 log(f"   Reator salvo na biblioteca de reatores como proposta (aguarda aprovação do engenheiro): {os.path.basename(_arq_b)}")
@@ -288,6 +301,16 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             fh.write("\n## Conferência esquema elétrico × painel 2D/3D × lista de material (REQ-PNL-028)\n\n| Item | Esquema | Painel/Lista | Check | Obs. |\n|---|---|---|---|---|\n")
             for r in res["conferencia"]:
                 fh.write("| " + " | ".join(str(x).replace("|", "/")[:160] for x in r) + " |\n")
+    try:                                            # v1.26.4 (REQ-GER-014): status GERAL logo abaixo do título (todas as tabelas)
+        from . import checagem as _CKg
+        _arq_r = os.path.join(pasta, "RESUMO.md")
+        _txt = open(_arq_r, encoding="utf-8").read()
+        _lin = _txt.split("\n")
+        _blk = _CKg.status_geral_md(_txt)
+        open(_arq_r, "w", encoding="utf-8").write("\n".join(_lin[:1] + _blk + _lin[1:]))
+        log("   " + _blk[3].replace("**", ""))
+    except Exception as ex:
+        log(f"   (status geral não gerado: {type(ex).__name__}: {ex})")
     carimbar_pasta(pasta, log)
     try:                                            # v1.19.0: relatório consolidado (tudo num PDF só) na raiz do projeto
         from . import consolidado as CONS
@@ -304,6 +327,59 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     z = shutil.make_archive(pasta, "zip", pasta) if zipar else None
     log(f"Concluído em {(_dt.datetime.now() - t0).total_seconds():.0f} s → {pasta}")
     return dict(pasta=pasta, zip=z, arquivos=arqs, resultado=res, reatores=inds, grupos=grupos, figuras=figs, codigo=cod)
+
+
+def _teto_perdas(d, estagios, log):
+    """v1.26.4 (REQ-GER-014): o teto de perdas que vai na especificação do fabricante e na térmica do PAINEL nunca fica abaixo
+    das perdas do pior método (+5 %); o teto de mercado original fica guardado para a comparação."""
+    try:
+        from .ind_avancado import final as _fin
+        tf = _fin(d)
+        for r in [d["requisitos"]] + [x["requisitos"] for x in estagios]:
+            pm0 = float(r.get("P_max_mercado") or r.get("P_max") or 0)
+            if not pm0:
+                continue
+            r["P_max_mercado"] = pm0
+            r["P_max"] = max(pm0, math.ceil(1.05 * tf["perdas_W"] / 5.0) * 5.0)
+        r = d["requisitos"]
+        if r.get("P_max") and r["P_max"] > r["P_max_mercado"] + 0.5:
+            log(f"   Reator: perdas do pior método {tf['perdas_W']:.0f} W acima do teto de mercado {r['P_max_mercado']:.0f} W → teto da "
+                f"especificação e da térmica do painel passa a {r['P_max']:.0f} W")
+    except Exception as ex:
+        log(f"   (teto de perdas não atualizado: {type(ex).__name__}: {ex})")
+
+
+def _fechar_termica(d, fazer_wf, refazer, log, max_it=3, proj=None, cat=None):
+    """v1.26.4 (REQ-GER-014): roda a análise avançada (sem o 3D, ~1 min) sobre o projeto e, se o ponto quente do PIOR método
+    não ficar MARGEM_TERMICA_K abaixo do limite, refaz o projeto com meta de elevação menor (até max_it vezes). Vale para o
+    reator de banco/sintonizado (fazer_wf = espectro) e para o indutor do filtro senoidal (proj/cat = circuito)."""
+    from . import ind_avancado as AV, ind_projeto as IP
+    quieto = lambda *_a, **_k: None
+    for it in range(max_it):
+        try:
+            av = AV.avaliar(d, proj, cat, log=quieto, fazer_3d=False, wf=(fazer_wf(d) if fazer_wf else None))
+        except Exception as ex:
+            log(f"   (fechamento térmico não concluído: {type(ex).__name__}: {ex})")
+            return d
+        tf = AV.adotar_pior(d, av)
+        log(f"   Térmica (pior método): {tf['perdas_W']:.0f} W, ponto quente {tf['ponto_quente_C']:.0f} °C × limite {tf['limite_C']:.0f} °C "
+            f"(folga {tf['margem_K']:.0f} K; mínimo {IP.MARGEM_TERMICA_K:.0f} K) – projeto {tf['projeto']['ponto_quente_C']:.0f} °C, "
+            f"avançado {tf['avancado']['ponto_quente_C']:.0f} °C")
+        if tf["margem_K"] >= IP.MARGEM_TERMICA_K or it == max_it - 1:
+            break
+        amb = tf["amb_C"]
+        alvo = float(d["alvo"]) * (tf["limite_C"] - IP.MARGEM_TERMICA_K - 3.0 - amb) / max(tf["ponto_quente_C"] - amb, 1.0)
+        alvo = min(alvo, float(d["termico"]["elev_bobina_K"]) * 0.92)          # tem que apertar de fato o projeto atual
+        log(f"   → folga térmica insuficiente: refazendo o projeto com meta de elevação {alvo:.0f} K (era {d['alvo']:.0f} K)")
+        try:
+            d2 = refazer(alvo)
+        except Exception as ex:
+            log(f"   (sem solução com a meta {alvo:.0f} K: {type(ex).__name__}: {ex} – mantido o projeto anterior; status ficará pelo pior resultado)")
+            break
+        d2["fechamento_termico"] = list(d.get("fechamento_termico") or []) + [dict(meta_K=float(d["alvo"]), ponto_quente_C=tf["ponto_quente_C"],
+                                                                                 perdas_W=tf["perdas_W"], massa_kg=float(d["massa_kg"]["total"]))]
+        d = d2
+    return d
 
 
 def _docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar, log):
@@ -347,22 +423,41 @@ def _docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar, log):
         if verificar:
             from . import ind_avancado as AV
             log("   Reator: análise avançada – formas de onda do espectro harmônico, núcleo no tempo, 3D, mapa térmico...")
-            Ih = dict(e["Ih_projeto"])                     # espectro escalado para a corrente de projeto adotada (k·I60 ou física)
-            s_h = math.sqrt(sum(v ** 2 for v in Ih.values()))
-            alvo = math.sqrt(max(r["In"] ** 2 - r["I1"] ** 2, 0.0))
-            if s_h > 0 and alvo > s_h:
-                Ih = {h: v * alvo / s_h for h, v in Ih.items()}
+            # v1.26.4: MESMAS correntes do projeto – espectro do local × k_t, com √(I1² + ΣIh²) = In (antes: toda a folga em harmônicas)
+            Ih = dict(r.get("Ih_termico") or e["Ih_projeto"])
             wf = B.wf_de_espectro(ped.freq_hz, r["I1"], Ih)
             av = AV.avaliar(d, None, None, log=log, fazer_3d=V.disponivel(), wf=wf)
             figs = AV.figuras(av, eng, nome)
             AV.salvar(av, os.path.join(eng, "avancado_indutor.json"))
             arqs[f"{nome}_avancado"] = AV.relatorio(d, av, os.path.join(eng, f"Analise_Avancada_{nome}.pdf"), figs)
             d["avancado"] = dict(perdas=av["perdas"], termico={k: v for k, v in av["termico"].items() if k != "iteracoes"})
+            tf = AV.adotar_pior(d, av)                     # v1.26.4 (REQ-GER-014): resultado final = o mais severo
             avs = list(av.get("avisos") or [])
             T_proj = d["termico"]["amb_painel_C"] + d["termico"]["elev_bobina_K"]
             if av["termico"]["T_cobre_med_C"] > T_proj + 15:
                 avs.append(f"Mapa térmico avançado: bobina média {av['termico']['T_cobre_med_C']:.0f} °C, acima dos {T_proj:.0f} °C do método de "
-                           f"projeto – ainda dentro da classe {r['classe']}, mas pedir ao fabricante canal de ventilação ou confirmar no ensaio de aquecimento.")
+                           f"projeto – os dois métodos térmicos divergem; ADOTADO o mais severo (ponto quente {tf['ponto_quente_C']:.0f} °C, "
+                           f"folga {tf['margem_K']:.0f} K até {tf['limite_C']:.0f} °C). Confirmar no ensaio de aquecimento do protótipo.")
+            if tf["status"] != "APROVADO":
+                avs.append(f"Térmica do reator {tf['status']}: ponto quente {tf['ponto_quente_C']:.0f} °C × limite {tf['limite_C']:.0f} °C "
+                           f"(folga {tf['margem_K']:.0f} K; mínimo {tf['margem_min_K']:.0f} K).")
+            try:                                           # caso EXTREMO informativo: toda a folga de corrente em harmônicas (limite IEC 60831)
+                k_h, k_t = float(r.get("k_harm_extremo") or 0), float(r.get("k_termico") or 1)
+                if k_h > 1.02 and r.get("I1_fisica"):
+                    Ihx = {h: v * k_h for h, v in e["Ih_projeto"].items()}
+                    avx = AV.avaliar(d, None, None, log=lambda *_a, **_k: None, fazer_3d=False, wf=B.wf_de_espectro(ped.freq_hz, r["I1_fisica"], Ihx))
+                    d["avancado_extremo"] = dict(perdas_W=float(avx["perdas"]["total"]), ponto_quente_C=float(avx["termico"]["T_cobre_max_C"]),
+                                                 I1_A=float(r["I1_fisica"]), Ih_A=float(r["I_harm_fisica"]) * k_h, k_h=k_h,
+                                                 limite_C=tf["limite_C"])
+                    x = d["avancado_extremo"]
+                    log(f"   Reator – caso extremo (toda a folga em harmônicas: {x['Ih_A']:.0f} A = {k_h:.2f} × as do local): {x['perdas_W']:.0f} W, "
+                        f"ponto quente {x['ponto_quente_C']:.0f} °C")
+                    if x["ponto_quente_C"] > tf["limite_C"]:
+                        avs.append(f"Caso extremo (harmônicas {k_h:.1f} × as do local, {x['Ih_A']:.0f} A – limite de corrente do capacitor IEC 60831): "
+                                   f"ponto quente {x['ponto_quente_C']:.0f} °C, acima de {tf['limite_C']:.0f} °C – o termostato do reator e o relé de "
+                                   f"sobrecarga harmônica do controlador são OBRIGATÓRIOS (desligam o estágio antes disso).")
+            except Exception as _exx:
+                log(f"   (caso extremo de harmônicas não calculado: {type(_exx).__name__}: {_exx})")
             d["avisos_avancado"] = avs
             for a_ in avs:
                 log(f"   ⚠ Reator (análise avançada): {a_}")
@@ -388,8 +483,10 @@ def resumo(ped, res, grupos, inds, cod):
     L += ["", "Ressonância paralela: " + (", ".join(f"{x:.2f}ª" for x in res["varredura"]["picos"]) or "nenhuma"), ""]
     for gi, (grp, d) in enumerate(zip(grupos, inds)):
         if d:
-            L.append(f"- Reator {gi+1} ({len(grp)} pç): {d['N']} esp., coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {d['perdas']['total']:.0f} W, "
-                     f"{d['massa_kg']['total']:.0f} kg, ΔT {d['termico']['elev_bobina_K']:.0f} K")
+            from .ind_avancado import final as _fin
+            _tf = _fin(d)
+            L.append(f"- Reator {gi+1} ({len(grp)} pç): {d['N']} esp., coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {_tf['perdas_W']:.0f} W, "
+                     f"{d['massa_kg']['total']:.0f} kg, ΔT {_tf['elev_K']:.0f} K, ponto quente {_tf['ponto_quente_C']:.0f} °C ({_tf['metodo']})")
     L += verificacoes_md(ped, res, grupos, inds)
     try:                                                # v1.26.3 (REQ-REA-014): tabela do reator padrão da biblioteca
         from . import biblioteca_reatores as _BRm
@@ -405,7 +502,7 @@ def resumo(ped, res, grupos, inds, cod):
                 e0 = res["estagios"][grp[0]] if isinstance(grp[0], int) else grp[0]
                 dm = d.get("dims_mm") or {}
                 med = (f"{dm.get('largura', 0):.0f} × {dm.get('profundidade', 0):.0f} × {dm.get('altura', 0):.0f} mm (L × P × A)" if dm else None)
-                L += _RB.tabela_md(f"Reator {gi + 1}", e0["L_uH"], e0["requisitos"]["In"], d["massa_kg"]["total"], d["perdas"]["total"], med,
+                L += _RB.tabela_md(f"Reator {gi + 1}", e0["L_uH"], e0["requisitos"]["In"], d["massa_kg"]["total"], _fin(d)["perdas_W"], med,
                                    tipo=ped.tipo)
     except Exception as ex:
         L += ["", f"(comparação com reatores reais não calculada: {type(ex).__name__}: {ex})"]
@@ -446,10 +543,56 @@ def verificacoes_md(ped, res, grupos, inds):
     lim_dt = {"B": 80, "F": 105, "H": 125}.get(str(ped.classe).upper(), 105)   # elevação média (IEC 60076-6, amb. 40 °C)
     for gi, (grp, d) in enumerate(zip(grupos, inds)):
         if d:
-            dt = d["termico"]["elev_bobina_K"]
-            u = CK.utilizacao(dt, lim_dt)
-            L.append(f"| Reator {gi + 1} | Elevação de temperatura da bobina (classe {ped.classe}) | {dt:.0f} K | ≤ {lim_dt} K | {u:.0f} % | "
-                     f"{CK.texto(CK.check(dt <= lim_dt, u))} |")
+            from .ind_avancado import final as _fin
+            tf = _fin(d)                                  # v1.26.4 (REQ-GER-014): o PIOR entre projeto e análise avançada
+            amb = tf["amb_C"]
+            lim_e = tf["limite_C"] - amb - 15.0           # elevação média admissível no ambiente do painel (ponto quente = média + 15 K)
+            dt = tf["elev_K"]
+            u = CK.utilizacao(dt, lim_e)
+            L.append(f"| Reator {gi + 1} | Elevação média da bobina – {tf['metodo']} (classe {ped.classe}, ambiente {amb:.0f} °C) | {dt:.0f} K | "
+                     f"≤ {lim_e:.0f} K | {u:.0f} % | {CK.texto(CK.check(dt <= lim_e, u))} |")
+            pq = tf["ponto_quente_C"]
+            st = CK.REPROVADO if tf["status"] == "REPROVADO" else (CK.ATENCAO if tf["status"] != "APROVADO" else CK.APROVADO)
+            L.append(f"| Reator {gi + 1} | Ponto quente da bobina (projeto {tf['projeto']['ponto_quente_C']:.0f} °C"
+                     + (f" / avançado {tf['avancado']['ponto_quente_C']:.0f} °C" if tf.get("avancado") else " / avançado não rodado")
+                     + f") | {pq:.0f} °C | ≤ {tf['limite_C']:.0f} °C com folga ≥ {tf['margem_min_K']:.0f} K | {pq / tf['limite_C'] * 100:.0f} % | {CK.texto(st)} |")
+            pmx = float(d["requisitos"].get("P_max_mercado") or d["requisitos"].get("P_max") or 0)
+            if pmx:
+                u = CK.utilizacao(tf["perdas_W"], pmx)
+                L.append(f"| Reator {gi + 1} | Perdas totais (projeto {tf['projeto']['perdas_W']:.0f} W"
+                         + (f" / avançado {tf['avancado']['perdas_W']:.0f} W" if tf.get("avancado") else "")
+                         + f") × teto de mercado na corrente de projeto; teto especificado ao fabricante e usado na térmica do painel: "
+                         f"{float(d['requisitos'].get('P_max') or pmx):.0f} W | {tf['perdas_W']:.0f} W | ≤ {pmx:.0f} W | {u:.0f} % | "
+                         f"{CK.texto(CK.check(tf['perdas_W'] <= pmx, u, nivel='aviso'))} |")
+            x = d.get("avancado_extremo")
+            if x:
+                st = CK.APROVADO if x["ponto_quente_C"] <= x["limite_C"] else CK.ATENCAO
+                L.append(f"| Reator {gi + 1} | Caso extremo: harmônicas {x['k_h']:.1f} × as do local ({x['Ih_A']:.0f} A; limite do capacitor IEC 60831) – "
+                         f"ponto quente | {x['ponto_quente_C']:.0f} °C ({x['perdas_W']:.0f} W) | ≤ {x['limite_C']:.0f} °C (informativo; proteção: termostato + "
+                         f"relé de sobrecarga harmônica) | {x['ponto_quente_C'] / x['limite_C'] * 100:.0f} % | {CK.texto(st)} |")
+    try:                                                # v1.26.4 (auditoria BCD-04/05): cabo × fusível × borne da contatora, por tipo de estágio
+        _vp = set()
+        for i, e in enumerate(res["estagios"]):
+            pr = B.protecao_estagio(ped, e)
+            ch = (pr["fusivel_A"], pr["contator"], pr["cabo_calc"]["secao"], pr["cabo_cap_calc"]["secao"])
+            if ch in _vp:
+                continue
+            _vp.add(ch)
+            iguais = [str(k + 1) for k, x in enumerate(res["estagios"]) if round(x["Q_kvar"], 1) == round(e["Q_kvar"], 1)]
+            for nome, val, lim, u, st, nota in B.conferencias_protecao(ped, e, pr):
+                stc = {"ok": CK.APROVADO, "atencao": CK.ATENCAO, "reprovado": CK.REPROVADO}[st]
+                L.append(f"| Estágio {', '.join(iguais)} | {nome}" + (f" – {nota}" if nota else "") + f" | {val} | {lim} | {u:.0f} % | {CK.texto(stc)} |")
+    except Exception as _exc:
+        L.append(f"| Estágios | Coordenação cabo × fusível × contatora | não calculada ({type(_exc).__name__}: {_exc}) | – | – | {CK.texto(CK.ATENCAO)} |")
+    if res.get("arco"):                                  # v1.26.4 (auditoria BCD-06): o arco reprovado tem que aparecer nesta tabela
+        try:
+            from . import arco as _ARv
+            for r_ in _ARv.linhas_check(res["arco"]):
+                if "REPROVADO" in str(r_[-1]) or "ATEN" in str(r_[-1]):
+                    L.append(f"| Arco elétrico | Energia incidente em {r_[0]} (IEEE 1584; eliminado por {r_[1]}, {r_[3]}) | {r_[4]} | "
+                             f"ver tabela de energia incidente | – | {r_[-1]} |")
+        except Exception:
+            pass
     for x in res["varredura"]["picos"]:
         hs = [h for h in (ped.harm_tensao_pct or {}) if ped.harm_tensao_pct.get(h, 0) > 0.3] + list(ped.harm_carga_a or {})
         dist = min((abs(x - h) / h for h in hs), default=1.0)

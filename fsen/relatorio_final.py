@@ -3,6 +3,7 @@ da Plataforma de Estudos): capa, índice de revisões, sumário, especificação
 resultados Python, dupla checagem ATP-EMTP, limites de todos os componentes (até refrigeração e elevação de temperatura),
 conclusões e recomendações."""
 from __future__ import annotations
+import math
 
 import copy
 import datetime as _dt
@@ -398,11 +399,19 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
 
     def lin(nome, ch, n=1):
         return [nome] + [f"{p.get(ch, 0):.{n}f}".replace(".", ",") for p in pts]
+
+    # v1.26.4 (auditoria AW-08): a tabela mostrava 0,00 A – a chave 'icap_unit_rms' só existe na comparação com o ATP; aqui é
+    # calculada como no dimensionamento: corrente do ramo Y ÷ √3 (delta) ÷ nº de capacitores em paralelo por ramo
+    _bc = getattr(proj, "banco", None)
+    _kd = (1 / math.sqrt(3)) if (_bc and str(_bc.ligacao) == "Delta") else 1.0
+    _np = max(int(getattr(_bc, "n_por_ramo", 1) or 1), 1)
+    lin_icap = ["Corrente RMS por capacitor (A)"] + [
+        f"{float(p.get('icap_unit_rms') or (p.get('icap_main_y_rms', p.get('icap_y_rms', 0)) * _kd / _np)):.2f}".replace(".", ",") for p in pts]
     linhas = [lin("Tensão na saída do inversor L-L fund. (V)", "v_inv_ll_fund"), lin("Tensão no motor L-L fund. (V)", "v_motor_ll_fund"),
               lin("Distorção da tensão no motor – PWM (%)", "thd_v_motor_pct", 2), lin("Tensão de pico no motor (V)", "vpk_motor", 0),
               lin("dv/dt no motor (V/µs)", "dvdt_motor_v_us", 2), lin("Corrente do inversor RMS (A)", "i1_rms"),
               lin("Corrente do motor RMS (A)", "i2_rms"), lin("Ondulação p-p no indutor (A)", "ripple_pp", 0),
-              lin("Corrente RMS por capacitor (A)", "icap_unit_rms", 2), lin("Índice de modulação", "m_index", 3)]
+              lin_icap, lin("Índice de modulação", "m_index", 3)]
     R.tabela(cab, linhas, [6.0] + [11.0 / len(pts)] * len(pts), legenda="Resultados da simulação (Plataforma FSEN)")
     p0 = pts[0]
     R.txt(f"Na frequência máxima de operação ({p0['f1']:g} Hz) o motor recebe {p0['v_motor_ll_fund']:.0f} V contra "
@@ -487,7 +496,7 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
             cls = str(ped.get("classe_temp") or "F")
             lim_cls = 155 if cls.strip().upper().startswith("F") else (180 if cls.strip().upper().startswith("H") else 130)
             R.txt(f"Ponto quente do enrolamento do indutor: {tq:.0f} °C, contra {lim_cls} °C da classe {cls.split()[0]} pedida pelo cliente "
-                  f"(margem {lim_cls - tq:.0f} K){'; atende' if tq <= lim_cls else '; NÃO atende – especificar isolação classe H'}.")
+                  f"(margem {lim_cls - tq:.0f} K){'; atende' if tq <= lim_cls else '; NÃO atende a classe pedida – REPROVADO: refazer o indutor (mais condutor/canal de ventilação) ou acordar outra classe por escrito com o cliente'}.")
         except Exception:
             pass
     R.figura(os.path.join(graf, "estudo_termico.png"), "Estudo térmico do painel – temperaturas por componente")

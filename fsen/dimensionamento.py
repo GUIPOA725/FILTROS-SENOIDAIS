@@ -372,7 +372,11 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
     v_min = cp.get("tensao_motor_min_pu", 0.90)
     for r in res:
         v_disp = min(1.0, m_max / r["m_index"])
-        txt = f"{100 * v_disp:.1f} % do V/f (m = {r['m_index']:.3f}{' – sobremodulação' if r['m_index'] > 1.155 else ''})"
+        # v1.26.4 (auditoria AW-05): declarar também a tensão REAL no motor contra a nominal (antes só a razão da modulação)
+        _vm = float(r.get("v_motor_ll_fund") or 0)
+        _vn = float(ped.tensao_v) * (min(float(r.get("f1") or ped.freq_rede_hz), float(ped.freq_rede_hz)) / float(ped.freq_rede_hz))
+        txt = (f"{100 * v_disp:.1f} % do V/f pedido ao inversor (m = {r['m_index']:.3f}{' – sobremodulação' if r['m_index'] > 1.155 else ''})"
+               + (f"; no motor {_vm:.0f} V = {100 * _vm / _vn:.1f} % do V/f de {_vn:.0f} V" if _vm and _vn else ""))
         if r["critico_tensao"]:
             v.append(Verificacao(f"Tensão disponível no motor – {r['nome']}", txt, f"≥ {100 * v_min:.0f} %", v_disp >= v_min,
                                  "Queda no filtro x reserva de tensão do inversor (Vcc = 1,35·Vrede)"))

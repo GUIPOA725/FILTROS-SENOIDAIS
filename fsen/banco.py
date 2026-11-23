@@ -276,14 +276,26 @@ def requisitos_reator(ped, e):
     hdom = max(Ih, key=lambda h: Ih[h] * h) if Ih else 5
     L = e["L_uH"] * 1e-6
     hs = sorted(Ih)
+    # v1.26.4 (REQ-GER-014): o dimensionamento TÉRMICO é feito na corrente de projeto In (a da placa e da especificação), com a
+    # MESMA composição do espectro do local: fundamental e harmônicas × k_t, de modo que √(I1² + ΣIh²) = In. Antes o projeto
+    # calculava as perdas com o espectro físico (≈ 0,9·In) e a análise avançada punha toda a folga em harmônicas (≈ 2× as
+    # harmônicas do local) – auditoria 23/11: 291 W × 483 W no mesmo reator. O caso "toda a folga em harmônicas" (limite do
+    # capacitor IEC 60831: 1,3·In com V + 10 %) continua sendo calculado, como caso EXTREMO informativo (k_h).
+    I_esp = math.sqrt(I1 ** 2 + Ih2)
+    k_t = max(Ith / I_esp, 1.0) if I_esp > 0 else 1.0
+    k_h = max(math.sqrt(max(Ith ** 2 - I1 ** 2, 0.0)) / Ihs, 1.0) if Ihs > 0 else 1.0
+    Ih_t = {h: v * k_t for h, v in Ih.items()}
+    I1_t = I1 * k_t
+    Ihs_t = Ihs * k_t
     fh = np.array([h * f1 for h in hs])
-    Vh = np.array([math.sqrt(2) * Ih[h] * 2 * math.pi * h * f1 * L for h in hs])
-    ipk = math.sqrt(2) * (I1 + sum(Ih.values()))
+    Vh = np.array([math.sqrt(2) * Ih_t[h] * 2 * math.pi * h * f1 * L for h in hs])
+    ipk = math.sqrt(2) * (I1_t + sum(Ih_t.values()))               # soma aritmética do espectro de projeto (o da especificação)
     lin = 1.5                                                      # "Sobrecarga 50 %" (ET Electric) – L mantida até 1,5×I_proj
-    req = dict(L=L, In=Ith, I1=I1, Ipk=ipk, Isat=max(math.sqrt(2) * lin * Ith * 0.97, ipk), Iovl=math.sqrt(2) * 2.0 * Ith,
-               Iinv=e["I60"], rpp=2 * math.sqrt(2) * Ihs, rrms=Ihs, fs=hdom * f1, f1=f1, V=ped.tensao_v,
+    req = dict(L=L, In=Ith, I1=I1_t, I1_fisica=I1, Ipk=ipk, Isat=max(math.sqrt(2) * lin * Ith * 0.97, ipk), Iovl=math.sqrt(2) * 2.0 * Ith,
+               Iinv=e["I60"], rpp=2 * math.sqrt(2) * Ihs_t, rrms=Ihs_t, fs=hdom * f1, f1=f1, V=ped.tensao_v,
                Vdc=math.sqrt(2) * ped.tensao_v * 1.1, classe=ped.classe,
-               P_max=(P_W_POR_KVAR_SINT if ped.tipo == "sintonizado" else P_W_POR_KVAR) * e["Q_kvar"], k_Pmax=0.88,
+               P_max=(P_W_POR_KVAR_SINT if ped.tipo == "sintonizado" else P_W_POR_KVAR) * e["Q_kvar"] * k_t ** 2, k_Pmax=0.88,   # teto de catálogo (na corrente física) levado à corrente de projeto
+               k_termico=k_t, k_harm_extremo=k_h, I_harm_fisica=Ihs, I_harm_termica=Ihs_t, Ih_termico=Ih_t,
                aplicacao=("reator de banco dessintonizado" if ped.tipo == "dessintonizado" else f"reator de filtro sintonizado ({e['ordem']:g}ª)"),
                B_proj_T=B_PROJ_REATOR_T, Ilin=math.sqrt(2) * K_LIN_FUND * e["I60"],     # v1.26.1 (REQ-REA-013)
                linearidade=lin, tol_L_pct=ped.tol_l_pct, I_electric=I_el, I_fisica=I_fis, k_corrente=k, I_ajuste=e["I60"],
@@ -453,6 +465,59 @@ def protecao_estagio(ped, e):
     return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cb["secao"],
                 contator_pico=cont_pico, contator_tipo=cont_tipo, cabo_calc=cb, cabo_cap_calc=cc,
                 cabo_ind_cap_mm2=cc["secao"], cabo_cap_unid_mm2=cc["secao"], n_cabos_cap_fase=n_c)
+
+
+# v1.26.4 (auditoria BCD-04/BCD-05): conferências que faltavam na coordenação do estágio ------------------------------------
+# I²t total de interrupção de fusíveis NH gG (A²s) – valores TÍPICOS de catálogo, arredondados para cima (A CONFERIR no catálogo
+# do fusível comprado). Serve para provar que o cabo aguenta o curto (NBR 5410: I²t ≤ k²·S²) quando o fusível é maior que a
+# capacidade de condução do cabo (em banco de capacitores o fusível é 1,6 × In e protege SÓ contra curto-circuito).
+I2T_NH_GG = {32: 6e3, 40: 1.0e4, 50: 1.8e4, 63: 3.0e4, 80: 5.5e4, 100: 1.0e5, 125: 1.7e5, 160: 3.0e5, 200: 5.0e5, 250: 9.0e5,
+             315: 1.5e6, 355: 2.0e6, 400: 2.8e6, 500: 4.5e6, 630: 9.0e6}
+K_CABO_EPR_CU = 143.0                # NBR 5410 / IEC 60364-4-43: condutor de cobre, isolação EPR/XLPE
+
+
+def borne_contatora_mm2(nome, ie_ac1=None):
+    """Seção máxima TÍPICA do borne de potência da contatora (mm², cabo flexível) pelo tamanho AC-3 lido do nome (AF52 → 52 A).
+    Valores típicos de catálogo IEC – A CONFERIR; None = ligação por barra/terminal (sem limite de borne)."""
+    import re
+    m = re.search(r"(?:AF|LC1[DF]|3RT\d{2}|CWM|CWB)\s*-?(\d{2,3})", str(nome or ""))
+    ac3 = float(m.group(1)) if m else (float(ie_ac1) / 1.6 if ie_ac1 else None)
+    if ac3 is None:
+        return None
+    for lim, mm2 in ((18, 6), (25, 10), (38, 16), (65, 35), (96, 50), (150, 95), (205, 120)):
+        if ac3 <= lim:
+            return mm2
+    return None
+
+
+def conferencias_protecao(ped, e, pr=None):
+    """Linhas (grandeza, valor, limite, utilização %, status 'ok'|'atencao'|'reprovado', nota) da coordenação do estágio."""
+    pr = pr or protecao_estagio(ped, e)
+    out = []
+    fus = float(pr["fusivel_A"])
+    i2t = I2T_NH_GG.get(int(fus))
+    for rot, cb in (("cabo de potência", pr["cabo_calc"]), ("cabo de cada capacitor", pr["cabo_cap_calc"])):
+        S, Iz = float(cb["secao"]), float(cb["Iz"])
+        if i2t:
+            k2s2 = (K_CABO_EPR_CU * S) ** 2
+            u = i2t / k2s2 * 100
+            out.append((f"Curto-circuito: I²t do fusível NH {fus:.0f} A × suportabilidade do {rot} {S:g} mm² (k²·S², k = {K_CABO_EPR_CU:g})",
+                        f"{i2t:.2g} A²s", f"≤ {k2s2:.2g} A²s", u, "ok" if u <= 100 else "reprovado",
+                        "I²t típico de catálogo – conferir no fusível comprado"))
+        if fus > Iz:
+            out.append((f"Sobrecarga: fusível {fus:.0f} A maior que a capacidade do {rot} {S:g} mm² (Iz {Iz:.0f} A no painel)",
+                        f"{fus:.0f} A", f"Iz {Iz:.0f} A", fus / Iz * 100, "atencao",
+                        "em banco de capacitores o fusível (1,6 × In) protege só contra CURTO; a sobrecarga é limitada pela carga "
+                        "(capacitor + reator) e protegida pelo controlador (sobrecorrente/harmônicas) e pelo termostato do reator – "
+                        "registrar esta justificativa no projeto"))
+    bm = borne_contatora_mm2(pr["contator"], pr.get("contator_In"))
+    S = float(pr["cabo_calc"]["secao"])
+    if bm:
+        out.append((f"Borne da contatora {str(pr['contator'])[:40]} × cabo de potência",
+                    f"cabo {S:g} mm²", f"borne ≤ {bm:g} mm² (típico – A CONFERIR)", S / bm * 100, "ok" if S <= bm else "reprovado",
+                    "" if S <= bm else "o cabo NÃO entra no borne: usar contatora de carcaça maior, barra de ligação/terminal redutor "
+                                       "homologado ou 2 cabos menores por fase – definir antes da compra"))
+    return out
 
 
 def protecao_pior(ped, res):
