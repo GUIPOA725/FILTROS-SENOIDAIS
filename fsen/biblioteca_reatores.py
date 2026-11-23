@@ -99,6 +99,39 @@ def propor(ped, e, d, projeto=""):
     return arq
 
 
+def propor_senoidal(d, cod="", cliente=""):
+    """v1.26.4 (REQ-REA-018): o indutor do FILTRO SENOIDAL também fica salvo como proposta (A_CONFERIR), com o modelo completo,
+    para poder ser reaproveitado em projetos novos depois de aprovado. (O reuso automático no projeto ainda não existe para o
+    senoidal – por enquanto fica salvo, listado e aprovável na mesma página da biblioteca.)"""
+    r = d["requisitos"]
+    f = dict(tipo="senoidal", tensao_v=float(r.get("V") or 0), freq_hz=float(r.get("f1") or 60), sintonia=f"fs{float(r.get('fs') or 0) / 1000:g}kHz",
+             kvar_estagio=0.0, capacitor=[0, 0.0, 0.0], condutor=str(d.get("cond") or ""), classe=str(r.get("classe") or ""), monofasico=False)
+    L_uH = float(r["L"]) * 1e6
+    for it in listar():
+        if it["familia"] == f and abs(it["L_uH"] / L_uH - 1) * 100 <= 0.2 and abs(it["requisitos"].get("In", 0) - r["In"]) < 0.5 \
+                and abs(it["massa_kg"] - d["massa_kg"]["total"]) < 0.5:
+            return it["_arquivo"]
+    from .ind_avancado import final as _fin
+    _tf = _fin(d)
+    reg = dict(status="A_CONFERIR", familia=f, L_uH=L_uH, requisitos={k: float(v) for k, v in r.items() if isinstance(v, (int, float))},
+               espectro_A={}, massa_kg=float(d["massa_kg"]["total"]), perdas_W=float(_tf["perdas_W"]), elev_K=float(_tf["elev_K"]),
+               ponto_quente_C=float(_tf["ponto_quente_C"]), termica_status=_tf["status"], termica_metodo=_tf["metodo"],
+               dims_mm=d.get("dims_mm"), resumo=dict(N=d.get("N"), coluna_mm=[round(d["a"] * 1e3), round(d["b"] * 1e3)], ng=d.get("ng"),
+                                                     chapa=(d.get("chapa_dados") or {}).get("nome")),
+               codigo=cod, projeto_origem=f"{cod} – {cliente}".strip(" –"), proposto_por=_usuario(), proposto_em=f"{_dt.datetime.now():%Y-%m-%d %H:%M}",
+               projeto={k: v for k, v in d.items() if k not in ("campo_pico",)})
+    nome = re.sub(r"[^A-Za-z0-9_,.-]+", "-", f"seno_{f['tensao_v']:g}V_{f['sintonia']}_{L_uH:.0f}uH_{r['In']:.0f}A")
+    arq = os.path.join(_base(), "propostas", f"{nome}_{_dt.datetime.now():%Y%m%d_%H%M}_{_usuario()}.json")
+    with open(arq, "w", encoding="utf-8") as fh:
+        json.dump(reg, fh, ensure_ascii=False, indent=1, default=_json_default)
+    try:
+        from . import memoria as ME
+        ME.registrar_uso("componente", f"indutor de filtro senoidal proposto para a biblioteca: {os.path.basename(arq)}", cod)
+    except Exception:
+        pass
+    return arq
+
+
 def _ler(arq, completo=False):
     try:
         j = json.load(open(arq, encoding="utf-8"))

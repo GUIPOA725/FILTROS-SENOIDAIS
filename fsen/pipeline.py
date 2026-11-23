@@ -439,6 +439,12 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                             f"coluna, bobina a {ind['c']*1e3:.0f} mm do núcleo, chapa {ind['chapa_dados']['esp_mm']} mm, sistema de isolação classe "
                             f"{ind['requisitos']['classe']}. Vocês podem adaptar ao padrão de fabricação de vocês – peço só que declarem as "
                             "diferenças (chapa, espiras, entreferros, condutor, isolação) para conferirmos.\n")
+            try:                                    # v1.26.4 (REQ-REA-018): indutor salvo na biblioteca como proposta
+                from . import biblioteca_reatores as _BRs
+                _arq_b = _BRs.propor_senoidal(ind, cod, getattr(ped, "cliente", "") or "")
+                log(f"   Indutor salvo na biblioteca de reatores como proposta (aguarda aprovação do engenheiro): {os.path.basename(_arq_b)}")
+            except Exception as _exb:
+                log(f"   (indutor não salvo na biblioteca: {type(_exb).__name__}: {_exb})")
             log(f"   Indutor: {ind['N']} espiras, {ind['ng']} entreferros/coluna, perdas ≈ {ind['perdas']['total']:.0f} W, "
                 f"elevação ≈ {ind['termico']['elev_bobina_K']:.0f} K, massa ≈ {ind['massa_kg']['total']:.0f} kg")
         except Exception as e:
