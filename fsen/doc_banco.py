@@ -370,6 +370,10 @@ def planilha_estagio(ped, e, arq):
 
 
 # ------------------------------------------------------------------------------------------------------------- DOCX
+ELEV_MAX_ESPEC_K = {"B": 60, "F": 80, "H": 100}   # elevação pedida ao fabricante: uma classe abaixo (folga – REQ-REA-013)
+B_T_AMB_ESPEC_C = 50.0                             # ar dentro do painel
+
+
 def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="Diadema – SP – Brasil", n_banco=1, mono=False):
     """Especificação do reator no formato das cartas da Electric à Cootrans (2015–2022) + o que a plataforma acrescenta."""
     from docx import Document
@@ -419,8 +423,17 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
              "Ajuste da Indutância: A indutância deverá ser ajustada pelo gap (entreferro) por tensão e corrente trifásicas.",
              "Gap (entreferro): o gap (entreferro) deverá ser separado por material isolante, mantendo as condições de variação de "
              "indutância, para circulação de corrente do projeto e elevação de temperatura.",
-             f"Linearidade (sobrecarga 50 %): o indutor não deverá saturar e deverá manter a indutância dentro da variação até "
-             f"1,5 × a corrente de projeto ({1.5*r['In']:.0f} A rms; pico de operação {r['Ipk']:.0f} A).",
+             # v1.26.2 (REQ-REL-009/REQ-REA-013): especificação de DESEMPENHO completa – o projeto detalhado fica interno
+             f"Linearidade: o indutor não deverá saturar – a indutância deve ficar em pelo menos 90 % do valor nominal até "
+             f"{_f(r.get('Ilin', 0) / 2 ** 0.5 / max(e['I60'], 1e-9), 1)} × a corrente fundamental de ajuste "
+             f"({(r.get('Ilin') or 1.5 * 2 ** 0.5 * r['In']) / 2 ** 0.5:.0f} A rms = {(r.get('Ilin') or 1.5 * 2 ** 0.5 * r['In']):.0f} A de pico) "
+             f"e dentro da tolerância até 1,5 × a corrente de projeto ({1.5*r['In']:.0f} A rms).",
+             f"Indução no núcleo: pico ≤ {_f(r.get('B_proj_T') or 1.45, 2)} T considerando a soma ARITMÉTICA da fundamental com todas as "
+             f"harmônicas da tabela abaixo (pico de {r['Ipk']:.0f} A) – o núcleo NÃO deve ser dimensionado pela corrente eficaz.",
+             f"Elevação de temperatura: média do enrolamento ≤ {ELEV_MAX_ESPEC_K.get(str(ped.classe).upper(), 80)} K com a corrente de "
+             f"projeto e o espectro da tabela, em ar a {B_T_AMB_ESPEC_C:g} °C dentro do painel (classe {ped.classe} com folga – a Electric "
+             "não trabalha no limite da classe).",
+             f"Perdas totais máximas (núcleo + enrolamento, com as harmônicas): {r['P_max']:.0f} W por indutor.",
              f"Enrolamento: chapa ou barra de {'alumínio' if ped.condutor == 'AL' else 'cobre'}.",
              "Núcleo: chapa de aço silício NOVA, com certificado do fabricante da chapa (não aceito material reaproveitado).",
              "Proteção térmica: termostato NF na bobina central (abre a 130 °C ± 5 °C para classe F), cabos até a régua de bornes."]
@@ -447,14 +460,25 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
                   f"Tensão esperada por fase (I × X_L): {_f(I * e['Xl'])} V  (X_L = {_f(e['Xl'] * 1e3)} mΩ)",
                   "Resistência do Isolamento Megômetro escala 1000Vcc:", "Tensão Aplicada [60Hz – 1 minuto ENR/M]: 2,5 kV"):
             doc.add_paragraph(t, style="List Bullet")
-    if d:
-        from .ind_projeto import descr_condutor
+    if d:                                           # v1.26.2 (REQ-REL-009): dessintonizado/sintonizado – desempenho + envelope; projeto fica interno
+        dm = d.get("dims_mm") or {}
         p = doc.add_paragraph()
-        p.add_run("Projeto de referência Electric (anexo): ").bold = True
-        p.add_run(f"calculado por elementos finitos – {d['chapa_dados']['nome']}, coluna {d['a']*1e3:.0f} × {d['b']*1e3:.0f} mm, {d['N']} "
-                  f"espiras de {descr_condutor(d, curto=True)}, {d['ng']} entreferros por coluna, perdas ≈ {d['perdas']['total']:.0f} W, "
-                  f"elevação ≈ {d['termico']['elev_bobina_K']:.0f} K, massa ≈ {d['massa_kg']['total']:.0f} kg. Seguem desenhos, CAD "
-                  "(STEP/DXF) e memorial. O fabricante pode adaptar ao seu padrão – favor declarar as diferenças.")
+        p.add_run("Dimensões e massa: ").bold = True
+        p.add_run((f"envelope máximo {dm.get('largura', 0) * 1.05:.0f} × {dm.get('profundidade', 0) * 1.05:.0f} × {dm.get('altura', 0) * 1.05:.0f} mm "
+                   "(largura × profundidade × altura, com terminais) – o indutor é montado em prateleira dentro do painel. " if dm else "")
+                  + f"Massa esperada pela Electric: cerca de {d['massa_kg']['total']:.0f} kg (cálculo próprio por elementos finitos, usado para "
+                  "conferir a proposta). Proposta com massa mais de 15 % abaixo ou perdas acima do máximo deve vir justificada com os "
+                  "dados do núcleo (seção da coluna, chapa e indução de projeto).")
+        p = doc.add_paragraph()
+        p.add_run("Construção: ").bold = True
+        p.add_run("impregnação a vácuo com verniz da classe térmica do indutor; entreferros colados; terminais em barra estanhada, entrada e "
+                  "saída identificadas (U1-V1-W1 / U2-V2-W2); base com furação para fixação em perfil; olhais de içamento acima de 35 kg; "
+                  "placa de identificação com L, corrente, classe, massa e nº de série. Enviar o desenho dimensional para aprovação antes "
+                  "de fabricar.")
+        p = doc.add_paragraph()
+        p.add_run("Ensaios adicionais: ").bold = True
+        p.add_run("medição da indutância por fase na corrente de ajuste, na corrente de projeto e em 1,5 × a corrente de projeto (ou na "
+                  "maior corrente que a bancada permitir – informar o valor); ensaio de elevação de temperatura na primeira peça do lote.")
     doc.add_paragraph("Favor informar: preço unitário, prazo, massa e dimensões (C × P × A), perdas garantidas na corrente de projeto, "
                       "origem e espessura da chapa e desenho dimensional.")
     doc.add_paragraph("\nAtenciosamente,\n\nEngº Guilherme Schallenberger\nElectric Service")
@@ -621,9 +645,9 @@ def email_fornecedor(nome, ped, res, grupos, arqs, cod, tipo="reator"):
             linhas.append(f"  {gi+1}) {len(grp) * (3 if ped.monofasico else 1)} pç – {e['L_uH']:.0f} µH ±{_f(ped.tol_l_pct, 0)} %, corrente de "
                           f"projeto {r['In']:.0f} A (ajuste {e['I60']:.0f} A), {_fd_txt(e)}, capacitor associado {_cap_txt(e)}, "
                           f"classe {ped.classe}, FQ > {e['fq']:g}, isolação 1 kV")
-        linhas += ["", "Segue a especificação de cada indutor (mesmo formato das anteriores) e o projeto de referência da Electric "
-                   "(desenhos, CAD STEP/DXF e memorial de cálculo por elementos finitos). Podem adaptar ao padrão de fabricação de vocês, "
-                   "declarando as diferenças.",
+        linhas += ["", "Segue a especificação de desempenho de cada indutor (indutância, espectro de correntes, linearidade, indução "
+                   "máxima, elevação de temperatura, perdas máximas, envelope dimensional e ensaios). O projeto construtivo é de vocês; "
+                   "enviem o desenho dimensional para aprovação antes de fabricar.",
                    "Exigência: chapa de aço silício NOVA com certificado (não aceitamos chapa reaproveitada).",
                    "Peço preço, prazo, massa/dimensões, perdas garantidas e o relatório de ensaio (corrente de projeto e de ajuste) de cada unidade."]
     elif tipo == "painel":

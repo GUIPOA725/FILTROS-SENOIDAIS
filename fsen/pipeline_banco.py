@@ -288,6 +288,10 @@ def _docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar, log):
     arqs = {}
     r = d["requisitos"]
     ccod = f"{cod}_{nome.split('_')[0]}{nome.split('_')[1]}"
+    # v1.26.2 (REQ-REL-009): banco/sintonizado – ao fabricante vai só a especificação de desempenho (03_Fornecedores); o projeto
+    # detalhado (memorial, projeto de referência, CAD) fica INTERNO, para conferir a proposta
+    forn = os.path.join(eng, "Projeto_interno_conferencia_NAO_ENVIAR")
+    os.makedirs(forn, exist_ok=True)
     _inf = dict(titulo=f"Reator trifásico – {r['aplicacao']} – {r['L']*1e6:.0f} µH / {r['In']:.0f} A – {cod}",
                 linha2=f"Classe {r['classe']} | {d['chapa_dados']['nome'][:48]} | {IP.descr_condutor(d, curto=True)}",
                 cod=cod, data=f"{_dt.date.today():%d/%m/%Y}", versao=versao)
