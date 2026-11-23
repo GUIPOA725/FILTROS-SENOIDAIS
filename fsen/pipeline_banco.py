@@ -391,6 +391,12 @@ def verificacoes_md(ped, res, grupos, inds):
             u = CK.utilizacao(v, l)
             L.append(f"| Capacitor est. {', '.join(iguais)} | {nome} (IEEE 18) | {v * 100:.0f} % | ≤ {l * 100:.0f} % | {u:.0f} % | "
                      f"{CK.texto(CK.check(v <= l, u))} |")
+        # v1.26.1 (REQ-BCO-004): o capacitor escolhido tem que fechar o kvar pedido do estágio (±8 %) – senão REPROVADO
+        if e.get("Q_alvo"):
+            dq = abs(e["Q_kvar"] - e["Q_alvo"]) / e["Q_alvo"] * 100
+            L.append(f"| Capacitor est. {', '.join(iguais)} | Potência efetiva × pedida ({e['cap'][0]}×{e['cap'][1]:g} kvar/{e['cap'][2]:g} V iguais) | "
+                     f"{e['Q_kvar']:.1f} kvar (pedido {e['Q_alvo']:g}) | ± 8 % | {dq / 8 * 100:.0f} % | "
+                     f"{CK.texto(CK.check(dq <= 8.0, dq / 8 * 100))} |")
     lim_dt = {"B": 80, "F": 105, "H": 125}.get(str(ped.classe).upper(), 105)   # elevação média (IEC 60076-6, amb. 40 °C)
     for gi, (grp, d) in enumerate(zip(grupos, inds)):
         if d:
