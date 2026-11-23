@@ -1,6 +1,6 @@
 {
 "versao": "1.26.0",
-"gerado_em": "2026-11-22 21:25",
+"gerado_em": "2026-11-22 21:29",
 "arquivos": {
 "ABRIR_FSEN.bat": "ed1e8fb5f981333873ebef0afe3dadf2ccb57d97058350540c2e59360b016184",
 "INICIAR.bat": "eb1a9d1cd22c7b5d56cbb8d14827045bfaee6532ec9834ee6c1cf5cc036edc86",
@@ -74,7 +74,7 @@
 "fsen/pipeline.py": "e5b6ad0db4840504748e647e73719848ab19a1d7c96d9a9175981e5ae4f80106",
 "fsen/pipeline_banco.py": "86313defcb95550398ad82a5f600bc68526782dab452c5268ed08347f89d4ebf",
 "fsen/ponto_otimo.py": "741497c05c215926749eedef17bf263b91ef26259d6d3b66065c01b0495fe7af",
-"fsen/protecao.py": "b51ae2c26adfbbe8bf7e9c41d972e9ec4bb0ebfddd727caeca6d9b028d32aab9",
+"fsen/protecao.py": "10894a7eee2608745aff7a5ebeab60bd02de5dce3106a40ec13d5b07ec6dbfc5",
 "fsen/reator_montagem.py": "a86b61b936f73643007637bddfb693563db0d4cf19df5b5afc9442f6a1ebc839",
 "fsen/relatorio_final.py": "11cd736cc9e8d4772b1bfa261006f0e7e489c5d1000111fb0a0d51745674c449",
 "fsen/simulacao.py": "ea14ad0d9e996934735b40c1616c0ad3efee0116ac0d73bfe37f3b9b29599414",

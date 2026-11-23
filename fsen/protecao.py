@@ -139,7 +139,7 @@ def verificar(raiz=RAIZ, restaurar=True):
     for rel, h in m["arquivos"].items():
         loc = os.path.join(raiz, rel)
         try:
-            ok = os.path.exists(loc) and _sha(loc) == h
+            ok = (not os.path.exists(loc)) or _sha(loc) == h      # arquivo ausente não é "edição" (cópia incompleta) – só conteúdo alterado
         except OSError:
             ok = True
         if not ok:
