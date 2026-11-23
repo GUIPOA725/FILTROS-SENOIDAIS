@@ -1,0 +1,25 @@
+# Reatores REAIS de referência para conferir o projeto da plataforma (REQ-REA-015) – só dados de orçamento/folha de dados.
+# Acrescentar aqui cada orçamento Cootrans/fabricante recebido (L, corrente, peso, medidas) – vira fator de aprovação.
+- nome: "Cootrans – Panatlântica 2024 (ORC 0413/2024), 50 kvar 415 V FD 8,16 %"
+  origem: "orçamento/ET do projeto real instalado (REF-PANAT-2024)"
+  tipo: dessintonizado
+  L_uH: 796
+  I_A: 95
+  massa_kg: 55
+  perdas_W: null
+  medidas_mm: null
+  condutor: "alumínio"
+  classe: F
+  real_instalado: true
+- nome: "TDK/Epcos B44066D5050M441, 50 kvar 440 V 60 Hz FD 5,67 %"
+  origem: "folha de dados TDK (en.tdk-electronics.tdk.com/inf/20/50/ds/B44066D5050M441.pdf), lida em 22/11/2026"
+  tipo: dessintonizado
+  L_uH: 618
+  I_A: 83.5
+  massa_kg: 34
+  perdas_W: 300
+  medidas_mm: "300 × 235 × 159 (cotas A × B × C da folha de dados)"
+  condutor: "não informado"
+  classe: H
+  linear_ate_A: 155
+  real_instalado: false

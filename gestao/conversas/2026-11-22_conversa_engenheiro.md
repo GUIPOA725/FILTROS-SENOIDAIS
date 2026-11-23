@@ -218,3 +218,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:56
 "Só muda a tensão e mantém essas potências depois, em casos novos acredito que vale simular com as medições de campo, mas o ideal é padronizar isso ajuda muito na montagem preços . Claro que vai ter casos diferentes mas ficam TB salvos vai chegar ao pontos que vamos ter uma biblioteca tão boa e efetivada que vai sair tudo muito rapido"
 → REQ-REA-014 (complemento).
+
+### 23:00
+"Compara TB com o da cootrans. O que eu fazia manualmente, eu recebia o orçamento da cootrans só especificação da cootrans de L e Amps e dimensionamento com tamanho e peso, ia na internet e verificava se ele estava ok , hoje vc pode fazer tudo mais rápido e fazer uma pesquisa mais profunda na internet de fabricantes intencionais e ver se seu projeto fecha com o deles em tamanho peso e características isso é um fator TB de aprovação concorda? Se sim salva e já considera com parente do projeto"
+→ REQ-REA-015.

@@ -363,6 +363,17 @@ def resumo(ped, res, grupos, inds, cod):
             L.append(f"- Reator {gi+1} ({len(grp)} pç): {d['N']} esp., coluna {d['a']*1e3:.0f}×{d['b']*1e3:.0f} mm, {d['perdas']['total']:.0f} W, "
                      f"{d['massa_kg']['total']:.0f} kg, ΔT {d['termico']['elev_bobina_K']:.0f} K")
     L += verificacoes_md(ped, res, grupos, inds)
+    try:                                                # v1.26.1 (REQ-REA-015): reator projetado × reatores reais (Cootrans, fabricantes)
+        from . import reator_benchmark as _RB
+        for gi, (grp, d) in enumerate(zip(grupos, inds)):
+            if d:
+                e0 = res["estagios"][grp[0]] if isinstance(grp[0], int) else grp[0]
+                dm = d.get("dims_mm") or {}
+                med = (f"{dm.get('largura', 0):.0f} × {dm.get('profundidade', 0):.0f} × {dm.get('altura', 0):.0f} mm (L × P × A)" if dm else None)
+                L += _RB.tabela_md(f"Reator {gi + 1}", e0["L_uH"], e0["requisitos"]["In"], d["massa_kg"]["total"], d["perdas"]["total"], med,
+                                   tipo=ped.tipo)
+    except Exception as ex:
+        L += ["", f"(comparação com reatores reais não calculada: {type(ex).__name__}: {ex})"]
     if res.get("arco"):                                 # v1.24.3: energia incidente IEEE 1584
         from . import arco as _AR
         L += ["", "## Energia incidente – IEEE 1584-2018 (NR-10 10.4.12)", "",
