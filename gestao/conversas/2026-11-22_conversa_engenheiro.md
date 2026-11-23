@@ -129,3 +129,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 21:02
 "Pode fazer tudo isso"
 → REQ-IA-010 (reforço), REQ-IA-012, REQ-GER-012, REQ-CMP-006.
+
+### 21:41
+"Pode rodar novamente panatlantica via plataforma local e salvar teste real"
+→ rodar ABB e Schneider pela plataforma no notebook (v1.26.0), salvar em PROJETOS\Panatlântica.
