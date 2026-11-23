@@ -320,3 +320,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (23/11 13:55) Engenheiro: "1. filtro senoidal, qual é o padrão de mercado classe H ou F, o padrão internacional é classe H para filtro senoidal?" → REQ-SEN-021; resposta: não há norma que fixe; Block H, Schaffner EIS 200 (N), MTE N 200 °C, TDK 155 (F) – mercado majoritariamente H ou acima.
 
 (23/11 13:58) Engenheiro: "eu vou ter que cotar ainda, então na cotação com os fabricantes de filtro senoidal vamos sempre partir de classe H." → REQ-SEN-021 implementado na v1.27.1.
+
+(23/11 ~14:20) v1.27.1 PUBLICADA (Drive + GitHub): filtro senoidal sempre em classe H. Teste A&W na nuvem: APROVADO, indutor 161 kg → refeito, ponto quente 124 °C (pior método), 131 °C no painel, painel 258 kg. Falta ele reabrir a plataforma no notebook para carregar a v1.27.1.
