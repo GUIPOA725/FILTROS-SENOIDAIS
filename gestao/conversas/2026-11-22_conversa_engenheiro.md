@@ -198,3 +198,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:33
 "Capacitores associados sempre iguais"
 → REQ-CMP-007 (reforço).
+
+### 22:36
+"No meu drive guilando@gmail.com tem muita coisa em inglês sobre indutores trifásicos para bancos de capacitores dessintonziados filtros indutores mono de 2 colunas. Vc pode ver primeiro pela nepsi, mas em inglês deve pesquisar em inglês , pode fazer uma análise e ver o que acha para te ajudar?"
+→ REQ-REF-008.
