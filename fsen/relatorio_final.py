@@ -495,8 +495,17 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
             tq = float(str(ti.valor).split("°")[0].replace(",", "."))
             cls = str(ped.get("classe_temp") or "F")
             lim_cls = 155 if cls.strip().upper().startswith("F") else (180 if cls.strip().upper().startswith("H") else 130)
-            R.txt(f"Ponto quente do enrolamento do indutor: {tq:.0f} °C, contra {lim_cls} °C da classe {cls.split()[0]} pedida pelo cliente "
-                  f"(margem {lim_cls - tq:.0f} K){'; atende' if tq <= lim_cls else '; NÃO atende a classe pedida – REPROVADO: refazer o indutor (mais condutor/canal de ventilação) ou acordar outra classe por escrito com o cliente'}.")
+            # v1.27.1 (REQ-SEN-021): a oferta parte de classe H; a classe pedida pelo cliente é a mínima
+            lim_h = 180
+            if tq <= lim_cls:
+                R.txt(f"Ponto quente do enrolamento do indutor: {tq:.0f} °C, dentro dos {lim_cls} °C da classe {cls.split()[0]} pedida pelo cliente "
+                      f"(margem {lim_cls - tq:.0f} K). O indutor é ofertado com sistema de isolação classe H (180 °C).")
+            elif tq <= lim_h:
+                R.txt(f"Ponto quente do enrolamento do indutor: {tq:.0f} °C – acima dos {lim_cls} °C da classe {cls.split()[0]} pedida pelo cliente e dentro "
+                      f"dos {lim_h} °C da classe H ofertada (margem {lim_h - tq:.0f} K). Classe H é o padrão Electric e de mercado para filtro senoidal "
+                      "(isolação superior à solicitada); a proposta deve informar isso e o cliente deve dar o aceite por escrito.")
+            else:
+                R.txt(f"Ponto quente do enrolamento do indutor: {tq:.0f} °C, acima dos {lim_h} °C da classe H – NÃO atende: REPROVADO, refazer o indutor.")
         except Exception:
             pass
     R.figura(os.path.join(graf, "estudo_termico.png"), "Estudo térmico do painel – temperaturas por componente")

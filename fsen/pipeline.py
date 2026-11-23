@@ -112,6 +112,12 @@ def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs, cat=No
                 arqs["indutor_avancado"] = AV.relatorio(ind, av, os.path.join(pasta_eng, f"Analise_Avancada_Indutor_{cod}.pdf"), figs)
                 ind["avancado"] = dict(perdas=av["perdas"], termico={k: v for k, v in av["termico"].items() if k != "iteracoes"})
                 tf = AV.adotar_pior(ind, av)               # v1.26.4 (REQ-GER-014): resultado final = o mais severo
+                _tc = float(ind["requisitos"].get("classe_cliente_C") or 0)
+                if _tc and tf["ponto_quente_C"] > _tc and tf["limite_C"] > _tc:      # v1.27.1 (REQ-SEN-021)
+                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [
+                        f"Indutor em classe H (padrão Electric para filtro senoidal): ponto quente {tf['ponto_quente_C']:.0f} °C, acima dos "
+                        f"{_tc:.0f} °C da classe pedida pelo cliente e dentro dos {tf['limite_C']:.0f} °C da classe H. Informar na proposta "
+                        "que a isolação ofertada é classe H (superior à solicitada) e obter o aceite do cliente por escrito."]
                 if tf["status"] != "APROVADO":
                     proj.avisos = list(getattr(proj, "avisos", []) or []) + [
                         f"Indutor – térmica {tf['status']}: ponto quente {tf['ponto_quente_C']:.0f} °C (pior entre projeto e análise avançada) × "
@@ -680,7 +686,7 @@ def _email_cliente(proj, orc, cat):
             f"- Validade: {com['validade_dias']} dias | Pagamento: {com['pagamento']} | Garantia: {com['garantia']}\n\n"
             f"Atendimento técnico: Vpico {max(p['vpk_saida'] for p in proj.pontos):.0f} V (≤ {ped.get('vpk_max_v') or '-'} V), "
             f"dv/dt {max(p['dvdt_saida_v_us'] for p in proj.pontos):.1f} V/µs (≤ {ped.get('dvdt_max_v_us') or '-'} V/µs), "
-            f"THD de tensão {max(p['thd_v_saida_pct'] for p in proj.pontos):.1f} %, isolação 1,1 kV, classe F.\n"
+            f"THD de tensão {max(p['thd_v_saida_pct'] for p in proj.pontos):.1f} %, isolação 1,1 kV, sistema de isolação classe H (180 °C – igual ou superior à classe solicitada).\n"
             f"Importante: o inversor deve operar com frequência de chaveamento fixa de {proj.fs_hz / 1000:g} kHz.\n\n"
             "Anexos: proposta, folha de dados, memorial de cálculo e desenho dimensional.\n\n"
             f"Atenciosamente,\n{emp['responsavel']}\n{emp['nome']}\n{emp['email']} | {emp['telefone']}\n")

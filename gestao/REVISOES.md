@@ -249,3 +249,16 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Verificador com o projeto de teste do banco (BCD-FD8,16-400kvar-415V_ABB_20261123_1039): "pode publicar", nenhum crítico regredido.
 - O teste saiu no nível 1 (2 reprovados reais: borne da contatora × cabo, arco elétrico) – comportamento esperado; pasta 06_Evidencias,
   maturidade.json e bloco no RESUMO gerados. A tela da Biblioteca (lista + perguntas) só foi conferida por sintaxe aqui – testar no notebook.
+
+## Revisão – v1.27.1 – 2026-11-23 14:05
+- Requisitos: 139 | APROVADO 85 | ATENÇÃO 35 | REPROVADO 19
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261123_1039
+- Mudanças: nenhuma
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+### Análise da revisão v1.27.1 (23/11/2026) – filtro senoidal sempre em classe H (REQ-SEN-021)
+- Verificador com o projeto do banco: "pode publicar". Teste da A&W na nuvem (sem ATP): Status APROVADO; o 1º indutor deu 178 °C pelo pior
+  método (limite 180 °C), a plataforma refez e fechou em 124 °C; no painel 131 °C. Painel 258 kg, 863 W, 1 ventilador; maturidade nível 2.
+- Testes no notebook pela v1.27.0 (antes desta mudança): A&W REPROVADO pela classe F (165,9 °C); Panatlântica NÃO LIBERAR (borne AF52 × cabo, arco).

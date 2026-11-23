@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.27.1 – 2026-11-23 (filtro senoidal sempre em classe H)
+- **Classe H como ponto de partida (REQ-SEN-021, decisão do engenheiro)**: no filtro senoidal o indutor é projetado, especificado e cotado em classe H (180 °C). É o padrão de mercado conferido em folhas de dados: Block SFA classe H; Schaffner FN 5040 HV e MTE SineWave Guardian classe 200 (N); só o TDK B84143V é classe F.
+- **Classe pedida pelo cliente = mínima**: se o cliente pede F e o ponto quente passa de 155 °C mas fica dentro da classe H, o projeto não reprova mais – sai um aviso para informar na proposta que a isolação é classe H (superior à solicitada) e obter o aceite por escrito. Acima de 180 °C continua REPROVADO.
+- **Documentos**: proposta/e-mail e tabela de atendimento passam a dizer classe H; o relatório explica a diferença entre a classe pedida e a ofertada.
+- Não muda: banco dessintonizado e filtro sintonizado continuam em classe F (padrão com a Cootrans).
+
 ## v1.27.0 – 2026-11-23 (nível de maturidade dos projetos)
 - **Nível de maturidade 0 a 5 (REQ-GER-016)**: 0 não usar em projetos novos · 1 salvo/desenhado · 2 calculado e verificado · 3 vendido/fabricado · 4 testado em fábrica (TAF) · 5 instalado e medido em campo. Os níveis 1 e 2 a plataforma dá sozinha ao rodar o projeto (com item REPROVADO fica no 1). Do 3 em diante só sobe com evidência.
 - **Pasta 06_Evidencias em cada projeto**, com três subpastas (vendido/fabricado, TAF, campo) e um LEIA-ME. Basta colocar o documento lá (pedido de compra, relatório de TAF, comissionamento, termografia) – a plataforma lê sozinha e sobe o nível. O nível e a tabela de como subir aparecem no fim do RESUMO.

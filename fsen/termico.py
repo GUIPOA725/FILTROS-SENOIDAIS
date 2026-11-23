@@ -121,7 +121,7 @@ def estudo_termico(proj, arr, cat, n_vent=None, vazao_unit=None) -> Dict[str, An
                 lim_c = min(float(t["classe_indutor_c"]), float(fem.get("limite_c") or t["classe_indutor_c"]))
                 ok = th <= lim_c and elev <= t["elevacao_indutor_k"]
                 add(f"{f['nome']} (ponto quente do enrolamento)", f["p"], ta, th,
-                    f"≤ {lim_c:.0f} °C (classe pedida) e elevação média ≤ {t['elevacao_indutor_k']} K", ok,
+                    f"≤ {lim_c:.0f} °C (classe do projeto) e elevação média ≤ {t['elevacao_indutor_k']} K", ok,
                     f"Projeto do indutor por elementos finitos ({fem.get('metodo') or 'método de projeto'}): elevação {fem['elev']:.0f} K a {fem['p']:.0f} W, escalada para "
                     f"{f['p']:.0f} W (limite contratual) → {elev:.0f} K + 15 K ao ponto quente")
                 continue

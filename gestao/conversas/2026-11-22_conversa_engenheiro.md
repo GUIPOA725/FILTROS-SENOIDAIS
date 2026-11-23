@@ -318,3 +318,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (23/11 13:09) Engenheiro: "voltei". Panatlântica rodada no notebook pela v1.27.0 (13:11–13:40): PROJETOS\Panatlântica\BCD-FD8,16-400kvar-415V_ABB_20261123_1311 – 8 × 50 kvar ABB; reator 28 esp., coluna 50×90, 58 kg, 361 W, ponto quente 132 °C (1º projeto 163 °C, refeito sozinho); status geral NÃO LIBERAR (2 reprovados: borne AF52 × cabo; arco nos terminais de entrada) e 22 atenções; transitórios Plataforma = ATP 31/31; maturidade nível 1. Relatórios consolidados da A&W e da Panatlântica enviados no chat.
 
 (23/11 13:55) Engenheiro: "1. filtro senoidal, qual é o padrão de mercado classe H ou F, o padrão internacional é classe H para filtro senoidal?" → REQ-SEN-021; resposta: não há norma que fixe; Block H, Schaffner EIS 200 (N), MTE N 200 °C, TDK 155 (F) – mercado majoritariamente H ou acima.
+
+(23/11 13:58) Engenheiro: "eu vou ter que cotar ainda, então na cotação com os fabricantes de filtro senoidal vamos sempre partir de classe H." → REQ-SEN-021 implementado na v1.27.1.

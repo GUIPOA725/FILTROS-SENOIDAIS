@@ -1,5 +1,5 @@
 {
-  "versao": "1.27.0",
+  "versao": "1.27.1",
   "data": "2026-11-23",
-  "resumo": "Nível de maturidade dos projetos (0 a 5): calculado automático, vendido/TAF/campo por evidência na pasta 06_Evidencias; biblioteca de reatores usa primeiro o de maior maturidade"
+  "resumo": "Filtro senoidal: cotação sempre em classe H; a classe pedida pelo cliente é a mínima, com aviso e pedido de aceite quando o ponto quente passa dela"
 }

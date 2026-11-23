@@ -137,7 +137,11 @@ def requisitos(proj, cat=None):
                 Iovl=1.5 * i_inv * math.sqrt(2) + rpp / 2, rpp=rpp, rrms=float(l1.ripple_rms_a), fs=float(proj.fs_hz),
                 f1=float(ped.freq_rede_hz), V=float(ped.tensao_v), Vdc=1.35 * float(ped.tensao_v) * 1.10,
                 classe="H",          # padrão Electric: sistema de isolação classe H com elevação limitada à de classe F (margem)
-                temp_max_C=_temp_classe_cliente(getattr(ped, "classe_temp", None)))   # v1.26.4: ponto quente ≤ classe PEDIDA pelo cliente
+                # v1.27.1 (REQ-SEN-021, decisão do engenheiro 23/11): no filtro senoidal a cotação com os fabricantes parte SEMPRE de
+                # classe H (padrão de mercado: Block H, Schaffner/MTE classe 200) – a classe pedida pelo cliente (ex.: F) é a MÍNIMA.
+                # O limite de ponto quente é o da classe H; se passar da classe do cliente, o projeto AVISA e pede o aceite.
+                temp_max_C=max(_temp_classe_cliente(getattr(ped, "classe_temp", None)), CLASSE["H"]["temp"]),
+                classe_cliente_C=_temp_classe_cliente(getattr(ped, "classe_temp", None)))
 
 
 def _dowell(m, delta):
