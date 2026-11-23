@@ -252,3 +252,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 00:34
 "Pode ser essa separação. Mas um bom detalhamento não somente indutância e corrente, vc não acha?"
 → REQ-REL-009 (separar fabricante × interno no banco/sintonizado; ET de desempenho bem detalhada).
+
+### 23/11 00:51
+"Para os filtros sintonizados e dessintonziado sempre usei classe f cootrans. Classe f ou h diminui a temperatura ou só suporta mais?"
+→ REQ-REA-016.
