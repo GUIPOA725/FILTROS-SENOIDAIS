@@ -328,6 +328,61 @@ def casos_analiticos(d):
 
 
 # ------------------------------------------------------------------------------------------------- comparação completa
+def inducao_coluna(d, G=None, mesh=None, mu_r=4000):
+    """Indução MÉDIA na coluna (T) com a corrente de pico de operação – plataforma × NGSolve × fórmula (REQ-REA-012, v1.26.3).
+    O engenheiro pediu a indução conferida em outro software. Fluxo por metro de profundidade numa coluna = diferença do potencial
+    vetor A entre as duas faces da coluna (2D) → B médio = |A(x1) − A(x0)| / a. Caso: fase lateral no pico (I, −I/2, −I/2) e fase
+    central no pico (−I/2, I, −I/2). Linear (μr igual nos dois programas, para comparar os SOLVERS) e não-linear (curva B-H, só na
+    plataforma – é o valor de projeto)."""
+    from ngsolve import H1, BilinearForm, LinearForm, GridFunction, grad, dx, Integrate, CoefficientFunction
+    G = G or geometria(d)
+    M = G["M"]
+    r = d["requisitos"]
+    I = float(r.get("Ipk") or 2 ** 0.5 * r["In"])
+    a, ww, hw = d["a"], d["ww"], d["hw"]
+    y0 = a + hw / 2
+    gys = sorted((g_[1] + g_[3]) / 2 for g_ in G["gaps"])
+    if gys:                                                        # nível no FERRO, o mais longe possível dos entreferros
+        cand = np.linspace(a + 0.08 * hw, a + 0.92 * hw, 41)
+        y0 = float(max(cand, key=lambda y: min(abs(y - gy) for gy in gys)))
+    cols = {"lateral": (0.0, a, [I, -I / 2, -I / 2]), "central": (a + ww, 2 * a + ww, [-I / 2, I, -I / 2])}
+    P = np.asarray(M.m.p)
+
+    def no(x, y):
+        return int(np.argmin((P[:, 0] - x) ** 2 + (P[:, 1] - y) ** 2))
+    mesh = mesh or _malha2d(G)
+    nu = mesh.MaterialCF({"ferro": 1 / (MU0 * mu_r)}, default=1 / MU0)
+    fes = H1(mesh, order=2, dirichlet="fora")
+    u, v = fes.TnT()
+    Am = BilinearForm(nu * grad(u) * grad(v) * dx).Assemble()
+    inv = Am.mat.Inverse(fes.FreeDofs(), inverse="sparsecholesky")
+    areas = [Integrate(CoefficientFunction(1), mesh, definedon=mesh.Materials(f"c{j}")) for j in range(len(G["cond"]))]
+    out = dict(I_pk=I, y_m=y0, mu_r=mu_r, colunas={})
+    L2 = None
+    for nome, (x0, x1, cur) in cols.items():
+        Al = M.resolver(cur, mu_r=mu_r)
+        b_lin = abs(Al[no(x1, y0)] - Al[no(x0, y0)]) / a
+        An = M.resolver(cur)
+        b_nl = abs(An[no(x1, y0)] - An[no(x0, y0)]) / a
+        f = LinearForm(fes)
+        for j, c in enumerate(G["cond"]):
+            f += (c["lado"] * cur[c["fase"]] / areas[j]) * v * dx(f"c{j}")
+        f.Assemble()
+        gf = GridFunction(fes)
+        gf.vec.data = inv * f.vec
+        e_ = 1e-6
+        b_ng = abs(gf(mesh(x1 - e_, y0)) - gf(mesh(x0 + e_, y0))) / a
+        out["colunas"][nome] = dict(plataforma_linear_T=float(b_lin), ngsolve_linear_T=float(b_ng), plataforma_nao_linear_T=float(b_nl))
+    try:
+        from .ind_projeto import L_fases
+        L2, _ = L_fases(M, d["b"])
+        out["formula_T"] = float(L2.mean() * I / (d["N"] * a * d["b"]))       # B = L·I/(N·A) – conta de mão
+    except Exception:
+        out["formula_T"] = None
+    out["B_proj_T"] = float(r.get("B_proj_T") or 1.45)
+    return out
+
+
 def comparar(d, log=print, fazer_3d=True, h3d=0.02):
     fs = d["requisitos"]["fs"]
     freqs = [60.0, float(fs), 2.0 * fs]
@@ -355,12 +410,21 @@ def comparar(d, log=print, fazer_3d=True, h3d=0.02):
             out["erro_3d"] = f"{type(e).__name__}: {e}"
             log(f"     NGSolve 3D não concluído: {out['erro_3d']}")
         out["tempos"]["ngsolve_3d"] = time.time() - t0
+    try:                                                # v1.26.3 (REQ-REA-012): indução na coluna conferida no 2º software
+        out["B_col"] = inducao_coluna(d, G=G, mesh=mesh)
+        bl = out["B_col"]["colunas"]["lateral"]
+        log(f"     Indução na coluna em {out['B_col']['I_pk']:.0f} A de pico: plataforma {bl['plataforma_linear_T']:.3f} T × NGSolve "
+            f"{bl['ngsolve_linear_T']:.3f} T (linear); não-linear {bl['plataforma_nao_linear_T']:.3f} T; fórmula "
+            f"{out['B_col'].get('formula_T') or 0:.3f} T; limite de projeto {out['B_col']['B_proj_T']:.2f} T")
+    except Exception as e:
+        out["erro_B"] = f"{type(e).__name__}: {e}"
+        log(f"     (indução na coluna não comparada: {out['erro_B']})")
     out["malha"] = malha_sensibilidade(d, fs)
     out["analiticos"] = casos_analiticos(d)
     return out
 
 
-TOL = dict(L2d=3.0, L3d=5.0, Rac60=5.0, RacAF=15.0)
+TOL = dict(L2d=3.0, L3d=5.0, Rac60=5.0, RacAF=15.0, B=3.0)
 
 
 def linhas_comparacao(cmp):
@@ -377,6 +441,9 @@ def linhas_comparacao(cmp):
     if "ng_L3d" in cmp:
         for k, f in enumerate("UVW"):
             lin(f"L 3D fase {f} (plataforma: 2D + correção 3D; NGSolve: 3D completo)", P["L3d"][k] * 1e6, cmp["ng_L3d"][k] * 1e6, "µH", TOL["L3d"])
+    for nome, bc in ((cmp.get("B_col") or {}).get("colunas") or {}).items():
+        lin(f"Indução média na coluna {nome} em {cmp['B_col']['I_pk']:.0f} A de pico (linear, mesmo μr)", bc["plataforma_linear_T"],
+            bc["ngsolve_linear_T"], "T", TOL["B"], "{:.3f}")
     for f in fs:
         lin(f"R CA da fase em {f:g} Hz", P["Rac"][f] * 1e3, cmp["ng_Rac"][f] * 1e3, "mΩ", TOL["Rac60"] if f < 100 else TOL["RacAF"], "{:.2f}")
     return L
