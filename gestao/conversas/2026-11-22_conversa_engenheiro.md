@@ -274,3 +274,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 06:32
 "Vc não pode ficar parado tem coisas para fazer da lista ainda?"
 → seguir com a lista de pendências sem esperar: memória da IA (limite), termografias, estágios de potências diferentes (REQ-BCO-004), indução no 2º software (REQ-REA-012), biblioteca de reatores (REQ-REA-014).
+
+### 23/11 07:52
+"Apaga a aew resultados e roda novamente"
+→ rodar de novo a Panatlântica pela plataforma local (v1.26.3). Exclusão: confirmar com ele QUAIS resultados ("aew" pode ser "aí os" = Panatlântica v1.26.1, ou o cliente A & W) antes de apagar.
