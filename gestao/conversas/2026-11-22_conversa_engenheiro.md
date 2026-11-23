@@ -190,3 +190,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 "Como eu sei qts teslas T tinha no indutor da cootrans, isso e perigoso, vc calcular isso, vc comparou com outro software?"
 → conferir o que se sabe do reator Cootrans (indução) e se a indução da plataforma é comparada com outro software.
 → REQ-REA-012.
+
+### 22:32
+"Quando combinar capacitores use sempre os dois iguais"
+→ REQ-CMP-007. (Também registrado hoje: REQ-BCO-004 – achado do teste real com estágios 25 + 50 kvar.)
