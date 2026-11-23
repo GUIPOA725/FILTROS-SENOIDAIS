@@ -165,3 +165,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:14
 "Na verdade é o meu padrão mas , se tiver outros usar eu uso 12.5kvar 25 50 75 100"
 → REQ-BCO-003 (complemento).
+
+### 22:14 (2)
+"Esse é o padrão para os filtros dessintonziados e sintonizados na baixa tensao"
+→ REQ-BCO-003 (vale para dessintonizado e sintonizado em BT).
