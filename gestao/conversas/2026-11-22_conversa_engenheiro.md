@@ -214,3 +214,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:53
 "O ideal é a gente não precisar cada vez vez um reator novo ter eles modelados salvos e depois do confirma todas vez fazer um reator diferente é complicado por padronizar os estágios ajuda muito e deixar tudo salvo e definido 12.5 25 50 75 100 kvar e trabalhar com eles simulando em cima deles para ver se os casos passam"
 → REQ-REA-014.
+
+### 22:56
+"Só muda a tensão e mantém essas potências depois, em casos novos acredito que vale simular com as medições de campo, mas o ideal é padronizar isso ajuda muito na montagem preços . Claro que vai ter casos diferentes mas ficam TB salvos vai chegar ao pontos que vamos ter uma biblioteca tão boa e efetivada que vai sair tudo muito rapido"
+→ REQ-REA-014 (complemento).
