@@ -194,3 +194,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:32
 "Quando combinar capacitores use sempre os dois iguais"
 → REQ-CMP-007. (Também registrado hoje: REQ-BCO-004 – achado do teste real com estágios 25 + 50 kvar.)
+
+### 22:33
+"Capacitores associados sempre iguais"
+→ REQ-CMP-007 (reforço).
