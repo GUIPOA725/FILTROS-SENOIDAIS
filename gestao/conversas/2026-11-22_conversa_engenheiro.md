@@ -185,3 +185,8 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:26 (2)
 "Deve considerar só em regime"
 → REQ-REA-011.
+
+### 22:28
+"Como eu sei qts teslas T tinha no indutor da cootrans, isso e perigoso, vc calcular isso, vc comparou com outro software?"
+→ conferir o que se sabe do reator Cootrans (indução) e se a indução da plataforma é comparada com outro software.
+→ REQ-REA-012.
