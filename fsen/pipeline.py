@@ -259,7 +259,35 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                                        else "2 por coluna nas culatras + fio/barra retangular (busca livre)"),
                        "culatra": "2 por coluna nas culatras + folha (não recomendado)"}.get(construcao_gap, "distribuídos (multigap) + folha")
             log(f"   Indutor: projeto de referência por elementos finitos – entreferros {_nome_c} (alguns minutos)...")
-            ind_pre = IP.projetar(proj, cat, log=log, construcao=construcao_gap, condutor=condutor_ind)
+            # v1.26.4 (REQ-SEN-020): a meta de elevação agora respeita a classe PEDIDA pelo cliente com 10 K de folga. Se a barra
+            # única não tiver solução, tenta condutores em paralelo; só depois abre mão da folga – e AVISA (nunca em silêncio).
+            _t_cli = IP._temp_classe_cliente((proj.pedido if isinstance(proj.pedido, dict) else proj.pedido.__dict__).get("classe_temp"))
+            _alvo_sem_folga = max(_t_cli - 50.0 - IP.PONTO_QUENTE_ACRESCIMO_K, 40.0)
+            _tent = [(condutor_ind, None, None)]
+            if construcao_gap == "culatra_fio" and condutor_ind != "livre":
+                _tent.append(("livre", None, "barra única sem solução com a folga térmica – usado fio/barra em paralelo (transposto)"))
+            _tent.append((condutor_ind, _alvo_sem_folga, f"sem solução com 10 K de folga – projetado SEM a folga (meta {_alvo_sem_folga:.0f} K): "
+                          "ponto quente no limite da classe pedida; avaliar classe superior com o cliente ou indutor maior"))
+            if construcao_gap == "culatra_fio" and condutor_ind != "livre":
+                _tent.append(("livre", _alvo_sem_folga, f"sem solução com 10 K de folga – fio/barra em paralelo e SEM a folga (meta {_alvo_sem_folga:.0f} K)"))
+            ind_pre, _err = None, None
+            for _cnd, _alvo, _nota in _tent:
+                IP.ALVO_ELEV_EXT = _alvo
+                try:
+                    ind_pre = IP.projetar(proj, cat, log=log, construcao=construcao_gap, condutor=_cnd)
+                except RuntimeError as _e1:
+                    _err = _e1
+                    log(f"   Indutor ({_cnd}{'' if _alvo is None else f', meta {_alvo:.0f} K'}): {_e1} – tentando a próxima opção")
+                    continue
+                finally:
+                    IP.ALVO_ELEV_EXT = None
+                condutor_ind = _cnd
+                if _nota:
+                    proj.avisos = list(getattr(proj, "avisos", []) or []) + [f"Indutor: {_nota}."]
+                    log(f"   Indutor: {_nota}")
+                break
+            if ind_pre is None:
+                raise _err or RuntimeError("indutor sem solução")
             _tfp = None
             if verificar_ind:                       # v1.26.4 (REQ-GER-014): fecha a térmica com a análise avançada ANTES do painel
                 try:
