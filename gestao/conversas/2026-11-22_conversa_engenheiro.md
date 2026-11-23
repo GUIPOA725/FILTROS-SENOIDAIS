@@ -282,3 +282,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 23/11 08:07
 "A&w pronta?"
 → ERRO MEU: "aew" das 07:52 era A&W (cliente do filtro senoidal), não Panatlântica. Corrigir: rodar a A&W pela plataforma local v1.26.3 e apagar os resultados antigos da A&W (confirmar se as pastas Indutor_Cootrans_v* entram).
+
+(23/11 08:30) A&W rodada pela plataforma local v1.26.3: PROJETOS\\A & W Suprimentos Industriais\\2026-11-23_FSEN-LC-269A-440V (L1 150 µH, 6 × 30 µF, 267 kg, APROVADO com 7 atenções). Exclusões pendentes da resposta dele sobre as pastas Indutor_Cootrans_v*. Rodada Panatlântica Schneider v1.26.3 interrompida por engano (pasta incompleta _20261123_0757 a apagar).
