@@ -210,3 +210,7 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 ### 22:50
 "Entreferros mais por coluna tipo multigap é complicado de fazer no Brasil . Bobina para esses indutores de dessintonziado e sintonizados é alumínio, já vi em folhas e barras, não sei o que fica melhor e mais barato, mas pelo que vi no geral muitos usam em folhas de alumínio acho que dá para usar eu já usei com a cootrans várias vezes. As outras decisões deixo para vc importante elas serem seguras e nunca gostou de trabalhar no limite sempre gosto de uma folga boa de segurança para o indutor não aquecer entendeu nem que fique um pouco maior"
 → REQ-REA-013.
+
+### 22:53
+"O ideal é a gente não precisar cada vez vez um reator novo ter eles modelados salvos e depois do confirma todas vez fazer um reator diferente é complicado por padronizar os estágios ajuda muito e deixar tudo salvo e definido 12.5 25 50 75 100 kvar e trabalhar com eles simulando em cima deles para ver se os casos passam"
+→ REQ-REA-014.
