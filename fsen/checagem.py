@@ -124,6 +124,8 @@ def status_geral_md(texto):
     for ln in texto.splitlines():
         if not ln.startswith("|"):
             continue
+        if ln.startswith("| Arco elétrico |"):          # espelho da tabela de energia incidente (já contada lá)
+            continue
         if "✖ REPROVADO" in ln:
             cel = [c.strip() for c in ln.strip().strip("|").split("|")]
             rep.append(" – ".join(c for c in cel[:3] if c)[:230])
