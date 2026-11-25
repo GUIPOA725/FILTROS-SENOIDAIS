@@ -105,3 +105,13 @@ referencias:
     - "Ressalvas à auditoria: 1,625 T é pico local de canto (coluna ≈ 1,0–1,2 T); o resistor de descarga do filtro senoidal existe na lista; fusível de banco protege contra curto, não sobrecarga."
   requisitos: [REQ-GER-014, REQ-REA-017, REQ-SEN-020, REQ-BCO-005]
   usada_em: "v1.26.4 – fsen/ind_avancado.py, pipeline_banco.py, pipeline.py, banco.py, termico.py, checagem.py"
+- id: REF-AUDITORIA-AW-268A-V1271
+  nome: "Auditoria técnica independente – A&W filtro senoidal FSEN-LC-268A-440V (dossiê 25/11/2026, v1.27.1)"
+  caminho: "gestao/analises/2026-11-25_Auditoria_AW_FSEN-LC-268A-440V_v1.27.1.pdf"
+  licoes:
+    - "Capacitores (fr, delta/estrela, tensão/corrente por unidade, perdas, vida) reproduzidos ao dígito – o lado capacitor está certo."
+    - "Pior método térmico comparava média + 15 K (projeto) com o máximo do mapa avançado (que não resolve o gradiente interno): margem real ~3 K, não 18 K."
+    - "Com o motor ligado a ressonância do LC sobe de 1003 Hz para ~1,22 kHz e cruza h23–h31 de tempo morto na faixa 41–48 Hz; sem amortecimento o ganho pode ser ~30, não 10,7."
+    - "A aprovação depende de fs = 4 kHz fixa; o ACS580 reduz a frequência sozinho – travar no contrato e no FAT."
+    - "Documentos ainda dizem classe F/100 K depois da decisão de ofertar classe H."
+  requisitos: [REQ-SEN-022, REQ-SEN-021, REQ-GER-014]
