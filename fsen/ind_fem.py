@@ -20,6 +20,13 @@ BH_GO = (np.array([0, 8, 15, 25, 40, 80, 200, 1000, 3000, 10000, 30000, 100000.0
          np.array([0, 1.0, 1.4, 1.6, 1.7, 1.78, 1.86, 1.94, 1.99, 2.04, 2.08, 2.15]))
 
 
+# v1.28.0 (REQ-SEN-022, auditoria NC-1.3): curva CONSERVADORA para a prova de linearidade – nos cantos e juntas o fluxo atravessa
+# o grão da chapa GO (permeabilidade bem menor e joelho mais cedo). Indução da curva GO × 0,85 e μr limitado a 8000 (≈ chapa de grão
+# não orientado). Se a indutância passa com esta curva, passa com folga na chapa real.
+BH_CONSERVADORA = (BH_GO[0], BH_GO[1] * 0.85)
+MU_MAX_CONSERVADOR = 8000.0
+
+
 def _graded(p, q, h_l, h_r, hmax, r=1.25):
     """Pontos entre p e q (exclui p, inclui q) com tamanho crescendo de h_l (perto de p) e h_r (perto de q) até hmax."""
     L = q - p
@@ -178,7 +185,7 @@ class ModeloIndutor:
             Je[sel] = c["lado"] * correntes[c["fase"]] / self.area_cond[j]
         return Je
 
-    def resolver(self, correntes, mu_r=None, bh=BH_GO, iters=60, tol=5e-4, relax=0.6):
+    def resolver(self, correntes, mu_r=None, bh=BH_GO, iters=60, tol=5e-4, relax=0.6, mu_max=60000.0):
         """mu_r=None → não-linear com a curva B-H (substituição sucessiva com relaxação adaptativa); senão linear."""
         m = self.m
         nu = np.full(len(m.area), 1 / MU0)
@@ -199,7 +206,7 @@ class ModeloIndutor:
             alto = Bm > bh[1][-1]
             Hm[alto] = bh[0][-1] + (Bm[alto] - bh[1][-1]) / MU0
             nu_new = np.where(Bm > 1e-6, Hm / np.maximum(Bm, 1e-6), 1 / (MU0 * 3000))
-            nu_new = np.clip(nu_new, 1 / (MU0 * 60000), 1 / MU0)
+            nu_new = np.clip(nu_new, 1 / (MU0 * mu_max), 1 / MU0)
             dif = float(np.max(np.abs(nu_new - nu[self.ferro]) / nu[self.ferro]))
             lam = self.lambda_fases(A)
             if it > 0 and np.max(np.abs(lam - lam_ant)) <= tol * max(np.max(np.abs(lam)), 1e-12) and dif < 0.5:

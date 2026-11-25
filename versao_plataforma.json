@@ -1,5 +1,5 @@
 {
-  "versao": "1.27.1",
-  "data": "2026-11-23",
-  "resumo": "Filtro senoidal: cotação sempre em classe H; a classe pedida pelo cliente é a mínima, com aviso e pedido de aceite quando o ponto quente passa dela"
+  "versao": "1.28.0",
+  "data": "2026-11-25",
+  "resumo": "Filtro senoidal – correções gerais da auditoria A&W: ponto quente avançado = média + 15 K, entreferro equalizado pelo 3D, saturação com curva conservadora, sensibilidade ao amortecimento, fs fixa como requisito, documentos coerentes"
 }

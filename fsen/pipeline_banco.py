@@ -453,7 +453,7 @@ def _docs_reator(d, e, ped, nome, cod, eng, forn, des, versao, verificar, log):
                 if k_h > 1.02 and r.get("I1_fisica"):
                     Ihx = {h: v * k_h for h, v in e["Ih_projeto"].items()}
                     avx = AV.avaliar(d, None, None, log=lambda *_a, **_k: None, fazer_3d=False, wf=B.wf_de_espectro(ped.freq_hz, r["I1_fisica"], Ihx))
-                    d["avancado_extremo"] = dict(perdas_W=float(avx["perdas"]["total"]), ponto_quente_C=float(avx["termico"]["T_cobre_max_C"]),
+                    d["avancado_extremo"] = dict(perdas_W=float(avx["perdas"]["total"]), ponto_quente_C=max(float(avx["termico"]["T_cobre_max_C"]), float(avx["termico"]["T_cobre_med_C"]) + 15.0),
                                                  I1_A=float(r["I1_fisica"]), Ih_A=float(r["I_harm_fisica"]) * k_h, k_h=k_h,
                                                  limite_C=tf["limite_C"])
                     x = d["avancado_extremo"]

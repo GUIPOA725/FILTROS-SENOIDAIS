@@ -93,9 +93,29 @@ def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs, cat=No
             log("   Indutor: verificação independente no NGSolve (2D + 3D, alguns minutos)...")
             cmp = V.comparar(ind, log=log)
             cmp["estudo_camadas"] = est
+            if cmp.get("ng_L3d") is not None:              # v1.28.0 (REQ-SEN-022): equaliza as 3 fases pelo 3D independente
+                try:
+                    aj = V.ajuste_gap_3d(ind, cmp["ng_L3d"])
+                    if aj:
+                        ind["ajuste_gap_3d"] = aj
+                        ind["gaps"] = aj["gaps"]
+                        ind["L3d_ng_previsto"] = aj["L3_ng_previsto"]
+                        cmp["ajuste_gap_3d"] = aj
+                        cmp["L_alvo"] = float(ind["requisitos"]["L"])
+                        txt = (f"Entreferro ajustado pela verificação 3D independente: por peça {', '.join(f'{g / ind['ng'] * 1e3:.2f}' for g in aj['gaps'])} mm "
+                               f"(antes {', '.join(f'{g / ind['ng'] * 1e3:.2f}' for g in aj['gaps_antes'])} mm); L 3D "
+                               f"{', '.join(f'{x * 1e6:.1f}' for x in aj['L3_ng_antes'])} → {', '.join(f'{x * 1e6:.1f}' for x in aj['L3_ng_previsto'])} µH, "
+                               f"desequilíbrio {aj['deseq_antes_pct']:.1f} % → {aj['deseq_previsto_pct']:.1f} %. Confirmar na 1ª peça (ajuste por calço, tabela 3.3 do protocolo).")
+                        log("   Indutor: " + txt)
+                        ind.setdefault("avisos", []).append(txt)
+                except Exception as _ea:
+                    log(f"   (ajuste do entreferro pelo 3D não calculado: {type(_ea).__name__}: {_ea})")
             V.salvar_cmp(cmp, os.path.join(pasta_eng, "verificacao_indutor.json"))
             arqs["indutor_verificacao"] = V.relatorio(ind, cmp, os.path.join(pasta_eng, f"Verificacao_Independente_Indutor_{cod}.pdf"))
-            nok = sum(1 for l in V.linhas_comparacao(cmp) if l[-1] != "OK")
+            _lc = V.linhas_comparacao(cmp)
+            if cmp.get("ajuste_gap_3d"):                   # depois do ajuste valem as linhas "APÓS o ajuste"
+                _lc = [l for l in _lc if not (l[0].startswith("L 3D fase") and "APÓS" not in l[0]) and not l[0].startswith("Desequilíbrio entre")]
+            nok = sum(1 for l in _lc if l[-1] != "OK")
             log(f"   Indutor: verificação independente concluída – {('todas as grandezas dentro do critério' if nok == 0 else f'{nok} fora do critério')}")
             if nok:
                 proj.avisos = list(getattr(proj, "avisos", []) or []) + [
@@ -318,7 +338,8 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                 _p_lim = min(_p_lim, float(_r["P_max"]) * float(_r.get("k_Pmax") or 1))
             _p_lim = max(_p_lim, float(ind_pre["perdas"]["total"]), float((_tfp or {}).get("perdas_W") or 0))
             _dm = ind_pre["dims_mm"]
-            proj.l1.perdas_w = round(_p_lim, 0)
+            proj.l1.perdas_w = round(_p_lim, 0)                 # TETO garantido (cálculo + 15 %) – não é "estimativa"
+            proj._ind_perdas_calc_w = round(float((_tfp or {}).get("perdas_W") or ind_pre["perdas"]["total"]), 0)
             proj.l1.dim_mm = [int(math.ceil(_dm["largura"] / 10) * 10), int(math.ceil(_dm["altura"] / 10) * 10),
                               int(math.ceil(_dm["profundidade"] / 10) * 10)]
             proj.l1.massa_kg = round(float(ind_pre["massa_kg"]["total"]), 0)
@@ -415,6 +436,9 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
             if ind is None:
                 raise RuntimeError("projeto FEM do indutor indisponível")
             ind["corrente_dimensionamento"] = getattr(proj, "corrente_dimensionamento", None) or {}
+            # v1.28.0: a verificação independente roda ANTES dos desenhos e do memorial – se ela ajustar o entreferro da coluna
+            # central, desenho, CAD e memorial já saem com o valor ajustado
+            _verificacao_indutor(ind, proj, sub["01_Engenharia"], cod, verificar_ind, log, arqs, cat=cat)
             IDS.imagens_campo(ind, os.path.join(sub["01_Engenharia"], "Indutor_campo_FEM.png"))
             _inf = dict(titulo=f"Indutor trifásico p/ filtro senoidal – {proj.l1.l_uh:.0f} µH / {proj.l1.i_nom_a:.0f} A – {cod}",
                         linha2=f"Classe {ind['requisitos']['classe']} (sistema) | {ind['chapa_dados']['nome'][:48]} | {IP.descr_condutor(ind, curto=True)}",
@@ -432,7 +456,6 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                                                             _inf["titulo"])
             with open(os.path.join(sub["01_Engenharia"], "indutor_projeto.json"), "w", encoding="utf-8") as f:
                 json.dump({k: v for k, v in ind.items() if k not in ("campo_pico",)}, f, ensure_ascii=False, indent=1, default=_json_default)
-            _verificacao_indutor(ind, proj, sub["01_Engenharia"], cod, verificar_ind, log, arqs, cat=cat)
             for _f in os.listdir(sub["03_Fornecedores"]):
                 if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
                     with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:
@@ -611,7 +634,9 @@ def _atp_dupla_checagem(proj, cat, pasta_eng, cod, log):
         div = [f"{x['ponto'].replace('Operação ', '')}: {l['grandeza']} (Py {l['python']:g} × ATP {l['atp']:g} {l['unidade']}, {l['dif_pct']:+.0f} %)"
                for x in res for l in x["tabela"] if not l["convergiu"]]
         st.update(status="rodou", convergiu=conv, segundos=round(_time.time() - t0, 1), divergencias=div,
-                  msg=("ATP rodou e CONVERGIU com o Python em todos os pontos" if conv else
+                  # v1.28.0 (REQ-SEN-022, auditoria §8): dizer o que a dupla checagem NÃO cobre – é teste do solver com o MESMO modelo
+                  msg=("ATP rodou e CONVERGIU com o Python em todos os pontos (teste do solver com o mesmo modelo: PWM ideal sem tempo "
+                       "morto, capacitor sem ESR, barramento CC ideal – não substitui a medição em campo nem a análise de ressonância)" if conv else
                        "ATP rodou e há DIVERGÊNCIA com o Python em " + "; ".join(div[:3])),
                   resultados=[dict(ponto=x["ponto"], tabela=x["tabela"]) for x in res], graficos=pngs,
                   vistas=_vistas(proj, casos, res, trab, pasta_atp, log))
@@ -684,10 +709,12 @@ def _email_cliente(proj, orc, cat):
             f"- Preço unitário: {rs(orc.preco_unit)} (impostos inclusos)\n- Total: {rs(orc.preco_total)}\n"
             f"- NCM: {com['ncm_sugerido']} | Frete: FOB Porto Alegre/RS | Prazo: {com['prazo_entrega']}\n"
             f"- Validade: {com['validade_dias']} dias | Pagamento: {com['pagamento']} | Garantia: {com['garantia']}\n\n"
-            f"Atendimento técnico: Vpico {max(p['vpk_saida'] for p in proj.pontos):.0f} V (≤ {ped.get('vpk_max_v') or '-'} V), "
+            f"Atendimento técnico: Vpico garantido < {D.vpk_garantia(proj):.0f} V no pior caso (≤ {ped.get('vpk_max_v') or '-'} V), "
             f"dv/dt {max(p['dvdt_saida_v_us'] for p in proj.pontos):.1f} V/µs (≤ {ped.get('dvdt_max_v_us') or '-'} V/µs), "
             f"THD de tensão {max(p['thd_v_saida_pct'] for p in proj.pontos):.1f} %, isolação 1,1 kV, sistema de isolação classe H (180 °C – igual ou superior à classe solicitada).\n"
-            f"Importante: o inversor deve operar com frequência de chaveamento fixa de {proj.fs_hz / 1000:g} kHz.\n\n"
+            f"Importante (requisito do fornecimento): o inversor deve operar com frequência de chaveamento FIXA de {proj.fs_hz / 1000:g} kHz, "
+            f"com a redução automática por temperatura DESABILITADA (no ABB ACS580: 97.01 e 97.02 = {proj.fs_hz / 1000:g} kHz). Com frequência "
+            "menor o filtro não atende a especificação. A parametrização é conferida no comissionamento.\n\n"
             "Anexos: proposta, folha de dados, memorial de cálculo e desenho dimensional.\n\n"
             f"Atenciosamente,\n{emp['responsavel']}\n{emp['nome']}\n{emp['email']} | {emp['telefone']}\n")
 

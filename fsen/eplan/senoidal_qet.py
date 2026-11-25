@@ -21,6 +21,18 @@ def _sec(it_cabos, uso, padrao=""):
     return padrao
 
 
+def _cabo_motor(proj, s_pot):
+    """v1.28.0 (REQ-SEN-022, auditoria D12): o cabo -W2 é o MESMO da simulação (seção, paralelos e blindagem do modelo do
+    sistema); antes o esquema repetia a seção interna do painel e escrevia 'blindado' sempre."""
+    si = getattr(proj, "sistema", {}) or {}
+    pd = proj.pedido if isinstance(proj.pedido, dict) else {}
+    sec = si.get("cabo_secao_mm2") or s_pot or "?"
+    par = int(si.get("cabo_paralelos") or 1)
+    bl = bool(pd.get("cabo_blindado", True))
+    form = (f"{par}×" if par > 1 else "") + f"3×{sec:g} mm² + PE" if isinstance(sec, (int, float)) else f"3×{sec} mm² + PE"
+    return form, ("blindado" if bl else "NÃO blindado"), bl
+
+
 def construir(proj, arr, cod, versao):
     l1, l2, b = proj.l1, proj.l2, proj.banco
     pd = proj.pedido
@@ -52,7 +64,8 @@ def construir(proj, arr, cod, versao):
     ext = dict(externo=True)
     inv = fp.el("inversor", 140, 50, "-U1", dict(ext, designation=f"Inversor {pd.get('inversor') or ''}".strip(),
                                                   dados=f"fs = {proj.fs_hz / 1000:g} kHz fixa"))
-    w1 = fp.el("cabo3", 140, 130, "-W1", dict(ext, designation="Cabo blindado inversor → filtro"))
+    _fm, _bl_txt, _bl = _cabo_motor(proj, s_pot)
+    w1 = fp.el("cabo3", 140, 130, "-W1", dict(ext, designation=f"Cabo {'blindado' if _bl else 'NÃO blindado'} inversor → filtro"))
     x1 = [fp.el("borne_continuite", 120 + 20 * k, 200, f"-X1:{f}1", inf("Borne de potência entrada (inversor)")) for k, f in enumerate(fases)]
     x1pe = fp.el("borne_continuite", 180, 200, "-X1:PE", inf("Borne PE entrada"))
     fp.texto(76, 192, "-X1", 9, "#1f4e8c")
@@ -61,7 +74,8 @@ def construir(proj, arr, cod, versao):
         fp.fio(w1.term("s", k), x1[k].term("n"), potencia=True, marca="PT")
     fp.fio(inv.term("s", 3), w1.term("n", 3), marca="VD/AM", cor="#2e7d32")
     fp.fio(w1.term("s", 3), x1pe.term("n"), marca="VD/AM", cor="#2e7d32")
-    fp.texto(250, 140, f"-W1  3×{s_pot or '?'} mm² + PE, blindado, blindagem aterrada 360° nas duas pontas", 6.5, "#555555")
+    fp.texto(250, 140, f"-W1  3×{s_pot or '?'} mm² + PE, " + ("blindado, blindagem aterrada 360° nas duas pontas" if _bl else
+                                                            "NÃO blindado (premissa da simulação – confirmar com o cliente)"), 6.5, "#555555")
     xL1 = 300
     L1 = fp.el("reator3", xL1, 330, "-L1", inf(f"Indutor do filtro {l1.l_uh:.0f} µH/fase", ref="projeto FSEN",
                                                   dados=f"{l1.l_uh:.0f}uH-{l1.i_nom_a:.0f}A"))
@@ -87,7 +101,7 @@ def construir(proj, arr, cod, versao):
     x2 = [fp.el("borne_continuite", 760 + 20 * k, 330, f"-X2:{f}2", inf("Borne de potência saída (motor)")) for k, f in enumerate(fases)]
     x2pe = fp.el("borne_continuite", 820, 330, "-X2:PE", inf("Borne PE saída"))
     fp.texto(716, 322, "-X2", 9, "#1f4e8c")
-    w2 = fp.el("cabo3", 920, 420, "-W2", dict(ext, designation="Cabo blindado filtro → motor"))
+    w2 = fp.el("cabo3", 920, 420, "-W2", dict(ext, designation=f"Cabo {_bl_txt} filtro → motor"))
     mot = fp.el("motor3", 920, 520, "-M", dict(ext, designation="Motor",
                                               dados=f"{pd.get('motor_cv') or '?'} cv {pd.get('motor_corrente_a') or '?'} A"))
     if lcl:     # -L2 sai por cima: entra no -X2 por cima; cabo do motor sai por baixo do -X2
@@ -106,7 +120,7 @@ def construir(proj, arr, cod, versao):
     for k in range(3):
         fp.fio(w2.term("s", k), mot.term("n", k), potencia=True, marca="PT")
     fp.fio(w2.term("s", 3), mot.term("n", 3), marca="VD/AM", cor="#2e7d32")
-    fp.texto(870, 600, f"-W2  3×{s_pot or '?'} mm² + PE blindado", 6.5, "#555555")
+    fp.texto(870, 600, f"-W2  {_fm} {_bl_txt} (o mesmo da simulação)", 6.5, "#555555")
     fp.texto(870, 612, f"comprimento {pd.get('cabo_m') or '?'} m", 6.5, "#555555")
     fp.ret(70, 170, 790, 480, "+PAINEL – filtro senoidal")
     # banco de capacitores: n_por_ramo blocos de 3 capacitores (1 por ramo) em paralelo
@@ -197,9 +211,10 @@ def gerar(proj, arr, pasta, cod, versao, log=print):
     arq_dxf = render_dxf(Q, os.path.join(pasta, f"Esquema_Eletrico_{cod}.dxf"))
     pd = proj.pedido
     s_pot = _sec(arr.cabos, "potência", "conforme ET")
-    cabos = [dict(tag="-W1", de="-X1:U1/V1/W1/PE", para=f"Inversor {pd.get('inversor') or ''}".strip(), formacao=f"3×{s_pot} mm² + PE (blindado)",
-                  funcao="Entrada do filtro (saída do inversor)"),
-             dict(tag="-W2", de="-X2:U2/V2/W2/PE", para="Motor", formacao=f"3×{s_pot} mm² + PE, {pd.get('cabo_m') or '?'} m",
+    _fm, _bl_txt, _bl = _cabo_motor(proj, None)
+    cabos = [dict(tag="-W1", de="-X1:U1/V1/W1/PE", para=f"Inversor {pd.get('inversor') or ''}".strip(),
+                  formacao=f"3×{s_pot} mm² + PE ({'blindado' if _bl else 'NÃO blindado'})", funcao="Entrada do filtro (saída do inversor)"),
+             dict(tag="-W2", de="-X2:U2/V2/W2/PE", para="Motor", formacao=f"{_fm} ({_bl_txt}, o mesmo da simulação), {pd.get('cabo_m') or '?'} m",
                   funcao="Saída do filtro para o motor"),
              dict(tag="-W3", de="-X3:1/2", para="220 Vca do cliente", formacao="2×1,5 mm²", funcao="Alimentação da ventilação"),
              dict(tag="-W4", de="-X3:3/4", para="CLP/inversor do cliente", formacao="2×1,0 mm²", funcao="Alarme de temperatura do indutor")]

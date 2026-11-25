@@ -665,10 +665,14 @@ def avaliar(d, proj, cat, log=print, fazer_3d=True, iter_termica=4, wf=None):
     out["avisos"] = []
     if perdas["total"] > d["perdas"]["total"] * 1.05:
         out["avisos"].append(f"Método avançado prevê {perdas['total']:.0f} W, acima dos {d['perdas']['total']:.0f} W do projeto.")
-    if mb["Tmax"] > cl_lim:
-        out["avisos"].append(f"Ponto quente da bobina {mb['Tmax']:.0f} °C – {mb['Tmax'] - cl_lim:.0f} K ACIMA do limite ({cl_lim:.0f} °C): NÃO atende.")
-    elif mb["Tmax"] > cl_lim - 20:
-        out["avisos"].append(f"Ponto quente da bobina {mb['Tmax']:.0f} °C – só {cl_lim - mb['Tmax']:.0f} K abaixo do limite ({cl_lim:.0f} °C).")
+    from .ind_projeto import PONTO_QUENTE_ACRESCIMO_K as _DPQ
+    _pq = max(mb["Tmax"], mb["Tmed_cobre"] + _DPQ)          # v1.28.0: média + 15 K no mínimo (o mapa não resolve o gradiente interno)
+    if _pq > cl_lim:
+        out["avisos"].append(f"Ponto quente da bobina {_pq:.0f} °C (média do mapa {mb['Tmed_cobre']:.0f} °C + {_DPQ:g} K) – {_pq - cl_lim:.0f} K "
+                             f"ACIMA do limite ({cl_lim:.0f} °C): NÃO atende.")
+    elif _pq > cl_lim - 20:
+        out["avisos"].append(f"Ponto quente da bobina {_pq:.0f} °C (média do mapa {mb['Tmed_cobre']:.0f} °C + {_DPQ:g} K) – só {cl_lim - _pq:.0f} K "
+                             f"abaixo do limite ({cl_lim:.0f} °C).")
     log(f"     Avançado: perdas {perdas['total']:.0f} W (plataforma {d['perdas']['total']:.0f} W); bobina média {mb['Tmed_cobre']:.0f} °C, "
         f"ponto quente {mb['Tmax']:.0f} °C; núcleo máx. {mn['Tmax']:.0f} °C ({out['tempos']['total']:.0f} s)")
     return out
@@ -686,8 +690,14 @@ def adotar_pior(d, av=None, gravar=True):
     fin = dict(proj)
     avn = None
     if av:
-        avn = dict(perdas_W=float(av["perdas"]["total"]), elev_K=float(av["termico"]["T_cobre_med_C"]) - amb,
-                   ponto_quente_C=float(av["termico"]["T_cobre_max_C"]))
+        # v1.28.0 (REQ-SEN-022, auditoria A&W 25/11): o mapa 2D não resolve o gradiente interno da bobina (máximo − média ≈ 1 K
+        # com barra de cobre). O ponto quente do método avançado é, no mínimo, a MÉDIA do mapa + o mesmo acréscimo de ponto quente
+        # do método de projeto (15 K) – assim os dois métodos comparam a mesma grandeza.
+        from .ind_projeto import PONTO_QUENTE_ACRESCIMO_K as _DPQ
+        _tmed = float(av["termico"]["T_cobre_med_C"])
+        avn = dict(perdas_W=float(av["perdas"]["total"]), elev_K=_tmed - amb,
+                   ponto_quente_C=max(float(av["termico"]["T_cobre_max_C"]), _tmed + _DPQ),
+                   ponto_quente_mapa_C=float(av["termico"]["T_cobre_max_C"]))
         fin = {k: max(proj[k], avn[k]) for k in proj}
     lim = float(t.get("limite_temp_C", 155.0))
     margem = lim - fin["ponto_quente_C"]
@@ -800,7 +810,8 @@ def relatorio(d, av, arq, figs):
     T, Tp = av["termico"], av["plataforma"]["termico"]
     R.tab(["Grandeza", "Projeto (modelo de nós)", "Avançado (mapa)"], [
         ("Bobina – elevação média", f"{Tp['elev_bobina_K']:.0f} K", f"{T['T_cobre_med_C'] - T['amb_C']:.0f} K"),
-        ("Bobina – ponto quente", f"{Tp['ponto_quente_C']:.0f} °C (estimado)", f"{T['T_cobre_max_C']:.0f} °C (a {T['pos_max_bobina_mm'][0]:.0f} mm da coluna)"),
+        ("Bobina – ponto quente", f"{Tp['ponto_quente_C']:.0f} °C (média + 15 K)",
+         f"{max(T['T_cobre_max_C'], T['T_cobre_med_C'] + 15):.0f} °C (média do mapa + 15 K; máximo local do mapa {T['T_cobre_max_C']:.0f} °C)"),
         ("Núcleo – elevação", f"{Tp['elev_nucleo_K']:.0f} K", f"máx. {T['T_nucleo_max_C'] - T['amb_C']:.0f} K / média {T['T_nucleo_med_C'] - T['amb_C']:.0f} K"),
         ("Limite da classe", f"{Tp['limite_temp_C']:.0f} °C", f"{Tp['limite_temp_C']:.0f} °C")], [4, 3.2, 4], 7.5)
     R.p(f"Ambiente {T['amb_C']:.0f} °C, convecção {T['h_conv']:.0f} W/m²K (mesma do projeto). Iterações eletrotérmicas: "

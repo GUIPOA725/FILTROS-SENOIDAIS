@@ -37,7 +37,7 @@ VERMELHO = colors.HexColor("#C62828")
 ORDEM_ANEXOS = [
     (r"Relatorio_Tecnico_Final", "Relatório técnico final (RTM)"),
     (r"Memorial_de_Calculo", "Memorial de cálculo"),
-    (r"AUDITORIA", "Auditoria do projeto"),
+    (r"VERIFICACAO_SISTEMA|AUDITORIA", "Verificação do sistema (dossiê para auditoria independente – não é auditoria)"),
     (r"Analise_Avancada", "Análise avançada do reator/indutor (FEM)"),
     (r"Verificacao_Independente", "Verificação independente (NGSolve)"),
     (r"Memorial_(Reator|Indutor)", "Memorial do reator/indutor (fornecedor)"),

@@ -441,6 +441,19 @@ def linhas_comparacao(cmp):
     if "ng_L3d" in cmp:
         for k, f in enumerate("UVW"):
             lin(f"L 3D fase {f} (plataforma: 2D + correção 3D; NGSolve: 3D completo)", P["L3d"][k] * 1e6, cmp["ng_L3d"][k] * 1e6, "µH", TOL["L3d"])
+        Lng = np.asarray(cmp["ng_L3d"], float)
+        dq = (Lng.max() - Lng.min()) / Lng.mean() * 100
+        L.append(("Desequilíbrio entre fases no 3D (NGSolve)", "–", f"{dq:.1f} %", "–", "≤ 3 %", "OK" if dq <= 3.0 else "VERIFICAR"))
+        aj = cmp.get("ajuste_gap_3d")
+        if aj:                                          # v1.28.0: resultado DEPOIS do ajuste do entreferro (o que vai ao desenho)
+            alvo = float(cmp.get("L_alvo") or 0) or None
+            for k, f in enumerate("UVW"):
+                vp = aj["L3_ng_previsto"][k] * 1e6
+                dif = (vp / (alvo * 1e6) - 1) * 100 if alvo else float("nan")
+                L.append((f"L 3D fase {f} APÓS o ajuste do entreferro (prevista) × alvo", f"{alvo * 1e6:.1f} µH" if alvo else "–", f"{vp:.1f} µH",
+                          f"{dif:+.1f} %", "±5 %", "OK" if abs(dif) <= 5.0 else "VERIFICAR"))
+            L.append(("Desequilíbrio APÓS o ajuste (previsto)", "–", f"{aj['deseq_previsto_pct']:.1f} %", "–", "≤ 3 %",
+                      "OK" if aj["deseq_previsto_pct"] <= 3.0 else "VERIFICAR"))
     for nome, bc in ((cmp.get("B_col") or {}).get("colunas") or {}).items():
         lin(f"Indução média na coluna {nome} em {cmp['B_col']['I_pk']:.0f} A de pico (linear, mesmo μr)", bc["plataforma_linear_T"],
             bc["ngsolve_linear_T"], "T", TOL["B"], "{:.3f}")
@@ -695,6 +708,29 @@ def sensibilidade_gap(d, delta_mm=0.1):
         Lk = correcao_3d(d, L_fases(Mk, d["b"])[0], Mk)
         out.append(dict(coluna="UVW"[k], gap_peca_mm=base[k] / d["ng"] * 1e3, dL_pct=list((Lk / L0 - 1) * 100)))
     return out
+
+
+def ajuste_gap_3d(d, Lng3, tol_pct=1.0):
+    """v1.28.0 (REQ-SEN-022, auditoria NC-1.4): quando a verificação 3D independente (NGSolve) mostra fase fora de ±5 % ou
+    desequilíbrio > 3 % – típico da coluna CENTRAL de núcleo trifásico, que a correção 3D analítica não pega –, recalcula o
+    entreferro de cada coluna pela matriz de sensibilidade (ΔL por +0,1 mm em cada coluna) para levar as 3 fases do 3D ao
+    alvo. Devolve None se já está dentro de tol_pct; senão os novos entreferros e a L 3D prevista depois do ajuste."""
+    alvo = float(d["requisitos"]["L"])
+    Lng = np.asarray(Lng3, float)
+    erro = (alvo / Lng - 1) * 100                        # quanto cada fase precisa subir (%)
+    if np.all(np.abs(erro) <= tol_pct):
+        return None
+    sens = sensibilidade_gap(d, 0.1)
+    S = np.array([[sens[k]["dL_pct"][i] for k in range(3)] for i in range(3)])   # S[i,k] = ΔL_i % por +0,1 mm/peça na coluna k
+    passos = np.linalg.lstsq(S, erro, rcond=None)[0]    # em unidades de +0,1 mm por peça
+    passos[0] = passos[2] = (passos[0] + passos[2]) / 2  # colunas laterais iguais (simetria)
+    ng = int(d["ng"])
+    gaps_novos = [max(g + p_ * 0.1e-3 * ng, 0.2e-3 * ng) for g, p_ in zip(d["gaps"], passos)]
+    L_prev = Lng * (1 + S @ passos / 100)
+    return dict(gaps_antes=list(d["gaps"]), gaps=gaps_novos, L3_ng_antes=list(Lng), L3_ng_previsto=list(L_prev),
+                delta_mm_peca=[float(p_ * 0.1) for p_ in passos],
+                deseq_antes_pct=float((Lng.max() - Lng.min()) / Lng.mean() * 100),
+                deseq_previsto_pct=float((L_prev.max() - L_prev.min()) / L_prev.mean() * 100))
 
 
 def ensaio_60hz(d):

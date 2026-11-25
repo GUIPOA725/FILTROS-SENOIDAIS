@@ -39,7 +39,7 @@ def _esc(s):
 
 
 class _Doc(BaseDocTemplate):
-    def __init__(self, arq, cab, rotulo="USO INTERNO – AUDITORIA TÉCNICA", **kw):
+    def __init__(self, arq, cab, rotulo="USO INTERNO – VERIFICAÇÃO DO SISTEMA (não é auditoria independente)", **kw):
         self.rotulo = rotulo
         super().__init__(arq, pagesize=A4, leftMargin=16 * mm, rightMargin=16 * mm, topMargin=18 * mm, bottomMargin=16 * mm, **kw)
         self.cab = cab
@@ -177,18 +177,19 @@ def gerar(proj, arr, orc, cat, pasta, ind=None, graficos=None, log=print):
     v = vinfo()
     cod = os.path.basename(pasta)
     eng = os.path.join(pasta, "01_Engenharia")
-    arq = os.path.join(eng, f"AUDITORIA_{cod}.pdf")
+    arq = os.path.join(eng, f"VERIFICACAO_SISTEMA_{cod}.pdf")   # v1.28.0: era AUDITORIA_ (auditoria D/§6.1)
     R = Rel()
     hoje = _dt.datetime.now()
     # ------------------------------------------------------------------ capa
     R.f.append(Spacer(1, 40 * mm))
-    R.f.append(Paragraph("Relatório de Auditoria Técnica", R.st["CAPA"]))
+    R.f.append(Paragraph("Relatório de Verificação do Sistema", R.st["CAPA"]))
     R.f.append(Paragraph(f"Filtro senoidal {proj.topologia} – {ped.corrente_a:g} A / {ped.tensao_v:g} V – {_esc(ped.cliente)}", R.st["H2"]))
     R.f.append(Spacer(1, 10 * mm))
     R.tab(["Campo", "Valor"], [("Projeto", cod), ("Emissão", hoje.strftime("%d/%m/%Y %H:%M")),
                                ("Plataforma", f"FSEN v{v.get('versao')} ({v.get('data')})"), ("Resumo da versão", v.get("resumo", "")),
                                ("Status do projeto", "APROVADO" if proj.aprovado else "REPROVADO"),
-                               ("Finalidade", "Uso interno – revisão independente por engenheiro especialista (parecer OK / NÃO OK / ajustar)")],
+                               ("Finalidade", "Uso interno – dossiê gerado pela própria plataforma para SUBSIDIAR uma auditoria independente. NÃO é auditoria: "
+                                              "foi gerado pelo mesmo sistema que fez o projeto. A auditoria só vale com o parecer assinado de um engenheiro externo.")],
           [1, 3])
     R.p("Este relatório reúne todos os dados, modelos, cálculos, simulações e decisões da plataforma para este projeto, "
         "inclusive os que não aparecem nos documentos ao cliente ou aos fornecedores. A seção final traz o formulário de parecer.")
@@ -489,7 +490,9 @@ def _secao_indutor(R, d, pasta):
     R.p(f"Entreferro final (total por coluna): laterais {d['gaps'][0]*1e3:.2f} mm, central {d['gaps'][1]*1e3:.2f} mm, em {d['ng']} peças.")
     R.p(f"Indutância (3D corrigida): {', '.join(f'{x*1e6:.1f}' for x in d['L3d'])} µH; 2D: {', '.join(f'{x*1e6:.1f}' for x in d['L2d'])} µH.")
     R.h2("Saturação (FEM não-linear)")
-    R.tab(list(d["saturacao"][0].keys()), [list(s.values()) for s in d["saturacao"]], fs=6.8)
+    R.tab(list(d["saturacao"][0].keys()), [[(f"{x:.4g}" if isinstance(x, float) else x) for x in s.values()] for s in d["saturacao"]], fs=6.2)
+    if d.get("saturacao_nota"):
+        R.p(d["saturacao_nota"])
     R.h2("Perdas")
     R.kv(d["perdas"])
     R.kv(dict(Rdc_ohm=d.get("Rdc_ohm"), **(d.get("Rac_ohm") or {})), "Resistências (por fase)")

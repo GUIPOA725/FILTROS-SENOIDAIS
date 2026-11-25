@@ -266,7 +266,7 @@ def memorial(ped, res, grupos, inds, arq, figs, versao=""):
         av = d.get("avancado")
         if av:
             lin.append(("Análise avançada (espectro, 3D)", f"{av['perdas']['total']:.0f} W; bobina média {av['termico']['T_cobre_med_C']:.0f} °C, "
-                        f"ponto quente {av['termico']['T_cobre_max_C']:.0f} °C"))
+                        f"ponto quente {max(av['termico']['T_cobre_max_C'], av['termico']['T_cobre_med_C'] + 15):.0f} °C (média do mapa + 15 K)"))
         if d.get("avancado_extremo"):
             x = d["avancado_extremo"]
             lin.append(("Caso extremo (informativo)", f"harmônicas {x['k_h']:.1f} × as do local ({x['Ih_A']:.0f} A, limite do capacitor IEC 60831): "

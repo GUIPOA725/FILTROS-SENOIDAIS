@@ -1,5 +1,6 @@
 """Geração de documentos Word (.docx), e-mails e planilha de custos."""
 from __future__ import annotations
+import math
 import os
 import datetime as _dt
 from docx import Document
@@ -472,7 +473,8 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
         _kv(d, [("Indutância", f"{L.l_uh:.1f} µH/fase ±5 % (medida a 60 Hz, In)"), ("Corrente térmica RMS", f"{L.i_nom_a:.0f} A"),
                 ("Corrente fundamental máx.", f"{L.i_fund_a:.0f} A"), ("Ondulação", f"{L.ripple_pp_a:.0f} A p-p / {L.ripple_rms_a:.0f} A RMS @ {L.f_chav_hz / 1000:g} kHz"),
                 ("Corrente de pico de operação", f"{L.i_pico_a:.0f} A"), ("Linearidade", f"L ≥ 90 % do nominal até {L.i_sat_a:.0f} A pico"),
-                ("Energia armazenada (3 fases)", f"{L.energia_j:.1f} J"), ("Perdas estimadas", f"{L.perdas_w:.0f} W"),
+                ("Energia armazenada (3 fases)", f"{L.energia_j:.1f} J"), ("Perdas", (f"calculadas {proj._ind_perdas_calc_w:.0f} W (pior método); máximo garantido {L.perdas_w:.0f} W"
+                             if getattr(proj, "_ind_perdas_calc_w", None) and L is proj.l1 else f"máximo garantido {L.perdas_w:.0f} W")),
                 ("Massa / dimensões estimadas", f"{L.massa_kg:.0f} kg / {L.dim_mm[0]}×{L.dim_mm[1]}×{L.dim_mm[2]} mm (L×A×P)")])
     d.add_heading("Banco de capacitores", 3)
     _kv(d, [("Capacitor", f"{b.fabricante} – {b.linha} – {b.uf_unit:g} µF {b.v_unit:g} V – P/N {b.pn}"),
@@ -522,6 +524,8 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
                  "Medição de capacitância por ramo – tolerância −5/+10 %.",
                  "Resistência de isolamento a 1000 Vcc (≥ 100 MΩ) e tensão aplicada 2,5 kV/1 min fase-terra (com capacitores e resistores desconectados do PE).",
                  "Teste funcional de ventiladores/termostato e verificação do tempo de descarga dos capacitores.",
+                 f"Comissionamento: conferir e registrar a frequência de chaveamento do inversor FIXA em {proj.fs_hz / 1000:g} kHz, com a redução "
+                 "automática por temperatura desabilitada, e medir a tensão no motor (THD e pico) na menor e na maior velocidade de operação.",
                  "Opcional (tipo, 1ª unidade): ensaio em carga com inversor, medição de THD, Vpico e dv/dt e termografia."])
 
     d.add_heading("10. Otimização global multiobjetivo", 1)
@@ -602,13 +606,13 @@ def folha_dados(proj, arr, cat, pasta, desenhos_png):
     pior = lambda k: max(p[k] for p in proj.pontos)
     _kv(d, [("Modelo", proj_codigo(proj)), ("Tensão nominal", f"{ped['tensao_v']:g} V ±10 %, 3~"),
             ("Corrente nominal", f"{ped['corrente_a']:g} A (40 °C)"), ("Frequência de saída", f"0–{max(ped['f_saida_max_hz'], 60):g} Hz"),
-            ("Frequência de chaveamento admissível", f"≥ {proj.fs_hz / 1000:g} kHz"), ("Indutância", f"{proj.l1.l_uh:.0f} µH/fase"),
+            ("Frequência de chaveamento", f"FIXA em {proj.fs_hz / 1000:g} kHz – redução automática do inversor desabilitada (requisito)"), ("Indutância", f"{proj.l1.l_uh:.0f} µH/fase"),
             ("Capacitância (Y equivalente)", f"{b.c_y_uf:g} µF/fase ({b.ligacao})"), ("Frequência de ressonância", f"{proj.fr_hz:.0f} Hz"),
             ("THD de tensão de saída", f"< {max(3.0, round(pior('thd_v_saida_pct') + 0.5)):.0f} %"),
-            ("Tensão de pico no motor", f"< {pior('vpk_saida') * 1.05:.0f} V"), ("dv/dt", f"< {max(5, pior('dvdt_saida_v_us') * 2):.0f} V/µs"),
+            ("Tensão de pico no motor", f"< {vpk_garantia(proj):.0f} V (pior caso: rede +10 % e tolerâncias)"), ("dv/dt", f"< {max(5, pior('dvdt_saida_v_us') * 2):.0f} V/µs"),
             ("Queda de tensão", f"{proj.l1.queda_v_pct:.1f} % @ {ped['f_saida_max_hz']:g} Hz"),
             ("Perdas", f"≈ {arr.perda_total_w:.0f} W"), ("Isolação", "1,1 kV; ensaio 2,5 kV / 1 min"),
-            ("Classe térmica", "F (155 °C), elevação ≤ 100 K"), ("Grau de proteção", f"IP{arr.caixa_ip}"),
+            ("Classe térmica", "Sistema de isolação classe H (180 °C), elevação média ≤ 125 K – igual ou superior à classe solicitada"), ("Grau de proteção", f"IP{arr.caixa_ip}"),
             ("Dimensões (L×A×P)", f"{arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm"), ("Massa", f"≈ {arr.massa_total_kg:.0f} kg"),
             ("Refrigeração", f"Forçada, {arr.n_ventiladores} ventilador(es), alimentação auxiliar 220 Vca"),
             ("Normas", "IEC 61800-5-1, IEC 60076-6, IEC 60831, IEC 61439, NBR 5410")])

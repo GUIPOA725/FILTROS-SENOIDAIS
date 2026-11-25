@@ -345,6 +345,24 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
                          f"≤ {cp['thd_v_max_pct'] + 1:.1f} %", thd_tot <= cp["thd_v_max_pct"] + 1,
                          "Calibrado com medições Dranetz (formas de onda) a 60 Hz: SENAI 958 µH/40 µF Y 7,2 %; SENAI 958 µH/20 µF Y 4,9 %; "
                          "IHR 1586 µH/20 µF Y 4,0 % – medições SEM motor; com motor o valor é calculado (modelo do motor)"))
+    # v1.28.0 (REQ-SEN-022, auditoria §5.2): a aprovação do THD depende do amortecimento suposto (Q 4, calibrado em filtros medidos
+    # SEM motor). Com o motor ligado a ressonância sobe para fr·√(1 + L1/Lm) e o amortecimento real não foi medido → sensibilidade
+    # com o DOBRO do Q (metade do amortecimento), em toda a faixa de velocidade, harmônicas de baixa e alta ordem do tempo morto.
+    from .simulacao import HARM_ALTAS as _HA, HARM_TEMPO_MORTO as _HT, Q_BAIXA_ORDEM_CAMPO as _QC
+    _q2 = 2 * _QC
+    _hall = {**_HT, **_HA}
+    thd_q2 = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo=0.5, harmonicas=_hall, com_motor_desligado=False, q_amort=_q2)
+    thd_tot_q2 = math.hypot(thd_pwm_fmax, thd_q2[0])
+    try:
+        _fr_c = 1 / (2 * math.pi * math.sqrt(p.L1 * p.C_y)) * math.sqrt(1 + p.L1 / p.Lm)
+    except Exception:
+        _fr_c = 0.0
+    v.append(Verificacao(f"THD total no motor com METADE do amortecimento (Q {_q2:g} em vez de {_QC:g}) – ressonância com o motor ligado "
+                         f"≈ {_fr_c:.0f} Hz, faixa {fmin:g}–{fmax:g} Hz", f"{thd_tot_q2:.2f} % (pior em {thd_q2[1]:.1f} Hz, h{thd_q2[2]}, ganho {thd_q2[3]:.1f})",
+                         f"≤ {cp['thd_v_max_pct'] + 1:.1f} % (alerta)", thd_tot_q2 <= cp["thd_v_max_pct"] + 1,
+                         "O amortecimento Q 4 foi calibrado em filtros medidos SEM motor; com o motor não há medição. Se este caso passar do "
+                         "limite, a aprovação do THD depende do amortecimento real: medir em campo no comissionamento ou prever amortecimento RC",
+                         critico=False))
     v.append(Verificacao(f"THD na saída do filtro SEM motor @ {fmax:g} Hz (teste/comissionamento a vazio)", f"{thd_tot_sm:.2f} %",
                          f"≤ {cp['thd_v_max_pct'] + 1:.1f} % (alerta)", thd_tot_sm <= cp["thd_v_max_pct"] + 1,
                          "Modelo calibrado nas medições Dranetz sem motor (SENAI 40 µF: previsto 7,2 % × medido 7,2 %). "
@@ -356,6 +374,10 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
                          f"{thd_hi:.2f} % (pior em {f_hi:.1f} Hz, h{h_hi}, ganho {g_hi:.1f})", "≤ 3,0 % (alerta)", thd_hi <= 3.0,
                          "Achado na dupla checagem ATP: LC sem amortecimento tem ganho alto na ressonância natural; "
                          "se o alerta persistir, medir em campo ou usar amortecimento RC", critico=False))
+    v.append(Verificacao("Frequência de chaveamento do inversor (requisito do fornecimento)", f"{fs / 1000:g} kHz FIXA",
+                         "travada no inversor – redução automática desabilitada", True,
+                         "Toda a verificação vale para esta fs. Inversores como o ABB ACS580 reduzem a fs sozinhos com a temperatura; "
+                         "travar (ACS580: 97.01/97.02) e conferir no comissionamento – consta na proposta e na folha de dados", critico=False))
     vpk = max(r.get("vpk_motor", r["vpk_saida"]) for r in res)
     lim_vpk = ped.vpk_max_v or 1000.0
     v.append(Verificacao("Tensão de pico no motor (L-L)", f"{vpk:.0f} V", f"≤ {lim_vpk:.0f} V", vpk <= lim_vpk,

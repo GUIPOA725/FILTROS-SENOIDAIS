@@ -8,7 +8,9 @@ import math
 import os
 
 # tolerâncias de aceitação do protótipo (prática de reatores IEC 60076-6 / fabricantes de filtro)
-TOL = dict(L_pct=5.0, deseq_pct=3.0, rdc_pct=10.0, perdas_pct=15.0, dim_pct=5.0, massa_pct=10.0, elev_k=100.0, elev_lim_k=125.0,
+# v1.28.0 (REQ-SEN-022, auditoria D14): elevação média ≤ 125 K (classe H, a mesma da ET) – antes o protocolo dizia 100 K e reprovaria
+# um protótipo que a ET aprova
+TOL = dict(L_pct=5.0, deseq_pct=3.0, rdc_pct=10.0, perdas_pct=15.0, dim_pct=5.0, massa_pct=10.0, elev_k=125.0, elev_lim_k=125.0,
            ir_mohm=100.0, l_sat_pct=90.0, l_ovl_pct=70.0)
 
 FORNECEDORES = [
@@ -85,14 +87,19 @@ def _secoes_verificacao(d, ind, tabela, bullets):
     d.add_paragraph("Com a bobina montada no núcleo (antes e depois do VPI), medir em cada fase, com as outras abertas, a resistência série "
                     "em 60 Hz e nas frequências abaixo (nível de sinal baixo, 1 V). Confere diretamente o cálculo das perdas de alta "
                     "frequência (correntes parasitas na barra perto dos entreferros + núcleo) sem precisar de inversor.")
-    lin = [(f"{x['f']:g} Hz", v(x["R_enr"] * 1e3, 2), v(x["R_fe"] * 1e3, 1), v(x["R_tot"] * 1e3, 1),
-            (f"{v(x['R_tot'] * 0.9e3, 2)}–{v(x['R_tot'] * 1.1e3, 2)}" if x["R_fe"] == 0 else f"{v(x['R_tot'] * 0.7e3, 0)}–{v(x['R_tot'] * 1.3e3, 0)}"),
+    # v1.28.0 (REQ-SEN-022, auditoria §4.6): uma ponte LCR a 1 V impõe indução ínfima (~10⁻⁴ T) – ela NÃO mede a perda do núcleo em
+    # corrente de operação. O critério da ponte é o ENROLAMENTO (com uma folga para a pequena parcela do núcleo em sinal baixo);
+    # a perda do núcleo em alta frequência é conferida no ensaio de perdas com inversor (item 6).
+    lin = [(f"{x['f']:g} Hz", v(x["R_enr"] * 1e3, 2), v(x["R_fe"] * 1e3, 1),
+            (f"{v(x['R_enr'] * 0.9e3, 2)}–{v(x['R_enr'] * 1.1e3, 2)}" if x["f"] < 1000 else f"{v(x['R_enr'] * 0.85e3, 1)}–{v(x['R_enr'] * 1.5e3, 1)}"),
             "", "", "") for x in V.rac_previsto(ind) if x["f"] <= 2.01 * float(ind["requisitos"]["fs"])]
-    tabela(d, ["Frequência", "Enrolamento (mΩ)", "Núcleo/entreferro equiv. (mΩ)", "R série prevista (mΩ)", "Faixa esperada (mΩ)",
-               "Fase U", "Fase V", "Fase W"], lin, [1.5, 1.8, 2.2, 1.9, 2.0, 1.4, 1.4, 1.4], 7.5)
-    d.add_paragraph("Em 60 Hz a R série é praticamente só o enrolamento (faixa ±10 %). Em alta frequência a ponte mede também a perda do "
-                    "núcleo e do entreferro, estimada aqui pelas perdas de alta frequência do projeto – por isso a faixa é ±30 %. Valores "
-                    "muito acima indicam chapa inadequada, rebarba ou barra perto demais do entreferro.")
+    tabela(d, ["Frequência", "Enrolamento previsto (mΩ)", "Núcleo em corrente de operação – só referência (mΩ)", "Faixa esperada na ponte (mΩ)",
+               "Fase U", "Fase V", "Fase W"], lin, [1.5, 2.0, 2.8, 2.4, 1.4, 1.4, 1.4], 7.5)
+    d.add_paragraph("A ponte LCR mede com sinal baixo (1 V): a indução no núcleo é ínfima e a perda do núcleo quase não aparece. Por isso a "
+                    "faixa esperada é a do ENROLAMENTO (±10 % em 60 Hz; −15 %/+50 % em alta frequência, para cobrir a parcela pequena do "
+                    "núcleo em sinal baixo). A coluna 'núcleo em corrente de operação' é só referência: a perda do núcleo é conferida no "
+                    "ensaio de perdas com inversor (item 6). Valores muito acima da faixa indicam barra perto demais do entreferro, "
+                    "rebarba ou chapa inadequada.")
     d.add_heading("3.3 Ajuste fino da indutância pelo entreferro (na montagem)", 2)
     sens = V.sensibilidade_gap(ind, 0.1)
     lin = [(s["coluna"], v(s["gap_peca_mm"], 2), *(v(x, 2) for x in s["dL_pct"])) for s in sens]
@@ -161,8 +168,8 @@ def protocolo_prototipo(proj, cat, ind, pasta, cod, novo, tabela, bullets):
         ("5", "Linearidade na sobrecarga do inversor (tabela 3.1)", f"{iovl:.0f} A pk", f"L({iovl:.0f} A pk) ≥ {TOL['l_ovl_pct']:g} %", "", ""),
         ("6", "Perdas totais com inversor (ou 60 Hz + AF)", f"{p_pred:.0f} W",
          f"≤ previsto +{TOL['perdas_pct']:g} % ({p_pred * 1.15:.0f} W) e ≤ {p_max:.0f} W", "", ""),
-        ("7", "Elevação média do enrolamento (resistência)", f"{el:.0f} K", f"≤ {TOL['elev_k']:g} K (sistema H, elevação F)", "", ""),
-        ("8", "Ponto quente (termopar/termografia)", "–", f"elevação ≤ {TOL['elev_lim_k']:g} K; sem ponto > 180 °C a 40 °C", "", ""),
+        ("7", "Elevação média do enrolamento (resistência)", f"{el:.0f} K", f"≤ {TOL['elev_k']:g} K (classe H) e ponto quente ≤ 180 °C", "", ""),
+        ("8", "Ponto quente (termopar/termografia)", "–", "sem ponto > 180 °C, corrigido para o ambiente de projeto", "", ""),
         ("9", "Tensão aplicada fase-terra e fase-fase", "3 kV / 2,5 kV", "1 min sem descarga", "", ""),
         ("10", "Resistência de isolamento (1000 V CC)", "–", f"≥ {TOL['ir_mohm']:g} MΩ", "", ""),
         ("11", "Termostato/PTC", "–", "atua na temperatura nominal; contato NF livre de potencial", "", ""),
@@ -331,7 +338,7 @@ def texto_email_extra(proj, ind, arqs_nomes):
           "- Item A: 1 protótipo com os ensaios do Protocolo em anexo (preço e prazo).",
           f"- Item B: série de {int(proj.pedido.get('quantidade', 1) if isinstance(proj.pedido, dict) else 1)} peça(s), liberada após "
           "aprovação do protótipo (preço e prazo).",
-          "- O Protocolo traz os critérios numéricos de aceitação (L ±5 %, desequilíbrio ≤ 3 %, perdas ≤ previsto +15 %, elevação ≤ 100 K, "
+          "- O Protocolo traz os critérios numéricos de aceitação (L ±5 %, desequilíbrio ≤ 3 %, perdas ≤ previsto +15 %, elevação ≤ 125 K (classe H), "
           "linearidade na saturação e na sobrecarga, dielétrico, isolamento, dimensões e massa).", "",
           "8) QUESTIONÁRIO – indutores que vocês já fabricaram para nós",
           "Pedimos, se possível, os dados internos dos indutores anteriores (espiras, núcleo, chapa, entreferros, condutor, perdas e "

@@ -324,3 +324,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (23/11 ~14:20) v1.27.1 PUBLICADA (Drive + GitHub): filtro senoidal sempre em classe H. Teste A&W na nuvem: APROVADO, indutor 161 kg → refeito, ponto quente 124 °C (pior método), 131 °C no painel, painel 258 kg. Falta ele reabrir a plataforma no notebook para carregar a v1.27.1.
 
 (25/11 19:57) Engenheiro: "veja a auditoria do a&w que foi simulado na pasta projetos do filtro senoidal do drive, vc concorda?" (AUDITORIA_CALCULOS_CAPACITOR_INDUTOR_FSEN-LC-268A-440V.pdf) → REQ-SEN-022 (PENDENTE). Resposta: concordo com a maior parte; discordo do "placeholder" da saturação (é FEM não linear, mas fica linear pela curva B-H limitada) e da área implícita (Bmax é pico local).
+
+(25/11 20:01) Engenheiro: "preciso que vc gere uma norma versão da plataforma de filtro senoidal para corrigir isso, não quero uma correção pontual para este projeto, mas sim para todos" → nova versão com as correções gerais do REQ-SEN-022 (ordem proposta 1–5).

@@ -71,7 +71,8 @@ def montar_bom(proj, arr, cat) -> List[ItemBOM]:
         f"(admissível {b.i_unit_max:.1f} A)",
         b.n_total, "pç", b.preco_unit, "Electric Service", "C")
     add("CAPACITOR", f"{b.fabricante}", "Resistor de descarga (se o capacitor não tiver interno)",
-        f"{b.r_descarga_mohm * 1000:.0f} kΩ {b.r_descarga_w:g} W, ≥ 1 kV (2 em série recomendados) – descarga ≤ 50 V em 60 s",
+        f"{b.r_descarga_mohm * 1000:.0f} kΩ TOTAL por capacitor, ≥ 1 kV (se usar 2 em série para a tensão, cada um com "
+        f"{b.r_descarga_mohm * 500:.0f} kΩ, {max(0.5, b.r_descarga_w / 2):g} W) – descarga ≤ 50 V em 60 s",
         b.n_total, "pç", m["preco_resistor_descarga"], "Montadora", "R")
     if am and am.tipo == "rc_paralelo":
         add("CAPACITOR", f"{b.fabricante}", f"Capacitor do ramo de amortecimento {b.uf_unit:g} µF {b.v_unit:g} V (mesmo tipo do banco)",

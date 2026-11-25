@@ -394,7 +394,7 @@ Q_BAIXA_ORDEM_CAMPO = 4.0
 
 
 def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, passo: float = 0.25, harmonicas=None,
-                                  com_motor_desligado: bool = True):
+                                  com_motor_desligado: bool = True, q_amort: float = None):
     """Varre a faixa de operação e calcula a distorção de saída causada pelas harmônicas de
     baixa ordem do inversor amplificadas pelo filtro. Retorna (thd_pior_%, f_pior, h_pior, ganho_pior).
     Calibração 19/11/2026: nas medições de campo (SENAI 40 µF e 20 µF, IHR 2022) a ressonância ficou na fr do LC SEM o motor
@@ -402,11 +402,12 @@ def risco_ressonancia_baixa_ordem(p: ParamCircuito, fmin: float, fmax: float, pa
     caso considera também o filtro sem o motor (com_motor_desligado=True)."""
     if com_motor_desligado:
         import dataclasses as _dc
-        a = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo, harmonicas, False)
-        b = risco_ressonancia_baixa_ordem(_dc.replace(p, Lm=p.Lm * 1e4 + 1.0), fmin, fmax, passo, harmonicas, False)
+        a = risco_ressonancia_baixa_ordem(p, fmin, fmax, passo, harmonicas, False, q_amort)
+        b = risco_ressonancia_baixa_ordem(_dc.replace(p, Lm=p.Lm * 1e4 + 1.0), fmin, fmax, passo, harmonicas, False, q_amort)
         return max(a, b)
     import dataclasses as _dc
-    p = _dc.replace(p, Q_hf=min(p.Q_hf, Q_BAIXA_ORDEM_CAMPO))
+    # q_amort (v1.28.0): Q da ressonância imposto (análise de sensibilidade ao amortecimento); padrão = Q calibrado em campo (4)
+    p = _dc.replace(p, Q_hf=(q_amort if q_amort else min(p.Q_hf, Q_BAIXA_ORDEM_CAMPO)))
     rp = _rp(p)
     pior = (0.0, fmin, 0, 0.0)
     for f1 in np.arange(fmin, fmax + 1e-9, passo):

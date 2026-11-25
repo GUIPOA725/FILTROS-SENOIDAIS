@@ -16,7 +16,7 @@ REGRAS = [
     ("01_Engenharia", "3_Indutor_Elementos_Finitos", [r"^Indutor_.*\.png$", r"^Verificacao_", r"^Resultados_Medidos_Indutor",
                                                       r"^verificacao_indutor\.json$", r"^estudo_camadas_indutor\.json$",
                                                       r"^Analise_Avancada_", r"^Avancado_", r"^avancado_indutor\.json$"]),
-    ("01_Engenharia", "4_Auditoria", [r"^AUDITORIA_"]),
+    ("01_Engenharia", "4_Verificacao_do_sistema", [r"^VERIFICACAO_SISTEMA_", r"^AUDITORIA_"]),
     ("01_Engenharia", "5_Compras_Interno", [r"^INTERNO_"]),
     ("02_Cliente", "1_Proposta_e_Email", [r"Proposta_Comercial", r"Email_Resposta_Cliente"]),
     ("02_Cliente", "2_Folha_de_Dados", [r"Folha_de_Dados"]),
@@ -38,7 +38,7 @@ LEIA_ME = """ORGANIZAÇÃO DESTE PROJETO (Plataforma FSEN)
    1_Memorial_e_Custos ...... memorial de cálculo, lista de material, custos e preço
    2_Estudos_Opcoes_e_Robustez  estudo de mínimo de capacitores, ponto ótimo/robustez, todas as configurações, sensibilidade
    3_Indutor_Elementos_Finitos  mapa de campo e folhas do projeto do indutor (imagens)
-   4_Auditoria .............. Relatório de Auditoria técnica (PDF) para revisão por engenheiro externo
+   4_Verificacao_do_sistema . Verificação do sistema (PDF) – dossiê para um auditor externo; não é auditoria
    5_Compras_Interno ........ fornecedores sugeridos para cotar (NÃO enviar a fornecedor)
    ATP ...................... decks, resultados e comparação Python × ATP-EMTP
    (arquivos .json na raiz: dados que a plataforma lê para reabrir o projeto – não mover)

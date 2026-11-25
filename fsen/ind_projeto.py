@@ -11,7 +11,7 @@ Todas as fórmulas e constantes estão aqui, com a origem. Incertezas declaradas
 import math
 import numpy as np
 
-from .ind_fem import ModeloIndutor, MU0, BH_GO, perdas_harmonico, perdas_harmonico_multi
+from .ind_fem import ModeloIndutor, MU0, BH_GO, BH_CONSERVADORA, MU_MAX_CONSERVADOR, perdas_harmonico, perdas_harmonico_multi
 
 # Critério de escolha: MENOR CUSTO de material (como o fabricante) com perdas totais ≤ P_max = topo da faixa de mercado
 # (Schaffner/REO interpolados para a corrente) – o mesmo número de "perdas desejadas" da ET do indutor.
@@ -929,10 +929,34 @@ def _projetar(proj, cat, chapa, cond_id, h_conv, amb_c, log, nd_min=0, fixo=None
             Lbp = float("nan")                          # coluna central só em Isat (economia de tempo; lateral é o pior caso)
         Bx, By = Mn.B(A)
         Bmax = float(np.hypot(Bx, By)[Mn.ferro].max())
-        sat.append(dict(caso=nome, I=I, L_lat_pct=100 * Lap2 / Lp2d[0], L_cen_pct=100 * Lbp / Lp2d[1], Bmax=Bmax))
+        # v1.28.0 (REQ-SEN-022): 2ª solução com a curva CONSERVADORA; a tabela publica o PIOR das duas e a referência passa a ser
+        # a L linear em BAIXA corrente com a mesma curva (antes a referência era μr = 4000 e a tabela mostrava 101 %)
+        Mc = modelo(d, gaps, ng)
+        Ac = Mc.resolver([I, -I / 2, -I / 2], bh=BH_CONSERVADORA, mu_max=MU_MAX_CONSERVADOR)
+        Lc = Mc.lambda_fases(Ac)[0] * d["b"] / I
+        if "_Lref_cons" not in d:
+            Mr = modelo(d, gaps, ng)
+            Ir = 0.05 * float(r["In"]) * math.sqrt(2)
+            d["_Lref_cons"] = Mr.lambda_fases(Mr.resolver([Ir, -Ir / 2, -Ir / 2], bh=BH_CONSERVADORA, mu_max=MU_MAX_CONSERVADOR))[0] * d["b"] / Ir
+            d["_Lref_nom"] = Mr.lambda_fases(Mr.resolver([Ir, -Ir / 2, -Ir / 2]))[0] * d["b"] / Ir
+        Bxc, Byc = Mc.B(Ac)
+        _kf = float((d.get("chapa_dados") or CHAPAS.get(d.get("chapa"), {})).get("kf") or 0.96)
+        Bmed_col = float(abs(lam[0]) / (d["N"] * d["a"] * d["b"] * _kf))     # λ = N·B·a·b·kf → B médio na coluna lateral (T)
+        sat.append(dict(caso=nome, I=I, L_lat_pct=min(100 * Lap2 / d["_Lref_nom"], 100 * Lc / d["_Lref_cons"]),
+                        L_lat_nominal_pct=100 * Lap2 / d["_Lref_nom"], L_lat_conservador_pct=100 * Lc / d["_Lref_cons"],
+                        L_cen_pct=100 * Lbp / Lp2d[1], B_medio_coluna_T=Bmed_col, Bmax_local_T=Bmax,
+                        Bmax_local_conservador_T=float(np.hypot(Bxc, Byc)[Mc.ferro].max()), Bmax=Bmax))
         if nome.startswith("Pico"):
             d["campo_pico"] = (Mn, A)
     d["saturacao"] = sat
+    d["saturacao_nota"] = (
+        "Saturação calculada por elementos finitos NÃO lineares, duas vezes: (1) curva B-H da chapa GO e (2) curva CONSERVADORA "
+        "(indução × 0,85, μr ≤ 8000 – fluxo atravessando o grão nos cantos). A tabela publica o PIOR dos dois. A referência (100 %) é a "
+        "indutância com 5 % da corrente nominal na mesma curva. Enquanto a indução fica abaixo do joelho da chapa a indutância quase "
+        "não muda: ela é dominada pelo entreferro (o ferro responde por ~1 % da relutância). B médio na coluna = fluxo ÷ (N·área "
+        "líquida); Bmax local = pico num canto do ferro (não é a indução da coluna). A coluna central só é calculada no caso Isat.")
+    for k_ in ("_Lref_cons", "_Lref_nom"):
+        d.pop(k_, None)
     for s_ in sat:                                           # v1.26.1 (REQ-REA-013): folga de segurança contra saturação
         if s_["caso"].startswith("Linearidade") and s_["L_lat_pct"] < 90.0:
             d.setdefault("avisos", []).append(f"Linearidade: em 2,5 × a corrente fundamental ({s_['I']:.0f} A de pico) a indutância cai para "
