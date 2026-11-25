@@ -330,3 +330,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (25/11 20:13) Engenheiro: "Tá. Mas vou cotar com fabricantes. Vc consegue colocar no email para os fabricantes o que eles devem entregar na proposta para vc analisar e comparar com nosso modelo?" → REQ-SEN-023.
 
 (25/11 20:21) Engenheiro: "Refazer a simulação agora? Onde eu vou na plataforma para fazer isso?" → resposta: esperar a publicação da v1.28.0; depois Nova solicitação → Abrir um projeto já feito → Dimensionar.
+
+- 25/11 (Claude): v1.28.0 publicada no Drive (36 arquivos: FSEN_v1.7.1, zip, versao_plataforma.json, CHANGELOG, GESTAO, MEMORIA_IA). Engenheiro deve reabrir pelo atalho e refazer o A&W.
