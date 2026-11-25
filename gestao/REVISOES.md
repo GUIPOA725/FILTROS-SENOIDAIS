@@ -262,3 +262,29 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Verificador com o projeto do banco: "pode publicar". Teste da A&W na nuvem (sem ATP): Status APROVADO; o 1º indutor deu 178 °C pelo pior
   método (limite 180 °C), a plataforma refez e fechou em 124 °C; no painel 131 °C. Painel 258 kg, 863 W, 1 ventilador; maturidade nível 2.
 - Testes no notebook pela v1.27.0 (antes desta mudança): A&W REPROVADO pela classe F (165,9 °C); Panatlântica NÃO LIBERAR (borne AF52 × cabo, arco).
+
+## Revisão – v1.28.0 – 2026-11-25 20:43
+- Requisitos: 141 | APROVADO 80 | ATENÇÃO 42 | REPROVADO 19
+- Projetos conferidos: nenhum
+- Mudanças: REQ-PUB-002 REGREDIU (APROVADO→ATENÇÃO); REQ-REL-001 REGREDIU (APROVADO→ATENÇÃO); REQ-REL-002 REGREDIU (APROVADO→ATENÇÃO); REQ-REL-005 REGREDIU (APROVADO→ATENÇÃO); REQ-SIM-001 REGREDIU (APROVADO→ATENÇÃO); REQ-GER-011 REGREDIU (APROVADO→ATENÇÃO); REQ-PNL-028 REGREDIU (APROVADO→ATENÇÃO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: REQ-PUB-002, REQ-REL-001, REQ-REL-002, REQ-REL-005, REQ-SIM-001, REQ-GER-011, REQ-PNL-028
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: NÃO PUBLICAR
+
+## Revisão – v1.28.0 – 2026-11-25 20:44
+- Requisitos: 141 | APROVADO 87 | ATENÇÃO 35 | REPROVADO 19
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261125_2029
+- Mudanças: REQ-PUB-002 MELHOROU (ATENÇÃO→APROVADO); REQ-REL-001 MELHOROU (ATENÇÃO→APROVADO); REQ-REL-002 MELHOROU (ATENÇÃO→APROVADO); REQ-REL-005 MELHOROU (ATENÇÃO→APROVADO); REQ-SIM-001 MELHOROU (ATENÇÃO→APROVADO); REQ-GER-011 MELHOROU (ATENÇÃO→APROVADO); REQ-PNL-028 MELHOROU (ATENÇÃO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+### Análise da revisão v1.28.0 (25/11/2026) – filtro senoidal: correções gerais da auditoria do A&W (REQ-SEN-022) e cotação (REQ-SEN-023)
+- Verificador com o projeto de teste do banco (BCD-FD8,16-400kvar-415V_ABB_20261125_2029): "pode publicar", nenhum crítico regredido.
+  (A primeira execução, logo depois de o projeto terminar, mostrou 7 itens em ATENÇÃO porque os arquivos ainda estavam sendo
+  gravados; repetida com a pasta completa, todos APROVADOS.) Com projeto senoidal o verificador continua reprovando os testes de
+  painel de banco – pendência conhecida: testes próprios para o filtro senoidal.
+- A&W com o pedido do dossiê auditado (cabo não blindado), na nuvem: Status APROVADO, 150 µH, 6 × 30 µF; 1º indutor 192 °C pela regra
+  nova (média + 15 K) → refeito → 124 °C; NGSolve 3D 142,9/140,1/145,4 µH → entreferro ajustado (central 7,31 mm/peça) → previsto
+  149,0/150,3/151,6 µH, desequilíbrio 3,7 → 1,7 %; THD com metade do amortecimento 9,35 % (ATENÇÃO, ressonância carregada ≈ 1,13 kHz).
+- E-mails de cotação com a lista do que a proposta deve trazer e as planilhas de resposta (indutor e capacitor) conferidos no teste.
