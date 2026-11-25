@@ -328,3 +328,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (25/11 20:01) Engenheiro: "preciso que vc gere uma norma versão da plataforma de filtro senoidal para corrigir isso, não quero uma correção pontual para este projeto, mas sim para todos" → nova versão com as correções gerais do REQ-SEN-022 (ordem proposta 1–5).
 
 (25/11 20:13) Engenheiro: "Tá. Mas vou cotar com fabricantes. Vc consegue colocar no email para os fabricantes o que eles devem entregar na proposta para vc analisar e comparar com nosso modelo?" → REQ-SEN-023.
+
+(25/11 20:21) Engenheiro: "Refazer a simulação agora? Onde eu vou na plataforma para fazer isso?" → resposta: esperar a publicação da v1.28.0; depois Nova solicitação → Abrir um projeto já feito → Dimensionar.
