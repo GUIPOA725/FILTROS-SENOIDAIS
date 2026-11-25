@@ -714,12 +714,19 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
         p = os.path.join(pasta, f"ET_Indutor_{tag}_{cod}.docx")
         d.save(p)
         f0 = forn["indutor"][0]
+        from . import conferencia as _CF                # v1.28.0 (REQ-SEN-023): planilha de resposta do fabricante
+        _xl = f"Formulario_Resposta_Indutor_{tag}_{cod}.xlsx"
+        try:
+            _CF.formulario_xlsx("indutor", os.path.join(pasta, _xl), cod, f"Resposta técnica – Indutor {tag} {L.l_uh:.0f} µH / {L.i_nom_a:.0f} A")
+            _txt_prop = _CF.texto_email_proposta("indutor", _xl)
+        except Exception as _ex:
+            _txt_prop = ""
         e = _email(pasta, f"Email_Indutor_{tag}.txt", _para(f0),
                    f"Cotação: Indutor trifásico p/ filtro senoidal {L.l_uh:.0f} µH @ {L.i_nom_a:.0f} A – {ped['tensao_v']:g} V "
                    f"({q} pç) + dados técnicos e ensaios ({cod})",
                    SI.corpo_email(L, proj, arr, cat, ped, q, tag, _ola(f0), _extenso, f0.get("ref"))
                    .replace("\nCritério de aceitação", (ALT.texto_email(alt) if L is proj.l1 else "") + "\nCritério de aceitação", 1)
-                   + assin)
+                   + "\n" + _txt_prop + assin)
         saidas[f"indutor_{tag}"] = (p, e)
 
     # --- CAPACITORES
@@ -743,9 +750,16 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     p = os.path.join(pasta, f"ET_Capacitores_{cod}.docx")
     d.save(p)
     fc = forn["capacitor"][0]
+    from . import conferencia as _CF
+    _xlc = f"Formulario_Resposta_Capacitor_{cod}.xlsx"
+    try:
+        _CF.formulario_xlsx("capacitor", os.path.join(pasta, _xlc), cod, f"Resposta técnica – Capacitor {b.uf_unit:g} µF {b.v_unit:g} V")
+        _txt_pc = _CF.texto_email_proposta("capacitor", _xlc)
+    except Exception:
+        _txt_pc = ""
     e = _email(pasta, "Email_Capacitores.txt", _para(fc),
                f"Cotação – capacitor {b.pn} {b.uf_unit:g} µF {b.v_unit:g} V – {n_nec} pç – filtro senoidal ({cod})",
-               SC.corpo_email(proj, cat, ped, q, _ola(fc), fc.get("ref")) + assin)
+               SC.corpo_email(proj, cat, ped, q, _ola(fc), fc.get("ref")) + "\n" + _txt_pc + assin)
     saidas["capacitores"] = (p, e)
 
     # --- RESISTORES DE AMORTECIMENTO

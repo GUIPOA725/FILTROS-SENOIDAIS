@@ -326,3 +326,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 (25/11 19:57) Engenheiro: "veja a auditoria do a&w que foi simulado na pasta projetos do filtro senoidal do drive, vc concorda?" (AUDITORIA_CALCULOS_CAPACITOR_INDUTOR_FSEN-LC-268A-440V.pdf) → REQ-SEN-022 (PENDENTE). Resposta: concordo com a maior parte; discordo do "placeholder" da saturação (é FEM não linear, mas fica linear pela curva B-H limitada) e da área implícita (Bmax é pico local).
 
 (25/11 20:01) Engenheiro: "preciso que vc gere uma norma versão da plataforma de filtro senoidal para corrigir isso, não quero uma correção pontual para este projeto, mas sim para todos" → nova versão com as correções gerais do REQ-SEN-022 (ordem proposta 1–5).
+
+(25/11 20:13) Engenheiro: "Tá. Mas vou cotar com fabricantes. Vc consegue colocar no email para os fabricantes o que eles devem entregar na proposta para vc analisar e comparar com nosso modelo?" → REQ-SEN-023.

@@ -33,6 +33,8 @@ CAMPOS_INDUTOR = [
     ("ensaio_aquecimento", "Ensaio de aquecimento", "", ["não oferece", "60 Hz senoidal", "com inversor / alta frequência"]),
     ("prototipo", "Aceita protótipo antes da série", "", "bool"), ("ensaio_rotina", "Relatório de rotina por nº de série", "", "bool"),
     ("dim_l", "Largura", "mm", "num"), ("dim_a", "Altura", "mm", "num"), ("dim_p", "Profundidade", "mm", "num"),
+    ("inducao_t", "Indução de trabalho na corrente nominal (pico)", "T", "num"), ("rdc_mohm", "Resistência CC por fase a 20 °C", "mΩ", "num"),
+    ("preco_prototipo", "Preço do protótipo (com os ensaios do Protocolo)", "R$", "num"),
     ("preco", "Preço unitário", "R$", "num"), ("prazo_dias", "Prazo", "dias", "num"),
 ]
 CAMPOS_CAPACITOR = [
@@ -372,3 +374,115 @@ def gerar_parecer(proj, arr, cat, pasta_proj, componente, decl, res):
     txt = cam.replace(".docx", "_Email_Resposta.txt")
     open(txt, "w", encoding="utf-8").write(f"Assunto: Conferência técnica da proposta – {tag} ({forn})\n\n{corpo}")
     return cam, txt
+
+
+# ------------------------------------------------------------------------------------------------------------------------------
+# v1.28.0 (REQ-SEN-023): o que o FABRICANTE deve entregar na proposta para a plataforma comparar com o nosso modelo.
+# O e-mail de cotação leva a lista e uma planilha de resposta (mesmos campos da tela "Conferir proposta de fornecedor"); a planilha
+# preenchida é carregada na tela e a conferência é automática.
+DOCUMENTOS_PROPOSTA = {
+    "indutor": [
+        "Planilha de resposta em anexo PREENCHIDA (um valor por linha; o que não souberem, deixar em branco e dizer por quê)",
+        "Desenho dimensional com furação, posição dos terminais e do termostato, massa",
+        "Curva ou tabela L × I (L em 25, 50, 100 % da corrente nominal, no pico de operação e no pico de sobrecarga)",
+        "Perdas SEPARADAS: cobre a 60 Hz, cobre em alta frequência, núcleo com a ondulação – e o total garantido",
+        "Elevação de temperatura média e ponto quente previstos, com o método usado (cálculo, ensaio de tipo de produto similar)",
+        "Material e espessura da chapa (datasheet), material e seção do condutor, nº de espiras, entreferros por coluna e entreferro total",
+        "Classe do SISTEMA de isolação com o certificado (UL 1446 / IEC 61857), não só a do esmalte; impregnação (VPI)",
+        "Relatório de ensaio de tipo de um indutor similar, se tiverem (L × I, perdas, aquecimento)",
+        "Preço do protótipo (com os ensaios do Protocolo) e preço da série, separados; prazo de cada um; validade; garantia",
+    ],
+    "capacitor": [
+        "Planilha de resposta em anexo PREENCHIDA",
+        "Datasheet do código ofertado (com a norma do produto: IEC 61071)",
+        "Imax, Î, UN (pico recorrente), ESR na frequência de chaveamento ou 10 kHz, ponto quente máximo e vida declarada",
+        "Data de fabricação do lote e certificado de rotina do lote",
+        "Preço unitário, prazo/estoque, validade",
+    ],
+}
+
+
+def campos(componente):
+    return CAMPOS_INDUTOR if componente == "indutor" else CAMPOS_CAPACITOR
+
+
+def texto_email_proposta(componente, nome_planilha):
+    """Bloco do e-mail de cotação: o que a proposta deve trazer para a nossa análise."""
+    docs = DOCUMENTOS_PROPOSTA[componente]
+    ls = ["", "O QUE A PROPOSTA DEVE TRAZER (para a nossa análise técnica)",
+          "Vamos comparar a proposta, item a item, com o nosso modelo de cálculo do componente (indutância, linearidade, perdas, "
+          "temperatura, massa e dimensões). Para isso, peço que a proposta traga:"]
+    ls += [f"{i}. {t}" for i, t in enumerate(docs, 1)]
+    ls += ["", f"A planilha {nome_planilha} (em anexo) tem um item por linha, com a unidade. Basta preencher a coluna 'Valor declarado' e "
+           "devolvê-la junto com a proposta. Propostas sem os dados técnicos não conseguem ser aprovadas na nossa engenharia.", ""]
+    return "\n".join(ls)
+
+
+def formulario_xlsx(componente, arq, cod, titulo):
+    """Planilha de resposta do fornecedor (os mesmos campos da tela de conferência)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.datavalidation import DataValidation
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Resposta"
+    ws["A1"] = f"{titulo} – {cod}"
+    ws["A1"].font = Font(bold=True, size=13)
+    ws["A2"] = ("Preencha a coluna D (Valor declarado) e devolva junto com a proposta. Em branco = não declarado. "
+                "Escolhas: use a lista da célula. Sim/Não: escreva sim ou não.")
+    ws["A2"].alignment = Alignment(wrap_text=True)
+    ws.merge_cells("A2:E2")
+    ws.row_dimensions[2].height = 32
+    cab = ["Chave (não alterar)", "Item", "Unidade", "Valor declarado", "Observação do fornecedor"]
+    for j, c in enumerate(cab, 1):
+        x = ws.cell(row=4, column=j, value=c)
+        x.font = Font(bold=True, color="FFFFFF")
+        x.fill = PatternFill("solid", fgColor="1F4E8C")
+    amarelo = PatternFill("solid", fgColor="FFF2CC")
+    for i, (k, rot, un, tipo) in enumerate(campos(componente), 5):
+        ws.cell(row=i, column=1, value=k).font = Font(color="999999", size=8)
+        ws.cell(row=i, column=2, value=rot)
+        ws.cell(row=i, column=3, value=un)
+        cel = ws.cell(row=i, column=4)
+        cel.fill = amarelo
+        if isinstance(tipo, list) or tipo == "bool":
+            ops = [o for o in (tipo if isinstance(tipo, list) else ["sim", "não"]) if not o.startswith("não declarad")]
+            dv = DataValidation(type="list", formula1='"' + ",".join(o.replace(",", ";") for o in ops) + '"', allow_blank=True)
+            ws.add_data_validation(dv)
+            dv.add(cel)
+    for col, w in zip("ABCDE", (16, 52, 9, 22, 40)):
+        ws.column_dimensions[col].width = w
+    wb.save(arq)
+    return arq
+
+
+def ler_formulario_xlsx(arq_ou_buffer, componente):
+    """Lê a planilha preenchida e devolve {chave: valor} no formato da conferência (números, bool, opções)."""
+    from openpyxl import load_workbook
+    wb = load_workbook(arq_ou_buffer, data_only=True)
+    ws = wb.active
+    tipos = {k: t for k, _r, _u, t in campos(componente)}
+    out = {}
+    for row in ws.iter_rows(min_row=5, values_only=True):
+        if not row or not row[0] or row[0] not in tipos:
+            continue
+        k, v = row[0], (row[3] if len(row) > 3 else None)
+        if v in (None, ""):
+            continue
+        t = tipos[k]
+        if t == "num":
+            try:
+                v = float(str(v).replace(",", ".").split()[0])
+            except (ValueError, IndexError):
+                continue
+        elif t == "bool":
+            v = str(v).strip().lower().startswith(("s", "y", "1", "true"))
+        elif isinstance(t, list):
+            vv = str(v).strip().lower()
+            v = next((o for o in t if o.lower() == vv or o.lower().startswith(vv[:6])), None)
+            if v is None:
+                continue
+        else:
+            v = str(v).strip()
+        out[k] = v
+    return out

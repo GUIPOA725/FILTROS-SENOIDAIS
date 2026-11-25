@@ -41,6 +41,20 @@ def tela_conferencia(pasta_saida):
     st.caption(pasta)
     comp = st.radio("Componente", ["Indutor", "Capacitores"], horizontal=True, key="conf_comp")
     campos = C.CAMPOS_INDUTOR if comp == "Indutor" else C.CAMPOS_CAPACITOR
+    # v1.28.0 (REQ-SEN-023): a planilha de resposta que vai no e-mail de cotação, preenchida pelo fabricante, preenche os campos abaixo
+    _hf = "A planilha vai anexa ao e-mail de cotação. Carregue a que o fabricante devolveu preenchida: os campos abaixo são preenchidos sozinhos."
+    upf = st.file_uploader("Planilha de resposta do fabricante (Formulario_Resposta_*.xlsx) – opcional", type=["xlsx"], key=f"conf_form_{comp}", help=_hf)
+    if upf is not None and st.session_state.get(f"conf_form_lido_{comp}") != upf.name:
+        try:
+            lido = C.ler_formulario_xlsx(upf, "indutor" if comp == "Indutor" else "capacitor")
+            for k, v in lido.items():
+                tp = next((t for kk, _r, _u, t in campos if kk == k), None)
+                st.session_state[f"conf_{comp}_{k}"] = ("sim" if v else "não") if tp == "bool" else v
+            st.session_state[f"conf_form_lido_{comp}"] = upf.name
+            st.success(f"{len(lido)} item(ns) lido(s) da planilha do fabricante.")
+            st.rerun()
+        except Exception as ex:
+            st.error(f"Não consegui ler a planilha: {type(ex).__name__}: {ex}")
     decl = {}
     with st.form(f"form_conf_{comp}"):
         cols = st.columns(3)
