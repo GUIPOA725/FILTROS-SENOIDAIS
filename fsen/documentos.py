@@ -599,6 +599,16 @@ def proposta(proj, arr, orc, cat, pasta):
     return caminho
 
 
+def vpk_garantia(proj):
+    """v1.28.0 (REQ-SEN-022, auditoria D9): tensão de pico GARANTIDA ao cliente = maior pico simulado entre os pontos de operação
+    e as condições extremas (rede +10 %, tolerâncias L/C, cabo), + 5 %, arredondado para cima de 5 V. Antes a garantia usava só a
+    rede nominal e ficava abaixo do próprio pior caso simulado."""
+    import math as _m
+    v = max([float(p.get("vpk_saida", 0) or 0) for p in proj.pontos] + [float(p.get("vpk_motor", 0) or 0) for p in proj.pontos]
+            + [float(c.get("vpk_motor", 0) or 0) for c in (getattr(proj, "condicoes_extremas", None) or []) if isinstance(c, dict)])
+    return _m.ceil(v * 1.05 / 5.0) * 5.0
+
+
 def folha_dados(proj, arr, cat, pasta, desenhos_png):
     ped = proj.pedido
     d = _novo("Folha de Dados Técnica", f"Filtro senoidal {proj.topologia} {ped['corrente_a']:g} A {ped['tensao_v']:g} V", proj, cat)
