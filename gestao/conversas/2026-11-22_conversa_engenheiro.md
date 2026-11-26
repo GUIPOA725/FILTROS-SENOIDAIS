@@ -379,3 +379,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 17:59 26/11 (engenheiro): "O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem ... sempre que conseguir vou insere nos dados" → REQ-SEN-029.
 - 26/11 (Claude): v1.34.1 – cabo genérico sem blindagem como padrão; motor WEG W22 IE4 132 kW 315S/M pelo catálogo.
 - 26/11 (Claude): v1.34.1 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
+- 19:28 26/11 (engenheiro): "Não entendi a troca do inversor, o cliente não vai trocar ... nem inversor nem motor nem cabo, isso não muda" → REQ-GER-020.
+- 19:29 26/11 (engenheiro): "Não estamos avaliando isso" → REQ-GER-020. Claude: v1.34.2 (equipamento do cliente fixo; derating só informativo).

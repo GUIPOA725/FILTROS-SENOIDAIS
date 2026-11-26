@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.34.2 – 26/11/2026 – equipamento do cliente é fixo
+- A plataforma não sugere mais trocar inversor, motor ou cabo do cliente, e não reprova o filtro pela capacidade do inversor; o derating do manual fica só como informação.
+- A frequência de chaveamento é escolhida entre as que o manual do inversor do cliente ainda entrega a corrente nominal do motor (ex.: ACS580-01-293A-4 fica em 4 kHz; 8 kHz não).
+
 ## v1.34.1 – 26/11/2026 – cabo genérico sem blindagem e motor WEG pelo catálogo
 - Quando o pedido não diz o tipo de cabo, o estudo adota cabo genérico SEM blindagem (antes era blindado); a análise de sensibilidade testa o blindado.
 - Motor WEG: a plataforma acha a carcaça pela potência e polos no catálogo técnico W22 e confere a corrente e o FP que o cliente mandou.

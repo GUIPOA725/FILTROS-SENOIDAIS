@@ -73,7 +73,7 @@ def fator_fs(info, fs_khz):
 
 
 def sugerir_modelo(info, fs_khz, i_necessaria):
-    """Menor modelo da MESMA família (pelos limites de faixa dos frames do manual) que entrega i_necessaria na fs."""
+    """NÃO usado nos relatórios (REQ-GER-020: equipamento do cliente é fixo). Menor modelo da MESMA família (pelos limites de faixa dos frames do manual) que entrega i_necessaria na fs."""
     if not info:
         return None
     fam = _base().get(info["familia"], {})
@@ -125,12 +125,9 @@ def gerar(ped, fs_hz, pasta, cod, i_necessaria=None, log=print):
               f"- Frequência de chaveamento fixada no projeto: **{fs_k:g} kHz** (mínima = referência)",
               f"- Derating pela fs mínima (tabela do manual): " + ", ".join(f"{a:g} kHz → {b:g}" for a, b in sorted(info["derating"].items())),
               f"- Fator na fs de projeto: **{k:.3f}**" if k is not None else "- Fator na fs de projeto: **NÃO tabelado pelo fabricante – não usar esta fs**",
-              f"- Corrente disponível do inversor: **{i_disp:.0f} A**" if i_disp else "- Corrente disponível: -",
-              (f"- Corrente necessária (carga com fator de serviço): {i_necessaria:.0f} A → "
-               + ("ATENDE" if i_disp and i_disp >= i_necessaria - 0.5 else "NÃO ATENDE – baixar a fs (redimensiona o filtro) ou inversor maior"))
-              if i_necessaria else "",
-              (lambda sg: f"- Menor modelo da família que atende {i_necessaria:.0f} A a {fs_k:g} kHz: IN {sg[0]:g} A (frame {sg[1]}, fator {sg[2]:.2f} → {sg[0] * sg[2]:.0f} A)"
-               if sg else "")(sugerir_modelo(info, fs_k, i_necessaria) if i_necessaria and not (i_disp and i_disp >= i_necessaria - 0.5) else None),
+              (f"- Corrente do inversor nesta fs pelo manual: {i_disp:.0f} A – INFORMATIVO: inversor, motor e cabo do cliente são "
+               "fixos e a capacidade do inversor não é avaliada pela Electric (REQ-GER-020); o filtro é projetado para o equipamento especificado")
+              if i_disp else "",
               (f"- Filtro senoidal do próprio fabricante para este modelo: {info['filtro_fabricante']['tipo']}, I cont. máx. "
                f"{info['filtro_fabricante']['i_cont_max_a']:g} A (referência de mercado)") if info.get("filtro_fabricante") else "",
               f"- Parâmetros: {info['parametros']}", f"- Status do cadastro: {info['status']} (consultado em {info['consultado_em']})",
@@ -153,10 +150,9 @@ def gerar(ped, fs_hz, pasta, cod, i_necessaria=None, log=print):
         if info:
             ws.append(["Frame / IN do manual", f"{info['frame']} / {info['i_n']:g} A", fonte, link, "OK" if ok else "ATENÇÃO"])
             ws.append(["fs fixada (97.01 = 97.02)", f"{fs_k:g} kHz", "projeto", "", ""])
-            ws.append(["Fator de derating na fs", f"{k:.3f}" if k is not None else "não tabelado", fonte, link,
-                       "OK" if k is not None else "REPROVADO"])
-            ws.append(["Corrente disponível", f"{i_disp:.0f} A" if i_disp else "-", fonte, link,
-                       ("OK" if (i_disp and (not i_necessaria or i_disp >= i_necessaria - 0.5)) else "REPROVADO")])
+            ws.append(["Fator de derating na fs (informativo)", f"{k:.3f}" if k is not None else "não tabelado", fonte, link, "INFO"])
+            ws.append(["Corrente do inversor na fs (informativo – equipamento do cliente, não avaliado)",
+                       f"{i_disp:.0f} A" if i_disp else "-", fonte, link, "INFO"])
             if info.get("filtro_fabricante"):
                 ws.append(["Filtro senoidal do fabricante (I cont. máx.)", f"{info['filtro_fabricante']['i_cont_max_a']:g} A",
                            (info["fontes"][-1]["codigo"] + " rev. " + info["fontes"][-1]["revisao"]), info["fontes"][-1]["link"], "referência"])

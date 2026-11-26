@@ -429,9 +429,12 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
                          queda <= cp["uk_max_pct"], "Guia de fabricantes (Danfoss Output Filters Design Guide / MTE: 4–10 %) – queda REATIVA X·I; "
                          "a perda de inserção real (|V entrada| − |V saída|, com o FP do motor) é menor e vai na folha de dados"))
     i1max = max(r["i1_rms"] for r in res)
-    lim_inv = (ped.inversor_corrente_a or In) * derating_fs(cat, ped, fs)
+    # v1.34.2 (REQ-GER-020): inversor/motor/cabo do cliente são FIXOS e a capacidade do inversor não é avaliada pela
+    # Electric – o filtro só não pode pedir mais que a corrente NOMINAL do inversor especificado (sem derating; o derating
+    # do manual vai como informação em 7_Manuais_Tecnicos)
+    lim_inv = (ped.inversor_corrente_a or In)
     v.append(Verificacao("Corrente do inversor (com filtro)", f"{i1max:.1f} A", f"≤ {lim_inv:.0f} A", i1max <= lim_inv * 1.0001,
-                         "Corrente nominal do inversor"))
+                         "Corrente nominal do inversor especificado pelo cliente"))
     icf = max(r["icap_y_fund"] for r in res)
     v.append(Verificacao("Corrente capacitiva fundamental", f"{100 * icf / In:.1f} % In", f"≤ {cp['ic_fund_max_pct']:.0f} %",
                          100 * icf / In <= cp["ic_fund_max_pct"], "Carga reativa no inversor"))
@@ -828,10 +831,11 @@ def verificacoes_auditoria(ped: Pedido, cat, p, res, fs, vdc=None) -> List[Verif
         fonte = IM.texto_fonte(info, True) if info else "tabela genérica do catálogo – NÃO confirmada no manual"
         txt = (f"fator {k:.2f} a {fs / 1000:g} kHz" + (f" → {k * i_inv:.0f} A disponíveis de {i_inv:.0f} A" if i_inv else "")
                + f" ({fonte})")
-        out.append(Verificacao(f"Derating do inversor {ped.inversor or ''} com a fs fixada em {fs / 1000:g} kHz",
-                               txt, "fator retirado do manual (documento/revisão/página)", confirmado,
-                               "Fixar a fs mínima acima da de fábrica reduz a corrente do inversor (ABB ACS580: só o aumento de 97.02 "
-                               "exige derating; 97.01 não). A corrente disponível entra na verificação crítica 'Corrente do inversor'",
+        out.append(Verificacao(f"Informativo – derating do inversor {ped.inversor or ''} com a fs fixada em {fs / 1000:g} kHz",
+                               txt + " – equipamento do cliente (fixo); capacidade do inversor não avaliada pela Electric",
+                               "informativo (REQ-GER-020)", True,
+                               "Dado do manual do fabricante, só para registro: fixar a fs mínima acima da de fábrica reduz a corrente "
+                               "do inversor (ABB ACS580: só o aumento de 97.02 exige derating). Não altera o filtro",
                                critico=False))
     except Exception:
         pass

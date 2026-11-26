@@ -31,10 +31,12 @@ def _opcoes_fs(ped, cat):
     inv = cat["inversores"].get(_inv_chave(ped.inversor, cat), cat["inversores"]["GENERICO"])
     fmin_k, fmax_k = cat.get("otimizacao", {}).get("fs_khz_faixa", [2, 8])
     ops = [f for f in inv["fs_opcoes_khz"] if fmin_k <= f <= fmax_k] or [inv["fs_padrao_khz"]]
-    # descarta fs em que o derating do inversor já impede a corrente do motor
-    i_need = min(ped.corrente_a, (ped.motor_corrente_a or ped.corrente_a) * max(ped.fator_servico, 1.0))
+    # v1.34.2 (REQ-GER-020 + REQ-INV-010): o inversor do cliente é FIXO – a fs (parâmetro, não equipamento) é escolhida entre as
+    # frequências em que o manual do inversor ainda entrega a corrente NOMINAL do motor (sem fator de serviço; a capacidade
+    # além disso não é avaliada pela Electric). Ex.: ACS580-01-293A-4 a 8 kHz = 0,60 × 293 = 176 A < 211 A → 8 kHz sai.
+    i_mot = float(ped.motor_corrente_a or ped.corrente_a)
     lim = ped.inversor_corrente_a or ped.corrente_a
-    ops = [f for f in ops if lim * derating_fs(cat, ped, f * 1000) >= i_need] or ops[:1]
+    ops = [f for f in ops if lim * derating_fs(cat, ped, f * 1000) >= i_mot - 0.5] or ops
     return [f * 1000 for f in ops]
 
 

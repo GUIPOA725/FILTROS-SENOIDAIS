@@ -661,19 +661,10 @@ def insercao_pct(proj):
 
 
 def _txt_inv_manual(proj, ped):
-    """v1.33.0 (REQ-INV-010): frase da proposta com a corrente do inversor na fs fixada, retirada do manual (doc/rev/página)."""
-    try:
-        from . import inversor_manual as IM
-        info = IM.identificar(ped.get("inversor"))
-        if info:
-            k = IM.fator_fs(info, proj.fs_hz / 1000)
-            if k is None:
-                return f"ATENÇÃO: o manual do inversor não tabela {proj.fs_hz / 1000:g} kHz ({IM.texto_fonte(info, True)})."
-            return (f"Corrente do inversor nesta frequência: {k:.2f} × {info['i_n']:g} A = {k * info['i_n']:.0f} A "
-                    f"(derating pela fs mínima – {IM.texto_fonte(info, True)}).")
-    except Exception:
-        pass
-    return "Confirmar no manual de hardware do inversor a corrente disponível (derating) nesta frequência."
+    """v1.34.2 (REQ-GER-020): inversor do cliente é fixo e a capacidade dele não é avaliada pela Electric – a proposta só
+    registra a fs fixa exigida pelo filtro e os parâmetros; o derating do manual fica em 01_Engenharia/7_Manuais_Tecnicos."""
+    return ("Ajustar no inversor a frequência de chaveamento de referência e a mínima no mesmo valor (ABB: 97.01 = 97.02). "
+            "A capacidade do inversor nessa frequência é do equipamento do cliente.")
 
 
 def garantias(proj, cat=None):

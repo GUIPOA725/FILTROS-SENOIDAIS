@@ -305,6 +305,22 @@ def t_motor_cabo_manual(projs):
                 f"L {c and round(c['L_mH_km'], 3)} mH/km")
 
 
+def t_equipamento_cliente_fixo(projs):
+    """v1.34.2 (REQ-GER-020): o derating do inversor do cliente não escolhe a fs nem reprova o filtro – ACS580-01-293A-4
+    (0,81 a 4 kHz pelo manual = 237 A ≥ 211 A do motor) continua com 4 kHz; 8 kHz (176 A) sai das opções."""
+    import sys as _s
+    _s.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import yaml as _y
+    from fsen.modelos import Pedido
+    from fsen.otimizacao import _opcoes_fs
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cat = _y.safe_load(open(os.path.join(raiz, "dados", "catalogo.yaml"), encoding="utf-8"))
+    p = Pedido(tensao_v=440, corrente_a=268, inversor="ABB ACS580-01-293A-4", inversor_corrente_a=293, motor_corrente_a=211,
+               fator_servico=1.15)
+    ops = _opcoes_fs(p, cat)
+    return (4000 in ops and 8000 not in ops), f"opções de fs para o ACS580-01-293A-4 (motor 211 A): {[o / 1000 for o in ops]} kHz"
+
+
 def t_bat_windows(projs):
     """v1.32.1 (REQ-GER-019): os .bat rodam no cmd do Windows – precisam ser ASCII puro e com fim de linha CRLF.
     Um acento num REM com fim de linha LF fez o cmd ler o ABRIR_FSEN.bat picado ('tle', 'cp', 'ho' não reconhecido)."""

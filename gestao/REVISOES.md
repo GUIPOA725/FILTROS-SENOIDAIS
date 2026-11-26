@@ -3,6 +3,11 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.34.2 – 26/11/2026 – equipamento do cliente é fixo (REQ-GER-020)
+**Engenheiro:** "o cliente não vai trocar ... nem inversor nem motor nem cabo, isso não muda" / "Não estamos avaliando isso".
+**Erro meu (v1.33.0):** usei o derating do manual para reprovar o filtro e sugeri inversor maior. **Correção:** a verificação crítica volta a usar a IN do inversor especificado; derating só informativo; relatório sem sugestão de troca; proposta não condiciona a capacidade do inversor. O manual continua servindo para a decisão de projeto que é da Electric: a fs escolhida é uma em que o inversor do cliente entrega a corrente nominal do motor (sem fator de serviço).
+**A&W com o 293A-4 do cliente:** 4 kHz, 210 µH + 3×30 µF Δ, APROVADO – igual ao projeto da v1.32.
+
 ## v1.34.1 – 26/11/2026 – cabo genérico sem blindagem e motor WEG (REQ-SEN-028/029)
 **Engenheiro:** "O motor é Weg e os valores são esses que eles mandaram" / "O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem".
 **Feito:** padrão do cabo = sem blindagem (modelo, leitor IA, dados faltantes, esquema, documentos, relatório de manuais); WEG W22 por catálogo (50024297 p.48) com carcaça, In, FP e conferência com a placa do cliente.
@@ -437,6 +442,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 
 ## Revisão – v1.34.1 – 2026-11-26 18:05
 - Requisitos: 159 | APROVADO 99 | ATENÇÃO 39 | REPROVADO 21
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEN-027, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.34.2 – 2026-11-26 19:39
+- Requisitos: 160 | APROVADO 100 | ATENÇÃO 39 | REPROVADO 21
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
