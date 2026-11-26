@@ -283,6 +283,7 @@ def _img(caminho, larg_max=170 * mm, alt_max=110 * mm):
 # ordem de leitura dos documentos que não são PDF – entram INTEIROS no corpo do consolidado
 ORDEM_CONTEUDO = [
     (r"Players_Mercado.*\.xlsx$", "Comparação com os players mundiais (Schaffner, TDK, Block, Danfoss, MTE) – REQ-SEN-024"),
+    (r"Inversor_Manual.*\.(xlsx|md)$", "Inversor – dados do manual completo do fabricante (fonte, página, link) – REQ-INV-010"),
     (r"Transitorios_.*\.xlsx$", "Transitórios – critérios por caso e comparação Plataforma × ATP"),
     (r"Proposta.*\.docx$", "Proposta técnica e comercial"),
     (r"ESTAGIO.*\.xlsx$", "Planilha ESTAGIO (padrão Electric)"),

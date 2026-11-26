@@ -1,0 +1,62 @@
+# Dados de inversores retirados do MANUAL COMPLETO do fabricante – v1.33.0 (REQ-INV-010)
+#
+# Engenheiro (26/11/2026 16:26): "vc precisa abrir o manual sempre do inversor do fabricante o completo e pegar as
+# informações para essa tomada de decisão, isso tem que estar no código". O inversor gera a forma de onda: frequência de
+# chaveamento, derating pela fs, corrente nominal/sobrecarga e limitações com filtro senoidal vêm daqui, com documento,
+# revisão, página e link. Se o inversor do projeto não está aqui, a plataforma marca ATENÇÃO e pede o cadastro.
+#
+# Regra de cadastro (para cada família):
+#   - fontes: um item por documento consultado (título, código, revisão, data, link, páginas e o que foi retirado);
+#   - modelos: regex que casa o código do cliente e de onde sai a corrente nominal (IN) – conferir com a tabela de ratings;
+#   - frames: faixa de modelos → frame e fatores de derating pela frequência MÍNIMA de chaveamento (kHz → fator);
+#   - filtro_senoidal_fabricante: corrente máxima contínua com o filtro senoidal do próprio fabricante (quando publicado);
+#   - parametros: como fixar a fs no inversor e o que exige derating.
+# Valores intermediários de fs: interpolação linear entre os pontos da tabela (registrado no relatório).
+
+familias:
+  "ABB ACS580-01":
+    fabricante: ABB
+    regex_modelo: 'ACS580-01-(\d{2,3})A(\d)-4|ACS580-01-(\d{2,3})A-4|ACS580-01-0?(\d)A(\d)-4'
+    regex_in: 'ACS580-01-0?(\d+)A(\d?)-4'
+    tensao: "3~ 380–480 V"
+    status: confirmado
+    consultado_em: "2026-11-26"
+    fontes:
+      - titulo: "ACS580-01 drives (0.75 to 250 kW) Hardware manual"
+        codigo: "3AXD50000018826"
+        revisao: "C (2014-10-21)"
+        link: "https://library.e.abb.com/public/16c1a57244ef499b8e9a1895982771ac/ACS580_01drivesHW_revC_screen_A5.pdf"
+        paginas: "p.128 (IEC ratings), p.134 (Switching frequency derating), p.143 (frequências de chaveamento)"
+        retirado: "Derating pela fs mínima (97.02): R8 246A-4…293A-4 = 1 (1 kHz), 0,96 (2 kHz), 0,81 (4 kHz), 0,60 (8 kHz), N/A (12 kHz). 'Changing parameter 97.01 does not require derating'. 293A-4: IN 293 A, ILd 278 A, IHd 246 A (130 % 1 min/10 min), Imax 418 A, R8."
+      - titulo: "ACH580-01 drives Hardware manual (mesmo hardware ACx580-01)"
+        codigo: "ACH580-01 HW rev A"
+        revisao: "A"
+        link: "https://library.e.abb.com/public/b039a4daed764f3782cfb7012dac708d/ACH580-01%20HW_revA_screen_A5.pdf"
+        paginas: "p.126 (Switching frequency derating – tabela completa R0…R9)"
+        retirado: "Tabela completa por frame (R0…R9); R8 idêntico ao manual ACS580-01 rev C (0,96 / 0,81 / 0,60)."
+      - titulo: "ACS580 General purpose drives catalog"
+        codigo: "3AUA0000145061"
+        revisao: "R (10.04.2026)"
+        link: "https://library.e.abb.com/public/1f0a1e0c460c4ec381cbb851d21427d7/ACS580_Catalog_3AUA0000145061_RevR_EN%2010-04-2026.pdf"
+        paginas: "p.25–26 (ratings e remissão do derating ao HW manual 3AXD50000044794), p.33 (sine filters)"
+        retirado: "293A-4 R8: IN 293 / ILd 278 / IHd 246 A (400 V). Filtro senoidal ABB (TDK B84143V0390S229): I cont. max 249 A para o 293A-4 (≈ 0,85 × IN); 246A-4: 209 A."
+    pendente: "Manual de hardware vigente 3AXD50000044794 (revisão atual) não acessível pelo robô – conferir se a tabela de derating mudou; os dois manuais oficiais consultados e o catálogo 2026 são coerentes."
+    parametros: >-
+      97.01 Switching frequency reference e 97.02 Minimum switching frequency = fs de projeto (fs fixa, sem redução
+      automática). Só o aumento de 97.02 exige derating; 97.01 não. Filtro de terceiros: fs fixa e, de preferência,
+      controle escalar; 95.15 bit1 é para o filtro ABB.
+    frames:
+      - {frame: R0, de: 2.6, ate: 5.6, derating: {1: 1.0, 2: 1.0, 4: 1.0, 8: 0.67, 12: 0.5}}
+      - {frame: R1, de: 7.2, ate: 12.6, derating: {1: 1.0, 2: 1.0, 4: 1.0, 8: 0.67, 12: 0.5}}
+      - {frame: R2, de: 17, ate: 25, derating: {1: 1.0, 2: 1.0, 4: 1.0, 8: 0.65, 12: 0.48}}
+      - {frame: R3, de: 32, ate: 45, derating: {1: 1.0, 2: 1.0, 4: 1.0, 8: 0.65, 12: 0.48}}
+      - {frame: R4, de: 62, ate: 62, derating: {1: 1.0, 2: 1.0, 4: 1.0, 8: 0.82, 12: 0.64}}
+      - {frame: R4, de: 73, ate: 73, derating: {1: 1.0, 2: 1.0, 4: 1.0, 8: 0.73, 12: 0.55}}
+      - {frame: R5, de: 88, ate: 106, derating: {1: 1.0}, nota: "TBA no manual – confirmar"}
+      - {frame: R6, de: 145, ate: 145, derating: {1: 1.0, 2: 0.97, 4: 0.83, 8: 0.66, 12: 0.5}}
+      - {frame: R7, de: 169, ate: 206, derating: {1: 1.0, 2: 0.98, 4: 0.88, 8: 0.7, 12: 0.5}}
+      - {frame: R8, de: 246, ate: 293, derating: {1: 1.0, 2: 0.96, 4: 0.81, 8: 0.6}}
+      - {frame: R9, de: 363, ate: 430, derating: {1: 1.0, 2: 0.95, 4: 0.78, 8: 0.56}}
+    filtro_senoidal_fabricante:
+      "246": {i_cont_max_a: 209, tipo: "TDK B84143V0230S229"}
+      "293": {i_cont_max_a: 249, tipo: "TDK B84143V0390S229"}

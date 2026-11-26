@@ -603,7 +603,7 @@ def proposta(proj, arr, orc, cat, pasta):
     _i_cli = float(ped.get("corrente_cliente_a") or 0)
     _obs = [f"O inversor deve operar com frequência de chaveamento FIXA de {proj.fs_hz / 1000:g} kHz (redução automática desabilitada) e "
             "controle escalar (ou com parâmetros de filtro senoidal). Abaixo dessa frequência o filtro não atende (THD, ressonância e "
-            "aquecimento). Confirmar no manual de hardware do inversor a corrente disponível (derating) nesta frequência.",
+            "aquecimento). " + _txt_inv_manual(proj, ped),
             "Instalação abrigada, temperatura ambiente até 40 °C, altitude até 1000 m.",
             (f"Premissa do estudo: cabo filtro → motor {'BLINDADO' if _blind else 'NÃO blindado'}"
              + (f", {_sis.get('cabo_paralelos', 1)}×{_sis.get('cabo_secao_mm2', '')} mm²" if _sis.get("cabo_secao_mm2") else "")
@@ -658,6 +658,22 @@ def insercao_pct(proj):
     phi = -_m.acos(max(min(float(ped.get("motor_fp") or 0.85), 1.0), 0.0))
     vi = complex(vo, 0) + 1j * x * i * complex(_m.cos(phi), _m.sin(phi))
     return 100 * (abs(vi) - vo) / abs(vi)
+
+
+def _txt_inv_manual(proj, ped):
+    """v1.33.0 (REQ-INV-010): frase da proposta com a corrente do inversor na fs fixada, retirada do manual (doc/rev/página)."""
+    try:
+        from . import inversor_manual as IM
+        info = IM.identificar(ped.get("inversor"))
+        if info:
+            k = IM.fator_fs(info, proj.fs_hz / 1000)
+            if k is None:
+                return f"ATENÇÃO: o manual do inversor não tabela {proj.fs_hz / 1000:g} kHz ({IM.texto_fonte(info, True)})."
+            return (f"Corrente do inversor nesta frequência: {k:.2f} × {info['i_n']:g} A = {k * info['i_n']:.0f} A "
+                    f"(derating pela fs mínima – {IM.texto_fonte(info, True)}).")
+    except Exception:
+        pass
+    return "Confirmar no manual de hardware do inversor a corrente disponível (derating) nesta frequência."
 
 
 def garantias(proj, cat=None):

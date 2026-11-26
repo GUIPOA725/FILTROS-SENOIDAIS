@@ -127,8 +127,12 @@ referencias:
   requisitos: [REQ-SEN-022, REQ-SEN-021, REQ-GER-014]
 
 - id: REF-ADENDO-AW-268A-V1323
-  data: "2026-11-26"
-  arquivo: gestao/analises/2026-11-26_Adendo_Verificacao_1513_Rev00.pdf
-  descricao: "Adendo da auditoria externa sobre o pacote A&W FSEN-LC-268A-440V gerado na v1.32.3 (15:46): 6 resolvidos, 11 parciais, 2 não tratados"
-  licoes: "C2, A4, A6, A7, A12 resolvidos; bloqueios: derating ACS580 a 4 kHz, aceite 268 A, THD baixa ordem com metade do amortecimento; resíduos de texto (60831, Q, Isat 500 A no RTM, e-mail)"
-  requisitos: [REQ-SEN-026, REQ-SEN-027]
+  nome: "Adendo de verificação da auditoria externa – A&W FSEN-LC-268A-440V, pacote v1.32.3 (26/11/2026 15:46)"
+  caminho: "gestao/analises/2026-11-26_Adendo_Verificacao_1513_Rev00.pdf"
+  licoes:
+    - "6 resolvidos (pico/THD fonte única, PTC, mercado like-for-like, otimização com a final, RTM classe H), 11 parciais, 2 não tratados (garantia, NCM)."
+    - "Bloqueios: derating do ACS580 a 4 kHz, aceite dos 268 A, THD de baixa ordem com metade do amortecimento."
+    - "Resíduos: IEC 60831 no memorial tab.9, 'Q equivalente 4' na tabela de critérios, 'Isat ≥ 500 A' no RTM, e-mail sem THD total e sem condição 268 A; rótulo '(por fase)' nos 3,7 m de cabo é o total das 3 fases."
+    - "v1.33.0: manual ABB confirma 0,81 a 4 kHz (237 A) para o 293A-4 – o inversor do cliente não atende a 4 kHz; 363A-4 atende."
+  requisitos: [REQ-SEN-026, REQ-SEN-027, REQ-INV-010]
+  usada_em: "v1.33.0"

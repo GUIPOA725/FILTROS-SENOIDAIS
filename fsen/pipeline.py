@@ -585,6 +585,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         log(f"   Players mundiais: {len(proj.players['linhas'])} modelos vizinhos de {len(proj.players['fontes'])} fabricantes")
     except Exception as e:
         log(f"   (comparação com players não feita: {type(e).__name__}: {e})")
+    try:                                            # v1.33.0 (REQ-INV-010): dados do inversor do MANUAL do fabricante (fonte/página/link)
+        from . import inversor_manual as _IM
+        _ineed = min(ped.corrente_a, (ped.motor_corrente_a or ped.corrente_a) * max(ped.fator_servico or 1.0, 1.0))
+        proj.inversor_manual = _IM.gerar(ped, proj.fs_hz, sub["01_Engenharia"], cod, i_necessaria=_ineed, log=log)
+        arqs["inversor_manual"] = proj.inversor_manual["arquivo"]
+    except Exception as e:
+        log(f"   (relatório do manual do inversor não feito: {type(e).__name__}: {e})")
     resumo = resumo_texto(proj, arr, orc, similares, pasta)
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as f:
         f.write(resumo)

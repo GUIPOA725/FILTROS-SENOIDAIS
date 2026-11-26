@@ -276,6 +276,21 @@ def t_biblioteca_paineis(projs):
     return (not falta), ("aprovar + partir do último aprovado + botão na tela" if not falta else "falta: " + ", ".join(falta))
 
 
+def t_inversor_manual(projs):
+    """v1.33.0 (REQ-INV-010): o cadastro de manuais de inversor existe, tem fonte (documento/revisão/página/link) e devolve o
+    derating do manual – caso de referência ABB ACS580-01-293A-4 (R8): 0,81 a 4 kHz (HW manual 3AXD50000018826 rev C p.134)."""
+    import sys as _s
+    _s.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from fsen import inversor_manual as IM
+    info = IM.identificar("ABB ACS580-01-293A-4")
+    if not info:
+        return False, "ACS580-01-293A-4 não encontrado em dados/inversores_manuais.yaml"
+    k = IM.fator_fs(info, 4)
+    fontes_ok = all(f.get("link") and f.get("paginas") and f.get("revisao") for f in info["fontes"])
+    ok = info["frame"] == "R8" and abs((k or 0) - 0.81) < 1e-6 and fontes_ok
+    return ok, f"ACS580-01-293A-4: frame {info['frame']}, fator 4 kHz {k}, fontes com link/página/revisão: {fontes_ok}"
+
+
 def t_bat_windows(projs):
     """v1.32.1 (REQ-GER-019): os .bat rodam no cmd do Windows – precisam ser ASCII puro e com fim de linha CRLF.
     Um acento num REM com fim de linha LF fez o cmd ler o ABRIR_FSEN.bat picado ('tle', 'cp', 'ho' não reconhecido)."""

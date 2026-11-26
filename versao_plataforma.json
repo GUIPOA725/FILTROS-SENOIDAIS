@@ -1,5 +1,5 @@
 {
-  "versao": "1.32.3",
+  "versao": "1.33.0",
   "data": "2026-11-26",
-  "resumo": "Abertura: não copia do Drive quando a cópia local já tem a mesma versão (abre na hora); log do robocopy para diagnóstico"
+  "resumo": "Inversor pelo manual completo do fabricante: derating pela fs, IN e frame com documento/revisão/página/link (dados/inversores_manuais.yaml), conferência com o modelo do cliente e relatório 7_Inversor_Manual"
 }

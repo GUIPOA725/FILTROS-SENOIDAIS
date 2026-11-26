@@ -3,6 +3,12 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.33.0 – 26/11/2026 – inversor pelo manual completo do fabricante (REQ-INV-010)
+**Pedido:** "vc precisa abrir o manual sempre do inversor do fabricante o completo ... isso tem que estar no código".
+**Feito:** cadastro `dados/inversores_manuais.yaml` (ABB ACS580-01 R0–R9, fontes oficiais ABB com link/página), `fsen/inversor_manual.py`, derating_fs pelo manual, verificação de conferência, relatório 7_Inversor_Manual, frase da proposta com a fonte, teste automático `t_inversor_manual`, regra no CLAUDE.md.
+**Achado no A&W:** ACS580-01-293A-4 a 4 kHz = 0,81 × 293 = 237 A (manual) e o filtro senoidal da própria ABB para este modelo é limitado a 249 A. A carga com FS 1,15 (243 A) + corrente do capacitor pede ~254 A → o inversor do cliente NÃO atende a 4 kHz; a 2 kHz o LC reprova (THD 5,4 %, fr 619 Hz); com ACS580-01-363A-4 (283 A a 4 kHz) o mesmo filtro 210 µH aprova. Decisão do engenheiro/cliente.
+**Limite:** manual vigente 3AXD50000044794 não acessível pelo robô; PDFs não baixam na nuvem (só link e página registrados).
+
 ## v1.32.3 – 26/11/2026 – abertura sem depender do Drive (REQ-GER-019)
 **Print 15:11:** ainda parado em [1/4] com a 1.32.2 (robocopy lendo a pasta do Drive, provavelmente com arquivos em sincronização/streaming). **Correção:** compara versao_plataforma.json do Drive com o local; igual → não copia; diferente → robocopy /R:1 /W:1 com log em %LOCALAPPDATA%\FSEN\robocopy.log.
 
@@ -400,4 +406,12 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.33.0 – 2026-11-26 16:43
+- Requisitos: 156 | APROVADO 96 | ATENÇÃO 39 | REPROVADO 21
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEN-027, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
 - Decisão: pode publicar

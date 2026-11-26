@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.33.0 – 26/11/2026 – inversor pelo manual do fabricante
+- Frequência de chaveamento, derating, corrente nominal e frame do inversor agora vêm do manual completo do fabricante, com documento, revisão, página e link.
+- A plataforma confere se o modelo e a corrente informados pelo cliente batem com o manual; se o inversor não estiver cadastrado, aparece ATENÇÃO pedindo o cadastro.
+- Novo relatório 01_Engenharia/7_Inversor_Manual (Word-livre .md + planilha) com a fonte de cada dado e, quando o inversor não atende, o menor modelo da família que atende.
+
 ## v1.32.3 – 26/11/2026 – abertura rápida
 - Se a cópia local já está na mesma versão do Drive, abre direto, sem copiar nada do Drive.
 

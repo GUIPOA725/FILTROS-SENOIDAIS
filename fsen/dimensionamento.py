@@ -166,6 +166,16 @@ def _json_default(o):
 
 # --------------------------------------------------------------------------------------
 def derating_fs(cat, ped, fs_hz):
+    """v1.33.0 (REQ-INV-010): primeiro o MANUAL do fabricante (dados/inversores_manuais.yaml – documento, revisão, página);
+    fs acima do último ponto tabelado pelo fabricante → 0 (não usar). Sem cadastro → tabela genérica do catálogo (ATENÇÃO)."""
+    try:
+        from . import inversor_manual as IM
+        info = IM.identificar(ped.inversor)
+        if info and info.get("derating"):
+            k = IM.fator_fs(info, fs_hz / 1000)
+            return 0.0 if k is None else float(k)
+    except Exception:
+        pass
     inv = cat["inversores"].get(_inv_chave(ped.inversor, cat), cat["inversores"]["GENERICO"])
     tab = inv.get("derating_fs", {2: 1.0, 4: 1.0, 8: 0.65, 12: 0.5})
     k = min(tab, key=lambda x: abs(float(x) - fs_hz / 1000))
@@ -797,18 +807,25 @@ def verificacoes_auditoria(ped: Pedido, cat, p, res, fs, vdc=None) -> List[Verif
     except Exception as e:  # nunca impede o projeto
         out.append(Verificacao("Portadora fixa × síncrona", f"não calculado ({e})", "informativo", True, "", critico=False))
     try:
+        from . import inversor_manual as IM
+        ok_m, txt_m, info = IM.conferencia(ped)
+        out.append(Verificacao("Inversor × manual completo do fabricante (modelo, frame, IN)", txt_m,
+                               "modelo do cliente encontrado no manual cadastrado (documento, revisão, página, link)", ok_m,
+                               "REQ-INV-010: o inversor gera a forma de onda – fs, derating e corrente vêm do manual de hardware "
+                               "completo (dados/inversores_manuais.yaml); relatório em 01_Engenharia/7_Inversor_Manual", critico=False))
         inv = cat["inversores"].get(_inv_chave(ped.inversor, cat), cat["inversores"]["GENERICO"])
         k = derating_fs(cat, ped, fs)
         fs_min = min(inv.get("fs_opcoes_khz") or [fs / 1000])
-        confirmado = bool(inv.get("derating_fs_confirmado"))
-        i_inv = float(ped.inversor_corrente_a or 0)
+        confirmado = bool(info and info.get("derating")) or bool(inv.get("derating_fs_confirmado"))
+        i_inv = float((info or {}).get("i_n") or ped.inversor_corrente_a or 0)
+        fonte = IM.texto_fonte(info, True) if info else "tabela genérica do catálogo – NÃO confirmada no manual"
         txt = (f"fator {k:.2f} a {fs / 1000:g} kHz" + (f" → {k * i_inv:.0f} A disponíveis de {i_inv:.0f} A" if i_inv else "")
-               + ("" if confirmado else " – tabela do catálogo NÃO confirmada no manual de hardware"))
-        out.append(Verificacao(f"Derating do inversor {ped.inversor or ''} com a fs fixada em {fs / 1000:g} kHz (mínima do inversor {fs_min:g} kHz)",
-                               txt, "confirmado no manual (página/tabela)", confirmado or fs / 1000 <= fs_min + 1e-6,
-                               "Fixar a fs acima da mínima de fábrica pode reduzir a corrente do inversor (ABB ACS580: derating quando o "
-                               "parâmetro 97.02 – fs mínima – é elevado). Confirmar no manual de hardware do modelo/frame e registrar "
-                               "página/tabela antes de firmar a proposta", critico=False))
+               + f" ({fonte})")
+        out.append(Verificacao(f"Derating do inversor {ped.inversor or ''} com a fs fixada em {fs / 1000:g} kHz",
+                               txt, "fator retirado do manual (documento/revisão/página)", confirmado,
+                               "Fixar a fs mínima acima da de fábrica reduz a corrente do inversor (ABB ACS580: só o aumento de 97.02 "
+                               "exige derating; 97.01 não). A corrente disponível entra na verificação crítica 'Corrente do inversor'",
+                               critico=False))
     except Exception:
         pass
     i_inv = float(ped.inversor_corrente_a or 0)

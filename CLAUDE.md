@@ -30,3 +30,5 @@ Engenheiro responsável: Guilherme (Electric Service). Responder em português.
 - Consolidado com TUDO; THD em todo espectro; coluna Check em todo resultado; pastas por fornecedor/análise.
 - Desenho do painel só com medidas reais de catálogo/FEM, no padrão AGCO (SolidWorks) ou melhor, igual nos 3 filtros.
 - Comparar sempre com o projeto real anterior do cliente quando existir (ex.: reator Cootrans da Panatlântica 2024).
+- Inversor (REQ-INV-010): dados de fs, derating, IN e frame SEMPRE do manual completo do fabricante, cadastrado em
+  `dados/inversores_manuais.yaml` com documento, revisão, página e link; conferir com o modelo que o cliente passou.

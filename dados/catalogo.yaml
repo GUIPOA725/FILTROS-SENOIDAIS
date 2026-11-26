@@ -309,7 +309,7 @@ inversores:
   "ABB ACS580":
     fs_opcoes_khz: [1.5, 2, 4, 8, 12]
     fs_padrao_khz: 4
-    derating_fs: {2: 1.0, 4: 1.0, 8: 0.65}   # confirmar tabela do manual de hardware (frame R8)
+    derating_fs: {2: 1.0, 4: 1.0, 8: 0.65}   # só reserva: vale o manual (dados/inversores_manuais.yaml, REQ-INV-010)
     notas: >-
       Fixar frequência de chaveamento: 97.01 = 97.02 = fs de projeto (manual ACS580).
       95.15 bit1 é apenas para filtro ABB; para filtro de terceiros usar fs fixa e,
