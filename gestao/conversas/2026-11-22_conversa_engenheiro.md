@@ -337,3 +337,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 25/11 (Claude): v1.28.1 publicada no Drive (Panatlântica ABB: 0 reprovados, 25 atenção).
 - 21:21 25/11 (engenheiro): "Essa contatora é para qts amps kvar?"
 - 21:22: "Estou achando cabo de 70 muito grande, eu usava 50 mm" → REQ-BCO-007.
+- 21:22: "Ou no meu projeto estava 70mm?" → resposta: no projeto 2024 eram 35 mm².
