@@ -426,7 +426,8 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     ets = D.et_fornecedores(proj, arr, orc, cat, sub["03_Fornecedores"], pdf_des)
     for k, (doc, mail) in ets.items():
         arqs[f"et_{k}"] = doc
-        arqs[f"email_{k}"] = mail
+        if mail:
+            arqs[f"email_{k}"] = mail
     ind = None
     if proj.topologia == "LC" and not proj.l2 and (cat.get("indutor_fem") or {}).get("habilitado", True):
         try:                                        # v1.10.0: projeto de referência do indutor por elementos finitos
@@ -456,11 +457,10 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                                                             _inf["titulo"])
             with open(os.path.join(sub["01_Engenharia"], "indutor_projeto.json"), "w", encoding="utf-8") as f:
                 json.dump({k: v for k, v in ind.items() if k not in ("campo_pico",)}, f, ensure_ascii=False, indent=1, default=_json_default)
-            for _f in os.listdir(sub["03_Fornecedores"]):
-                if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
-                    with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:
-                        _fh.write(
-                            "\n\nANEXOS – PROJETO DE REFERÊNCIA DO INDUTOR\n"
+            if True:                                # v1.31.0 (REQ-DOC-020): este texto vai para a ET (Word), não para o e-mail
+                if True:
+                    proj._txt_ref_indutor = (
+                            "PROJETO DE REFERÊNCIA DO INDUTOR\n"
                             f"Seguem também o Projeto de Referência (desenhos com vistas, cortes, 3D e lista de materiais), os arquivos CAD "
                             f"editáveis (3D em STEP e 2D em DXF, escala 1:1) e o Memorial de "
                             f"cálculo por elementos finitos ({os.path.basename(arqs['indutor_desenhos'])}, {os.path.basename(arqs['indutor_memorial'])}). "
@@ -468,6 +468,7 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                             f"coluna, bobina a {ind['c']*1e3:.0f} mm do núcleo, chapa {ind['chapa_dados']['esp_mm']} mm, sistema de isolação classe "
                             f"{ind['requisitos']['classe']}. Vocês podem adaptar ao padrão de fabricação de vocês – peço só que declarem as "
                             "diferenças (chapa, espiras, entreferros, condutor, isolação) para conferirmos.\n")
+                    _fh = None
             try:                                    # v1.26.4 (REQ-REA-018): indutor salvo na biblioteca como proposta
                 from . import biblioteca_reatores as _BRs
                 _arq_b = _BRs.propor_senoidal(ind, cod, getattr(ped, "cliente", "") or "", pasta=pasta)
@@ -493,13 +494,15 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                     log(f"   (anexo técnico do indutor não gerado: {type(_e).__name__}: {_e})")
             _anexos = sorted(f for f in os.listdir(sub["03_Fornecedores"])
                              if re.search(r"Indutor", f, re.I) and not f.startswith("Email_") and not f.endswith(".json"))
-            for _f in os.listdir(sub["03_Fornecedores"]):
-                if _f.startswith("Email_Indutor") and _f.endswith(".txt"):
-                    with open(os.path.join(sub["03_Fornecedores"], _f), "a", encoding="utf-8") as _fh:
-                        _fh.write(DIF.texto_email_extra(proj, ind, _anexos) + "\n")
+            proj._txt_extra_indutor = DIF.texto_email_extra(proj, ind, _anexos)   # v1.31.0: vai para a ET (Word)
             log("   Indutor: protocolo de ensaio do protótipo e questionário ao fabricante gerados (03_Fornecedores/1_Indutor)")
         except Exception as e:
             log(f"   (protocolo/questionário do indutor não gerados: {type(e).__name__}: {e})")
+    try:                                            # v1.31.0 (REQ-DOC-020): ET completa no Word + e-mail curto, com os anexos reais
+        D.finalizar_cotacoes(proj, cat, sub["03_Fornecedores"], cod)
+        log("   Cotações: ET (Word) completas e e-mails curtos para indutor e capacitores")
+    except Exception as _exf:
+        log(f"   (finalização das ETs de cotação falhou: {type(_exf).__name__}: {_exf})")
     arqs["rfq_montagem"], arqs["email_montagem"] = D.rfq_montagem(proj, arr, orc, cat, sub["04_Montadora"])
     arqs["caderno_montagem"] = D.caderno_montagem(proj, arr, orc, cat, sub["04_Montadora"], pngs)
     shutil.copy(pdf_des, sub["04_Montadora"])

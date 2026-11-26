@@ -221,7 +221,7 @@ GUIAS = {
                        "Leia a **justificativa** e as **lacunas** (o que faltou e qual premissa foi usada).",
                        "Escolha o montante: **reativo medido** ou **com folga Electric** (crescimento, perdas do trafo, N-1/N-2).",
                        "Confira estágios, tensão, FD e trafo → gere o pacote.",
-                       "Confira 03_Fornecedores/2_Painel_Montadora: ET do painel, esquema, layout, plaquetas, DE/PARA."],
+                       "Confira 04_Montadora/1_Cotacao_Montagem: ET do painel, esquema, layout, plaquetas, DE/PARA."],
     "sintonizado": ["Escolha **Filtro harmônico sintonizado** em Tipo de filtro.",
                     "Carregue a medição (harmônicas de corrente por ordem são essenciais).",
                     "**🔎 Ler solicitação e medições** → confira as ordens dos ramos (5ª/7ª/11ª) e o Nr.",

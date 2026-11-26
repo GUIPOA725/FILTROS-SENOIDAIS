@@ -25,10 +25,8 @@ REGRAS = [
     ("02_Cliente", "4_Dados_Faltantes", [r"Email_Solicitacao_Dados", r"Questionario_Tecnico"]),
     ("03_Fornecedores", "1_Indutor", [r"Indutor", r"^Parecer_Proposta_Indutor"]),
     ("03_Fornecedores", "2_Capacitores", [r"Capacitor"]),
-    ("03_Fornecedores", "3_Caixa_Metalica", [r"Caixa"]),
-    ("03_Fornecedores", "4_Plaqueta_Adesivos", [r"Plaqueta"]),
-    ("03_Fornecedores", "5_Cabos_Miscelanea", [r"Cabos"]),
-    ("04_Montadora", "1_Cotacao_Montagem", [r"RFQ_Montagem", r"Email_Montagem"]),
+    ("03_Fornecedores", "3_Resistores", [r"Resistores"]),
+    ("04_Montadora", "1_Cotacao_Montagem", [r"RFQ_Montagem", r"Email_Montagem", r"^ET_Caixa", r"^ET_Plaqueta", r"^LM_Cabos"]),
     ("04_Montadora", "2_Caderno_Montagem", [r"Caderno_Montagem"]),
     ("04_Montadora", "3_Desenhos", [r"_desenhos\.pdf$"]),
     ("05_Desenhos", "1_Painel", [r"_desenhos\.pdf$", r"^folha\d"]),
@@ -54,10 +52,11 @@ LEIA_ME = """ORGANIZAÇÃO DESTE PROJETO (Plataforma FSEN)
 03_Fornecedores .......... uma subpasta por COMPONENTE – mandar só a subpasta do fornecedor
    1_Indutor ................ ET + projeto de referência (desenhos, CAD) + memorial + protocolo do protótipo + questionário + e-mail → fabricante (ex.: Cootrans)
    2_Capacitores ............ ET + figura da corrente + e-mail
-   3_Caixa_Metalica / 4_Plaqueta_Adesivos / 5_Cabos_Miscelanea
+   (escopo Electric no filtro senoidal: indutor + capacitores; caixa, plaqueta, cabos e miscelânea são da MONTADORA)
    (os pareceres de conferência de proposta são gravados na subpasta do componente)
 
-04_Montadora ............. cotação de montagem, caderno de montagem, desenhos do painel
+04_Montadora ............. NÃO é fornecedor: pacote de cotação da montagem (RFQ + e-mail + ETs dos itens que ela compra:
+                           caixa, plaqueta/adesivos, cabos e miscelânea), caderno de montagem, desenhos do painel
 05_Desenhos .............. 1_Painel (vistas, 3D, diagrama, cabos)  |  2_Indutor (projeto de referência)
 graficos ................. figuras da simulação
 """

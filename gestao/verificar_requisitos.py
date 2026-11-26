@@ -108,9 +108,10 @@ def t_pastas_por_fornecedor(projs):
     for p in projs:
         tem = [d for d in ("01_Engenharia", "02_Cliente", "03_Fornecedores", "05_Desenhos") if os.path.isdir(os.path.join(p, d))]
         sub = [d for d in os.listdir(os.path.join(p, "03_Fornecedores"))] if os.path.isdir(os.path.join(p, "03_Fornecedores")) else []
-        o = len(tem) == 4 and len(sub) >= 2
+        _mont = os.path.isdir(os.path.join(p, "04_Montadora")) or "2_Painel_Montadora" in sub   # v1.31.0: montadora fora de 03
+        o = len(tem) == 4 and len(sub) >= 1 and _mont
         ok &= o
-        ev.append(f"{os.path.basename(p)}: {len(tem)}/4 pastas, {len(sub)} subpastas de fornecedor")
+        ev.append(f"{os.path.basename(p)}: {len(tem)}/4 pastas, {len(sub)} subpasta(s) de fornecedor, montadora {'ok' if _mont else 'FALTA'}")
     return ok, "; ".join(ev)
 
 

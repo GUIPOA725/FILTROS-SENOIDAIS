@@ -394,28 +394,19 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
     r = e["requisitos"]
     sint = ped.tipo == "sintonizado"
     qtd = len(grp) * n_banco * (3 if mono else 1)
-    doc = Document()
-    sec = doc.sections[0]
-    sec.page_height, sec.page_width = Cm(29.7), Cm(21.0)
-    sec.left_margin = sec.right_margin = Cm(2.2)
-    st = doc.styles["Normal"]
-    st.font.name = "Calibri"
-    st.font.size = Pt(11)
-    doc.add_paragraph(f"Porto Alegre, {_data_ext()}.").alignment = 2
-    doc.add_paragraph(f"À\n{fornecedor}\n{local}")
+    # v1.31.0 (REQ-DOC-020): ET no padrão visual das ETs de cotação (antes: carta) – mesmo conteúdo técnico
+    from . import et_cotacao as ETC
+    from .documentos import _kv
     if mono:
         titulo = "INDUTOR MONOFÁSICO, NÚCLEO DE FERRO ENVOLVIDO, PARA FILTRO DE HARMÔNICA SINTONIZADO"
     elif sint:
         titulo = "INDUTOR TRIFÁSICO PARA FILTRO DE HARMÔNICA SINTONIZADO"
     else:
         titulo = "INDUTOR TRIFÁSICO PARA BANCO DE CAPACITORES DESSINTONIZADO"
-    p = doc.add_paragraph()
-    p.add_run(titulo).bold = True
-    p = doc.add_paragraph()
-    p.add_run(f"{_f(e['Q_alvo'], 0)}kVAr/{ped.tensao_v:g}V/" + (f"{e['ordem']:g}ª harmônica (Nr {_f(e['nr'], 2)})" if sint else
-                                                              f"FD{_f(e['p_pct'], 2)}%") + f" – {cod}").bold = True
-    p = doc.add_paragraph()
-    p.add_run("EQUIPAMENTO:").bold = True
+    sub_t = (f"{_f(e['Q_alvo'], 0)} kVAr / {ped.tensao_v:g} V / " + (f"{e['ordem']:g}ª harmônica (Nr {_f(e['nr'], 2)})" if sint else
+                                                                   f"FD {_f(e['p_pct'], 2)} %") + f" – {cod}")
+    doc = _novo("Especificação Técnica – " + titulo.capitalize(), sub_t, cod, cat)
+    doc.add_paragraph(f"Destinatário: {fornecedor} – {local}  •  Porto Alegre, {_data_ext()}")
     vsai = e["Uc1"]
     itens = [f"Corrente RMS de Projeto [A]: {r['In']:.0f}A.",
              f"Frequência Rede [Hz]: {ped.freq_hz:g}Hz.",
@@ -448,9 +439,27 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
              f"Enrolamento: chapa ou barra de {'alumínio' if ped.condutor == 'AL' else 'cobre'}.",
              "Núcleo: chapa de aço silício NOVA, com certificado do fabricante da chapa (não aceito material reaproveitado).",
              "Proteção térmica: termostato NF na bobina central (abre a 130 °C ± 5 °C para classe F), cabos até a régua de bornes."]
+    ETC.quadro_resumo(doc, f"O QUE ESTAMOS COTANDO – {qtd} indutor(es)", [
+        ("Item", titulo.capitalize()), ("Quantidade", f"{qtd} unidades"),
+        ("Indutância", f"{e['L_uH']:.0f} µH ±{_f(ped.tol_l_pct, 0)} %" + ("" if mono else " (desequilíbrio entre fases ≤ 2 %)")),
+        ("Corrente", f"projeto {r['In']:.0f} A RMS (com harmônicas) • ajuste {e['I60']:.0f} A (60 Hz)"),
+        ("Tensão", f"entrada {ped.tensao_v:g} V + 10 % • saída (lado capacitor) {vsai:.0f} V + 10 %"),
+        ("Capacitor associado", _cap_txt(e)), ("Classe", f"{'F (155 °C)' if ped.classe == 'F' else 'H (180 °C)'} – isolação 1 kV, IP00"),
+        ("Perdas máximas", f"{r['P_max']:.0f} W por indutor (núcleo + enrolamento, com harmônicas)")],
+        nota="A especificação define DESEMPENHO; o projeto construtivo é do fabricante. O desenho dimensional deve ser aprovado antes "
+             "de fabricar. O que a proposta deve trazer está no fim deste documento.")
+    doc.add_heading("1. Características elétricas exigidas", 1)
+    _pares, _txts = [], []
     for t in itens:
+        a, _, b = t.partition(":")
+        if b and len(a) <= 40:
+            _pares.append((a.strip(), b.strip().rstrip(".")))
+        else:
+            _txts.append(t)
+    _kv(doc, _pares, tam=9)
+    for t in _txts:
         doc.add_paragraph(t, style="List Bullet")
-    doc.add_paragraph("Correntes harmônicas previstas pelo indutor (regime contínuo):")
+    doc.add_heading("2. Correntes harmônicas previstas pelo indutor (regime contínuo)", 1)
     hs = sorted(e["Ih_projeto"])
     _iht = r.get("Ih_termico") or e["Ih_projeto"]
     _tabela(doc, ["Harmônica", "60 Hz"] + [f"{h}ª ({h*ped.freq_hz:g} Hz)" for h in hs],
@@ -466,10 +475,9 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
         doc.add_paragraph("Para a condição de corrente máxima da tabela acima, a temperatura no núcleo do indutor não deverá passar de "
                           "100 graus, bem como nos enrolamentos se possível. A Electric garante que esses limites de corrente não serão "
                           "ultrapassados por meio de proteção de sobrecorrente externa.")
-    p = doc.add_paragraph()
-    p.add_run("Ensaios Elétricos Indutores: ").bold = True
-    p.add_run("Deverá ser enviado um relatório, contendo no mínimo os ensaios elétricos trifásicos com os resultados médios para as "
-              "correntes de:")
+    doc.add_heading("3. Ensaios elétricos", 1)
+    p = doc.add_paragraph("Deverá ser enviado um relatório por unidade, contendo no mínimo os ensaios elétricos trifásicos com os "
+                          "resultados médios para as correntes de:")
     for nome, I in ((f"Corrente de Projeto: {r['In']:.0f}A", r["In"]), (f"Corrente de Ajuste: {e['I60']:.0f}A", e["I60"])):
         doc.add_paragraph().add_run(nome).bold = True
         for t in ("Resistência dos enrolamentos a 28°C:", "Resistência corrigida a 115 °C:", "Reatância por fase a 28°C:",
@@ -477,6 +485,7 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
                   "Resistência do Isolamento Megômetro escala 1000Vcc:", "Tensão Aplicada [60Hz – 1 minuto ENR/M]: 2,5 kV"):
             doc.add_paragraph(t, style="List Bullet")
     if d:                                           # v1.26.2 (REQ-REL-009): dessintonizado/sintonizado – desempenho + envelope; projeto fica interno
+        doc.add_heading("4. Dimensões, massa e construção", 1)
         dm = d.get("dims_mm") or {}
         p = doc.add_paragraph()
         p.add_run("Dimensões e massa: ").bold = True
@@ -495,9 +504,14 @@ def esp_reator(ped, res, grp, d, pasta, cod, cat, fornecedor="COOTRANS", local="
         p.add_run("Ensaios adicionais: ").bold = True
         p.add_run("medição da indutância por fase na corrente de ajuste, na corrente de projeto e em 1,5 × a corrente de projeto (ou na "
                   "maior corrente que a bancada permitir – informar o valor); ensaio de elevação de temperatura na primeira peça do lote.")
-    doc.add_paragraph("Favor informar: preço unitário, prazo, massa e dimensões (C × P × A), perdas garantidas na corrente de projeto, "
-                      "origem e espessura da chapa e desenho dimensional.")
-    doc.add_paragraph("\nAtenciosamente,\n\nEngº Guilherme Schallenberger\nElectric Service")
+    ETC.secao_proposta(doc, 5, ["Preço unitário e prazo de entrega",
+                                "Massa e dimensões (C × P × A) com desenho dimensional e furação – para aprovação antes de fabricar",
+                                "Perdas garantidas na corrente de projeto e elevação de temperatura prevista (média e ponto quente)",
+                                "Indutância na corrente de ajuste, na de projeto e em 1,5 × a de projeto (linearidade)",
+                                "Origem, tipo e espessura da chapa (com certificado de chapa nova) e indução de projeto",
+                                "Material e seção do condutor; classe do sistema de isolação; tipo de impregnação",
+                                "Modelo do relatório de ensaio por unidade"])
+    ETC.secao_contato(doc, 6, cat)
     tipo = "Monofasico" if mono else "Trifasico"
     arq = os.path.join(pasta, f"Indutor_{tipo}_{e['L_uH']:.0f}uH-{r['In']:.0f}A_{e['codigo']}_{fornecedor.split()[0].title()}.docx")
     doc.save(arq)
@@ -665,10 +679,83 @@ def email_fornecedor(nome, ped, res, grupos, arqs, cod, tipo="reator"):
                    "máxima, elevação de temperatura, perdas máximas, envelope dimensional e ensaios). O projeto construtivo é de vocês; "
                    "enviem o desenho dimensional para aprovação antes de fabricar.",
                    "Exigência: chapa de aço silício NOVA com certificado (não aceitamos chapa reaproveitada).",
-                   "Peço preço, prazo, massa/dimensões, perdas garantidas e o relatório de ensaio (corrente de projeto e de ajuste) de cada unidade."]
+                   "Peço preço, prazo, massa/dimensões, perdas garantidas e o relatório de ensaio (corrente de projeto e de ajuste) de cada unidade.",
+                   "A lista completa do que a proposta deve trazer está no fim da especificação (Word) em anexo."]
     elif tipo == "painel":
         linhas.append(f"Solicito cotação da montagem do painel conforme a especificação anexa (ref. {cod}). Os reatores são fornecimento Electric.")
     else:
         linhas.append(f"Solicito cotação dos capacitores conforme a especificação anexa (ref. {cod}).")
     linhas += ["", "Anexos: " + ", ".join(os.path.basename(a) for a in arqs if a), "", "Atenciosamente,", "Electric Service – Engenharia"]
     return "\n".join(linhas)
+
+
+# ------------------------------------------------------------------ v1.31.0 (REQ-DOC-020): capacitores do filtro SINTONIZADO
+def et_capacitor_sintonizado(ped, res, pasta, cod, cat, n_banco=1):
+    """ET de cotação dos capacitores do filtro sintonizado (fornecimento Electric: reator + capacitor). Devolve (docx, email)."""
+    from . import banco as B
+    from . import et_cotacao as ETC
+    from .documentos import _tabela, _bullets, _kv
+    os.makedirs(pasta, exist_ok=True)
+    E = res["estagios"]
+    grupos = B.reatores_distintos(res)
+    tot = sum(len(g) * E[g[0]]["cap"][0] for g in grupos) * n_banco
+    doc = _novo("Especificação Técnica – Capacitores para filtro de harmônica sintonizado",
+                f"{_f(sum(ped.estagios_kvar), 0)} kVAr / {ped.tensao_v:g} V / {ped.freq_hz:g} Hz – {cod}", cod, cat)
+    ETC.quadro_resumo(doc, f"O QUE ESTAMOS COTANDO – {tot} capacitores", [
+        ("Item", "Capacitor de potência trifásico para FILTRO DE HARMÔNICA SINTONIZADO (em série com reator) – IEC 60831-1/-2"),
+        ("Quantidade", f"{tot} unidades no total (tabela por estágio abaixo)"),
+        ("Atenção", "a tensão no capacitor é MAIOR que a da rede (efeito do reator em série) e ele conduz a corrente harmônica sintonizada – "
+                    "não serve capacitor dimensionado só pela tensão da rede")],
+        nota="O que a proposta deve trazer está no fim deste documento.")
+    doc.add_heading("1. Capacitores por estágio", 1)
+    linhas = []
+    for g in grupos:
+        e = E[g[0]]
+        n, u, V = e["cap"]
+        linhas.append([f"{_f(e['Q_alvo'], 0)} kVAr – h{e['ordem']:g} (Nr {_f(e['nr'], 2)})", f"{len(g) * n * n_banco}",
+                       f"{_f(u, 1)} kVAr / {V:g} V", f"{_f(e['C_delta_uF'] / n, 1)} µF Δ",
+                       f"{e['Uc1']:.0f} / {e['Uc_rms']:.0f} / {e['Uc_arit']:.0f}", f"{e['I_cap_rms'] / n:.0f}",
+                       f"{e['faixa_sintonia']['f_min']:.0f}–{e['faixa_sintonia']['f_max']:.0f}"])
+    _tabela(doc, ["Estágio", "Qtd", "Unidade", "C por unidade", "U fund / RMS / pico aritm. (V)", "I RMS por unidade (A)",
+                  "Faixa de sintonia (Hz)"], linhas, [3.6, 1.0, 2.6, 2.2, 3.2, 2.2, 2.4], tam=8)
+    doc.add_heading("2. Tensões harmônicas no capacitor (por estágio)", 1)
+    for g in grupos:
+        e = E[g[0]]
+        hs = sorted(e["Uch"])
+        doc.add_paragraph(f"Estágio {_f(e['Q_alvo'], 0)} kVAr:")
+        _tabela(doc, ["Harmônica", "1ª"] + [f"{h}ª" for h in hs], [["Tensão (V)", f"{e['Uc1']:.0f}"] + [f"{e['Uch'][h]:.1f}" for h in hs]],
+                tam=8)
+    doc.add_heading("3. Requisitos – e por quê", 1)
+    _kv(doc, [("Norma", "IEC 60831-1/-2 (capacitor de potência autorregenerativo); aplicação de filtro conforme IEC 61642"),
+              ("Tensão nominal (UN)", "≥ a tensão da tabela acima × 1,10 (sobretensão de rede) – a soma aritmética com as harmônicas "
+                                      "deve ficar dentro de 1,2 × √2 × UN (pico)"),
+              ("Corrente", "≥ 1,35 × a corrente nominal da unidade (IEC 60831), considerando a corrente harmônica sintonizada"),
+              ("Tolerância de capacitância", "−5 % / +5 % por unidade e diferença entre fases ≤ 2 % – a sintonia depende de L × C"),
+              ("Estabilidade", "perda de capacitância ao longo da vida declarada (a sintonia desloca com a perda de C)"),
+              ("Categoria de temperatura", "−25/D (55 °C) ou melhor – o ar dentro do painel chega a 50 °C"),
+              ("Segurança", "dispositivo interno de sobrepressão; resistores de descarga (≤ 75 V em 3 min)"),
+              ("Perdas", "≤ 0,5 W/kVAr (dielétrico) – declarar")], tam=9)
+    ETC.secao_proposta(doc, 4, ["Datasheet do código ofertado, com a norma (IEC 60831) e a categoria de temperatura",
+                                "UN, corrente máxima, tolerância de C e estabilidade de C ao longo da vida",
+                                "Perdas (W/kVAr) e vida declarada", "Data de fabricação do lote e certificado de rotina",
+                                "Preço unitário, prazo/estoque e validade"])
+    ETC.secao_contato(doc, 5, cat)
+    arq = os.path.join(pasta, f"ET_Capacitores_Sintonizado_{cod}.docx")
+    doc.save(arq)
+    fc = ((cat or {}).get("fornecedores") or {}).get("capacitor") or [{}]
+    f0 = fc[0]
+    ola = f"Olá {f0.get('tratamento')}, tudo bem?" if f0.get("tratamento") else "Olá, tudo bem?"
+    emp = (cat or {}).get("empresa") or {}
+    assin = f"\n\nAtenciosamente,\n{emp.get('responsavel', '')}\n{emp.get('nome', 'Electric Service')}\n{emp.get('email', '')} | {emp.get('telefone', '')}"
+    corpo = ETC.email_curto(ola, f"Gostaria de uma proposta para {tot} capacitores de potência para filtro de harmônica sintonizado "
+                                 f"({ped.tensao_v:g} V / {ped.freq_hz:g} Hz) – ref. {cod}.",
+                            [f"{len(g) * E[g[0]]['cap'][0] * n_banco} × {_f(E[g[0]]['cap'][1], 1)} kVAr / {E[g[0]]['cap'][2]:g} V "
+                             f"(estágio {_f(E[g[0]]['Q_alvo'], 0)} kVAr, h{E[g[0]]['ordem']:g})" for g in grupos]
+                            + ["tolerância de C ±5 % e diferença entre fases ≤ 2 % (sintonia)"],
+                            os.path.basename(arq), [arq], assin)
+    em = os.path.join(pasta, "Email_Capacitores.txt")
+    para = f"{f0.get('contato') or f0.get('nome', '')} <{f0.get('email', 'a definir')}>"
+    with open(em, "w", encoding="utf-8") as fh:
+        fh.write(f"Para: {para}\nAssunto: Cotação – capacitores para filtro sintonizado {_f(sum(ped.estagios_kvar), 0)} kVAr "
+                 f"{ped.tensao_v:g} V ({cod})\n\n{corpo}\n")
+    return arq, em

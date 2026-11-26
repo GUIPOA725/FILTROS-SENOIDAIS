@@ -697,6 +697,24 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
         tag = L.nome.split(" ")[0]
         d = _novo(f"Especificação Técnica – Indutor {tag}", f"Reator trifásico para filtro senoidal – {cod}", proj, cat)
         from . import spec_indutor as SI
+        from . import et_cotacao as ETC              # v1.31.0 (REQ-DOC-020): quadro "o que estamos cotando" no início da ET
+        try:
+            _R = SI.requisitos(L, proj, arr, cat, ped)
+            _clc = _classe_ind(cat)
+            ETC.quadro_resumo(d, f"O QUE ESTAMOS COTANDO – {q} indutor(es) {tag}", [
+                ("Item", "Indutor trifásico a seco para FILTRO SENOIDAL (saída de inversor PWM) – não é reator de 60 Hz"),
+                ("Quantidade", f"{q} peça(s) de série" + (" + 1 protótipo com ensaios de tipo (cotar separado)" if _R.get("prototipo") else "")),
+                ("Indutância", f"{L.l_uh:.0f} µH por fase ±5 % na corrente nominal (desequilíbrio ≤ 3 %)"),
+                ("Corrente", f"{L.i_nom_a:.0f} A RMS (0–{_R['fmx']:g} Hz) + ondulação {_R['rpp']:.0f} A pico a pico a {_R['fs'] / 1000:g} kHz"),
+                ("Linearidade", f"L ≥ 90 % até {_R['ipk_sat']:.0f} A de pico e ≥ 70 % até {_R['ipk_sobrec']:.0f} A (sobrecarga)"),
+                ("Tensão", f"{ped['tensao_v']:g} V PWM, barramento CC até ≈ {_R['vdc']:.0f} V; isolação 1,1 kV"),
+                ("Classe térmica", f"{_clc[0]} ({_clc[1]} °C) – elevação ≤ {_clc[2]} K; impregnação VPI; termostato/PTC"),
+                ("Perdas totais", f"≤ {_R['perdas_meta']:.0f} W (60 Hz + ondulação)"),
+                ("Aplicação", f"inversor {ped.get('inversor') or 'PWM'}; motor {ped.get('potencia_motor_cv') or ''} cv / {ped['tensao_v']:g} V")],
+                nota="A especificação define DESEMPENHO; a construção é do fabricante, desde que os valores sejam declarados e comprovados "
+                     "em ensaio. O que a proposta deve trazer está no fim deste documento.")
+        except Exception:
+            pass
         fig = None
         if L is proj.l1:
             try:
@@ -722,12 +740,17 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
             _txt_prop = _CF.texto_email_proposta("indutor", _xl)
         except Exception as _ex:
             _txt_prop = ""
+        from . import et_cotacao as ETC
         e = _email(pasta, f"Email_Indutor_{tag}.txt", _para(f0),
                    f"Cotação: Indutor trifásico p/ filtro senoidal {L.l_uh:.0f} µH @ {L.i_nom_a:.0f} A – {ped['tensao_v']:g} V "
                    f"({q} pç) + dados técnicos e ensaios ({cod})",
-                   SI.corpo_email(L, proj, arr, cat, ped, q, tag, _ola(f0), _extenso, f0.get("ref"))
-                   .replace("\nCritério de aceitação", (ALT.texto_email(alt) if L is proj.l1 else "") + "\nCritério de aceitação", 1)
-                   + "\n" + _txt_prop + assin)
+                   ETC.email_curto(_ola(f0), f"Gostaria de uma proposta para {q} ({_extenso(q)}) indutor(es) trifásico(s) para filtro senoidal "
+                                   f"na saída de inversor {ped.get('inversor') or 'PWM'} – ref. {cod}.",
+                                   [f"{L.l_uh:.0f} µH/fase, {L.i_nom_a:.0f} A RMS, {ped['tensao_v']:g} V PWM, chaveamento {proj.fs_hz / 1000:g} kHz",
+                                    f"classe {_classe_ind(cat)[0]} ({_classe_ind(cat)[1]} °C), elevação ≤ {_classe_ind(cat)[2]} K",
+                                    "protótipo com ensaios de tipo e série cotados SEPARADOS"],
+                                   os.path.basename(p), [p, os.path.join(pasta, _xl)], assin,
+                                   extra=f"Peço que a proposta venha com a planilha {_xl} preenchida."))
         saidas[f"indutor_{tag}"] = (p, e)
 
     # --- CAPACITORES
@@ -747,6 +770,18 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
                                    pasta_atp=os.path.join(os.path.dirname(pasta), "01_Engenharia", "ATP"))
     except Exception:
         figc = None
+    try:                                            # v1.31.0 (REQ-DOC-020)
+        from . import et_cotacao as ETC
+        ETC.quadro_resumo(d, f"O QUE ESTAMOS COTANDO – {n_nec} capacitores", [
+            ("Item", "Capacitor de filme MKP para FILTRO AC de eletrônica de potência (IEC 61071) – não é capacitor de correção de FP"),
+            ("Código de referência", f"{b.pn} – {b.uf_unit:g} µF / {b.v_unit:g} V (ou equivalente com os mesmos limites)"),
+            ("Quantidade", f"{n_nec} peças ({b.n_total} por filtro × {q})" + (f"; {est} em estoque → comprar {n_comp}" if est else "")),
+            ("Ligação no filtro", f"{b.ligacao} – {b.n_por_ramo} por ramo"),
+            ("Corrente por unidade", f"{(e_.get('i_unit') or b.i_unit_rms or 0):.1f} A RMS (fundamental + {proj.fs_hz / 1000:g} kHz) – Imax ≥ {lc['imax']:.0f} A"),
+            ("Tensão de pico", f"≥ {lc['vpk']:.0f} V (recorrente)")],
+            nota="O que a proposta deve trazer está no fim deste documento.")
+    except Exception:
+        pass
     SC.escrever_et(d, proj, cat, ped, q, _kv, _tabela, _bullets, _f, figura=figc)
     p = os.path.join(pasta, f"ET_Capacitores_{cod}.docx")
     d.save(p)
@@ -760,7 +795,13 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
         _txt_pc = ""
     e = _email(pasta, "Email_Capacitores.txt", _para(fc),
                f"Cotação – capacitor {b.pn} {b.uf_unit:g} µF {b.v_unit:g} V – {n_nec} pç – filtro senoidal ({cod})",
-               SC.corpo_email(proj, cat, ped, q, _ola(fc), fc.get("ref")) + "\n" + _txt_pc + assin)
+               ETC.email_curto(_ola(fc), f"Gostaria de uma proposta para {n_nec} capacitores {b.pn} {b.uf_unit:g} µF / {b.v_unit:g} V "
+                               f"(ou equivalente) para filtro senoidal – ref. {cod}.",
+                               [f"capacitor de filme para filtro AC de eletrônica de potência (IEC 61071), ligação {b.ligacao.lower()}",
+                                f"corrente com componente de {proj.fs_hz / 1000:g} kHz – precisamos do Imax, ESR e ponto quente declarados",
+                                "data de fabricação do lote e certificado de rotina"],
+                               os.path.basename(p), [p, os.path.join(pasta, _xlc)], assin,
+                               extra=f"Peço que a proposta venha com a planilha {_xlc} preenchida."))
     saidas["capacitores"] = (p, e)
 
     # --- RESISTORES DE AMORTECIMENTO
@@ -794,16 +835,7 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     p = os.path.join(pasta, f"ET_Caixa_Metalica_{cod}.docx")
     d.save(p)
     fx = forn["caixa"][0]
-    e = _email(pasta, "Email_Caixa.txt", _para(fx),
-               f"Cotação – {q} armário(s) {arr.caixa_l}x{arr.caixa_a}x{arr.caixa_p} mm IP{arr.caixa_ip} para filtro senoidal ({cod})",
-               f"{_ola(fx)}\n\n(Usar somente se a caixa não for comprada pela montadora.)\n\n"
-               f"Solicito cotação de {q} armário(s) {arr.caixa_tipo} {arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm (L × A × P), IP{arr.caixa_ip}, "
-               "RAL 7035, conforme ET e desenho anexos:\n"
-               "- placa de montagem galvanizada e chapa de passagem de cabos inferior removível;\n"
-               f"- {arr.n_ventiladores} recortes para ventiladores no topo da porta e {arr.n_ventiladores} para grelhas de entrada na base;\n"
-               f"- reforço na base para o indutor (≈ {proj.l1.massa_kg:.0f} kg) e olhais de içamento;\n"
-               "- fecho com chave e aterramento da porta.\n\n"
-               "Favor informar preço, prazo e frete." + assin)
+    e = None                                         # v1.31.0 (REQ-DOC-020): compra da MONTADORA – vai no pacote de montagem
     saidas["caixa"] = (p, e)
 
     # --- CABOS E MISCELÂNEA
@@ -815,12 +847,7 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     p = os.path.join(pasta, f"LM_Cabos_Miscelanea_{cod}.docx")
     d.save(p)
     fm = forn["cabos_misc"][0]
-    e = _email(pasta, "Email_Cabos_Misc.txt", _para(fm), f"Cotação – cabos e materiais elétricos para {q} filtro(s) senoidal(is) ({cod})",
-               f"{_ola(fm)}\n\n(Usar somente se o material não for comprado pela montadora.)\n\n"
-               f"Solicito cotação dos materiais da lista anexa para {q} filtro(s): cabos flexíveis 0,6/1 kV HEPR 90 °C "
-               f"({arr.cabos[0]['desc'] if arr.cabos else 'conforme lista'}), terminais de compressão, barramentos/bornes, "
-               f"{arr.n_ventiladores * q} ventiladores com filtro, termostatos, grelhas e acessórios – quantidades totais na última coluna.\n\n"
-               "Favor informar preço, prazo e disponibilidade." + assin)
+    e = None                                         # v1.31.0 (REQ-DOC-020): compra da MONTADORA – vai no pacote de montagem
     saidas["cabos_misc"] = (p, e)
 
     # --- PLAQUETA DE IDENTIFICAÇÃO E ADESIVOS
@@ -844,13 +871,7 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
                  "Logotipo Electric Service"])
     p = os.path.join(pasta, f"ET_Plaqueta_Adesivos_{cod}.docx")
     d.save(p)
-    e = _email(pasta, "Email_Plaqueta_Adesivos.txt", _para(fe),
-               f"[ORÇAMENTO] – Plaquetas e adesivos para {q} painel(is) de filtro senoidal ({cod})",
-               f"{_ola(fe)}\n\nPreciso de orçamento para {q} jogo(s) de identificação de painel, conforme especificação anexa:\n"
-               f"- {q} plaqueta(s) de identificação 100 × 70 mm, gravação permanente, com os dados técnicos do filtro;\n"
-               f"- {q} jogo(s) de adesivos: advertência de choque elétrico, capacitores (aguardar 5 min), superfície quente, "
-               "aviso de frequência de chaveamento fixa, identificação de bornes e logotipo.\n\n"
-               "Favor informar preço e prazo." + assin)
+    e = None                                         # v1.31.0 (REQ-DOC-020): compra da MONTADORA – vai no pacote de montagem
     saidas["plaqueta"] = (p, e)
     return saidas
 
@@ -878,27 +899,50 @@ def rfq_montagem(proj, arr, orc, cat, pasta):
                  "Prazo de fabricação após recebimento de indutores/capacitores.", "Condição de pagamento e validade.",
                  "Ensaios inclusos (isolamento, tensão aplicada, continuidade, funcional) e formato do relatório.",
                  "Embalagem (palete/engradado para transporte rodoviário) e frete até Porto Alegre ou direto ao cliente."])
-    d.add_paragraph("Anexos: desenhos (vistas, 3D, diagrama elétrico, lista de cabos) e Caderno de Montagem.")
+    # v1.31.0 (REQ-DOC-020): a montadora NÃO é fornecedor de componente Electric – recebe o pacote de cotação da montagem
+    from . import et_cotacao as ETC
+    d.add_heading("5. Fornecimento Electric Service (material de terceiros sob guarda da montadora)", 1)
+    _bullets(d, [f"{q} indutor(es) trifásico(s) {proj.l1.l_uh:.0f} µH / {proj.l1.i_nom_a:.0f} A (≈ {proj.l1.massa_kg:.0f} kg cada) – "
+                 "conferir na chegada: placa, integridade, termostato",
+                 f"{proj.banco.n_total * q} capacitores {proj.banco.pn} {proj.banco.uf_unit:g} µF / {proj.banco.v_unit:g} V – "
+                 f"ligação {proj.banco.ligacao.lower()}, {proj.banco.n_por_ramo} por ramo",
+                 "A montadora é responsável pela guarda, manuseio e montagem desses itens a partir do recebimento."])
+    d.add_heading("6. Requisitos de montagem que entram no preço", 1)
+    _bullets(d, ["Canaletas SOMENTE para cabos de comando; cabos de FORÇA por fora das canaletas, espaçados ≥ 1 diâmetro e presos "
+                 "em espaçadores/suportes isolantes (NBR IEC 61439-1 Anexo H – a seção dos cabos foi calculada assim)",
+                 "Torques de aperto conforme o Caderno de Montagem; terminais de compressão com ferramenta adequada",
+                 "Identificação de cabos e bornes conforme o esquema e a lista de-para de etiquetas",
+                 "Indutor fixado na base reforçada com as distâncias do desenho (campo magnético do entreferro)",
+                 "Ventiladores e grelhas na posição do desenho (fluxo de ar de baixo para cima)"])
+    d.add_heading("7. Ensaios de rotina e entrega", 1)
+    _bullets(d, ["Continuidade e conferência do fechamento dos capacitores", "Isolamento (megômetro 1000 Vcc) e tensão aplicada",
+                 "Medição de C por ramo", "Teste funcional dos ventiladores e do termostato", "Relatório de ensaio por número de série",
+                 "Embalagem para transporte rodoviário"])
+    d.add_heading("8. O que a proposta deve trazer", 1)
+    _bullets(d, ["Mão de obra por unidade e materiais da montadora – SEPARADOS (com a lista de material cotada item a item)",
+                 "Prazo de fabricação após o recebimento dos indutores e capacitores", "Ensaios inclusos e modelo do relatório",
+                 "Embalagem e frete (Porto Alegre ou direto ao cliente)", "Condição de pagamento e validade"])
+    _anx = [os.path.join(pasta, f) for f in (f"{cod}_desenhos.pdf", f"Caderno_Montagem_{cod}.docx")] + \
+           [os.path.join(os.path.dirname(pasta), "03_Fornecedores", f) for f in (f"ET_Caixa_Metalica_{cod}.docx",
+            f"ET_Plaqueta_Adesivos_{cod}.docx", f"LM_Cabos_Miscelanea_{cod}.docx")]
+    ETC.secao_anexos(d, 9, _anx)
+    ETC.secao_contato(d, 10, cat)
     p = os.path.join(pasta, f"RFQ_Montagem_{cod}.docx")
     d.save(p)
     f0 = cat["fornecedores"]["montagem"][0]
     emp = cat["empresa"]
     b = proj.banco
+    from . import et_cotacao as ETC
     e = _email(pasta, "Email_Montagem.txt", _para(f0), f"Orçamento de montagem – {q} filtro(s) senoidal(is) {ped['corrente_a']:g} A / {ped['tensao_v']:g} V ({cod})",
-               f"{_ola(f0)}\n\nSegue solicitação de orçamento para a montagem completa de {q} filtro(s) senoidal(is) "
-               f"{proj.topologia} {ped['corrente_a']:g} A / {ped['tensao_v']:g} V, conforme RFQ, desenhos e caderno de montagem anexos.\n\n"
-               "Escopo resumido:\n"
-               f"- Armário {arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm IP{arr.caixa_ip} com {arr.n_ventiladores} ventiladores "
-               f"(dissipação ≈ {arr.perda_total_w:.0f} W por filtro);\n"
-               f"- 1 indutor trifásico de ≈ {proj.l1.massa_kg:.0f} kg e {b.n_total} capacitores {b.uf_unit:g} µF em {b.ligacao.lower()} "
-               f"({b.n_por_ramo} por ramo) – FORNECIDOS POR NÓS;\n"
-               f"- cabeação de potência ({(arr.cabos[0]['desc'] if arr.cabos else '').lower()}), bornes, identificação, plaqueta e adesivos;\n"
-               "- Ensaios de rotina: continuidade, isolamento, tensão aplicada, conferência do fechamento do banco, medição de C por ramo "
-               "e teste funcional dos ventiladores, com relatório;\n"
-               "- Embalagem para transporte rodoviário.\n\n"
-               "Favor informar separadamente: mão de obra por unidade, materiais de vocês, prazo após o recebimento dos indutores e "
-               "capacitores, condição de pagamento e frete (Porto Alegre ou direto ao cliente)."
-               f"\n\nAtenciosamente,\n{emp['responsavel']}\n{emp['nome']}\n{emp['email']} | {emp['telefone']}")
+               ETC.email_curto(_ola(f0), f"Segue solicitação de orçamento para a montagem completa de {q} filtro(s) senoidal(is) "
+                               f"{proj.topologia} {ped['corrente_a']:g} A / {ped['tensao_v']:g} V – ref. {cod}.",
+                               [f"armário {arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm IP{arr.caixa_ip}, {arr.n_ventiladores} ventilador(es), "
+                                f"≈ {arr.perda_total_w:.0f} W por filtro",
+                                f"indutor (≈ {proj.l1.massa_kg:.0f} kg) e {b.n_total} capacitores por filtro FORNECIDOS PELA ELECTRIC",
+                                "caixa, cabos, bornes, plaqueta, adesivos e miscelânea por conta de vocês (ETs anexas)",
+                                "mão de obra e materiais cotados SEPARADOS"],
+                               os.path.basename(p), [p] + [a for a in _anx], 
+                               "\n\nAtenciosamente,\n" + f"{emp['responsavel']}\n{emp['nome']}\n{emp['email']} | {emp['telefone']}"))
     return p, e
 
 
@@ -1049,3 +1093,65 @@ def planilha_custos(proj, arr, orc, cat, pasta):
     p = os.path.join(pasta, f"{proj_codigo(proj)}_BOM_Custos_Preco.xlsx")
     wb.save(p)
     return p
+
+
+# ------------------------------------------------------------------ v1.31.0 (REQ-DOC-020): ET completa no Word + e-mail curto
+def _texto_para_docx(d, texto):
+    """Converte o texto antigo do e-mail (títulos 'N) ...', itens '- ...') em parágrafos da ET."""
+    import re as _re
+    for ln in (texto or "").splitlines():
+        t = ln.strip()
+        if not t or t.lower().startswith("anexos desta solicitação"):
+            continue
+        if _re.match(r"^\d+\)\s", t) or (t.isupper() and len(t) > 6):
+            d.add_heading(_re.sub(r"^\d+\)\s*", "", t).capitalize() if t.isupper() else _re.sub(r"^\d+\)\s*", "", t), 2)
+        elif t.startswith("- "):
+            d.add_paragraph(t[2:], style="List Bullet")
+        else:
+            d.add_paragraph(t)
+
+
+def finalizar_cotacoes(proj, cat, pasta, cod):
+    """Fecha as ETs de cotação (indutor e capacitores) com: informações complementares, o que a proposta deve trazer,
+    lista de anexos REAIS e contato – e reescreve o e-mail curto com a lista de anexos."""
+    import re as _re
+    from docx import Document
+    from . import et_cotacao as ETC
+    from .conferencia import DOCUMENTOS_PROPOSTA
+    arqs = sorted(os.listdir(pasta))
+
+    def _n_sec(d):
+        return 1 + sum(1 for p in d.paragraphs if p.style.name == "Heading 1")
+
+    def _fechar(et, componente, anexos, extras):
+        d = Document(et)
+        if extras:
+            d.add_heading(f"{_n_sec(d)}. Informações complementares", 1)
+            for t in extras:
+                _texto_para_docx(d, t)
+        form = next((os.path.basename(a) for a in anexos if "Formulario_Resposta" in a), None)
+        ETC.secao_proposta(d, _n_sec(d), DOCUMENTOS_PROPOSTA[componente], form)
+        ETC.secao_anexos(d, _n_sec(d), [et] + [a for a in anexos if a != et])
+        ETC.secao_contato(d, _n_sec(d), cat)
+        d.save(et)
+
+    def _reescrever_email(email, anexos):
+        if not os.path.exists(email):
+            return
+        txt = open(email, encoding="utf-8").read()
+        nomes = [os.path.basename(a) for a in anexos]
+        txt = _re.sub(r"\nAnexos:\n(?:- .*\n?)*", "\nAnexos:\n" + "".join(f"- {n}\n" for n in nomes), txt, count=1)
+        open(email, "w", encoding="utf-8").write(txt)
+
+    for et in [a for a in arqs if a.startswith("ET_Indutor_") and a.endswith(".docx")]:
+        tag = et.split("_")[2]
+        anexos = [os.path.join(pasta, a) for a in arqs if _re.search(r"Indutor", a) and not a.startswith(("Email_", "ET_", "Parecer_"))
+                  and not a.endswith(".json")]
+        anexos = sorted(anexos, key=lambda a: (0 if "Formulario" in a else 1, a))
+        extras = [getattr(proj, "_txt_ref_indutor", ""), getattr(proj, "_txt_extra_indutor", "")] if tag == "L1" else []
+        _fechar(os.path.join(pasta, et), "indutor", anexos, [x for x in extras if x])
+        _reescrever_email(os.path.join(pasta, f"Email_Indutor_{tag}.txt"), [os.path.join(pasta, et)] + anexos)
+    for et in [a for a in arqs if a.startswith("ET_Capacitores_") and a.endswith(".docx")]:
+        anexos = [os.path.join(pasta, a) for a in arqs if _re.search(r"Capacitor", a) and not a.startswith(("Email_", "ET_", "Parecer_"))]
+        _fechar(os.path.join(pasta, et), "capacitor", anexos, [])
+        _reescrever_email(os.path.join(pasta, "Email_Capacitores.txt"), [os.path.join(pasta, et)] + anexos)

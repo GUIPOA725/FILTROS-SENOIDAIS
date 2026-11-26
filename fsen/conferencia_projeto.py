@@ -112,7 +112,9 @@ def capacitores_por_estagio(pasta, tags_esq, tags_lc, dp, lay, res=None):
 
 
 def conferir(pasta, res=None):
-    pnl = os.path.join(pasta, "03_Fornecedores", "2_Painel_Montadora")
+    pnl = os.path.join(pasta, "04_Montadora", "1_Cotacao_Montagem")       # v1.31.0 (antes 03_Fornecedores/2_Painel_Montadora)
+    if not os.path.isdir(pnl):
+        pnl = os.path.join(pasta, "03_Fornecedores", "2_Painel_Montadora")
     L, err = [], []
 
     def lin(item, a, b, ok, nivel=CK.REPROVADO, obs=""):

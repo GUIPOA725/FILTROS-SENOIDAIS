@@ -33,7 +33,7 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
     _mc = getattr(ped, "marca", "") or ""
     _suf = "" if _mc in ("", "Padrão Electric") else "_" + re.sub(r"[^A-Za-z0-9]+", "", _mc)
     pasta = os.path.join(pasta_cli, f"{cod}{_suf}_{t0:%Y%m%d_%H%M}")
-    sub = {k: os.path.join(pasta, k) for k in ("01_Engenharia", "02_Cliente", "03_Fornecedores", "05_Desenhos")}
+    sub = {k: os.path.join(pasta, k) for k in ("01_Engenharia", "02_Cliente", "03_Fornecedores", "04_Montadora", "05_Desenhos")}
     for p in sub.values():
         os.makedirs(p, exist_ok=True)
     arqs = {}
@@ -180,7 +180,15 @@ def processar_banco(ped: B.PedidoBanco, pasta_base, cat=None, log=print, verific
             ax = [a for a in anexos if not re.search(r"_(Cootrans|Ibt|Wise)\.docx$", a) or a.endswith(f"_{nm}.docx")]
             with open(os.path.join(forn, f"Email_Reator_{nm}.txt"), "w", encoding="utf-8") as fh:
                 fh.write(DB.email_fornecedor(fn, ped, res, [grp], ax, cod))
-    pnl = os.path.join(sub["03_Fornecedores"], "2_Painel_Montadora")
+    if ped.tipo == "sintonizado":                   # v1.31.0 (REQ-DOC-020): no sintonizado a Electric fornece reator + capacitor
+        try:
+            arqs["et_capacitores"], arqs["email_capacitores"] = DB.et_capacitor_sintonizado(
+                ped, res, os.path.join(sub["03_Fornecedores"], "2_Capacitores"), cod, cat, n_bancos)
+            log("   Capacitores do filtro sintonizado: ET (Word) + e-mail em 03_Fornecedores/2_Capacitores")
+        except Exception as _exc:
+            log(f"   (ET dos capacitores do sintonizado não gerada: {type(_exc).__name__}: {_exc})")
+    # v1.31.0 (REQ-DOC-020): a montadora NÃO é fornecedor – pacote de cotação da montagem em 04_Montadora
+    pnl = os.path.join(sub["04_Montadora"], "1_Cotacao_Montagem")
     os.makedirs(pnl, exist_ok=True)
     arqs["et_painel"], arqs["et_painel_xlsx"] = DB.et_painel(ped, res, pnl, cod, cat, n_bancos)
     # v1.15.0: esquema elétrico estilo EPLAN (força, comando, bornes, cabos, lista de material) em PDF + DXF + XLSX

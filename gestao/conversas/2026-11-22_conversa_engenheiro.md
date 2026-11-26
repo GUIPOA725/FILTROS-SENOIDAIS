@@ -352,3 +352,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 23:59: "Outra coisa sobre os capacitores... quando usar em delta e quando em estrela?... Todos seguem o mesmo padrão" → REQ-SEN-025.
 - 00:03 26/11 (engenheiro): "Em 440v o capacitor ligado em delta de 480v da epcos aguenta? É tão próximo? Mas estrela me quebra que para o mesmo capacitor deveria ter 3 x mais" → respondido (84 % RMS/pico; regra 1,1×Un = 525 V oferecida).
 - 26/11 (Claude): v1.30.0 publicada; planilha de players copiada para a pasta A&W v1.29.0.
+- 09:35 26/11 (engenheiro): "...gerar um word tb juntamente com o email... ET bacana bonito facil de ler e bem organizado... para a montadora... isso já ta pronto? ...senoidal forneço indutor e capacitor, dessintonizado só indutor, sintonizado indutor e capacitor" → REQ-DOC-020.
