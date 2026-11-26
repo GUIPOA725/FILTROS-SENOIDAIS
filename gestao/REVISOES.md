@@ -3,6 +3,9 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.32.3 – 26/11/2026 – abertura sem depender do Drive (REQ-GER-019)
+**Print 15:11:** ainda parado em [1/4] com a 1.32.2 (robocopy lendo a pasta do Drive, provavelmente com arquivos em sincronização/streaming). **Correção:** compara versao_plataforma.json do Drive com o local; igual → não copia; diferente → robocopy /R:1 /W:1 com log em %LOCALAPPDATA%\FSEN\robocopy.log.
+
 ## v1.32.2 – 26/11/2026 – .bat picado (REQ-GER-019)
 **Erro (print 15:07):** "tle", "cp", "ho" não reconhecido como comando. **Causa:** meu REM com "–"/"ã" (UTF-8) e fim de linha LF no ABRIR_FSEN.bat da 1.32.1 – o cmd perde o alinhamento dos blocos. **Correção:** todos os .bat ASCII + CRLF, .gitattributes, teste t_bat_windows no verificador. **Lição:** .bat só ASCII + CRLF.
 

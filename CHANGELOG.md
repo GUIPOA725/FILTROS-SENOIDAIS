@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.32.3 – 26/11/2026 – abertura rápida
+- Se a cópia local já está na mesma versão do Drive, abre direto, sem copiar nada do Drive.
+
 ## v1.32.2 – 26/11/2026 – correção urgente: a 1.32.1 não abria
 - O arquivo de abertura tinha um acento e fim de linha errado para o Windows; corrigido e agora conferido automaticamente antes de publicar.
 

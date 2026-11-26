@@ -22,8 +22,15 @@ set "LOCAL=%LOCALAPPDATA%\FSEN\programa"
 echo [1/4] Atualizando a copia local do programa...
 REM v1.32.1 (REQ-GER-019): /R:2 /W:2 - sem isso o robocopy tenta 1 milhao de vezes (30 s cada) um arquivo que o Google Drive
 REM ainda esta sincronizando e a janela fica parada em [1/4]. Se algum arquivo falhar, segue com a copia local que ja existe.
-robocopy "%ORIGEM%." "%LOCAL%" /MIR /R:2 /W:2 /XD __pycache__ saidas /XF historico.db /NFL /NDL /NJH /NJS /NP >nul
-if errorlevel 8 echo   Aviso: alguns arquivos do Drive ainda estao sincronizando - abrindo com a copia local.
+REM v1.32.3: se a copia local ja tem a MESMA versao do Drive, nao copia nada (abre na hora, sem depender do Drive).
+REM So copia quando a versao muda; log em %LOCALAPPDATA%\FSEN\robocopy.log para diagnostico.
+fc /b "%ORIGEM%versao_plataforma.json" "%LOCAL%\versao_plataforma.json" >nul 2>&1
+if errorlevel 1 (
+  robocopy "%ORIGEM%." "%LOCAL%" /MIR /R:1 /W:1 /XD __pycache__ saidas .git /XF historico.db /NP /LOG:"%LOCALAPPDATA%\FSEN\robocopy.log" >nul
+  if errorlevel 8 echo   Aviso: alguns arquivos do Drive ainda estao sincronizando - abrindo com a copia local.
+) else (
+  echo       copia local ja esta na versao do Drive.
+)
 cd /d "%LOCAL%"
 
 REM --- 2) procura o Python (Anaconda primeiro)

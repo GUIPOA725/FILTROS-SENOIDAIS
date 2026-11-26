@@ -1,5 +1,5 @@
 {
-  "versao": "1.32.2",
+  "versao": "1.32.3",
   "data": "2026-11-26",
-  "resumo": "Correção urgente: ABRIR_FSEN.bat da 1.32.1 não abria (acento + fim de linha LF) – .bat ASCII + CRLF e teste automático"
+  "resumo": "Abertura: não copia do Drive quando a cópia local já tem a mesma versão (abre na hora); log do robocopy para diagnóstico"
 }

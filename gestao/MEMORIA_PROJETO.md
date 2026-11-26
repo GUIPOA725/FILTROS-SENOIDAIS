@@ -31,7 +31,7 @@ com o engenheiro; componente novo só vale para todos depois da aprovação dele
 Todo resultado tem coluna **Check**: ✔ APROVADO, ⚠ ATENÇÃO (perto do limite ou a confirmar), ✖ REPROVADO, INFO. A planilha
 Conferencia_Esquema_x_Painel_x_Lista confere esquema elétrico × painel 2D/3D × lista de material: tem que dar zero reprovado.
 
-_Gerado em 26/11/2026 15:08 – plataforma v1.32.2 – 154 requisitos registrados._
+_Gerado em 26/11/2026 15:11 – plataforma v1.32.3 – 154 requisitos registrados._
 
 ## Regras e decisões do engenheiro (registro de requisitos – palavras dele)
 Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
@@ -254,10 +254,10 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 - **Auditoria técnica independente – A&W filtro senoidal FSEN-LC-268A-440V (dossiê 25/11/2026, v1.27.1)**: Capacitores (fr, delta/estrela, tensão/corrente por unidade, perdas, vida) reproduzidos ao dígito – o lado capacitor está certo. | Pior método térmico comparava média + 15 K (projeto) com o máximo do mapa avançado (que não resolve o gradiente interno): margem real ~3 K, não 18 K. | Com o motor ligado a ressonância do LC sobe de 1003 Hz para ~1,22 kHz e cruza h23–h31 de tempo morto na faixa 41–48 Hz; sem amortecimento o ganho pode ser ~30, não 10,7.
 
 ## Últimas versões (resumo do CHANGELOG)
+- **v1.32.3 – 26/11/2026 – abertura rápida**: Se a cópia local já está na mesma versão do Drive, abre direto, sem copiar nada do Drive.
 - **v1.32.2 – 26/11/2026 – correção urgente: a 1.32.1 não abria**: O arquivo de abertura tinha um acento e fim de linha errado para o Windows; corrigido e agora conferido automaticamente antes de publicar.
 - **v1.32.1 – 26/11/2026 – correção: abertura parada em [1/4]**: A cópia local não fica mais esperando arquivo que o Google Drive ainda está sincronizando (2 tentativas de 2 s e abre com a cópia local).
 - **v1.32.0 – 26/11/2026 – auditoria independente: documentos coerentes e normas corretas**: Valores garantidos iguais em folha de dados, proposta e relatório (pico do pior caso; THD da saída × THD total no motor; queda × inserção). Normas corrigidas (IEC 61071 no capacitor, IEC 61800-3, CE/UL declarada como não incluída). PTC 160 °C único no indutor (ET, esquema, lista de material); relé de PTC na lista. Lista de material com protótipo, resistor de descarga obrigatório e proteção do banco justificada.
-- **v1.31.2 – 26/11/2026 – atualização automática ao abrir**: REQ-GER-018: janela_fsen.py compara a versão da cópia local com a pasta oficial do Drive (PROGRAMAS/FSEN_v1.7.1) e, se houver versão mais nova, copia 
 
 ## Histórico literal
 As conversas completas do engenheiro com a IA estão em gestao/conversas/ (no programa e no Drive em ATUALIZACOES-MELHORIAS\GESTAO\conversas). Consulte lá quando precisar da frase exata.

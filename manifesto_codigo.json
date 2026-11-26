@@ -1,8 +1,8 @@
 {
-"versao": "1.32.2",
-"gerado_em": "2026-11-26 15:08",
+"versao": "1.32.3",
+"gerado_em": "2026-11-26 15:11",
 "arquivos": {
-"ABRIR_FSEN.bat": "50d36778f93760c9ec062eb8e9348e484eed9d7d68ffc7cb1e35b089730db50d",
+"ABRIR_FSEN.bat": "74622ba7a7bd7b7dc3a3215c1c8eb5aa006a5603fad9c09c48a939ee250b64f4",
 "INICIAR.bat": "438f9c7302d33d6111fc93fe5c3675ca0d0d46c34c4a9dcf9609a1743978cbbf",
 "INSTALAR.bat": "8237ae3ebbfa26b6d4f476c05b42336f79a0a7c09f0d2a3e39132ed85dce86a6",
 "MONITOR_EMAIL.bat": "4c177b2fa998f822cc78498958700d68bf705fa111f06aa47a2605ebf0f72b67",
