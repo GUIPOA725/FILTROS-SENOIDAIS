@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.32.2 – 26/11/2026 – correção urgente: a 1.32.1 não abria
+- O arquivo de abertura tinha um acento e fim de linha errado para o Windows; corrigido e agora conferido automaticamente antes de publicar.
+
 ## v1.32.1 – 26/11/2026 – correção: abertura parada em [1/4]
 - A cópia local não fica mais esperando arquivo que o Google Drive ainda está sincronizando (2 tentativas de 2 s e abre com a cópia local).
 

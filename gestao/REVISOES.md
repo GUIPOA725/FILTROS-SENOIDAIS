@@ -3,6 +3,9 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.32.2 – 26/11/2026 – .bat picado (REQ-GER-019)
+**Erro (print 15:07):** "tle", "cp", "ho" não reconhecido como comando. **Causa:** meu REM com "–"/"ã" (UTF-8) e fim de linha LF no ABRIR_FSEN.bat da 1.32.1 – o cmd perde o alinhamento dos blocos. **Correção:** todos os .bat ASCII + CRLF, .gitattributes, teste t_bat_windows no verificador. **Lição:** .bat só ASCII + CRLF.
+
 ## v1.32.1 – 26/11/2026 – abertura travada em [1/4] (REQ-GER-019)
 **Erro (print):** janela parada em "Atualizando a cópia local". **Causa:** robocopy sem /R /W tenta 1 milhão de vezes (30 s) arquivo em sincronização no Drive logo após a publicação. **Correção:** /R:2 /W:2 + aviso; segue com a cópia local.
 

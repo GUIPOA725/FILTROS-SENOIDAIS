@@ -1,5 +1,5 @@
 {
-  "versao": "1.32.1",
+  "versao": "1.32.2",
   "data": "2026-11-26",
-  "resumo": "Correção: abertura travava em [1/4] (robocopy esperando arquivo do Drive em sincronização) – agora 2 tentativas de 2 s e segue com a cópia local"
+  "resumo": "Correção urgente: ABRIR_FSEN.bat da 1.32.1 não abria (acento + fim de linha LF) – .bat ASCII + CRLF e teste automático"
 }

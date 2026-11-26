@@ -276,6 +276,19 @@ def t_biblioteca_paineis(projs):
     return (not falta), ("aprovar + partir do último aprovado + botão na tela" if not falta else "falta: " + ", ".join(falta))
 
 
+def t_bat_windows(projs):
+    """v1.32.1 (REQ-GER-019): os .bat rodam no cmd do Windows – precisam ser ASCII puro e com fim de linha CRLF.
+    Um acento num REM com fim de linha LF fez o cmd ler o ABRIR_FSEN.bat picado ('tle', 'cp', 'ho' não reconhecido)."""
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ruins = []
+    for f in os.listdir(raiz):
+        if f.lower().endswith((".bat", ".cmd")):
+            b = open(os.path.join(raiz, f), "rb").read()
+            if any(x > 127 for x in b) or b.count(b"\n") != b.count(b"\r\n"):
+                ruins.append(f)
+    return (not ruins), ("todos os .bat ASCII + CRLF" if not ruins else "fora do padrão (ASCII + CRLF): " + ", ".join(ruins))
+
+
 def t_compila_python_311(projs):
     """v1.31.1 (REQ-GER-017): o notebook roda Python < 3.12 – todo .py tem que compilar no 3.11 (f-string com aspas aninhadas
     iguais só existe a partir do 3.12 e derrubou a v1.28.0–1.31.0 no computador do engenheiro)."""
