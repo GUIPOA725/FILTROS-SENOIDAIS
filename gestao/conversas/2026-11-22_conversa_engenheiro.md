@@ -371,3 +371,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 16:19 26/11 (engenheiro): (PDF Adendo_Verificacao_1513_Rev00) "veja a auditoria externa oque vc acha?" → REQ-SEN-027 (PENDENTE).
 - 16:26 26/11 (engenheiro): "eu não tenho como abrir o manual, vc até pode pegar ele na internet ... coloca isso como padrão no codigo ... isso tem que estar no codigo da nova versão" → REQ-INV-010.
 - 26/11 (Claude): v1.33.0 – manual do inversor no código; achado A&W: 293A-4 dá 237 A a 4 kHz (manual ABB), não alimenta 254 A; 363A-4 aprova.
+- 26/11 (Claude): v1.33.0 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
