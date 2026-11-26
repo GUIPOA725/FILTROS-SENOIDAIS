@@ -105,6 +105,16 @@ referencias:
     - "Ressalvas à auditoria: 1,625 T é pico local de canto (coluna ≈ 1,0–1,2 T); o resistor de descarga do filtro senoidal existe na lista; fusível de banco protege contra curto, não sobrecarga."
   requisitos: [REQ-GER-014, REQ-REA-017, REQ-SEN-020, REQ-BCO-005]
   usada_em: "v1.26.4 – fsen/ind_avancado.py, pipeline_banco.py, pipeline.py, banco.py, termico.py, checagem.py"
+- id: REF-AUDITORIA-AW-268A-V1312
+  nome: "Auditoria técnica independente Rev00 – A&W FSEN-LC-268A-440V (pacote 26/11/2026, v1.31.2, 200 µH + 6 × 20 µF)"
+  caminho: "gestao/analises/2026-11-26_Auditoria_AW_FSEN-LC-268A-440V_v1.31.2.pdf"
+  licoes:
+    - "Projeto coerente e no envelope dos players (Schaffner FN5040-260: 0,2 mH, fr 948 Hz); sem erro de dimensionamento."
+    - "Folhas de dados/proposta/RTM com números diferentes do estudo (pico 598/655/570/623 V; THD motor <4 % × 4,91/7,27 %) – fonte única obrigatória."
+    - "Normas trocadas: IEC 60831 em capacitor de filtro (é IEC 61071); NEMA MG1 em linhas de capacitor; IEC 61800-2 para THD/queda; IEC 61000-2-4 classe 2 = 8 % (não 5 %); faltam IEC 61800-3, declaração CE/UL, IEC 60068, verificação da montagem."
+    - "ET do reator: Isat 500 × 680 A ambíguo; proteção térmica 140/160 °C e B1 fora do BOM; protótipo fora do BOM; resistor de descarga e proteção de falta do banco de capacitores não firmes."
+    - "Perda nos cabos internos por regra empírica (60 W) × I²R real (~132 W); fs 4 kHz do ACS580-01-293A-4 sem derating confirmado (97.02); PWM síncrono × 4 kHz fixo; desequilíbrio 3D com quadros 3,1 %; comparação de players misturando conjunto × reator e uk × inserção."
+  requisitos: [REQ-SEN-026]
 - id: REF-AUDITORIA-AW-268A-V1271
   nome: "Auditoria técnica independente – A&W filtro senoidal FSEN-LC-268A-440V (dossiê 25/11/2026, v1.27.1)"
   caminho: "gestao/analises/2026-11-25_Auditoria_AW_FSEN-LC-268A-440V_v1.27.1.pdf"

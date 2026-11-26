@@ -359,3 +359,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 26/11 (Claude): v1.31.1 publicada (Drive + cópia local em %LOCALAPPDATA%\FSEN\programa).
 - 10:56 26/11 (engenheiro): "ele não tá atualizando a versão quando abro a versão 1.31.0 antiga" / "não atualiza a nova" / "isso tem que ser automático" → REQ-GER-018, v1.31.2.
 - 26/11 (Claude): v1.31.2 publicada (Drive, cópia local e pasta FSEN_plataforma_v1.31.0 extraída recebem janela/bat novos).
+- 14:00 26/11 (engenheiro): "veja a AUDITORIA TÉCNICA INDEPENDENTE Filtro senoidal LC FSEN-LC-268A-440V ... vc concorda?" (PDF Rev00) → REF-AUDITORIA-AW-268A-V1312, REQ-SEN-026.
