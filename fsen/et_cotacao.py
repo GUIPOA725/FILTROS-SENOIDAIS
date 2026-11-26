@@ -95,6 +95,7 @@ def quadro_resumo(d, titulo, pares, nota=None):
             _sombrear(r[1], "F7F9FC")
     from docx.shared import Cm
     t.autofit = False
+    t.columns[0].width, t.columns[1].width = Cm(4.2), Cm(12.8)
     for row in t.rows[1:]:
         if len(row.cells) == 2 and row.cells[0]._tc is not row.cells[1]._tc:
             row.cells[0].width, row.cells[1].width = Cm(4.2), Cm(12.8)
