@@ -821,6 +821,9 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
                    f"{am.i_ramo_rms:.0f} A RMS, isolação 1,1 kV, baixa indutância, conforme ET anexa." + assin)
         saidas["resistores"] = (p, e)
 
+    # --- CAIXA, CABOS/MISCELÂNEA E PLAQUETA: compra da MONTADORA (v1.31.0, REQ-DOC-020) – ficam no pacote de montagem
+    _pmont = os.path.join(os.path.dirname(pasta), "04_Montadora")
+    os.makedirs(_pmont, exist_ok=True)
     # --- CAIXA
     d = _novo("Especificação Técnica – Caixa Metálica", cod, proj, cat)
     _kv(d, [("Tipo", f"Armário {arr.caixa_tipo} {arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm (L×A×P)"),
@@ -832,7 +835,7 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
             ("Reforço", "Perfis na base para fixação do indutor (massa estimada " + f"{proj.l1.massa_kg:.0f} kg)"),
             ("Quantidade", f"{q}")])
     d.add_paragraph("Desenho de referência: ver folhas 1 e 2 do arquivo de desenhos anexo.")
-    p = os.path.join(pasta, f"ET_Caixa_Metalica_{cod}.docx")
+    p = os.path.join(_pmont, f"ET_Caixa_Metalica_{cod}.docx")
     d.save(p)
     fx = forn["caixa"][0]
     e = None                                         # v1.31.0 (REQ-DOC-020): compra da MONTADORA – vai no pacote de montagem
@@ -844,7 +847,7 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
     _tabela(d, ["#", "Descrição", "Especificação", "Qtd/filtro", "Un", f"Qtd total ({q})"],
             [(k + 1, i.descricao, i.especificacao, _f(i.qtd, 1), i.un, _f(i.qtd * q, 1)) for k, i in enumerate(itens)],
             [0.8, 5.5, 5.5, 1.8, 1.0, 2.4], tam=8)
-    p = os.path.join(pasta, f"LM_Cabos_Miscelanea_{cod}.docx")
+    p = os.path.join(_pmont, f"LM_Cabos_Miscelanea_{cod}.docx")
     d.save(p)
     fm = forn["cabos_misc"][0]
     e = None                                         # v1.31.0 (REQ-DOC-020): compra da MONTADORA – vai no pacote de montagem
@@ -869,7 +872,7 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
                  f"\"Inversor deve operar com frequência de chaveamento FIXA ≥ {proj.fs_hz / 1000:g} kHz\" – porta, interna",
                  "Identificação de bornes: ENTRADA INVERSOR U1 V1 W1 / SAÍDA MOTOR U2 V2 W2 / PE",
                  "Logotipo Electric Service"])
-    p = os.path.join(pasta, f"ET_Plaqueta_Adesivos_{cod}.docx")
+    p = os.path.join(_pmont, f"ET_Plaqueta_Adesivos_{cod}.docx")
     d.save(p)
     e = None                                         # v1.31.0 (REQ-DOC-020): compra da MONTADORA – vai no pacote de montagem
     saidas["plaqueta"] = (p, e)
@@ -923,7 +926,7 @@ def rfq_montagem(proj, arr, orc, cat, pasta):
                  "Prazo de fabricação após o recebimento dos indutores e capacitores", "Ensaios inclusos e modelo do relatório",
                  "Embalagem e frete (Porto Alegre ou direto ao cliente)", "Condição de pagamento e validade"])
     _anx = [os.path.join(pasta, f) for f in (f"{cod}_desenhos.pdf", f"Caderno_Montagem_{cod}.docx")] + \
-           [os.path.join(os.path.dirname(pasta), "03_Fornecedores", f) for f in (f"ET_Caixa_Metalica_{cod}.docx",
+           [os.path.join(pasta, f) for f in (f"ET_Caixa_Metalica_{cod}.docx",
             f"ET_Plaqueta_Adesivos_{cod}.docx", f"LM_Cabos_Miscelanea_{cod}.docx")]
     ETC.secao_anexos(d, 9, _anx)
     ETC.secao_contato(d, 10, cat)
@@ -941,7 +944,10 @@ def rfq_montagem(proj, arr, orc, cat, pasta):
                                 f"indutor (≈ {proj.l1.massa_kg:.0f} kg) e {b.n_total} capacitores por filtro FORNECIDOS PELA ELECTRIC",
                                 "caixa, cabos, bornes, plaqueta, adesivos e miscelânea por conta de vocês (ETs anexas)",
                                 "mão de obra e materiais cotados SEPARADOS"],
-                               os.path.basename(p), [p] + [a for a in _anx], 
+                               os.path.basename(p), [p] + [a for a in _anx],
+                               texto_et=f"O pedido completo está no Word em anexo ({os.path.basename(p)}): escopo Electric × montadora, "
+                                        "lista de material, requisitos de montagem, ensaios de rotina e o que a proposta deve trazer.",
+                               assin=
                                "\n\nAtenciosamente,\n" + f"{emp['responsavel']}\n{emp['nome']}\n{emp['email']} | {emp['telefone']}"))
     return p, e
 

@@ -1,5 +1,5 @@
 {
-  "versao": "1.30.0",
+  "versao": "1.31.0",
   "data": "2026-11-26",
-  "resumo": "Filtro senoidal comparado com os players mundiais (Schaffner, TDK EPCOS, Block, Danfoss, MTE) – planilha em 01_Engenharia/6_Players_Mercado, bloco no RESUMO e no consolidado, só dados de datasheet com link e data"
+  "resumo": "Cotações: ET completa em Word (quadro do que se cota, requisitos, o que a proposta deve trazer, anexos) + e-mail curto; escopo Electric por tipo de filtro; montadora fora de fornecedores com RFQ completo; ET dos capacitores do sintonizado"
 }

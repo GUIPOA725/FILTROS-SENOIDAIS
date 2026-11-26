@@ -93,6 +93,11 @@ def quadro_resumo(d, titulo, pares, nota=None):
         _sombrear(r[0], AZUL_CLARO)
         if k % 2:
             _sombrear(r[1], "F7F9FC")
+    from docx.shared import Cm
+    t.autofit = False
+    for row in t.rows[1:]:
+        if len(row.cells) == 2 and row.cells[0]._tc is not row.cells[1]._tc:
+            row.cells[0].width, row.cells[1].width = Cm(4.2), Cm(12.8)
     if nota:
         r = t.add_row().cells
         c = r[0].merge(r[1])
@@ -143,13 +148,13 @@ def secao_contato(d, num, cat):
                     f"{emp.get('telefone', '')}. Se for útil, fazemos uma call rápida com a engenharia de vocês para alinhar a especificação.")
 
 
-def email_curto(ola, pedido, resumo, et_nome, anexos, assin, extra=None):
+def email_curto(ola, pedido, resumo, et_nome, anexos, assin="", extra=None, texto_et=None):
     """Corpo do e-mail de cotação: curto – o técnico está na ET anexa."""
     ls = [ola, "", pedido, ""]
     if resumo:
         ls += ["Resumo:"] + [f"- {x}" for x in resumo] + [""]
-    ls += [f"A especificação completa está no Word em anexo ({et_nome}): requisitos e o motivo de cada um, dados que vocês precisam "
-           "declarar, ensaios, critérios de aceitação e o que a proposta deve trazer para a nossa análise técnica."]
+    ls += [texto_et or (f"A especificação completa está no Word em anexo ({et_nome}): requisitos e o motivo de cada um, dados que vocês "
+                        "precisam declarar, ensaios, critérios de aceitação e o que a proposta deve trazer para a nossa análise técnica.")]
     if extra:
         ls += ["", extra]
     nomes = [os.path.basename(a) for a in anexos if a]
