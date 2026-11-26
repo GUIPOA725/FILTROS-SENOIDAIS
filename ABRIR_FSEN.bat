@@ -11,6 +11,8 @@ set "ORIGEM=%~dp0"
 REM v1.18.5: sempre abre a versao MAIS NOVA do Drive (pasta PROGRAMAS\FSEN_v1.7.1), mesmo que o atalho
 REM ou o duplo-clique tenha sido numa pasta de versao antiga (FSEN_plataforma_v1.xx.x)
 for %%I in ("%~dp0..\FSEN_v1.7.1") do set "CANON=%%~fI\"
+REM v1.31.2 (REQ-GER-018): se a pasta irma nao existir (versao extraida em outro lugar), usa o caminho oficial do Drive
+if not exist "%CANON%ABRIR_FSEN.bat" set "CANON=G:\Drives compartilhados\Engenharia\15 - TEMPLATES-PLANILHA ESTUDOS\PLATAFORMA FILTROS SENOIDAIS\PROGRAMAS\FSEN_v1.7.1\"
 if exist "%CANON%ABRIR_FSEN.bat" if /i not "%ORIGEM%"=="%CANON%" (
   echo Abrindo a versao mais nova: %CANON%
   call "%CANON%ABRIR_FSEN.bat"

@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.31.2 – 26/11/2026 – atualização automática ao abrir
+- REQ-GER-018: janela_fsen.py compara a versão da cópia local com a pasta oficial do Drive (PROGRAMAS/FSEN_v1.7.1) e, se houver versão mais nova, copia tudo antes de subir o servidor – funciona de qualquer atalho, pasta de versão antiga extraída ou .bat. ABRIR_FSEN.bat usa o caminho oficial absoluto quando a pasta irmã FSEN_v1.7.1 não existe. Registro no janela.log ("atualização automática: vX → vY").
+
 ## v1.31.1 – 26/11/2026 – correção: plataforma não abria no notebook (Python 3.11)
 - REQ-GER-017: fsen/pipeline.py tinha uma f-string com aspas iguais aninhadas (válida só no Python 3.12+), introduzida na v1.28.0 – no Python 3.11 do notebook a plataforma não abria (SyntaxError linha 105). Corrigido.
 - gestao/verificar_requisitos.py: novo teste "compila_python_311" (crítico) – todo .py tem que compilar no Python 3.11 antes de publicar.

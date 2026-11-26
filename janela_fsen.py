@@ -107,7 +107,63 @@ def abrir_janela(url, titulo):
     return True
 
 
+CANONICA = [  # v1.31.2 (REQ-GER-018): a versão OFICIAL mais nova fica sempre nesta pasta do Drive
+    r"G:\Drives compartilhados\Engenharia\15 - TEMPLATES-PLANILHA ESTUDOS\PLATAFORMA FILTROS SENOIDAIS\PROGRAMAS\FSEN_v1.7.1",
+]
+_PULAR_DIR = {"__pycache__", "saidas", ".git"}
+_PULAR_ARQ = {"historico.db"}
+
+
+def _vtupla(v):
+    try:
+        return tuple(int(x) for x in str(v).split("."))
+    except ValueError:
+        return (0,)
+
+
+def _versao_de(pasta):
+    try:
+        return json.load(open(os.path.join(pasta, "versao_plataforma.json"), encoding="utf-8")).get("versao", "")
+    except Exception:
+        return ""
+
+
+def atualizar_automatico():
+    """v1.31.2 (REQ-GER-018, engenheiro 26/11: "isso tem que ser automático"): ao abrir, se a pasta oficial do Drive tem versão
+    mais nova que a cópia local, copia tudo para a cópia local ANTES de subir o servidor – não importa de qual atalho, pasta de
+    versão antiga ou .bat a plataforma foi aberta."""
+    import shutil
+    origem = os.environ.get("FSEN_ORIGEM", "")
+    cands = ([os.path.join(os.path.dirname(origem.rstrip("\\/")), "FSEN_v1.7.1")] if origem else []) + CANONICA
+    for c in cands:
+        if not c or not os.path.isfile(os.path.join(c, "versao_plataforma.json")) or os.path.abspath(c) == os.path.abspath(RAIZ):
+            continue
+        vn, vl = _versao_de(c), _versao_de(RAIZ)
+        if _vtupla(vn) <= _vtupla(vl):
+            return False
+        n = 0
+        for d, ds, fs in os.walk(c):
+            ds[:] = [x for x in ds if x not in _PULAR_DIR]
+            rel = os.path.relpath(d, c)
+            os.makedirs(os.path.join(RAIZ, rel), exist_ok=True)
+            for f in fs:
+                if f in _PULAR_ARQ:
+                    continue
+                try:
+                    shutil.copy2(os.path.join(d, f), os.path.join(RAIZ, rel, f))
+                    n += 1
+                except OSError as e:
+                    log(f"atualização: não copiou {f}: {e}")
+        log(f"atualização automática: v{vl} → v{vn} ({n} arquivos de {c})")
+        return True
+    return False
+
+
 def main():
+    try:
+        atualizar_automatico()
+    except Exception as e:
+        log(f"atualização automática falhou: {type(e).__name__}: {e}")
     porta = porta_livre()
     url = f"http://127.0.0.1:{porta}"
     log(f"iniciando FSEN v{versao()} em {url}")
