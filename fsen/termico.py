@@ -1,5 +1,5 @@
 """Estudo térmico do filtro montado: perdas por componente, escoamento de ar na caixa, temperatura do ar no ponto de
-cada componente, temperatura do componente e limites (IEC 61439-1 cl.10.10, IEC TR 60890, IEC 60076-6, IEC 60831, NBR 5410).
+cada componente, temperatura do componente e limites (IEC 61439-1 cl.10.10, IEC TR 60890, IEC 60076-6, IEC 60831; fiação interna NBR IEC 61439-1 Anexo H).
 
 Modelo (1-D, ventilação forçada de baixo para cima):
 - o ar entra pela grelha inferior a T_amb e é aquecido pelas fontes que estão abaixo de cada altura:
@@ -153,9 +153,10 @@ def estudo_termico(proj, arr, cat, n_vent=None, vazao_unit=None) -> Dict[str, An
                 "Fabricante do resistor; manter 100 mm de afastamento de plásticos e capacitores", crit=False)
         else:
             ta = t_ar(arr.caixa_a)
-            k = math.sqrt(max(t["t_cabo_max_c"] - ta, 1) / (t["t_cabo_max_c"] - 30))
-            add("Cabos internos (fator de correção pela temperatura do ar)", f["p"], ta, ta, f"k = {k:.2f} ≥ 0,80 (usado no cálculo)",
-                k >= 0.80, "NBR 5410 tab. 40 – HEPR 90 °C")
+            from . import fiacao_iec61439 as _FI                    # v1.29.0 (REQ-PNL-032): fiação interna pela NBR IEC 61439-1
+            add("Cabos internos – ar no painel ≤ ar de projeto da fiação (Anexo H, condutor 70 °C)", f["p"], ta, ta,
+                f"≤ {_FI.T_AR_INTERNO_C:g} °C (k1 {_FI.k1(ta):.2f} ≥ {_FI.k1(_FI.T_AR_INTERNO_C):.2f})",
+                ta <= _FI.T_AR_INTERNO_C, "NBR IEC 61439-1 §10.10.4.3.1 f) / Anexo H Tab. H.2")
     t_saida = t_ar(arr.caixa_a)
     ver.append(dict(item="Térmico – elevação do ar na saída da caixa", valor=f"{t_saida - T0:.1f} K ({t_saida:.1f} °C)",
                     limite=f"≤ {t['elev_ar_saida_max_k']} K", ok=t_saida - T0 <= t["elev_ar_saida_max_k"],

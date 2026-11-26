@@ -1,5 +1,5 @@
 {
-  "versao": "1.28.1",
+  "versao": "1.29.0",
   "data": "2026-11-25",
-  "resumo": "Banco – correções gerais: contatora escolhida pelo borne de catálogo que aceita o cabo calculado; arco nos terminais de entrada tratado como energia do alimentador do cliente (terminais isolados, etiqueta, tempo real da proteção pedido ao cliente)"
+  "resumo": "Fiação interna dos 3 filtros pela NBR IEC 61439-1 (Anexo H, 125 %, condutor 70 °C), cabos de força fora da canaleta e espaçados, componentes a ≤ 80 % (contatora AC-1); NBR 5410 só nos cabos de campo"
 }

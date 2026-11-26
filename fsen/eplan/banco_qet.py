@@ -35,16 +35,16 @@ def _barras(f, xs_tap, nomes=("-R2", "-S2", "-T2")):
 
 
 def _secao_geral(I):
-    """Seção do cabo/barra da chave geral (cobre 90 °C, fator 0,62 do painel – mesma regra dos estágios)."""
-    from .. import banco as B
-    for s_, cap in B.CABO_90C:
-        if cap * 0.62 >= I:
-            return f"{s_:g}"
-    return "barra"
+    """Seção do cabo da chave geral (fiação interna): NBR IEC 61439-1 Anexo H – mesma regra dos estágios (v1.29.0)."""
+    from .. import fiacao_iec61439 as FI
+    c = FI.cabo(I)
+    if c["paralelos"] > 1 or not c["Iz"]:
+        return "barra"
+    return f"{c['secao']:g}"
 
 
 def _secao_pe(I):
-    """Condutor de proteção (NBR 5410 tab. 58): S ≤ 16 → S; 16 < S ≤ 35 → 16; S > 35 → S/2."""
+    """Condutor de proteção (NBR IEC 61439-1 Tab. 5 = NBR 5410 tab. 58): S ≤ 16 → S; 16 < S ≤ 35 → 16; S > 35 → S/2."""
     s_ = _secao_geral(I)
     try:
         s_ = float(s_)

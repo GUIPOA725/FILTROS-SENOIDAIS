@@ -1,5 +1,12 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.29.0 – 25/11/2026 – fiação interna pela NBR IEC 61439-1 nos 3 filtros
+- REQ-PNL-031/032/033: o painel é conjunto NBR IEC 61439-1/-2 (bancos: IEC 61921, que manda atender a 61439). A fiação INTERNA deixa a NBR 5410 e passa ao §10.10.4.3.1 f) + Anexo H: seção para 125 % da corrente, condutor a 70 °C (borne dos dispositivos), ar interno 55 °C (limite da térmica), cabos de força FORA da canaleta e espaçados ≥ 1 diâmetro (opção "encostados" no pedido). NBR 5410 só para cabos de campo.
+- Componentes a ≤ 80 % (§10.10.4.3.1 c): contatora AC-1 ≥ In/0,8 e ≥ 1,3 × I60 (IEC 61921 §6.2.2); cabos dos capacitores para 1,3 × In.
+- Banco dessintonizado/sintonizado (banco.py), filtro senoidal (mecanica.py, termico.py), EPLAN (banco_qet), lista de material (espaçadores; canaleta só comando), tabela de normas e 3D (rotas de força fora da canaleta; sem canaletas horizontais de força no verso).
+- Panatlântica 50 kvar 415 V: 50 mm² + AF80 (antes 70 mm² + AF116), igual à prática Electric.
+- Pesquisa: gestao/analises/2026-11-25_norma_fiacao_interna_IEC61439.md.
+
 ## v1.28.1 – 25/11/2026 – banco: borne da contatora e arco nos terminais de entrada (correções gerais)
 - REQ-BCO-006: se o cabo calculado (NBR 5410) não entra no borne, a plataforma sobe sozinha a contatora da mesma marca até a primeira cujo borne de catálogo aceita o cabo. Bornes ABB conferidos nas folhas de dados: AF52/AF65 35 mm², AF80/AF96 50 mm², AF116/AF146 70 mm² (flexível). AF96 e AF116 com medidas reais no catálogo de dimensões.
 - REQ-SEG-015: os terminais de entrada (lado de linha do disjuntor geral) recebem a energia do alimentador do cliente, que o painel não consegue reduzir. Agora: tampa de terminais + barreira IPXXB na lista de material, medida no estudo de arco, etiqueta, e Check ATENÇÃO até 40 cal/cm² (REPROVADO só acima, onde não existe vestimenta). O tempo da proteção do cliente passa a ser lido do pedido (sem ele: 500 ms e lacuna pedindo o estudo de seletividade).

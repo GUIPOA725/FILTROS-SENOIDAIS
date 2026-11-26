@@ -139,7 +139,8 @@ NORMAS = [
     ("IEC 60831-1/2 e IEC 61071", "Capacitores de potência autorregenerativos e capacitores para eletrônica de potência"),
     ("IEC 61000-2-4 / IEEE 519-2022", "Referência de distorção harmônica de tensão (≤ 5 %)"),
     ("IEC 61439-1/2 / NBR IEC 61439", "Conjuntos de manobra e controle de baixa tensão (caixa, elevação de temperatura, ensaios)"),
-    ("NBR 5410 / IEC 60364-5-52", "Dimensionamento de condutores e condutor de proteção"),
+    ("NBR IEC 61439-1 Anexo H / IEC 60364-5-52", "Fiação interna do painel: 125 % da corrente, condutor 70 °C, força fora da canaleta"),
+    ("NBR 5410", "Cabos de campo (alimentação e saída para o motor) e aterramento da instalação"),
     ("IEC 60529 / NR-10", "Grau de proteção IP e segurança em instalações elétricas (placas, descarga de capacitores)"),
 ]
 
@@ -625,7 +626,7 @@ def folha_dados(proj, arr, cat, pasta, desenhos_png):
             ("Classe térmica", "Sistema de isolação classe H (180 °C), elevação média ≤ 125 K – igual ou superior à classe solicitada"), ("Grau de proteção", f"IP{arr.caixa_ip}"),
             ("Dimensões (L×A×P)", f"{arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm"), ("Massa", f"≈ {arr.massa_total_kg:.0f} kg"),
             ("Refrigeração", f"Forçada, {arr.n_ventiladores} ventilador(es), alimentação auxiliar 220 Vca"),
-            ("Normas", "IEC 61800-5-1, IEC 60076-6, IEC 60831, IEC 61439, NBR 5410")])
+            ("Normas", "IEC 61800-5-1, IEC 60076-6, IEC 60831, NBR IEC 61439-1/-2 (fiação interna Anexo H), NBR 5410 (cabos de campo)")])
     if desenhos_png:
         _img(d, desenhos_png[1], 17)
     caminho = os.path.join(pasta, f"{proj_codigo(proj)}_Folha_de_Dados.docx")

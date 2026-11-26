@@ -65,7 +65,7 @@ def folha_dados(proj, arr):
         ("Invólucro", f"{arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm (L × A × P), IP{arr.caixa_ip}, IK10, RAL 7035"),
         ("Refrigeração", f"forçada, {arr.n_ventiladores} ventilador(es) 220 Vca com termostato"),
         ("Isolação", "1,1 kV; ensaio 2,5 kV / 1 min"),
-        ("Normas", "IEC 61800-2/5-1, IEC 60076-6, IEC 60831-1 / IEC 61071, IEC 61439-1/2, NEMA MG1 Pt.30/31, IEC TS 60034-25, NBR 5410"),
+        ("Normas", "IEC 61800-2/5-1, IEC 60076-6, IEC 60831-1 / IEC 61071, IEC 61439-1/2, NEMA MG1 Pt.30/31, IEC TS 60034-25; fiação interna NBR IEC 61439-1 Anexo H; NBR 5410 só cabos de campo"),
         ("Documentação", "memorial de cálculo, simulação por ponto de operação, dupla checagem ATP, projeto do indutor por elementos "
                          "finitos, esquema elétrico, desenhos, ET aos fornecedores, relatório consolidado"),
     ]

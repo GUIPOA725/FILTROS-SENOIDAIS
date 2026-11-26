@@ -89,6 +89,7 @@ class PedidoBanco:
     acesso_painel: str = "frontal/traseiro"   # v1.17.4: "frontal/traseiro" (prof. 800, padrão) | "frontal" (prof. 400, mais largo)
     leitura: Dict[str, object] = field(default_factory=dict)
     marca: str = "Padrão Electric"        # v1.20.0: fabricante dos componentes (reator sempre Electric) – dados/fabricantes.yaml   # v1.19.0: leitura da IA (critério, premissas) p/ o relatório consolidado
+    arranjo_cabos_forca: str = "espacados"   # v1.29.0: "espacados" (≥ 1 diâmetro, padrão Electric) | "encostados" – NUNCA na canaleta
     t_protecao_montante_ms: float = 0.0   # v1.28.1: tempo de eliminação da proteção do cliente a montante (0 = não informado → 500 ms)
 
     @property
@@ -413,7 +414,8 @@ CONTATORES = [("Epcos B44066-S2011 (≤ 22 kvar 440 V)", 28.9), ("Epcos B44066-S
 CABO_90C = [(10, 60), (16, 80), (25, 105), (35, 130), (50, 160), (70, 205), (95, 245), (120, 285), (150, 325), (185, 370), (240, 435)]
 
 
-# v1.24.3 (REQ-PNL-017): cabos calculados pela NBR 5410 – capacidade de condução × FCT (temperatura do ar DENTRO do painel)
+# v1.24.3 (REQ-PNL-017) – v1.29.0: tabelas da NBR 5410 usadas SÓ nos cabos de CAMPO (cliente → painel); fiação interna em
+# fsen/fiacao_iec61439.py (NBR IEC 61439-1 Anexo H). Capacidade de condução × FCT (temperatura do ar DENTRO do painel)
 # × FCA (circuitos agrupados na mesma canaleta). Base: CABO_90C (EPR/XLPE 90 °C, 30 °C).
 FCT_90C = {30: 1.00, 35: 0.96, 40: 0.91, 45: 0.87, 50: 0.82, 55: 0.76, 60: 0.71}          # NBR 5410 tab. 40 (EPR/XLPE)
 FCA_FEIXE = {1: 1.00, 2: 0.80, 3: 0.70, 4: 0.65, 5: 0.60, 6: 0.57, 7: 0.54, 8: 0.52, 9: 0.50, 12: 0.45, 16: 0.41, 20: 0.38}  # tab. 42
@@ -448,17 +450,22 @@ def protecao_estagio(ped, e):
     chave = 100 if fus <= 63 else 160 if fus <= 125 else 250 if fus <= 250 else 400 if fus <= 400 else 630
     base = "NH00" if fus <= 160 else "NH01" if fus <= 250 else "NH2"
     I_ct = e["requisitos"]["In"] * 0.96 if sint else e["I60"] * 1.1
+    # v1.29.0 (REQ-PNL-032): NBR IEC 61439-1 §10.10.4.3.1 c) – circuito ≤ 80 % da corrente térmica do componente; IEC 61921 §6.2.2
+    # – chaves e conexões para 1,3 × a corrente senoidal nominal
+    I_80 = max(e["requisitos"]["In"] / 0.8, 1.3 * e["I60"])
+    I_ct = max(I_ct, I_80)
     cont = next((c for c in CONTATORES if c[1] >= I_ct), CONTATORES[-1])
     cont_pico, cont_tipo = None, "para capacitor (AC-6b)"
     if getattr(ped, "marca", "") and ped.marca != "Padrão Electric":      # v1.20.0: contatora da marca (comum AC-3/AC-1 c/ reator)
         from . import fabricantes as FB
         I_req = 1.15 * max(e.get("I_cap_rms") or 0, e["I60"]) if not sint else e["requisitos"]["In"] * 1.05
+        I_req = max(I_req, I_80)                               # v1.29.0: AC-1 ≥ In / 0,8 (61439-1) e ≥ 1,3 × I60 (IEC 61921)
         cm = FB.contatora(ped.marca, I_req, e["Q_kvar"], ped.tensao_v)
         if cm:
             cont, cont_pico, cont_tipo = (cm["nome"], cm["ie"]), cm["pico"], cm["tipo"]
-    from .painel_gabinete import ESTAGIOS_POR_COLUNA as _EPC
-    n_ag = _EPC                                               # nº de CIRCUITOS (estágios) na mesma canaleta – NBR 5410 tab. 42
-    cb = cabo_nbr5410(e["requisitos"]["In"], n_ag)
+    from . import fiacao_iec61439 as FI                    # v1.29.0 (REQ-PNL-032): fiação interna pela NBR IEC 61439-1 Anexo H
+    _arr = getattr(ped, "arranjo_cabos_forca", "") or FI.ARRANJO_FORCA   # força FORA da canaleta (canaleta só comando)
+    cb = FI.cabo(e["requisitos"]["In"], _arr)
     # v1.28.1 (REQ-BCO-006): o cabo calculado TEM que entrar no borne – se não entra, sobe a contatora (mesma marca) até a
     # primeira cujo borne (catálogo) aceita o cabo. Regra geral, não ajuste de um projeto.
     cont_motivo = ""
@@ -475,12 +482,13 @@ def protecao_estagio(ped, e):
             b_ = borne_contatora_mm2(n_, ie_)
             if ie_ >= cont[1] and (b_ is None or b_ >= cb["secao"]):
                 cont, cont_pico = (n_, ie_), (pk_ if pk_ is not None else cont_pico)
-                cont_motivo = (f"contatora aumentada de {_orig} para {n_}: o cabo calculado de {cb['secao']:g} mm² (NBR 5410, "
-                               f"agrupamento e ar interno) não entra no borne de {_bm:g} mm² da menor (REQ-BCO-006)")
+                cont_motivo = (f"contatora aumentada de {_orig} para {n_}: o cabo calculado de {cb['secao']:g} mm² (NBR IEC 61439-1 "
+                               f"Anexo H, 125 % da corrente) não entra no borne de {_bm:g} mm² da menor (REQ-BCO-006)")
                 break
     n_c = max(1, int(e["cap"][0]))                             # REQ-PNL-027: UM cabo por fase de CADA capacitor até o reator
     I_unid = (e.get("I_cap_rms") or e["I60"]) / n_c * 1.10     # corrente da lata (+10 % tolerância de capacitância, IEC 60831)
-    cc = cabo_nbr5410(I_unid, n_ag * n_c)                      # agrupamento: todos os circuitos das latas na mesma canaleta
+    I_unid = max(I_unid, 1.3 * (e.get("I_cap_rms") or e["I60"]) / n_c)   # IEC 61921 §6.2.2: conexões para 1,3 × In
+    cc = FI.cabo(I_unid, _arr)                                 # cada lata: 1 cabo por fase, força fora da canaleta
     cc["I_unid"] = round(I_unid, 1)
     return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cb["secao"],
                 contator_pico=cont_pico, contator_tipo=cont_tipo, contator_motivo=cont_motivo, cabo_calc=cb, cabo_cap_calc=cc,
@@ -489,11 +497,11 @@ def protecao_estagio(ped, e):
 
 # v1.26.4 (auditoria BCD-04/BCD-05): conferências que faltavam na coordenação do estágio ------------------------------------
 # I²t total de interrupção de fusíveis NH gG (A²s) – valores TÍPICOS de catálogo, arredondados para cima (A CONFERIR no catálogo
-# do fusível comprado). Serve para provar que o cabo aguenta o curto (NBR 5410: I²t ≤ k²·S²) quando o fusível é maior que a
+# do fusível comprado). Serve para provar que o cabo aguenta o curto (IEC 60364-4-43, citada pela NBR IEC 61439-1: I²t ≤ k²·S²) quando o fusível é maior que a
 # capacidade de condução do cabo (em banco de capacitores o fusível é 1,6 × In e protege SÓ contra curto-circuito).
 I2T_NH_GG = {32: 6e3, 40: 1.0e4, 50: 1.8e4, 63: 3.0e4, 80: 5.5e4, 100: 1.0e5, 125: 1.7e5, 160: 3.0e5, 200: 5.0e5, 250: 9.0e5,
              315: 1.5e6, 355: 2.0e6, 400: 2.8e6, 500: 4.5e6, 630: 9.0e6}
-K_CABO_EPR_CU = 143.0                # NBR 5410 / IEC 60364-4-43: condutor de cobre, isolação EPR/XLPE
+K_CABO_EPR_CU = 143.0                # IEC 60364-4-43 tab. 43A: condutor de cobre, isolação EPR/XLPE
 
 
 # v1.28.1 (REQ-BCO-006): seção máxima do borne de potência para cabo FLEXÍVEL (com ponteira), folhas de dados ABB conferidas

@@ -137,20 +137,34 @@ def verificacao(ped, res, gab, prot, trans=None):
                         f"≥ {djg['Icc_kA']:.1f} kA", CK.check(djg["Icu_kA"] >= djg["Icc_kA"], CK.utilizacao(djg["Icc_kA"], djg["Icu_kA"])),
                         "IEC 60909 simplificado"))
         trc = _B.trafo_comando(ped, res, prot, n_exaust=((gab or {}).get("ventilacao") or {}).get("n_exaustores", 2))
-        L.append(_linha("61439-1 / NBR 5410", f"Trafo de comando {trc['Sn']} VA × carga (retenção {trc['S_ret']} VA; pior manobra "
+        L.append(_linha("61439-1 / IEC 61558-2-2", f"Trafo de comando {trc['Sn']} VA × carga (retenção {trc['S_ret']} VA; pior manobra "
                         f"{trc['S_inst']} VA com {trc['sim']} bobinas partindo)", f"{trc['Sn']} VA", f"≥ {trc['S_req']} VA",
                         CK.check(trc["Sn"] >= trc["S_req"], CK.utilizacao(trc["S_req"], trc["Sn"])), "ΣS_ret/0,8 e S_inst/3"))
         for nome, cb in (("estágio (chave → contatora → reator)", prot.get("cabo_calc")), ("reator → capacitor", prot.get("cabo_cap_calc"))):
             if cb:
-                L.append(_linha("NBR 5410 §6.2.5", f"Cabo do {nome}: {cb['secao']} mm² – I0 {cb['I0']} A × FCT {cb['FCT']} ({cb['T_int']:g} °C "
-                                f"interno) × FCA {cb['FCA']} ({cb['n_agrup']} circuitos na canaleta)", f"Iz {cb['Iz']:.0f} A",
-                                f"≥ {cb['I']:.0f} A", CK.check(cb["Iz"] >= cb["I"], CK.utilizacao(cb["I"], cb["Iz"])), "tab. 36/40/42"))
+                _req = cb.get("I_req", cb["I"])
+                L.append(_linha("61439-1 §10.10.4.3.1 f) / Anexo H", f"Cabo do {nome}: {cb.get('texto') or str(cb['secao']) + ' mm²'}",
+                                f"Imax {cb['Iz']:.0f} A", f"≥ {_req:.0f} A (125 %)", CK.check(cb["Iz"] >= _req, CK.utilizacao(_req, cb["Iz"])),
+                                "força fora da canaleta, espaçados ≥ 1 diâmetro"))
+        try:                                                # v1.29.0: componentes a ≤ 80 % (§10.10.4.3.1 c)
+            _In = float(res["estagios"][0]["requisitos"]["In"]) if res.get("estagios") else 0
+            _pp = _B.protecao_pior(ped, res)
+            _Inc = float(_pp.get("contator_In") or 0)
+            if _Inc:
+                L.append(_linha("61439-1 §10.10.4.3.1 c)", f"Contatora {_pp['contator']} (AC-1 {_Inc:.0f} A) × corrente do estágio "
+                                f"{max(float(e_['requisitos']['In']) for e_ in res['estagios']):.0f} A", f"{max(float(e_['requisitos']['In']) for e_ in res['estagios']):.0f} A",
+                                f"≤ 80 % × {_Inc:.0f} = {0.8 * _Inc:.0f} A",
+                                CK.check(max(float(e_['requisitos']['In']) for e_ in res['estagios']) <= 0.8 * _Inc,
+                                         CK.utilizacao(max(float(e_['requisitos']['In']) for e_ in res['estagios']), 0.8 * _Inc)),
+                                "IEC 61921 §6.2.2: ≥ 1,3 × I60"))
+        except Exception:
+            pass
     except Exception as ex:
         L.append(_linha("—", f"Cálculo do geral/comando/cabos não feito: {type(ex).__name__}", "-", "-", CK.ATENCAO, "-"))
     # ---------------------------------------------------------------- NR-10 (Portaria MTE 737/2026) – itens de projeto
     nr10 = [("10.4.1", "Dispositivo de desligamento com impedimento de reenergização e sinalização da condição", "disjuntor geral c/ cadeado + sinaleiro"),
             ("10.4.2", "Seccionamento de ação simultânea (3 polos)", "disjuntor geral tripolar"),
-            ("10.4.3.1", "Circuitos de finalidades distintas separados (força × comando)", "zona de comando separada + canaletas próprias"),
+            ("10.4.3.1", "Circuitos de finalidades distintas separados (força × comando)", "canaletas SÓ para comando; cabos de força por fora, espaçados"),
             ("10.4.4", "Aterramento das partes condutoras (portas, placa, estrutura)", "barra PE + cordoalhas"),
             ("10.4.6", "Condições para aterramento temporário", "pinos esféricos no barramento"),
             ("10.4.12", "Estudo de energia incidente", "IEEE 1584-2018 – Estudo_Energia_Incidente + etiqueta na porta"),

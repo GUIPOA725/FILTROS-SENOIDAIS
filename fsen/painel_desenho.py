@@ -346,7 +346,7 @@ def construir(ped, res, gab, cod, versao):
     titulo_eq = f"BANCO DE CAPACITOR {tipo} {ped.tensao_v:.0f} V – {res['Q_total_kvar']:.0f} kVAr – {ped.freq_hz:.0f} Hz"
     curto = f"Banco {tipo.lower()} {ped.tensao_v:.0f} V {res['Q_total_kvar']:.0f} kVAr"
     pr = ProjetoEletrico(ped.cliente, (ped.projeto or curto)[:40], cod, "", versao,
-                         norma="NBR IEC 61439-1/2 · IEC 60890 · NBR 5410")
+                         norma="NBR IEC 61439-1/2 (fiação Anexo H) · IEC 60890 · NBR 5410 (campo)")
     area_y0 = Y0 + CAR_H + 22
     area_h = Y1 - area_y0 - 14
     f = pr.nova("LAYOUT EXTERNO", "=PAINEL", "+GAB")

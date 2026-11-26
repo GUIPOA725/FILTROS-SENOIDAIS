@@ -58,11 +58,21 @@ def secao_cabo(cat, corrente):
     return maior, n
 
 
+def secao_cabo_interno(cat, corrente, minimo=0.0):
+    """v1.29.0 (REQ-PNL-032): fiação INTERNA do painel pela NBR IEC 61439-1 Anexo H (125 %, condutor 70 °C, ar interno 55 °C,
+    força fora da canaleta, espaçados ≥ 1 diâmetro). O fator de efeito pelicular da ondulação (cabo_fator_hf) continua.
+    secao_cabo() fica só para cabos de CAMPO (painel → motor, NBR 5410)."""
+    from . import fiacao_iec61439 as FI
+    c = FI.cabo(corrente * cat.get("cabo_fator_hf", 1.0), borne_min_mm2=minimo)
+    return c["secao"], c["paralelos"], c
+
+
 SECOES = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300]
 
 
 def secao_pe(s_fase):
-    """NBR 5410 tab.58: S<=16 -> S; 16<S<=35 -> 16; S>35 -> S/2 (próxima padronizada)."""
+    """Condutor de proteção: NBR IEC 61439-1 §8.4.3.2.3 / Tab. 5 (mesma regra da IEC 60364-5-54 / NBR 5410 tab. 58):
+    S<=16 -> S; 16<S<=35 -> 16; S>35 -> S/2 (próxima padronizada)."""
     if s_fase <= 16:
         return s_fase
     if s_fase <= 35:
@@ -192,22 +202,20 @@ def projetar_arranjo(proj, cat, ordem: str = "indutor_embaixo") -> Arranjo:
 
     # cabos internos
     i_lin = max(l1.i_nom_a, proj.pedido["corrente_a"])
-    s_pot, n_par = secao_cabo(cat, i_lin)
+    s_pot, n_par, _cpot = secao_cabo_interno(cat, i_lin)        # v1.29.0: NBR IEC 61439-1 Anexo H (era tabela de campo)
     lig_delta = banco.ligacao == "Delta"
     i_ramo = am.i_ramo_rms if am else (banco.i_unit_rms * n)
-    s_cap, _ = secao_cabo(cat, max(i_ramo * 1.5, 20))
-    s_cap = max(s_cap, 10)
-    s_jump, _ = secao_cabo(cat, max(banco.i_unit_rms * 1.6, 10))
-    s_jump = max(s_jump, 6)
+    s_cap, _, _ccap = secao_cabo_interno(cat, max(i_ramo * 1.3, 16), minimo=10)     # IEC 61921 §6.2.2: 1,3 × I do capacitor
+    s_jump, _, _cjmp = secao_cabo_interno(cat, max(banco.i_unit_rms * 1.3, 8), minimo=6)
     alt_m = A / 1000
     cabos = [
-        dict(desc=f"Cabo flexível 0,6/1 kV HEPR 90 °C {n_par}x{s_pot} mm² – X1→L1 (por fase)", secao=s_pot, n_par=n_par,
+        dict(desc=f"Cabo flexível 0,6/1 kV HEPR 90 °C {n_par}x{s_pot} mm² – X1→L1 (por fase) – força fora da canaleta, espaçados ≥ 1 diâmetro", secao=s_pot, n_par=n_par, calc=_cpot["texto"],
              metros=round(3 * n_par * (0.6 + 0.4 * alt_m), 1), uso="potência"),
-        dict(desc=f"Cabo flexível 0,6/1 kV HEPR 90 °C {n_par}x{s_pot} mm² – L1→X2 (por fase)", secao=s_pot, n_par=n_par,
+        dict(desc=f"Cabo flexível 0,6/1 kV HEPR 90 °C {n_par}x{s_pot} mm² – L1→X2 (por fase) – força fora da canaleta, espaçados ≥ 1 diâmetro", secao=s_pot, n_par=n_par, calc=_cpot["texto"],
              metros=round(3 * n_par * (0.6 + 0.4 * alt_m), 1), uso="potência"),
-        dict(desc=f"Cabo flexível 0,6/1 kV {s_cap} mm² – derivação L1 saída → banco de capacitores", secao=s_cap, n_par=1,
+        dict(desc=f"Cabo flexível 0,6/1 kV {s_cap} mm² – derivação L1 saída → banco de capacitores (fora da canaleta)", secao=s_cap, n_par=1, calc=_ccap["texto"],
              metros=round(3 * (0.8 + 0.5 * alt_m) * (2 if am else 1), 1), uso="ramo capacitivo"),
-        dict(desc=f"Cabo flexível 750 V {s_jump} mm² – jumpers entre capacitores", secao=s_jump, n_par=1,
+        dict(desc=f"Cabo flexível 750 V {s_jump} mm² – jumpers entre capacitores", secao=s_jump, n_par=1, calc=_cjmp["texto"],
              metros=round(banco.n_total * 2 * 0.25, 1), uso="jumpers"),
         dict(desc=f"Cabo flexível verde/amarelo {secao_pe(s_pot)} mm² – aterramento indutor/caixa/porta", secao=secao_pe(s_pot),
              n_par=1, metros=round(3.0 + alt_m, 1), uso="terra"),

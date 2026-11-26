@@ -3,7 +3,7 @@
 Fonte única dos componentes: dados/componentes_db.yaml (por marca: ABB, SCHNEIDER, ELECTRIC = padrão Panatlântica 2024).
 Projeto ABB → itens ABB; Schneider → Schneider; padrão Electric → os da Panatlântica; item que a marca não tem → equivalente
 ELECTRIC, registrado na coluna "Origem". Valor não confirmado no catálogo sai como "CONFERIR" (nunca como certo).
-Cálculos: barramento pela DIN 43671 com correção da temperatura interna; cabos pela NBR 5410 (banco.cabo_nbr5410);
+Cálculos: barramento pela DIN 43671 com correção da temperatura interna; fiação interna pela NBR IEC 61439-1 Anexo H (fsen/fiacao_iec61439.py, força fora da canaleta); cabos do cliente pela NBR 5410;
 torques de barramento pela DIN 43673; terminais de compressão DIN 46235.
 """
 from __future__ import annotations
@@ -159,12 +159,12 @@ def montar(ped, res, gab, prot, ext=None):
         cb, cc = G["pr"]["cabo_calc"], G["pr"]["cabo_cap_calc"]
         ng_, nc_ = len(G["idx"]), int(G["e"]["cap"][0])
         est_ = f"estágio(s) {B.tags_estagio('', G['idx'])}"
-        add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cb['secao']} mm² preto (fases do estágio: chave → contatora → reator) – {est_}",
+        add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cb['secao']} mm² preto (fases do estágio: chave → contatora → reator) – FORA da canaleta, espaçados ≥ 1 diâmetro – {est_}",
             f"{cb['secao']} mm² classe 5", round(3 * ng_ * comp_est, 1), "m", "ELECTRIC", "calculado",
-            f"NBR 5410: I0 {cb['I0']} A × FCT {cb['FCT']} × FCA {cb['FCA']} = {cb['Iz']:.0f} A ≥ {cb['I']:.0f} A")
-        add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cc['secao']} mm² preto (reator → cada capacitor) – {est_}",
+            cb.get("texto") or f"NBR IEC 61439-1 Anexo H: {cb['Iz']:.0f} A ≥ 125 % × {cb['I']:.0f} A")
+        add("4 Cabos de força", "", f"Cabo flexível 0,6/1 kV HEPR 90 °C {cc['secao']} mm² preto (reator → cada capacitor) – FORA da canaleta, espaçados ≥ 1 diâmetro – {est_}",
             f"{cc['secao']} mm² classe 5", round(3 * ng_ * nc_ * 1.2, 1), "m", "ELECTRIC", "calculado",
-            f"NBR 5410: Iz {cc['Iz']:.0f} A ≥ {cc['I']:.0f} A")
+            cc.get("texto") or f"NBR IEC 61439-1 Anexo H: {cc['Iz']:.0f} A ≥ 125 % × {cc['I']:.0f} A")
         add("4 Cabos de força", "", f"Terminal de compressão tubular Cu estanhado {cb['secao']} mm² (DIN 46235), furo conforme borne – {est_}",
             f"terminal {cb['secao']} mm²", 3 * ng_ * 4, "pç", "ELECTRIC", "calculado", "2 pontas × 2 trechos × 3 fases × estágio; prensagem hexagonal")
         add("4 Cabos de força", "", f"Terminal de compressão/ponteira {cc['secao']} mm² no borne de cada capacitor – {est_}", f"terminal {cc['secao']} mm²",
@@ -226,7 +226,14 @@ def montar(ped, res, gab, prot, ext=None):
         1, "cj", "ELECTRIC", "calculado", "Etiqueta_Arco_Eletrico do projeto")
     # ------------------------------------------------ infraestrutura
     n_col = len(pn["gabinete"]["colunas"])
-    add("7 Infraestrutura", "", "Canaleta recortada 60 × 60 mm cinza com tampa", "canaleta 60×60", round(n_col * (4 * 0.9 + 2 * 1.5), 1),
+    try:                                                   # v1.29.0 (REQ-PNL-032): suportes dos cabos de força (fora da canaleta)
+        _n_sup = sum(len(G_["idx"]) for G_ in GR) * 6
+        add("7 Infraestrutura", "", "Suporte/espaçador isolante para cabos de força fixado na placa (mantém os cabos de força FORA da "
+            "canaleta e afastados ≥ 1 diâmetro – NBR IEC 61439-1 Anexo H) + abraçadeira de nylon com base", "espaçador de cabos",
+            _n_sup, "pç", "ELECTRIC", "calculado", "6 por estágio (chave→contatora, contatora→placa, reator→capacitores)")
+    except Exception:
+        pass
+    add("7 Infraestrutura", "", "Canaleta recortada 60 × 60 mm cinza com tampa – SOMENTE cabos de comando", "canaleta 60×60", round(n_col * (4 * 0.9 + 2 * 1.5), 1),
         "m", "ELECTRIC", "calculado", "4 horizontais + 2 verticais por coluna")
     add("7 Infraestrutura", "", "Trilho DIN 35 mm perfurado", "trilho DIN 35", round(n_col * 1.0, 1), "m", "ELECTRIC", "calculado", "")
     add("7 Infraestrutura", "", "Prateleira/suporte dos capacitores e dos reatores (cantoneira perfurada pintada preta)", "suportes", 1, "cj",

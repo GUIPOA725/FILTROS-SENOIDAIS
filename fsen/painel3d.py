@@ -617,10 +617,10 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             xm = xu0 + passo * (j + 0.5)
             _contatora(p, xm - kd["L"] / 2, yf, z_km, kd, bool(ctt))
             _secc(p, xm - sd["L"] / 2, yf, z_sc, sd, bool(sec))
-            # rotas de montagem por fase: barra → chave (cordoalha) | chave → contatora (pela canaleta) | contatora → passa-cabo
+            # rotas de montagem por fase: barra → chave (cordoalha) | chave → contatora (à frente da canaleta, força fora da canaleta) | contatora → passa-cabo
             for f in range(3):
                 dx = (f - 1) * sd["L"] * 0.28
-                ycab = yf - 35
+                ycab = yf - 60 - 8 - cab_d / 2                              # v1.29.0: força FORA (à frente) da canaleta de comando
                 yb = yp + CHAPA / 2 + 85                                    # derivação: barra (atrás) → passa-barra → topo da chave NH
                 _tubo(p, "tras", [(xm + dx, yb, z_bb + f * 45 + 15), (xm + dx, yb - 40, z_bb + f * 45 + 15),
                                   (xm + dx, yb - 40, z_sc + sd["A"] + 60), (xm + dx, yp, z_sc + sd["A"] + 60)], 14, "#1e1e1e")
@@ -629,7 +629,7 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                 _tubo(p, "frente", [(xm + dx, ycab, z_sc), (xm + dx, ycab, z_dut[1] + dut / 2),
                                     (xm + dx * 0.8, ycab, z_km + kd["A"])], 12, "#1e1e1e")
                 xl_ = x_lado[lado_est[j]] + (f - 1) * cab_d * 1.1
-                ycn = yf - 18 - f * 12
+                ycn = yf - 60 - 8 - cab_d / 2 - f * 2 * cab_d               # v1.29.0: fora da canaleta, espaçados ≥ 1 diâmetro
                 _tubo(p, "frente", [(xm + dx * 0.8, ycab, z_km), (xm + dx * 0.8, ycab, z_dut[0] + dut * 0.65),
                                     (xm + dx * 0.8, ycn, z_dut[0] + dut * 0.65), (xl_, ycn, z_dut[0] + dut * 0.65),
                                     (xl_, ycn, z_ps[j] + 12), (xl_, yp, z_ps[j] + 12)], cab_d, "#1e1e1e")
@@ -694,8 +694,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
             for kc, q in enumerate(caps_j):
                 for f, (tx, ty, tz) in enumerate(q[3]):
                     _cl(p, "frente", tx, ty, tz, cap_d * 1.15, 14, "#1565c0" if f == 0 else "#202020" if f == 1 else "#8d8d8d")  # anilha de fase
-                    ycn = yf - 10 - ((kc * 3 + f) % 5) * 10
-                    zcn = z_dut[0] + 10 + ((kc * 3 + f) // 5) * 9
+                    ycn = yf - 60 - 8 - cap_d / 2 - ((kc * 3 + f) % 5) * 2 * cap_d      # v1.29.0: fora da canaleta, espaçados
+                    zcn = z_dut[0] + 10 + ((kc * 3 + f) // 5) * 2 * cap_d
                     xl_ = x_lado[lado_est[j]] + ((kc * 3 + f) % 4 - 1.5) * cap_d
                     yg_ = yf - 12 - ((kc * 3 + f) % 3) * 10            # sobe pelo vão atrás das latas (não atravessa prateleira)
                     zs_ = tz + 14 + min(28, max(10, (z_dut[0] - tz) * 0.3))
@@ -762,6 +762,12 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                     f"{esp_lat:.0f} mm", f"≥ {prm['afastamento_lateral_min_mm']} mm (ar e ferramenta)",
                     CK.texto(CK.check(esp_lat >= prm["afastamento_lateral_min_mm"],
                                       CK.utilizacao(prm["afastamento_lateral_min_mm"], max(esp_lat, 1))))])
+        # v1.29.0 (REQ-PNL-032): cabos de força fora da canaleta, espaçados ≥ 1 diâmetro (NBR IEC 61439-1 Anexo H)
+        _prof_cab = 60 + 8 + cab_d * 6                                   # canaleta + folga + 3 fases com espaço de 1 diâmetro
+        ver.append(["Placa – frente", f"Cabos de força FORA da canaleta (canaleta só comando), espaçados ≥ 1 diâmetro "
+                    f"({cab_d:.0f} mm) – faixa à frente da canaleta ({c['funcao']})", f"{_prof_cab:.0f} mm da placa",
+                    f"≤ {(yf - PERFIL - 20):.0f} mm (até a porta)", CK.texto(CK.check(_prof_cab <= yf - PERFIL - 20,
+                                                                                 CK.utilizacao(_prof_cab, yf - PERFIL - 20)))])
         _dq = (achar_dim(_cq if i == 0 and "_cq" in dir() else "", "disjuntores") or {}).get("P", 150) + 40 if i == 0 else 0
         prof_comp = max(sd.get("P", 80), kd.get("P", 108), _dq) + 30
         ver.append(["Placa – frente", f"Profundidade dos componentes da frente (chave, contatora, disjuntor geral + mecanismo) – {c['funcao']}",
@@ -803,9 +809,8 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
         yv = yp + CHAPA / 2
         zT = [zs_r[nv] + PERFIL + rA + 15 for nv in range(niveis)]      # canaleta acima dos reatores (bornes de cima)
         zB = [zs_r[nv] + PERFIL + 2 for nv in range(niveis)]            # canaleta sobre a prateleira (bornes de baixo)
-        for nv in range(niveis):
-            for zz in (zT[nv], zB[nv]):
-                _canaleta_tras(p, xa + 10 + cv, yv, zz, xb - xa - 20 - 2 * cv, 40)
+        # v1.29.0 (REQ-PNL-032): canaleta é SÓ comando – no verso fica só a vertical (fios dos termostatos); os cabos de força
+        # correm por fora, espaçados ≥ 1 diâmetro, presos em espaçadores na placa
         z_vt0, z_vt1 = min(zB), max(max(zT) + 40, max(z_ps) + 60)
         for lado in (0, 1):
             _canaleta_tras(p, x_lado[lado] - cv / 2, yv, z_vt0, cv, z_vt1 - z_vt0, vertical=True)
@@ -873,13 +878,13 @@ def modelo(ped, res, gab, prot, inds=None, caps_cod=None, base=None):
                     for kc in range(ncab):
                         ox = (kc - (ncab - 1) / 2) * D_ * 1.05
                         kk_ = f * ncab + kc
-                        ych = yv + 6 + (kk_ % 4) * 5
+                        ych = yv + 30 + 8 + D_ / 2 + (kk_ % 4) * 2 * D_     # v1.29.0: fora da canaleta, espaçados ≥ 1 diâmetro
                         xo = xl_ + (kk_ % 5 - 2) * D_ * 0.9
-                        if cima:                                 # sobe do borne, passa POR CIMA do reator e entra na canaleta superior
-                            zch = zT[nv] + 12 + (kk_ % 3) * 9
+                        if cima:                                 # sobe do borne, passa POR CIMA do reator e corre espaçado (fora de canaleta)
+                            zch = zT[nv] + 12 + (kk_ % 3) * 2 * D_
                             rota = [E, (E[0] + ox * 0.3, E[1] + 18, E[2] + 22), (E[0] + ox, E[1] + 18, zch), (E[0] + ox, ych, zch)]
-                        else:                                    # desce do borne e volta pelo vão entre reatores até a canaleta inferior
-                            zch = zB[nv] + 12 + (kk_ % 3) * 9
+                        else:                                    # desce do borne e volta pelo vão entre reatores e corre espaçado (fora de canaleta)
+                            zch = zB[nv] + 12 + (kk_ % 3) * 2 * D_
                             zl = E[2] - 14 - (kk_ % 3) * 6
                             rota = [E, (E[0] + ox * 0.3, E[1] + 18, zl), (xg + ox * 0.5, E[1] + 18, zl), (xg + ox * 0.5, yr + 10, zl),
                                     (xg + ox * 0.5, ych, zch)]

@@ -198,7 +198,7 @@ def _premissas(ped, proj, cat):
         "amb": f"{pp.get('amb_max_c', 40)} °C",
         "alt": "≤ 1000 m",
         "cabo_comp": f"{ped.cabo_m or cat.get('cabo_comprimento_padrao_m', 30):g} m",
-        "cabo_secao": "dimensionado pela corrente (NBR 5410)",
+        "cabo_secao": "dimensionado pela corrente (NBR 5410 – cabo de campo até o motor)",
         "cabo_tipo": "blindado simétrico para inversor",
         "motor_fp": f"FP {ped.motor_fp}",
         "motor_placa": "dispersão 0,15 pu (motor de indução típico)",
