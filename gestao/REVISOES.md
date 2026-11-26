@@ -323,3 +323,11 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
 - Decisão: pode publicar
+
+## Revisão – v1.30.0 – 2026-11-26 00:08
+- Requisitos: 149 | APROVADO 91 | ATENÇÃO 38 | REPROVADO 20
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261125_2155
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
