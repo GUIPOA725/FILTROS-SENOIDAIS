@@ -367,3 +367,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 15:07 26/11 (engenheiro): print com 'tle'/'cp'/'ho' não é reconhecido – "não abre" → v1.32.2 (.bat ASCII + CRLF).
 - 26/11 (Claude): v1.32.2 publicada (ABRIR_FSEN.bat e INICIAR.bat ASCII + CRLF no Drive e na cópia local; conferido o arquivo do Drive).
 - 15:11 26/11 (engenheiro): print ainda parado em [1/4] – "não abre" → v1.32.3 (não copia do Drive quando a versão local é igual).
+- 15:11–15:12 26/11 (engenheiro): "achou e abriu" / "abriu" (v1.32.2 abriu após a cópia do Drive). Claude: v1.32.3 publicada (abre direto quando a versão local é igual à do Drive).
