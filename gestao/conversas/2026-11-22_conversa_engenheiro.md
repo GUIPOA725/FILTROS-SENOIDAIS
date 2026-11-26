@@ -378,3 +378,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 17:59 26/11 (engenheiro): "O motor é Weg e os valores são esses que eles mandaram" → REQ-SEN-028 (A&W: motor WEG).
 - 17:59 26/11 (engenheiro): "O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem ... sempre que conseguir vou insere nos dados" → REQ-SEN-029.
 - 26/11 (Claude): v1.34.1 – cabo genérico sem blindagem como padrão; motor WEG W22 IE4 132 kW 315S/M pelo catálogo.
+- 26/11 (Claude): v1.34.1 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
