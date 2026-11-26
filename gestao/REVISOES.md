@@ -3,6 +3,13 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.29.0 – 25/11/2026 – fiação interna pela NBR IEC 61439-1 nos 3 filtros
+**Pedido:** "então vc precisa mudar todo o codigo para a fiação ... NBR IEC 61439-1 nos 3 filtros"; "A canaleta é comando, os cabos de força são por fora das canaletas".
+**Pesquisa:** gestao/analises/2026-11-25_norma_fiacao_interna_IEC61439.md (NBR IEC 61439-1:2016 obrigatória desde 12/2021; IEC 61921 manda atender a 61439; NBR 5410 §1.4).
+**Feito:** fsen/fiacao_iec61439.py (Anexo H: 125 %, 70 °C, ar 55 °C, força fora da canaleta espaçada ≥ 1 diâmetro; opção encostados); contatora ≤ 80 % (AC-1) e ≥ 1,3 × I60; cabos de capacitor 1,3 × In; senoidal (mecanica/termico); EPLAN; lista (espaçadores; canaleta só comando); normas; 3D sem cabos de força em canaleta.
+**Testes:** Panatlântica ABB – sem reprovações, 22 atenção; 50 mm² + AF80 (antes 70 + AF116); verificador "pode publicar". A&W (pedido do dossiê) – APROVADO; cabos X1→L1 1×240 mm² espaçados (269 A × 1,05 × 1,25 = 353 A ≤ 375 A).
+**Pendente:** confirmar com o engenheiro se algum projeto usa cabos encostados (marcar no pedido).
+
 ## v1.28.1 – 25/11/2026 – banco: borne da contatora e arco nos terminais de entrada
 **Pedido:** "Vc não consegue corrigir esses problemas?" (os 2 REPROVADOS da Panatlântica na v1.28.0).
 **Feito (regra geral):** REQ-BCO-006: a contatora sobe sozinha até uma cujo borne de catálogo aceite o cabo NBR 5410. Bornes ABB conferidos nas folhas de dados de 25/11. REQ-SEG-015: o lado de linha do -Q0 passa a ser tratado como energia do alimentador do cliente: tampa e IPXXB na lista, medida no estudo, ATENÇÃO até 40 cal/cm², tempo real da proteção lido do pedido ou pedido como lacuna.
