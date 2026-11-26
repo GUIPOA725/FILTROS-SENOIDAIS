@@ -3,6 +3,12 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.30.0 – 26/11/2026 – filtro senoidal × players mundiais
+**Pedido:** REQ-SEN-024 ("buscar nos 4 players mundiais... pasta players... planilha comparativa e no consolidado").
+**Feito:** dados/players_filtro_senoidal.yaml (Schaffner, TDK, Block, Danfoss – C 115–260 A "conferir" –, MTE), fsen/players.py, planilha em 01_Engenharia/6_Players_Mercado, bloco no RESUMO e no consolidado.
+**Teste:** A&W (pedido do projeto, prioridade mercado) – 9 modelos vizinhos de 5 fabricantes; uk 8,4 % (faixa 6,7–14), fr 1158 Hz (623–1359), 3,15 W/A (≤ 3,72) – APROVADO. Mudança isolada no filtro senoidal (banco não afetado).
+**Pendente:** conferir C da Danfoss 115–260 A no PDF original; estender ao reator do banco (Epcos, Schneider, ABB, Frako, Cootrans); REQ-SEN-025 (estrela × delta).
+
 ## v1.29.0 – 25/11/2026 – fiação interna pela NBR IEC 61439-1 nos 3 filtros
 **Pedido:** "então vc precisa mudar todo o codigo para a fiação ... NBR IEC 61439-1 nos 3 filtros"; "A canaleta é comando, os cabos de força são por fora das canaletas".
 **Pesquisa:** gestao/analises/2026-11-25_norma_fiacao_interna_IEC61439.md (NBR IEC 61439-1:2016 obrigatória desde 12/2021; IEC 61921 manda atender a 61439; NBR 5410 §1.4).
