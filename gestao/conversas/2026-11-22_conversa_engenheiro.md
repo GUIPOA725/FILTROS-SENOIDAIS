@@ -334,3 +334,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 25/11 (Claude): v1.28.0 publicada no Drive (36 arquivos: FSEN_v1.7.1, zip, versao_plataforma.json, CHANGELOG, GESTAO, MEMORIA_IA). Engenheiro deve reabrir pelo atalho e refazer o A&W.
 
 - 20:51 25/11 (engenheiro): "Vc não consegue corrigir esses problemas?" → REQ-BCO-006 e REQ-SEG-015 (v1.28.1).
+- 25/11 (Claude): v1.28.1 publicada no Drive (Panatlântica ABB: 0 reprovados, 25 atenção).
