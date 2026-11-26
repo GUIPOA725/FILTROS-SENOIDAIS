@@ -343,3 +343,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 21:37: "vc tem certeza absoluta que é a NBR IEC 61439-1? ela serve para o caso onde vou usar filtros? faça uma pesquisa mais profunda, o que se fala no brasil e exterior os principais montadores de painéis sobre isso?" → REQ-PNL-032.
 - 21:50 25/11 (engenheiro): "A canaleta é comando, os cabos de força são por fora das canaletas... Precisa mudar em todo o código isso" → REQ-PNL-033, v1.29.0.
 - 22:16 25/11 (engenheiro): "Preciso cotar o indutor com os fabricantes"
+- 25/11 (Claude): v1.29.0 publicada no Drive (fiação interna NBR IEC 61439-1; Panatlântica sem reprovações; A&W aprovado).
