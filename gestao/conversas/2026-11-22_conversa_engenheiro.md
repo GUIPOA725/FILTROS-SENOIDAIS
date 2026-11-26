@@ -358,3 +358,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 10:49 26/11 (engenheiro): print do SyntaxError (pipeline.py linha 105) "olha esse erro" / "tentei usar a ultima versão" → REQ-GER-017, v1.31.1.
 - 26/11 (Claude): v1.31.1 publicada (Drive + cópia local em %LOCALAPPDATA%\FSEN\programa).
 - 10:56 26/11 (engenheiro): "ele não tá atualizando a versão quando abro a versão 1.31.0 antiga" / "não atualiza a nova" / "isso tem que ser automático" → REQ-GER-018, v1.31.2.
+- 26/11 (Claude): v1.31.2 publicada (Drive, cópia local e pasta FSEN_plataforma_v1.31.0 extraída recebem janela/bat novos).
