@@ -363,3 +363,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 14:05 26/11 (engenheiro): "pode sim, se vc concorda com ele e acha necessário e vai melhorar o estudo e projeto, pode fazer" → v1.32.0 (REQ-SEN-026 geral, todos os projetos).
 - 26/11 (Claude): v1.32.0 publicada (Drive PROGRAMAS + FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA) – correções da auditoria A&W; teste A&W aprovado e verificador do banco 'pode publicar'.
 - 15:03 26/11 (engenheiro): print da janela parada em "[1/4] Atualizando a copia local do programa..." – "e esse erro" / "não abre" → REQ-GER-019, v1.32.1 (robocopy /R:2 /W:2).
+- 26/11 (Claude): v1.32.1 publicada (ABRIR_FSEN.bat no Drive e na cópia local).
