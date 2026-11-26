@@ -356,3 +356,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 26/11 (Claude): v1.31.0 (REQ-DOC-020) testada nos 3 tipos.
 - 26/11 (Claude): v1.31.0 publicada; ETs/e-mails novos copiados para a pasta A&W v1.29.0 (03_Fornecedores e 04_Montadora/1_Cotacao_Montagem).
 - 10:49 26/11 (engenheiro): print do SyntaxError (pipeline.py linha 105) "olha esse erro" / "tentei usar a ultima versão" → REQ-GER-017, v1.31.1.
+- 26/11 (Claude): v1.31.1 publicada (Drive + cópia local em %LOCALAPPDATA%\FSEN\programa).
