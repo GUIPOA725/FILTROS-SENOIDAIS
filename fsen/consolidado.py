@@ -282,6 +282,7 @@ def _img(caminho, larg_max=170 * mm, alt_max=110 * mm):
 # ------------------------------------------------------------------ v1.21.0: conteúdo de Word/Excel/e-mails/JSON
 # ordem de leitura dos documentos que não são PDF – entram INTEIROS no corpo do consolidado
 ORDEM_CONTEUDO = [
+    (r"Players_Mercado.*\.xlsx$", "Comparação com os players mundiais (Schaffner, TDK, Block, Danfoss, MTE) – REQ-SEN-024"),
     (r"Transitorios_.*\.xlsx$", "Transitórios – critérios por caso e comparação Plataforma × ATP"),
     (r"Proposta.*\.docx$", "Proposta técnica e comercial"),
     (r"ESTAGIO.*\.xlsx$", "Planilha ESTAGIO (padrão Electric)"),

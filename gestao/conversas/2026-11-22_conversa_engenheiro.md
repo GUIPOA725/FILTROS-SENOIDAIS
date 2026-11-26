@@ -348,3 +348,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 25/11 (Claude): A&W v1.29.0 copiado para PROJETOS\A & W...\2026-11-25_FSEN-LC-268A-440V_v1.29.0 (111 arquivos; consolidado com imagens recomprimidas, 13 MB).
 - 23:49 25/11 (engenheiro): "Esse indutor e capacitores formando um LC estão de acordo com mercado internacional... 4 players mundiais... criar uma pasta tipo concorrentes ou players... Vc concorda? Isso já existe no código?" → REQ-SEN-024.
 - 23:50 25/11 (engenheiro): "É uma busca mais profunda na internet com critérios não algo só visual precisa de informações técnicas boas" → REQ-SEN-024 (critérios: L, Cy, fr, uk, W/A, massa, fs mín, classe; só datasheet oficial).
+- 23:56 25/11 (engenheiro): "Eu gostei da sua comparação usar salvar em planilha comparativa TB e no consolidado" → REQ-SEN-024 em implementação (v1.30.0).
+- 23:59: "Outra coisa sobre os capacitores... quando usar em delta e quando em estrela?... Todos seguem o mesmo padrão" → REQ-SEN-025.

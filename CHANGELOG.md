@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.30.0 – 26/11/2026 – filtro senoidal × players mundiais
+- REQ-SEN-024: base dados/players_filtro_senoidal.yaml (Schaffner FN5040, TDK EPCOS B84143V R227, Block SFB, Danfoss MCC 101, MTE SWG – datasheet oficial, link e data de consulta). Em cada projeto: modelos vizinhos de cada fabricante normalizados para a tensão/frequência do projeto (C em estrela, fr, uk, W/A, kg/A, fs mín, queda, classe), faixa de referência e Check (uk ±1 ponto, fr ±20 %, perdas/A ≤ máx +10 %; fora = ATENÇÃO com justificativa).
+- Saída: 01_Engenharia/6_Players_Mercado/Players_Mercado_Filtro_<cod>.xlsx (abas Comparativo, Fontes, Critérios), bloco no RESUMO e no relatório consolidado.
+
 ## v1.29.0 – 25/11/2026 – fiação interna pela NBR IEC 61439-1 nos 3 filtros
 - REQ-PNL-031/032/033: o painel é conjunto NBR IEC 61439-1/-2 (bancos: IEC 61921, que manda atender a 61439). A fiação INTERNA deixa a NBR 5410 e passa ao §10.10.4.3.1 f) + Anexo H: seção para 125 % da corrente, condutor a 70 °C (borne dos dispositivos), ar interno 55 °C (limite da térmica), cabos de força FORA da canaleta e espaçados ≥ 1 diâmetro (opção "encostados" no pedido). NBR 5410 só para cabos de campo.
 - Componentes a ≤ 80 % (§10.10.4.3.1 c): contatora AC-1 ≥ In/0,8 e ≥ 1,3 × I60 (IEC 61921 §6.2.2); cabos dos capacitores para 1,3 × In.

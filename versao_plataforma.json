@@ -1,5 +1,5 @@
 {
-  "versao": "1.29.0",
-  "data": "2026-11-25",
-  "resumo": "Fiação interna dos 3 filtros pela NBR IEC 61439-1 (Anexo H, 125 %, condutor 70 °C), cabos de força fora da canaleta e espaçados, componentes a ≤ 80 % (contatora AC-1); NBR 5410 só nos cabos de campo"
+  "versao": "1.30.0",
+  "data": "2026-11-26",
+  "resumo": "Filtro senoidal comparado com os players mundiais (Schaffner, TDK EPCOS, Block, Danfoss, MTE) – planilha em 01_Engenharia/6_Players_Mercado, bloco no RESUMO e no consolidado, só dados de datasheet com link e data"
 }

@@ -547,6 +547,13 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     with open(os.path.join(sub["01_Engenharia"], "arranjo_orcamento.json"), "w", encoding="utf-8") as f:
         json.dump({"arranjo": arr.to_dict(), "orcamento": orc.to_dict(), "similares": similares}, f, ensure_ascii=False, indent=2,
                   default=_json_default)
+    try:                                            # v1.30.0 (REQ-SEN-024): comparação com os players mundiais (planilha + resumo)
+        from . import players as _PL
+        proj.players = _PL.de_projeto(proj, arr)
+        arqs["players"] = _PL.salvar_xlsx(proj.players, os.path.join(sub["01_Engenharia"], f"Players_Mercado_Filtro_{cod}.xlsx"), cod)
+        log(f"   Players mundiais: {len(proj.players['linhas'])} modelos vizinhos de {len(proj.players['fontes'])} fabricantes")
+    except Exception as e:
+        log(f"   (comparação com players não feita: {type(e).__name__}: {e})")
     resumo = resumo_texto(proj, arr, orc, similares, pasta)
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as f:
         f.write(resumo)
@@ -738,6 +745,12 @@ def resumo_texto(proj, arr, orc, similares, pasta):
                "Check: APROVADO (< 90 % do limite), ATENÇÃO (90–100 % ou aviso), REPROVADO (acima do limite obrigatório)."] + [
            ""] + texto_atp(getattr(proj, "dupla_checagem_atp", None)) + ["## Comercial", f"- Custo por filtro: {rs(orc.custo_unit_total)}  (material {rs(orc.custo_material)} + montagem {rs(orc.custo_montagem)})",
            f"- Preço unitário: **{rs(orc.preco_unit)}** | total {rs(orc.preco_total)} (impostos {orc.impostos_pct:g} %, margem {orc.margem_pct:g} %)", ""]
+    if getattr(proj, "players", None):                       # v1.30.0 (REQ-SEN-024)
+        try:
+            from . import players as _PL
+            lin += _PL.linhas_md(proj.players)
+        except Exception:
+            pass
     if proj.avisos:
         lin += ["## Avisos"] + [f"- {a}" for a in proj.avisos] + [""]
     if ped.get("lacunas"):
