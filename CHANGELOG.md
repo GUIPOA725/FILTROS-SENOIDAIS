@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.28.1 – 25/11/2026 – banco: borne da contatora e arco nos terminais de entrada (correções gerais)
+- REQ-BCO-006: se o cabo calculado (NBR 5410) não entra no borne, a plataforma sobe sozinha a contatora da mesma marca até a primeira cujo borne de catálogo aceita o cabo. Bornes ABB conferidos nas folhas de dados: AF52/AF65 35 mm², AF80/AF96 50 mm², AF116/AF146 70 mm² (flexível). AF96 e AF116 com medidas reais no catálogo de dimensões.
+- REQ-SEG-015: os terminais de entrada (lado de linha do disjuntor geral) recebem a energia do alimentador do cliente, que o painel não consegue reduzir. Agora: tampa de terminais + barreira IPXXB na lista de material, medida no estudo de arco, etiqueta, e Check ATENÇÃO até 40 cal/cm² (REPROVADO só acima, onde não existe vestimenta). O tempo da proteção do cliente passa a ser lido do pedido (sem ele: 500 ms e lacuna pedindo o estudo de seletividade).
+
 ## v1.28.0 – 2026-11-25 (filtro senoidal: correções gerais da auditoria do A&W)
 Correções para TODOS os projetos (REQ-SEN-022), a partir da auditoria independente do dossiê FSEN-LC-268A-440V:
 - **Ponto quente da análise avançada**: o mapa térmico 2D não resolve o gradiente dentro da bobina (máximo − média ≈ 1 K). Agora o ponto quente avançado é, no mínimo, a média do mapa + 15 K – a mesma regra do método de projeto. Com isso o "pior dos dois métodos" compara a mesma grandeza e o fechamento térmico refaz indutores que estavam a poucos kelvin do limite (no A&W auditado a margem real era ~3 K, não 18 K). Vale também para os reatores de banco.

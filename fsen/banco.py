@@ -89,6 +89,7 @@ class PedidoBanco:
     acesso_painel: str = "frontal/traseiro"   # v1.17.4: "frontal/traseiro" (prof. 800, padrão) | "frontal" (prof. 400, mais largo)
     leitura: Dict[str, object] = field(default_factory=dict)
     marca: str = "Padrão Electric"        # v1.20.0: fabricante dos componentes (reator sempre Electric) – dados/fabricantes.yaml   # v1.19.0: leitura da IA (critério, premissas) p/ o relatório consolidado
+    t_protecao_montante_ms: float = 0.0   # v1.28.1: tempo de eliminação da proteção do cliente a montante (0 = não informado → 500 ms)
 
     @property
     def p_pct(self):
@@ -458,12 +459,31 @@ def protecao_estagio(ped, e):
     from .painel_gabinete import ESTAGIOS_POR_COLUNA as _EPC
     n_ag = _EPC                                               # nº de CIRCUITOS (estágios) na mesma canaleta – NBR 5410 tab. 42
     cb = cabo_nbr5410(e["requisitos"]["In"], n_ag)
+    # v1.28.1 (REQ-BCO-006): o cabo calculado TEM que entrar no borne – se não entra, sobe a contatora (mesma marca) até a
+    # primeira cujo borne (catálogo) aceita o cabo. Regra geral, não ajuste de um projeto.
+    cont_motivo = ""
+    _bm = borne_contatora_mm2(cont[0], cont[1])
+    if _bm and cb["secao"] > _bm:
+        _orig = cont[0]
+        _lista = []
+        if getattr(ped, "marca", "") and ped.marca != "Padrão Electric":
+            from . import fabricantes as FB
+            _lista = [(n, float(ie), float(pk)) for n, ie, pk in ((FB._m(ped.marca).get("contatoras") or {}).get("comum") or [])]
+        else:
+            _lista = [(n, float(ie), None) for n, ie in CONTATORES]
+        for n_, ie_, pk_ in _lista:
+            b_ = borne_contatora_mm2(n_, ie_)
+            if ie_ >= cont[1] and (b_ is None or b_ >= cb["secao"]):
+                cont, cont_pico = (n_, ie_), (pk_ if pk_ is not None else cont_pico)
+                cont_motivo = (f"contatora aumentada de {_orig} para {n_}: o cabo calculado de {cb['secao']:g} mm² (NBR 5410, "
+                               f"agrupamento e ar interno) não entra no borne de {_bm:g} mm² da menor (REQ-BCO-006)")
+                break
     n_c = max(1, int(e["cap"][0]))                             # REQ-PNL-027: UM cabo por fase de CADA capacitor até o reator
     I_unid = (e.get("I_cap_rms") or e["I60"]) / n_c * 1.10     # corrente da lata (+10 % tolerância de capacitância, IEC 60831)
     cc = cabo_nbr5410(I_unid, n_ag * n_c)                      # agrupamento: todos os circuitos das latas na mesma canaleta
     cc["I_unid"] = round(I_unid, 1)
     return dict(fusivel_A=fus, chave_A=chave, base=base, contator=cont[0], contator_In=cont[1], cabo_mm2=cb["secao"],
-                contator_pico=cont_pico, contator_tipo=cont_tipo, cabo_calc=cb, cabo_cap_calc=cc,
+                contator_pico=cont_pico, contator_tipo=cont_tipo, contator_motivo=cont_motivo, cabo_calc=cb, cabo_cap_calc=cc,
                 cabo_ind_cap_mm2=cc["secao"], cabo_cap_unid_mm2=cc["secao"], n_cabos_cap_fase=n_c)
 
 
@@ -476,6 +496,11 @@ I2T_NH_GG = {32: 6e3, 40: 1.0e4, 50: 1.8e4, 63: 3.0e4, 80: 5.5e4, 100: 1.0e5, 12
 K_CABO_EPR_CU = 143.0                # NBR 5410 / IEC 60364-4-43: condutor de cobre, isolação EPR/XLPE
 
 
+# v1.28.1 (REQ-BCO-006): seção máxima do borne de potência para cabo FLEXÍVEL (com ponteira), folhas de dados ABB conferidas
+# em 25/11/2026: AF52 1SBL367001R1300 4–35 mm² (1/2×); AF96 1SBL407001R1300 6–50 mm² (1/2×); AF116 1SFL427001R1300 2×10–70 mm².
+BORNE_CATALOGO_MM2 = {"AF52": 35, "AF65": 35, "AF80": 50, "AF96": 50, "AF116": 70, "AF146": 70}
+
+
 def borne_contatora_mm2(nome, ie_ac1=None):
     """Seção máxima TÍPICA do borne de potência da contatora (mm², cabo flexível) pelo tamanho AC-3 lido do nome (AF52 → 52 A).
     Valores típicos de catálogo IEC – A CONFERIR; None = ligação por barra/terminal (sem limite de borne)."""
@@ -484,7 +509,11 @@ def borne_contatora_mm2(nome, ie_ac1=None):
     ac3 = float(m.group(1)) if m else (float(ie_ac1) / 1.6 if ie_ac1 else None)
     if ac3 is None:
         return None
-    for lim, mm2 in ((18, 6), (25, 10), (38, 16), (65, 35), (96, 50), (150, 95), (205, 120)):
+    nm = str(nome or "").upper()
+    for k_, v_ in BORNE_CATALOGO_MM2.items():              # v1.28.1: borne REAL de catálogo (cabo flexível) quando conhecido
+        if re.search(rf"\b{k_}(?:-|\b)", nm):
+            return v_
+    for lim, mm2 in ((18, 6), (25, 10), (38, 16), (65, 35), (96, 50), (150, 70), (205, 120)):
         if ac3 <= lim:
             return mm2
     return None
@@ -515,7 +544,7 @@ def conferencias_protecao(ped, e, pr=None):
     if bm:
         out.append((f"Borne da contatora {str(pr['contator'])[:40]} × cabo de potência",
                     f"cabo {S:g} mm²", f"borne ≤ {bm:g} mm² (típico – A CONFERIR)", S / bm * 100, "ok" if S <= bm else "reprovado",
-                    "" if S <= bm else "o cabo NÃO entra no borne: usar contatora de carcaça maior, barra de ligação/terminal redutor "
+                    (pr.get("contator_motivo") or "") if S <= bm else "o cabo NÃO entra no borne: usar contatora de carcaça maior, barra de ligação/terminal redutor "
                                        "homologado ou 2 cabos menores por fase – definir antes da compra"))
     return out
 

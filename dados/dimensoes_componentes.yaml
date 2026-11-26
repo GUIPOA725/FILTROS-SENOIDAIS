@@ -38,6 +38,10 @@ contatoras:
                                      fonte: "new.abb.com/products/1SBL387001R1300 (22/11/2026) – AC-1 105 A 40 °C", conferir: false}
   "ABB AF80-30-00-13":              {tipo: caixa, L: 70, A: 125.5, P: 116, kg: 1.17, fixacao: "trilho DIN 35 / parafuso", bobina_VA: "retenção 4 VA (60 Hz)",
                                      fonte: "new.abb.com/products/1SBL397001R1300 (22/11/2026) – AC-1 125 A 40 °C", conferir: false}
+  "ABB AF96-30-00-13":              {tipo: caixa, L: 70, A: 125.5, P: 116, kg: 1.17, fixacao: "trilho DIN 35 / parafuso", bobina_VA: "retenção 4 VA (60 Hz)",
+                                     fonte: "ABB 1SBL407001R1300 folha de dados (25/11/2026) – AC-1 130 A 40 °C, borne flex 6–50 mm²", conferir: false}
+  "ABB AF116-30-00-13":             {tipo: caixa, L: 90, A: 150, P: 126, kg: 1.55, fixacao: "parafuso",
+                                     fonte: "ABB 1SFL427001R1300 folha de dados (25/11/2026) – AC-1 160 A 40 °C, borne flex 2×10–70 mm²", conferir: false}
   "Epcos B44066S7410":              {tipo: caixa, L: 60, A: 145, P: 128.5, fixacao: "parafuso M4 / trilho DIN",
                                      fonte: "TDK/Epcos B44066S…J230 – desenho dimensional (contatora p/ capacitor 75 kvar 400 V) – projeto CVI 2021", conferir: true}
 

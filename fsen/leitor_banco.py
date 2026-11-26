@@ -20,6 +20,7 @@ CAMPOS = {
     "harm_corrente_pct": "object", "trafo_kva": "number", "trafo_z_pct": "number", "scc_rede_mva": "number",
     "amb_c": "number", "quantidade": "integer", "modulo_ou_painel": "string", "observacoes": "string",
     "marca_componentes": "string",
+    "t_protecao_montante_ms": "number",
 }
 
 INSTRUCAO = """Você é engenheiro de aplicação de correção de fator de potência e filtros de harmônicas em baixa tensão
@@ -41,6 +42,8 @@ Regras:
 - fd_pct ou nr: só se o CLIENTE pedir um valor. O padrão Electric do dessintonizado é FD 8,16 % (Nr 3,5 – 210 Hz): se não
   for pedido, NÃO liste como lacuna e NUNCA sugira 7 % como premissa (14 % só com 3ª harmônica relevante). ordens: harmônicas a sintonizar se pedidas (ex. [5, 7]).
 - trafo_kva, trafo_z_pct (impedância %), scc_rede_mva (potência de curto na MT) – da placa/unifilar.
+- t_protecao_montante_ms: tempo total de eliminação de falta da proteção do CLIENTE a montante do painel (relé + disjuntor), em ms,
+  se o pedido ou o estudo de seletividade informar; senão omitir (a plataforma adota 500 ms, conservador).
 - marca_componentes: se o cliente pedir uma marca para os componentes do painel: "ABB", "Schneider", "Siemens", "WEG" ou
   "Epcos (TDK)" (o reator é sempre Electric). Omita se não pedir.
 - modulo_ou_painel: "modulo" (cliente já tem painel/contatoras e quer só módulos) ou "painel" (painel completo).
@@ -272,6 +275,15 @@ def decidir(dados, tipo_forcado=None):
             setattr(ped, k, float(dados[k]))
         elif k != "amb_c":
             lac.append(f"{k} não informado – adotado {getattr(ped, k):g}.")
+    try:                                                   # v1.28.1 (REQ-SEG-015): tempo da proteção do cliente (arco elétrico)
+        _tm = float(dados.get("t_protecao_montante_ms") or 0)
+    except (TypeError, ValueError):
+        _tm = 0.0
+    if _tm > 0:
+        ped.t_protecao_montante_ms = _tm
+    else:
+        lac.append("tempo da proteção a montante do cliente não informado – adotado 500 ms no estudo de arco (pedir ao cliente o "
+                   "estudo de seletividade: com o tempo real a energia nos terminais de entrada pode cair muito).")
     if tipo == "dessintonizado":
         nr = dados.get("nr")
         if not nr and dados.get("fd_pct"):

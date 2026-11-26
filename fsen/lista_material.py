@@ -102,6 +102,9 @@ def montar(ped, res, gab, prot, ext=None):
     add("1 Proteção geral", "-Q0", "Mecanismo de manopla rotativa externa com eixo prolongado, intertravamento de porta e "
         "dispositivo para cadeado (NR-10)", "acessório do -Q0 (mesma marca)", 1, "cj", o, "CONFERIR código do acessório", "NR-10 10.4.1/10.6.5")
     ce = B.cabos_entrada(ped, djg["In"])
+    add("1 Proteção geral", "-Q0", "Tampa de terminais (cobre-terminais) do LADO DE LINHA do -Q0 + barreira de policarbonato IPXXB do "
+        "compartimento de entrada – terminais energizados pelo alimentador do cliente (REQ-SEG-015)", "acessório do -Q0 (mesma marca)", 1, "cj", o,
+        "CONFERIR código do acessório", "NR-10 10.6.1 / NBR IEC 61439-2")
     add("1 Proteção geral", "-X0", f"Cabos do cliente até o -Q0: {ce['texto']} – fornecimento do cliente; painel com flange de "
         f"entrada {'no teto' if str(getattr(ped, 'entrada_cabos', 'baixo')).startswith('c') else 'na base'} e prensa-cabos",
         "flange + prensa-cabos", 1, "cj", "ELECTRIC", "calculado", f"NBR 5410 a {ce['T']:g} °C: {ce.get('Iz_total')} A ≥ {djg['In']} A")

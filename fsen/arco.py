@@ -47,9 +47,11 @@ def calcular(V_kV, Ibf_kA, T_ms, altura_mm=2200, largura_mm=1000, profundidade_m
     return dict(E=pior["E"], AFB_mm=pior["AFB_mm"], I_arc_kA=pior["I_arc_kA"], casos=out, T_ms=T_ms, Ibf_kA=Ibf_kA)
 
 
-def cenarios(ped, Icc_kA, gab=None, t_montante_ms=500.0, t_geral_ms=50.0, t_fusivel_ms=10.0):
+def cenarios(ped, Icc_kA, gab=None, t_montante_ms=None, t_geral_ms=50.0, t_fusivel_ms=10.0):
     """Cenários do painel. t_montante_ms: tempo da proteção do cliente (não informado → 500 ms, conservador);
     t_geral_ms: disparo instantâneo do disjuntor geral (abertura + arco ≈ 50 ms); t_fusivel_ms: NH gG limitador (≤ ½ ciclo)."""
+    if t_montante_ms is None:                                   # v1.28.1: tempo informado pelo cliente, se houver; senão 500 ms
+        t_montante_ms = float(getattr(ped, "t_protecao_montante_ms", 0) or 500.0)
     V = ped.tensao_v / 1000
     dim = (gab or {}).get("dimensoes_mm") or {"altura": 2200, "largura": 1000, "profundidade": 800}
     larg_col = max((c["largura"] for c in (gab or {}).get("colunas", [])), default=1000)
@@ -70,10 +72,31 @@ def linhas_check(res_arco):
     >8 REPROVADO para trabalho energizado – o painel é para operar FECHADO; NR-10 exige desenergizar para intervir)."""
     out = []
     for c in res_arco["cenarios"]:
+        if lado_linha(c):
+            # v1.28.1 (REQ-SEG-015): o lado de LINHA do -Q0 é energizado pelo alimentador do CLIENTE – a energia é fixada pela
+            # proteção a montante e nenhum componente do painel a reduz. O painel cumpre a sua parte isolando esses terminais
+            # (tampa de terminais + barreira IPXXB, compartimento de entrada) e etiquetando; intervenção só com o alimentador
+            # desligado e bloqueado a montante (NR-10 10.5). Por isso: ≤ 1,2 APROVADO; ≤ 40 cal/cm² ATENÇÃO (exige as medidas e
+            # o tempo real da proteção do cliente); > 40 cal/cm² REPROVADO (não existe vestimenta – o cliente tem que reduzir o
+            # tempo a montante: ajuste instantâneo/modo manutenção ou relé de arco).
+            st = CK.APROVADO if c["E"] <= 1.2 else (CK.ATENCAO if c["E"] <= LIMITE_LADO_LINHA_CAL else CK.REPROVADO)
+            out.append([c["local"] + " – energia do alimentador do cliente: terminais isolados (tampa + IPXXB) e etiquetados; "
+                        "intervir só com o alimentador desligado a montante; confirmar o tempo real da proteção do cliente",
+                        c["eliminacao"], f"{c['I_arc_kA']:.1f} kA", f"{c['T_ms']:.0f} ms", f"{c['E']:.2f} cal/cm²",
+                        f"{c['AFB_mm']:.0f} mm", c["categoria"], CK.texto(st, c["E"] / LIMITE_LADO_LINHA_CAL * 100)])
+            continue
         st = CK.APROVADO if c["E"] <= 1.2 else (CK.ATENCAO if c["E"] <= 8 else CK.REPROVADO)
         out.append([c["local"], c["eliminacao"], f"{c['I_arc_kA']:.1f} kA", f"{c['T_ms']:.0f} ms", f"{c['E']:.2f} cal/cm²",
                     f"{c['AFB_mm']:.0f} mm", c["categoria"], CK.texto(st, c["E"] / 1.2 * 100)])
     return out
+
+
+LIMITE_LADO_LINHA_CAL = 40.0      # NFPA 70E / NR-10: acima de 40 cal/cm² não há vestimenta – trabalho energizado proibido
+
+
+def lado_linha(c):
+    """Cenário dos terminais de entrada (lado de linha do disjuntor geral) – energia definida pela proteção do cliente."""
+    return str(c.get("local", "")).startswith("Terminais de entrada")
 
 
 def etiqueta_pdf(arq, ped, cod, res_arco, versao=""):
@@ -103,6 +126,9 @@ def etiqueta_pdf(arq, ped, cod, res_arco, versao=""):
 
 MEDIDAS = [
     ("Disjuntor geral -Q0 no painel com manopla externa, intertravamento e cadeado", "barramento eliminado em ~50 ms em vez do tempo da proteção do cliente", "NR-10 10.4.1 / 10.6.5"),
+    ("Terminais de entrada (lado de linha do -Q0) com tampa de terminais do disjuntor e barreira IPXXB própria, em compartimento de "
+     "entrada separado; etiqueta com a energia do lado de linha", "nada energizado pelo alimentador do cliente fica exposto com a porta "
+     "aberta e o -Q0 desligado; intervenção nos terminais só com o alimentador desligado e bloqueado a montante", "NR-10 10.5/10.6.1; NBR IEC 61439-2"),
     ("Fusíveis NH gG limitadores por estágio", "arco no estágio eliminado em ≤ ½ ciclo", "NR-10 10.6.5 (limitadores de corrente)"),
     ("Compartimento do barramento com policarbonato (forma 2b) e protetores de borne (IPXXB)", "arco não se propaga; nada vivo exposto com a porta aberta", "NR-10 10.6.1/10.6.2; NBR IEC 61439-2"),
     ("Operação e inspeção com a porta fechada (controlador, sinaleiros, comando na porta; janela de termografia opcional)", "elimina exposição na operação de rotina", "NR-10 10.7.7.1"),

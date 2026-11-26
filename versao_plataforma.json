@@ -1,5 +1,5 @@
 {
-  "versao": "1.28.0",
+  "versao": "1.28.1",
   "data": "2026-11-25",
-  "resumo": "Filtro senoidal – correções gerais da auditoria A&W: ponto quente avançado = média + 15 K, entreferro equalizado pelo 3D, saturação com curva conservadora, sensibilidade ao amortecimento, fs fixa como requisito, documentos coerentes"
+  "resumo": "Banco – correções gerais: contatora escolhida pelo borne de catálogo que aceita o cabo calculado; arco nos terminais de entrada tratado como energia do alimentador do cliente (terminais isolados, etiqueta, tempo real da proteção pedido ao cliente)"
 }
