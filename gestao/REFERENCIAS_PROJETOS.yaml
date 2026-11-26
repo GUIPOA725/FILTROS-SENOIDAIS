@@ -125,3 +125,10 @@ referencias:
     - "A aprovação depende de fs = 4 kHz fixa; o ACS580 reduz a frequência sozinho – travar no contrato e no FAT."
     - "Documentos ainda dizem classe F/100 K depois da decisão de ofertar classe H."
   requisitos: [REQ-SEN-022, REQ-SEN-021, REQ-GER-014]
+
+- id: REF-ADENDO-AW-268A-V1323
+  data: "2026-11-26"
+  arquivo: gestao/analises/2026-11-26_Adendo_Verificacao_1513_Rev00.pdf
+  descricao: "Adendo da auditoria externa sobre o pacote A&W FSEN-LC-268A-440V gerado na v1.32.3 (15:46): 6 resolvidos, 11 parciais, 2 não tratados"
+  licoes: "C2, A4, A6, A7, A12 resolvidos; bloqueios: derating ACS580 a 4 kHz, aceite 268 A, THD baixa ordem com metade do amortecimento; resíduos de texto (60831, Q, Isat 500 A no RTM, e-mail)"
+  requisitos: [REQ-SEN-026, REQ-SEN-027]
