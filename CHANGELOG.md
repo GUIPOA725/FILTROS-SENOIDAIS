@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.32.1 – 26/11/2026 – correção: abertura parada em [1/4]
+- A cópia local não fica mais esperando arquivo que o Google Drive ainda está sincronizando (2 tentativas de 2 s e abre com a cópia local).
+
 ## v1.32.0 – 26/11/2026 – auditoria independente: documentos coerentes e normas corretas
 - Valores garantidos iguais em folha de dados, proposta e relatório (pico do pior caso; THD da saída × THD total no motor; queda × inserção).
 - Normas corrigidas (IEC 61071 no capacitor, IEC 61800-3, CE/UL declarada como não incluída).

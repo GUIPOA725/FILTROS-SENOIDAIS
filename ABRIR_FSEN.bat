@@ -20,7 +20,10 @@ if exist "%CANON%ABRIR_FSEN.bat" if /i not "%ORIGEM%"=="%CANON%" (
 )
 set "LOCAL=%LOCALAPPDATA%\FSEN\programa"
 echo [1/4] Atualizando a copia local do programa...
-robocopy "%ORIGEM%." "%LOCAL%" /MIR /XD __pycache__ saidas /XF historico.db /NFL /NDL /NJH /NJS /NP >nul
+REM v1.32.1 (REQ-GER-019): /R:2 /W:2 – sem isso o robocopy tenta 1 milhao de vezes (30 s cada) um arquivo que o Google Drive
+REM ainda esta sincronizando e a janela fica parada em [1/4]. Se algum arquivo falhar, segue com a copia local que ja existe.
+robocopy "%ORIGEM%." "%LOCAL%" /MIR /R:2 /W:2 /XD __pycache__ saidas /XF historico.db /NFL /NDL /NJH /NJS /NP >nul
+if errorlevel 8 echo   Aviso: alguns arquivos do Drive ainda estao sincronizando - abrindo com a copia local.
 cd /d "%LOCAL%"
 
 REM --- 2) procura o Python (Anaconda primeiro)

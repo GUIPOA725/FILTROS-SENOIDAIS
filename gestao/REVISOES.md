@@ -3,6 +3,9 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.32.1 – 26/11/2026 – abertura travada em [1/4] (REQ-GER-019)
+**Erro (print):** janela parada em "Atualizando a cópia local". **Causa:** robocopy sem /R /W tenta 1 milhão de vezes (30 s) arquivo em sincronização no Drive logo após a publicação. **Correção:** /R:2 /W:2 + aviso; segue com a cópia local.
+
 ## v1.32.0 – 26/11/2026 – correções da auditoria independente A&W (REQ-SEN-026)
 **Origem:** auditoria técnica independente do pacote v1.31.2 do FSEN-LC-268A-440V; engenheiro: "pode sim, se vc concorda com ele e acha necessário ... pode fazer". Correção GERAL (todos os filtros senoidais).
 **Feito:**

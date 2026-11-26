@@ -1,5 +1,5 @@
 {
-  "versao": "1.32.0",
+  "versao": "1.32.1",
   "data": "2026-11-26",
-  "resumo": "Auditoria independente A&W: fonte única dos valores garantidos (pico, THD saída × THD total no motor, uk × inserção), normas corrigidas (IEC 61071, 61800-3, CE/UL), PTC 160 °C único, BOM com protótipo/descarga/proteção do banco, perdas de cabo I²R, players like-for-like, portadora fixa, derating do inversor, mancal/ruído/268 A na proposta"
+  "resumo": "Correção: abertura travava em [1/4] (robocopy esperando arquivo do Drive em sincronização) – agora 2 tentativas de 2 s e segue com a cópia local"
 }
