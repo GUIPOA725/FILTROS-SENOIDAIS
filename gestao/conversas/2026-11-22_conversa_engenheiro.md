@@ -344,3 +344,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 21:50 25/11 (engenheiro): "A canaleta é comando, os cabos de força são por fora das canaletas... Precisa mudar em todo o código isso" → REQ-PNL-033, v1.29.0.
 - 22:16 25/11 (engenheiro): "Preciso cotar o indutor com os fabricantes"
 - 25/11 (Claude): v1.29.0 publicada no Drive (fiação interna NBR IEC 61439-1; Panatlântica sem reprovações; A&W aprovado).
+- 22:44 25/11 (engenheiro): "melhor vc rodar novamente no meu notebook o A&W não estou nele, roda via script para não abrir a tela da plataforma" → sem shell no notebook nesta sessão; rodado por script com o pedido.json do projeto e prioridade mercado (mesma v1.29.0), resultado copiado para o Drive.
