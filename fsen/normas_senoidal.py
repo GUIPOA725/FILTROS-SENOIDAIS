@@ -1,7 +1,7 @@
 """Filtro senoidal – folha de dados e verificação de normas no MESMO padrão do banco/sintonizado (v1.23.2).
 
 Mesma pasta (01_Engenharia/5_Normas_Folha_de_Dados, cópia em 02_Cliente), mesmo PDF e mesma coluna de Check.
-Verificações técnicas = as do dimensionamento (motor: NEMA MG1 Pt.30/31 e IEC TS 60034-25; inversor; capacitor IEC 60831/61071;
+Verificações técnicas = as do dimensionamento (motor: NEMA MG1 Pt.30/31 e IEC TS 60034-25; inversor; capacitor IEC 61071;
 térmico) + painel IEC 61439 (isolação calculada; IP/IK/dielétrico/rotina exigidos e comprovados no recebimento).
 """
 from __future__ import annotations
@@ -11,9 +11,13 @@ import os
 from . import checagem as CK
 from .normas_banco import pdf_padrao, _linha
 
-REF = {"pico": "NEMA MG1 Pt.30/31", "dv/dt": "IEC TS 60034-25", "THD": "IEC 61800-2 / projeto", "Queda": "IEC 61800-2",
-       "capacitor": "IEC 60831-1 / 61071", "inversor": "dados do inversor", "Térmico": "IEC 60076-6 / 60890",
-       "Ressonância": "projeto", "modo comum": "IEC TS 60034-25", "Ondulação": "projeto", "Tensão disponível": "projeto"}
+# v1.32.0 (REQ-SEN-026, auditoria A&W): ordem importa (o 1º que casar vale) – capacitor ANTES de 'pico' para a tensão de pico no
+# capacitor não sair como NEMA MG1 (que é só do MOTOR); THD e queda não são da IEC 61800-2 (critério de projeto / guia de fabricante).
+REF = {"capacitor": "IEC 61071", "mancal": "IEC TS 60034-25", "modo comum": "IEC TS 60034-25", "terra": "IEC TS 60034-25",
+       "pico": "NEMA MG1 Pt.30/31 (motor)", "dv/dt": "IEC TS 60034-25", "THD": "critério de projeto (fabricantes 3–5 %)",
+       "Queda": "guia Danfoss/MTE (4–10 %)", "Derating": "manual do inversor", "Portadora": "projeto",
+       "inversor": "dados do inversor", "Térmico": "IEC 60076-6 / 60890", "Ressonância": "projeto", "Ondulação": "projeto",
+       "Tensão disponível": "projeto"}
 
 
 def _clausula(item):
@@ -46,29 +50,37 @@ def verificacao(proj, arr):
 
 
 def folha_dados(proj, arr):
+    """v1.32.0: valores garantidos da FONTE ÚNICA documentos.garantias() – igual à folha Word e à proposta."""
+    from .documentos import garantias
+    from .ind_projeto import protecao_termica_txt
     ped = proj.pedido
     b = proj.banco
-    pior = lambda k: max(p[k] for p in proj.pontos)
-    return [
+    g = garantias(proj)
+    L = [
         ("Produto", f"Filtro senoidal {proj.topologia} para saída de inversor – Electric Service"),
         ("Tensão nominal / corrente", f"{ped['tensao_v']:g} V ±10 %, trifásico / {ped['corrente_a']:g} A (40 °C)"),
-        ("Frequência de saída / chaveamento", f"0–{max(ped['f_saida_max_hz'], 60):g} Hz / ≥ {proj.fs_hz / 1000:g} kHz"),
+        ("Frequência de saída / chaveamento", f"0–{max(ped['f_saida_max_hz'], 60):g} Hz / {proj.fs_hz / 1000:g} kHz FIXA"),
         ("Indutância / capacitância", f"{proj.l1.l_uh:.0f} µH/fase / {b.c_y_uf:g} µF/fase Y ({b.ligacao})"),
         ("Frequência de ressonância", f"{proj.fr_hz:.0f} Hz"),
-        ("THD de tensão no motor", f"< {max(3.0, round(pior('thd_v_saida_pct') + 0.5)):.0f} %"),
-        ("Tensão de pico / dv/dt no motor", f"< {pior('vpk_saida') * 1.05:.0f} V / < {max(5, pior('dvdt_saida_v_us') * 2):.0f} V/µs"),
-        ("Queda de tensão", f"{proj.l1.queda_v_pct:.1f} % @ {ped['f_saida_max_hz']:g} Hz"),
-        ("Capacitores", f"{b.n_total} × {b.uf_unit:g} µF {b.v_unit:g} V ({b.fabricante}) em {b.ligacao}"),
-        ("Indutor", f"Electric – {proj.l1.l_uh:.0f} µH, {proj.l1.i_nom_a:.0f} A, Isat ≥ {proj.l1.i_sat_a:.0f} A, classe F, "
-                    "projeto por elementos finitos com relatório, termostato NF"),
-        ("Perdas / massa", f"≈ {arr.perda_total_w:.0f} W / ≈ {arr.massa_total_kg:.0f} kg"),
-        ("Invólucro", f"{arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm (L × A × P), IP{arr.caixa_ip}, IK10, RAL 7035"),
+        ("THD de tensão na saída do filtro", g["txt_thd_saida"]),
+        ("THD total de tensão no motor", g["txt_thd_total"]),
+        ("Tensão de pico / dv/dt no motor", f"{g['txt_vpk']} / {g['txt_dvdt']}"),
+        ("Queda de tensão", g["txt_queda"]),
+        ("Capacitores", f"{b.n_total} × {b.uf_unit:g} µF {b.v_unit:g} V ({b.fabricante}) em {b.ligacao} – IEC 61071"),
+        ("Indutor", f"Electric – {proj.l1.l_uh:.0f} µH, {proj.l1.i_nom_a:.0f} A, L ≥ 90 % até {proj.l1.i_sat_a:.0f} A pico, "
+                    f"sistema de isolação classe H (180 °C), projeto por elementos finitos com relatório, {protecao_termica_txt(True)}"),
+        ("Perdas / massa", f"≈ {arr.perda_total_w:.0f} W / ≈ {arr.massa_total_kg:.0f} kg (com a caixa)"),
+        ("Invólucro", f"{arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm (L × A × P), IP{arr.caixa_ip}, IK10 (projeto; comprovar no FAT), RAL 7035"),
         ("Refrigeração", f"forçada, {arr.n_ventiladores} ventilador(es) 220 Vca com termostato"),
         ("Isolação", "1,1 kV; ensaio 2,5 kV / 1 min"),
-        ("Normas", "IEC 61800-2/5-1, IEC 60076-6, IEC 60831-1 / IEC 61071, IEC 61439-1/2, NEMA MG1 Pt.30/31, IEC TS 60034-25; fiação interna NBR IEC 61439-1 Anexo H; NBR 5410 só cabos de campo"),
-        ("Documentação", "memorial de cálculo, simulação por ponto de operação, dupla checagem ATP, projeto do indutor por elementos "
-                         "finitos, esquema elétrico, desenhos, ET aos fornecedores, relatório consolidado"),
+        ("Ruído", g["txt_ruido"]),
+        ("Normas", g["txt_normas"]),
     ]
+    if g["txt_mancal"]:
+        L.append(("Mancal do motor", g["txt_mancal"]))
+    L.append(("Documentação", "memorial de cálculo, simulação por ponto de operação, dupla checagem ATP, projeto do indutor por elementos "
+                              "finitos, esquema elétrico, desenhos, ET aos fornecedores, relatório consolidado"))
+    return L
 
 
 def gerar_pdf(proj, arr, cod, pasta, versao="", log=print):

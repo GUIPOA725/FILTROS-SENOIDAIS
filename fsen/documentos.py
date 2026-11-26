@@ -130,14 +130,16 @@ def _rs(x):
 
 
 NORMAS = [
-    ("IEC 61800-2 / IEC 61800-5-1", "Sistemas de acionamento de velocidade variável – requisitos gerais e segurança elétrica/térmica do filtro de saída"),
+    ("IEC 61800-5-1", "Segurança elétrica, térmica e energética do acionamento – aplicada ao filtro de saída"),
+    ("IEC 61800-3", "EMC do acionamento (sistema inversor + filtro + cabo) – responsabilidade do sistema; o filtro senoidal não atenua o modo comum"),
     ("IEC TS 60034-25 / IEC TS 60034-17", "Motores alimentados por conversor: limites de tensão de pico e dv/dt nos terminais"),
     ("IEC TS 61800-8", "Especificação da tensão na interface de potência do acionamento (inclui o efeito de filtros de saída)"),
     ("NEMA MG1 Part 30 / Part 31", "Motores de uso geral (≤ 1000 V pico) e motores para inversor (≤ 1600 V pico, tr ≥ 0,1 µs)"),
     ("IEC 60076-6", "Reatores – indutância, tolerâncias, elevação de temperatura e ensaios"),
     ("IEC 61558-2-20", "Pequenos reatores – construção e ensaios de isolamento"),
-    ("IEC 60831-1/2 e IEC 61071", "Capacitores de potência autorregenerativos e capacitores para eletrônica de potência"),
-    ("IEC 61000-2-4 / IEEE 519-2022", "Referência de distorção harmônica de tensão (≤ 5 %)"),
+    ("IEC 61071", "Capacitores para eletrônica de potência – norma do capacitor do filtro (a IEC 60831 é de correção de FP em 50/60 Hz)"),
+    ("IEC 61000-2-4 / IEEE 519-2022", "Só referência de distorção em REDES (classe 1 = 5 %, classe 2 = 8 %; IEEE 519 5 %) – o THD do filtro é critério de projeto"),
+    ("Certificação", "CE/UL não incluída; IP/IK: projeto para o grau indicado, comprovado no FAT"),
     ("IEC 61439-1/2 / NBR IEC 61439", "Conjuntos de manobra e controle de baixa tensão (caixa, elevação de temperatura, ensaios)"),
     ("NBR IEC 61439-1 Anexo H / IEC 60364-5-52", "Fiação interna do painel: 125 % da corrente, condutor 70 °C, força fora da canaleta"),
     ("NBR 5410", "Cabos de campo (alimentação e saída para o motor) e aterramento da instalação"),
@@ -150,13 +152,13 @@ CRITERIOS_ORIGEM = [
     ("Tensão de pico e dv/dt no motor", "{vpk} V / {dvdt} V/µs (cliente) – NEMA ≤ 1000 V", "Norma",
      "NEMA MG1 Pt 30/31; IEC TS 60034-17 / 60034-25"),
     ("Capacitores: tensão, corrente, pico, dv/dt, vida", "datasheet + 1,10·Un contínuo", "Norma + datasheet",
-     "IEC 61071 (eletrônica de potência) / IEC 60831; datasheet TDK B3236"),
+     "IEC 61071 (capacitores para eletrônica de potência); datasheet TDK B3236"),
     ("Queda de tensão no indutor", "≤ {ukmax} % na f máx (busca {ukmin}–{ukbusca} %)", "Guia de fabricante",
      "Danfoss – Output Filters Design Guide: 4–10 % para filtro senoidal"),
     ("Frequência de chaveamento fixa e mínima", "{fs} kHz (parametrizada no inversor)", "Guia de fabricante",
      "Danfoss: não operar abaixo de 80 % da fs nominal do filtro"),
     ("Distorção (THD) da tensão no motor", "≤ {thd} % (PWM) e ≤ {thd1} % total com baixa ordem", "Prática de mercado",
-     "Catálogos de filtros senoidais (Schaffner, ABB, WEG); IEC 61000-2-4 como referência de 5 %"),
+     "Catálogos de filtros senoidais (Schaffner, ABB, WEG, MTE); a IEC 61000-2-4 (classe 1 = 5 %) é só referência – é norma de rede"),
     ("Faixa da frequência de ressonância", "≥ {frmult}·f saída máx e ≤ fs/2", "Artigo + calibração",
      "Liserre, Blaabjerg, Hansen – IEEE Trans. Ind. Appl. 2005 (10·f < fr < fs/2); 13× calibrado nos filtros fabricados"),
     ("Ondulação de corrente no indutor", "≤ {rip} % do pico nominal", "Prática de projeto",
@@ -473,7 +475,8 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
         d.add_heading(L.nome, 3)
         _kv(d, [("Indutância", f"{L.l_uh:.1f} µH/fase ±5 % (medida a 60 Hz, In)"), ("Corrente térmica RMS", f"{L.i_nom_a:.0f} A"),
                 ("Corrente fundamental máx.", f"{L.i_fund_a:.0f} A"), ("Ondulação", f"{L.ripple_pp_a:.0f} A p-p / {L.ripple_rms_a:.0f} A RMS @ {L.f_chav_hz / 1000:g} kHz"),
-                ("Corrente de pico de operação", f"{L.i_pico_a:.0f} A"), ("Linearidade", f"L ≥ 90 % do nominal até {L.i_sat_a:.0f} A pico"),
+                ("Corrente de pico de operação", f"{L.i_pico_a:.0f} A"), ("Linearidade", f"L ≥ 90 % do nominal até {L.i_sat_a:.0f} A pico; "
+                 f"L ≥ 70 % até {1.5 * max(float(ped.get('inversor_corrente_a') or 0), L.i_nom_a) * 2 ** 0.5 + float(L.ripple_pp_a or 0) / 2:.0f} A pico (sobrecarga 1,5 × 60 s)"),
                 ("Energia armazenada (3 fases)", f"{L.energia_j:.1f} J"), ("Perdas", (f"calculadas {proj._ind_perdas_calc_w:.0f} W (pior método); máximo garantido {L.perdas_w:.0f} W"
                              if getattr(proj, "_ind_perdas_calc_w", None) and L is proj.l1 else f"máximo garantido {L.perdas_w:.0f} W")),
                 ("Massa / dimensões estimadas", f"{L.massa_kg:.0f} kg / {L.dim_mm[0]}×{L.dim_mm[1]}×{L.dim_mm[2]} mm (L×A×P)")])
@@ -561,7 +564,7 @@ def proposta(proj, arr, orc, cat, pasta):
     _tabela(d, ["Item", "Qtd", "Un", "Descrição", "Preço unit.", "Preço total"],
             [("01", orc.quantidade, "pç", desc, _rs(orc.preco_unit), _rs(orc.preco_total))], [1.2, 1.2, 1.0, 8.6, 2.5, 2.5])
     d.add_heading("2. Características técnicas garantidas", 1)
-    pior = lambda k: max(p[k] for p in proj.pontos)
+    _g = garantias(proj, cat)
     _tabela(d, ["Requisito do cliente", "Solicitado", "Ofertado (simulado)"], [
         ("Tipo", "Senoidal", f"Senoidal {proj.topologia}, fr = {proj.fr_hz:.0f} Hz"),
         ("Corrente nominal", f"{ped.get('corrente_cliente_a') or ped['corrente_a']:g} A",
@@ -569,16 +572,19 @@ def proposta(proj, arr, orc, cat, pasta):
                       f"{cc['i_motor_a']:.0f} A + capacitores + ondulação, margem 10 %); núcleo para o inversor de "
                       f"{cc['i_ref_pico_a']:.0f} A com sobrecarga de 150 % / 60 s sem saturar")
           if cc.get("base") == "carga" else f"{ped['corrente_a']:g} A")(getattr(proj, "corrente_dimensionamento", None) or {})),
-        ("Tensão máx. de pico no motor", f"{ped['vpk_max_v'] or '-'} V", f"{pior('vpk_saida'):.0f} V"),
+        ("Tensão máx. de pico no motor", f"{ped['vpk_max_v'] or '-'} V", _g["txt_vpk"]),
         ("Rise time", f"> {ped['rise_time_min_us'] or '-'} µs", f"> 100 µs (forma senoidal)"),
-        ("dv/dt máximo", f"{ped['dvdt_max_v_us'] or '-'} V/µs", f"{pior('dvdt_saida_v_us'):.1f} V/µs"),
-        ("THD de tensão no motor", "-", f"{pior('thd_v_saida_pct'):.1f} % (fs = {proj.fs_hz / 1000:g} kHz)"),
+        ("dv/dt máximo", f"{ped['dvdt_max_v_us'] or '-'} V/µs", _g["txt_dvdt"]),
+        ("THD de tensão na saída do filtro", "-", _g["txt_thd_saida"] + f" – fs = {proj.fs_hz / 1000:g} kHz"),
+        ("THD total de tensão no motor", "-", _g["txt_thd_total"]),
         ("Classe de isolamento", f"{ped['classe_isolamento_kv']} kV", "1,1 kV"),
         ("Classe de temperatura", ped["classe_temp"], "H (180 °C) – padrão Electric para filtro senoidal (igual ou superior à solicitada)"),
         ("Elevação de temperatura", ped["elevacao_temp"], "média do enrolamento conforme o estudo térmico (limite da classe H: 125 K)"),
-        ("Queda de tensão", "-", f"{proj.l1.queda_v_pct:.1f} % @ {ped['f_saida_max_hz']:g} Hz"),
+        ("Queda de tensão", "-", _g["txt_queda"]),
         ("Perdas totais", "-", f"≈ {arr.perda_total_w:.0f} W"),
-        ("Frequência de chaveamento do inversor", "-", f"≥ {proj.fs_hz / 1000:g} kHz fixa"),
+        ("Frequência de chaveamento do inversor", "-", f"{proj.fs_hz / 1000:g} kHz FIXA (confirmar o derating do inversor nesta fs)"),
+        ("Ruído", "-", _g["txt_ruido"]),
+        ("Normas", "-", _g["txt_normas"]),
     ], [5.5, 4.0, 7.5])
     d.add_heading("3. Condições comerciais", 1)
     _kv(d, [("Preço", "Valores unitários com impostos inclusos (ICMS, PIS, COFINS)"),
@@ -591,9 +597,27 @@ def proposta(proj, arr, orc, cat, pasta):
     _bullets(d, ["Folha de dados técnica do filtro (catálogo/ficha técnica).", "Memorial de cálculo e relatório de simulação.",
                  "Desenho dimensional e diagrama elétrico.", "Relatório de ensaios de rotina emitido na entrega de cada unidade."])
     d.add_heading("5. Observações", 1)
-    _bullets(d, [f"O inversor deve operar com frequência de chaveamento fixa de {proj.fs_hz / 1000:g} kHz e controle escalar (ou com parâmetros de filtro).",
-                 "Instalação abrigada, temperatura ambiente até 40 °C, altitude até 1000 m.",
-                 "Cabo blindado entre filtro e motor recomendado; aterramento conforme NBR 5410."])
+    _sis = getattr(proj, "sistema", None) or {}
+    _blind = bool(ped.get("cabo_blindado"))
+    _i_inv = float(ped.get("inversor_corrente_a") or 0)
+    _i_cli = float(ped.get("corrente_cliente_a") or 0)
+    _obs = [f"O inversor deve operar com frequência de chaveamento FIXA de {proj.fs_hz / 1000:g} kHz (redução automática desabilitada) e "
+            "controle escalar (ou com parâmetros de filtro senoidal). Abaixo dessa frequência o filtro não atende (THD, ressonância e "
+            "aquecimento). Confirmar no manual de hardware do inversor a corrente disponível (derating) nesta frequência.",
+            "Instalação abrigada, temperatura ambiente até 40 °C, altitude até 1000 m.",
+            (f"Premissa do estudo: cabo filtro → motor {'BLINDADO' if _blind else 'NÃO blindado'}"
+             + (f", {_sis.get('cabo_paralelos', 1)}×{_sis.get('cabo_secao_mm2', '')} mm²" if _sis.get("cabo_secao_mm2") else "")
+             + f", {float(ped.get('cabo_m') or _sis.get('cabo_m') or 0):g} m – o mesmo do esquema elétrico. Outro cabo muda o modo comum e a "
+             "tensão no mancal: avisar para refazer o estudo. Aterramento conforme NBR 5410.")]
+    if _i_inv and float(ped["corrente_a"]) < max(_i_inv, _i_cli) - 0.5:
+        _obs.append(f"O filtro é dimensionado para {ped['corrente_a']:g} A contínuos (carga real), abaixo da corrente do inversor "
+                    f"({_i_inv:g} A)" + (f" e da solicitada ({_i_cli:g} A)" if _i_cli else "") + ". Condição de fornecimento: limitar a "
+                    f"corrente do inversor a {ped['corrente_a']:g} A (ABB ACS580: parâmetro 30.17 Maximum current) – aceite do cliente.")
+    if _g["txt_mancal"]:
+        _obs.append("Mancal do motor: " + _g["txt_mancal"] + ".")
+    _obs.append("Garantias de pico e THD válidas para a frequência de chaveamento, o cabo e o motor acima; o THD total no motor "
+                "depende do amortecimento real da instalação e é confirmado na medição de comissionamento.")
+    _bullets(d, _obs)
     d.add_paragraph(f"\nAtenciosamente,\n\n{emp['responsavel']}\n{emp['nome']}\n{emp['email']} • {emp['telefone']}")
     caminho = os.path.join(pasta, f"{proj_codigo(proj)}_Proposta_Comercial.docx")
     d.save(caminho)
@@ -610,23 +634,100 @@ def vpk_garantia(proj):
     return _m.ceil(v * 1.05 / 5.0) * 5.0
 
 
+def _verif(proj, inicio):
+    return next((v for v in (proj.verificacoes or []) if str(getattr(v, "item", "")).startswith(inicio)), None)
+
+
+def _num(txt, default=0.0):
+    import re as _re
+    m = _re.search(r"-?\d+(?:[.,]\d+)?", str(txt or ""))
+    return float(m.group(0).replace(",", ".")) if m else default
+
+
+def insercao_pct(proj):
+    """Perda de inserção REAL do filtro na f máx e corrente nominal: (|V entrada| − |V saída|)/|V entrada|, com o FP do motor.
+    É menor que a queda reativa X·I/V (uk), que é o que o cliente 'perde' só com carga puramente indutiva."""
+    import math as _m
+    ped = proj.pedido
+    f_op = float(ped.get("f_saida_max_hz") or ped.get("freq_rede_hz") or 60)
+    fr = float(ped.get("freq_rede_hz") or 60)
+    vo = float(ped["tensao_v"]) * min(f_op / fr, 1.0) / _m.sqrt(3)
+    L = (proj.l1.l_uh + (proj.l2.l_uh if proj.l2 else 0)) * 1e-6
+    x = 2 * _m.pi * f_op * L
+    i = float(ped["corrente_a"])
+    phi = -_m.acos(max(min(float(ped.get("motor_fp") or 0.85), 1.0), 0.0))
+    vi = complex(vo, 0) + 1j * x * i * complex(_m.cos(phi), _m.sin(phi))
+    return 100 * (abs(vi) - vo) / abs(vi)
+
+
+def garantias(proj, cat=None):
+    """v1.32.0 (REQ-SEN-026, auditoria A&W 26/11/2026): FONTE ÚNICA dos valores garantidos ao cliente – usada pela folha de dados
+    PDF e Word, pela proposta e pelo relatório. Antes cada documento calculava o seu (pico 570/598/655 V; 'THD no motor < 4 %'
+    quando o total no motor era 4,9 % e 7,3 % no pior caso).
+      • pico no motor = vpk_garantia (pior caso entre pontos e condições extremas + 5 %);
+      • THD da tensão de SAÍDA (PWM, até 4·fs) – pior caso entre pontos e condições extremas, arredondado para cima, mín. 4 %;
+      • THD TOTAL no motor (PWM + baixa ordem) – limite de projeto, com o valor nominal e o caso de metade do amortecimento;
+      • queda reativa (uk) e perda de inserção real, separadas."""
+    import math as _m
+    ped = proj.pedido
+    cp = (cat or {}).get("projeto_padrao", {}) if cat else {}
+    pior = lambda k: max(float(p.get(k, 0) or 0) for p in proj.pontos)
+    ext = [c for c in (getattr(proj, "condicoes_extremas", None) or []) if isinstance(c, dict) and "thd_motor" in c]
+    thd_s = max([pior("thd_v_saida_pct")] + [float(c["thd_motor"]) for c in ext])
+    thd_s_lim = max(4.0, float(_m.ceil(thd_s + 0.05)))
+    vt = _verif(proj, "THD total no motor @")
+    vh = _verif(proj, "THD total no motor com METADE")
+    thd_tot = _num(vt.valor) if vt else 0.0
+    thd_tot_lim = _num(vt.limite, float(cp.get("thd_v_max_pct", 5.0)) + 1) if vt else float(cp.get("thd_v_max_pct", 5.0)) + 1
+    thd_half = _num(vh.valor) if vh else 0.0
+    vm = _verif(proj, "Tensão estimada no mancal")
+    v_mancal = _num(vm.valor) if vm else 0.0
+    v_mancal_lim = _num(vm.limite, 10.0) if vm else 10.0
+    fmx = float(ped.get("f_saida_max_hz") or 60)
+    g = dict(
+        vpk=vpk_garantia(proj),
+        dvdt=max(5.0, pior("dvdt_saida_v_us") * 2),
+        thd_saida=thd_s, thd_saida_lim=thd_s_lim,
+        thd_total=thd_tot, thd_total_lim=thd_tot_lim, thd_total_metade_amort=thd_half,
+        uk=float(proj.l1.queda_v_pct), insercao=insercao_pct(proj), f_max=fmx,
+        v_mancal=v_mancal, v_mancal_lim=v_mancal_lim, mancal_atencao=bool(vm and not vm.ok),
+    )
+    g["txt_vpk"] = f"< {g['vpk']:.0f} V (pior caso: rede +10 %, tolerâncias L/C e cabo, + 5 %)"
+    g["txt_dvdt"] = f"< {g['dvdt']:.0f} V/µs"
+    g["txt_thd_saida"] = f"< {g['thd_saida_lim']:.0f} % (PWM, até 4·fs; pior caso simulado {thd_s:.1f} %)"
+    g["txt_thd_total"] = (f"≤ {thd_tot_lim:.0f} % (PWM + harmônicas de baixa ordem do inversor; nominal {thd_tot:.1f} %"
+                          + (f"; com metade do amortecimento {thd_half:.1f} % – confirmar no comissionamento" if thd_half else "") + ")")
+    g["txt_queda"] = (f"queda reativa (uk) {g['uk']:.1f} % e perda de inserção real {g['insercao']:.1f} % @ {fmx:g} Hz, "
+                      f"{float(ped['corrente_a']):g} A, FP {float(ped.get('motor_fp') or 0.85):.2f}")
+    g["txt_mancal"] = (f"{v_mancal:.1f} V pico estimado (> {v_mancal_lim:g} V): prever rolamento isolado no lado oposto e/ou escova de "
+                       "aterramento do eixo – o filtro senoidal LC não atenua o modo comum (IEC TS 60034-25)") if g["mancal_atencao"] else ""
+    g["txt_ruido"] = "declarado pelo fabricante do indutor e medido no FAT: LpA a 1 m (ISO 3744/3746), filtro em carga nominal e fs de projeto"
+    g["txt_normas"] = ("Produto projetado segundo IEC 61071 (capacitores para eletrônica de potência), IEC 60076-6 (reator), "
+                       "NBR IEC 61439-1/-2 (conjunto; fiação interna pelo Anexo H) e IEC 61800-5-1 (segurança do acionamento); "
+                       "EMC do acionamento: IEC 61800-3 (responsabilidade do sistema inversor + filtro + cabo); motor: IEC TS 60034-25 / "
+                       "NEMA MG1 Pt. 30/31 (limites de pico e dv/dt). Certificação CE/UL não incluída. IP e IK: projeto para, comprovar no FAT. "
+                       "NBR 5410 só para os cabos de campo")
+    return g
+
+
 def folha_dados(proj, arr, cat, pasta, desenhos_png):
     ped = proj.pedido
     d = _novo("Folha de Dados Técnica", f"Filtro senoidal {proj.topologia} {ped['corrente_a']:g} A {ped['tensao_v']:g} V", proj, cat)
     b = proj.banco
-    pior = lambda k: max(p[k] for p in proj.pontos)
+    _g = garantias(proj, cat)
     _kv(d, [("Modelo", proj_codigo(proj)), ("Tensão nominal", f"{ped['tensao_v']:g} V ±10 %, 3~"),
             ("Corrente nominal", f"{ped['corrente_a']:g} A (40 °C)"), ("Frequência de saída", f"0–{max(ped['f_saida_max_hz'], 60):g} Hz"),
             ("Frequência de chaveamento", f"FIXA em {proj.fs_hz / 1000:g} kHz – redução automática do inversor desabilitada (requisito)"), ("Indutância", f"{proj.l1.l_uh:.0f} µH/fase"),
             ("Capacitância (Y equivalente)", f"{b.c_y_uf:g} µF/fase ({b.ligacao})"), ("Frequência de ressonância", f"{proj.fr_hz:.0f} Hz"),
-            ("THD de tensão de saída", f"< {max(3.0, round(pior('thd_v_saida_pct') + 0.5)):.0f} %"),
-            ("Tensão de pico no motor", f"< {vpk_garantia(proj):.0f} V (pior caso: rede +10 % e tolerâncias)"), ("dv/dt", f"< {max(5, pior('dvdt_saida_v_us') * 2):.0f} V/µs"),
-            ("Queda de tensão", f"{proj.l1.queda_v_pct:.1f} % @ {ped['f_saida_max_hz']:g} Hz"),
+            ("THD de tensão de saída do filtro", _g["txt_thd_saida"]),
+            ("THD total de tensão no motor", _g["txt_thd_total"]),
+            ("Tensão de pico no motor", _g["txt_vpk"]), ("dv/dt", _g["txt_dvdt"]),
+            ("Queda de tensão", _g["txt_queda"]), ("Ruído", _g["txt_ruido"]),
             ("Perdas", f"≈ {arr.perda_total_w:.0f} W"), ("Isolação", "1,1 kV; ensaio 2,5 kV / 1 min"),
             ("Classe térmica", "Sistema de isolação classe H (180 °C), elevação média ≤ 125 K – igual ou superior à classe solicitada"), ("Grau de proteção", f"IP{arr.caixa_ip}"),
             ("Dimensões (L×A×P)", f"{arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm"), ("Massa", f"≈ {arr.massa_total_kg:.0f} kg"),
             ("Refrigeração", f"Forçada, {arr.n_ventiladores} ventilador(es), alimentação auxiliar 220 Vca"),
-            ("Normas", "IEC 61800-5-1, IEC 60076-6, IEC 60831, NBR IEC 61439-1/-2 (fiação interna Anexo H), NBR 5410 (cabos de campo)")])
+            ("Normas", _g["txt_normas"])] + ([("Mancal do motor", _g["txt_mancal"])] if _g["txt_mancal"] else []))
     if desenhos_png:
         _img(d, desenhos_png[1], 17)
     caminho = os.path.join(pasta, f"{proj_codigo(proj)}_Folha_de_Dados.docx")
@@ -708,7 +809,8 @@ def et_fornecedores(proj, arr, orc, cat, pasta, desenhos_pdf):
                 ("Corrente", f"{L.i_nom_a:.0f} A RMS (0–{_R['fmx']:g} Hz) + ondulação {_R['rpp']:.0f} A pico a pico a {_R['fs'] / 1000:g} kHz"),
                 ("Linearidade", f"L ≥ 90 % até {_R['ipk_sat']:.0f} A de pico e ≥ 70 % até {_R['ipk_sobrec']:.0f} A (sobrecarga)"),
                 ("Tensão", f"{ped['tensao_v']:g} V PWM, barramento CC até ≈ {_R['vdc']:.0f} V; isolação 1,1 kV"),
-                ("Classe térmica", f"{_clc[0]} ({_clc[1]} °C) – elevação ≤ {_clc[2]} K; impregnação VPI; termostato/PTC"),
+                ("Classe térmica", f"{_clc[0]} ({_clc[1]} °C) – elevação ≤ {_clc[2]} K; impregnação VPI"),
+                ("Proteção térmica", __import__("fsen.ind_projeto", fromlist=["x"]).protecao_termica_txt(_clc[1] >= 180)),
                 ("Perdas totais", f"≤ {_R['perdas_meta']:.0f} W (60 Hz + ondulação)"),
                 ("Aplicação", f"inversor {ped.get('inversor') or 'PWM'}; motor {ped.get('potencia_motor_cv') or ''} cv / {ped['tensao_v']:g} V")],
                 nota="A especificação define DESEMPENHO; a construção é do fabricante, desde que os valores sejam declarados e comprovados "

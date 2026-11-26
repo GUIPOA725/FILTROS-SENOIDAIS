@@ -328,7 +328,7 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
         ("Classe térmica", f"{cl} ({cc} °C) efetivamente fornecida; elevação média ≤ {ce} K; classe no desenho e na placa",
          "O estudo térmico do filtro foi feito com esta classe; classe menor reduz a vida útil."),
         ("Impregnação", "VPI ou imersão a vácuo", "Fixa espiras e chapas: em alta frequência, partes soltas vibram, fazem ruído e se desgastam."),
-        ("Proteção térmica", "Termostato NF ou PTC na coluna central, 2 fios em borne (TH1/TH2)",
+        ("Proteção térmica", __import__("fsen.ind_projeto", fromlist=["x"]).protecao_termica_txt(True),
          "Permite desligar o inversor antes de danificar a isolação se a ventilação falhar."),
         ("Perdas", f"≤ {_f(R['perdas_meta'], 0)} W totais (desejado); máximo admissível {_f(R['perdas'], 0)} W",
          "Dimensionam a ventilação do painel; a meta segue a referência de mercado (item 8)."),
@@ -338,6 +338,8 @@ def escrever_et(d, L, proj, arr, cat, ped, q, _kv, _tabela, _bullets, _f, figura
         ("Espaço", f"até {arr.caixa_l - 150}×700×{arr.caixa_p - 150} mm (L×A×P); estimativa {L.dim_mm[0]}×{L.dim_mm[1]}×{L.dim_mm[2]} mm, "
                    f"≈ {R['massa']:.0f} kg", "Armário padrão do filtro."),
         ("Placa", "Fabricante, modelo, nº de série, L, In, chaveamento, classe, perdas, massa, data", "Rastreabilidade e conferência."),
+        ("Ruído", "Declarar LpA a 1 m (ISO 3744/3746) em carga nominal e na fs de projeto; medido no ensaio do protótipo",
+         "Reator a 4 kHz é fonte audível; os players declaram < 70–75 dB(A) e o cliente pode medir (auditoria A&W A9)."),
         ("Normas", "IEC 60076-6 / IEC 61558-2-20 / NBR 5356; IEC 60085", "Normas de reatores usadas pelos fabricantes de filtro."),
         ("Quantidade", f"{q} peça(s)", "")], [3.6, 7.0, 6.4], 8)
 
@@ -486,7 +488,7 @@ def corpo_email(L, proj, arr, cat, ped, q, tag, ola, extenso, ref_fornecedor=Non
         f"- Chaveamento: {R['fs'] / 1000:g} kHz nominal\n"
         f"- Classe térmica: {cl} ({cc} °C) efetivamente fornecida (constar no desenho e na placa), elevação ≤ {ce} K; impregnação VPI\n"
         "- Isolação 1,1 kV; ensaio aplicado 2,5 kV fase-fase / 3 kV fase-terra, 1 min; isolação reforçada nas primeiras espiras (dv/dt)\n"
-        "- Proteção térmica: termostato ou PTC no enrolamento, 2 fios em borne\n"
+        f"- Proteção térmica: {__import__('fsen.ind_projeto', fromlist=['x']).protecao_termica_txt(True)}\n"
         f"- Perdas totais desejadas: ≤ {R['perdas_meta']:.0f} W (60 Hz + ondulação); máximo admissível {R['perdas']:.0f} W\n"
         f"- Espaço: até {arr.caixa_l - 150} × 700 × {arr.caixa_p - 150} mm (L × A × P), painel com ventilação forçada de baixo para cima\n"
         "- Placa: L, In, frequência de chaveamento, classe, perdas, massa, nº de série\n\n"

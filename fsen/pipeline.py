@@ -387,7 +387,32 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     if df_opt is not None and len(df_opt):
         from .graficos import grafico_pareto
         graf["pareto"] = grafico_pareto(df_opt, sub["graficos"])
-        df_opt.to_excel(os.path.join(sub["01_Engenharia"], f"{cod}_Otimizacao_todas_configuracoes.xlsx"), index=False)
+        try:        # v1.32.0 (REQ-SEN-026, auditoria A&W A7): a tabela traz a configuração FINAL, os flags e o critério de desempate
+            import pandas as _pd
+            _d = df_opt.copy()
+            if "robusto" in _d.columns:
+                _d["robusto"] = _d["robusto"].map(lambda x: "não avaliado (fora das 10 de maior nota)" if x is None or x != x
+                                                  else ("sim" if bool(x) else "não"))
+            _lf = float(proj.l1.l_uh)
+            _m = _pd.Series([False] * len(_d), index=_d.index)
+            if "L1_uH" in _d.columns and "ligacao" in _d.columns:
+                _m = ((_d["L1_uH"].astype(float) - _lf).abs() <= max(3.0, 0.02 * _lf)) & (_d["ligacao"] == proj.banco.ligacao)
+                if "n_por_ramo" in _d.columns:
+                    _m &= _d["n_por_ramo"].astype(float) == float(proj.banco.n_por_ramo)
+            _d.insert(0, "escolhida", _m.map(lambda x: "SIM" if x else ""))
+            _vt = next((v for v in proj.verificacoes if str(v.item).startswith("THD total no motor @")), None)
+            _fin = {"escolhida": "FINAL (simulação fina)", "L1_uH": round(_lf, 1), "ligacao": proj.banco.ligacao,
+                    "n_por_ramo": proj.banco.n_por_ramo, "C_y_uF": proj.banco.c_y_uf, "fr_Hz": round(proj.fr_hz),
+                    "fs_khz": proj.fs_hz / 1000, "thd_pct": max(p["thd_v_saida_pct"] for p in proj.pontos),
+                    "viavel": bool(proj.aprovado),
+                    "obs": ("configuração final após a simulação fina e o ajuste do indutor (L de catálogo/FEM); "
+                            f"THD total no motor {_vt.valor if _vt else '-'}; critério de escolha: maior nota ponderada entre as viáveis "
+                            "e robustas (pesos em catalogo.yaml → otimizacao.pesos); desempate: menor custo, depois menor nº de capacitores")}
+            _d = _pd.concat([_pd.DataFrame([_fin]), _d], ignore_index=True)
+            _d.to_excel(os.path.join(sub["01_Engenharia"], f"{cod}_Otimizacao_todas_configuracoes.xlsx"), index=False)
+        except Exception as _e:
+            log(f"   Otimização: tabela com a final não gerada ({_e}) – gravando a original")
+            df_opt.to_excel(os.path.join(sub["01_Engenharia"], f"{cod}_Otimizacao_todas_configuracoes.xlsx"), index=False)
     _atp_dupla_checagem(proj, cat, sub["01_Engenharia"], cod, log)
     log("5/7 Desenhos 2D/3D e diagrama elétrico...")
     pdf_des, pngs = gerar_desenhos(proj, arr, cat, sub["05_Desenhos"])

@@ -61,19 +61,38 @@ def montar_bom(proj, arr, cat) -> List[ItemBOM]:
     def add(grupo, fornecedor, desc, spec, qtd, un, cu, por, tag=""):
         itens.append(ItemBOM(len(itens) + 1, grupo, fornecedor, desc, spec, qtd, un, round(cu, 2), por, tag))
 
+    from .ind_projeto import protecao_termica_txt
+    _ped = proj.pedido
+    _q = max(1, int(_ped.get("quantidade", 1) or 1))
+    _i_inv = float(_ped.get("inversor_corrente_a") or _ped.get("corrente_cliente_a") or 0)
     for L in [proj.l1] + ([proj.l2] if proj.l2 else []):
+        # v1.32.0 (REQ-SEN-026, auditoria A&W item 7): a linha do BOM traz as DUAS condições de linearidade da ET
+        _iovl = 1.5 * max(_i_inv, float(L.i_nom_a)) * math.sqrt(2) + float(L.ripple_pp_a or 0) / 2
         add("INDUTOR", nome("indutor"), f"Indutor trifásico núcleo comum para filtro senoidal – {L.nome.split(' – ')[0]}",
             f"{L.l_uh:.0f} µH/fase ±5 %; In térmica {L.i_nom_a:.0f} A (fund. {L.i_fund_a:.0f} A + ondulação {L.ripple_rms_a:.0f} A RMS @ "
-            f"{L.f_chav_hz / 1000:g} kHz); Isat ≥ {L.i_sat_a:.0f} A pico; isolação 1,1 kV; classe F/H; "
+            f"{L.f_chav_hz / 1000:g} kHz); L ≥ 90 % até {L.i_sat_a:.0f} A pico e L ≥ 70 % até {_iovl:.0f} A pico (sobrecarga 1,5×/60 s); "
+            f"isolação 1,1 kV; classe H (180 °C); {protecao_termica_txt(True)}; "
             f"perdas ≤ {L.perdas_w:.0f} W", 1, "pç", L.custo, "Electric Service", L.nome.split(" ")[0])
+    _pt = cat.get("prototipo") or {}
+    add("INDUTOR", nome("indutor"), "Protótipo do indutor L1 + ensaios de tipo (rateado no lote)",
+        "1 protótipo; ensaios: L × I até a sobrecarga, perdas a 60 Hz e com a ondulação de chaveamento, aquecimento em carga nominal, "
+        "dielétrico, desequilíbrio entre fases, ruído LpA a 1 m – ESTIMATIVA: substituir pela cotação do fornecedor",
+        round(1.0 / _q, 3), "vb", float(_pt.get("fator_custo_indutor", 1.0)) * proj.l1.custo + float(_pt.get("ensaios_rs", 3500)),
+        "Electric Service", "L1-P")
     add("CAPACITOR", f"{b.fabricante}", f"Capacitor monofásico MKP {b.uf_unit:g} µF {b.v_unit:g} V – {b.linha}",
         f"P/N {b.pn}; {_norma_cap(cat, b.cap_id)}; autorregenerativo c/ dispositivo de sobrepressão; Irms aplicada {b.i_unit_rms:.1f} A "
         f"(admissível {b.i_unit_max:.1f} A)",
         b.n_total, "pç", b.preco_unit, "Electric Service", "C")
-    add("CAPACITOR", f"{b.fabricante}", "Resistor de descarga (se o capacitor não tiver interno)",
+    add("CAPACITOR", f"{b.fabricante}", "Resistor de descarga EXTERNO por capacitor – obrigatório (só dispensar com datasheet/carta do "
+        "fabricante comprovando resistor interno que atenda ≤ 50 V em 60 s)",
         f"{b.r_descarga_mohm * 1000:.0f} kΩ TOTAL por capacitor, ≥ 1 kV (se usar 2 em série para a tensão, cada um com "
         f"{b.r_descarga_mohm * 500:.0f} kΩ, {max(0.5, b.r_descarga_w / 2):g} W) – descarga ≤ 50 V em 60 s",
         b.n_total, "pç", m["preco_resistor_descarga"], "Montadora", "R")
+    add("CAPACITOR", f"{b.fabricante}", "Proteção contra falha do banco de capacitores – justificativa (sem fusível por ramo)",
+        "Capacitor MKP autorregenerativo com dispositivo de sobrepressão (IEC 61071) + banco a jusante do indutor e do inversor: a "
+        "corrente de falta é limitada pela proteção de sobrecorrente do inversor (desliga em µs) – não há corrente de curto da rede "
+        "no banco. Fusível por ramo só se o cliente exigir (aR, ≥ 1,6 × I do ramo, com perdas incluídas na térmica)",
+        1, "nota", 0.0, "Electric Service", "C-PROT")
     if am and am.tipo == "rc_paralelo":
         add("CAPACITOR", f"{b.fabricante}", f"Capacitor do ramo de amortecimento {b.uf_unit:g} µF {b.v_unit:g} V (mesmo tipo do banco)",
             f"{am.n_cd_por_ramo} por ramo, em série com o resistor de amortecimento", 3 * am.n_cd_por_ramo, "pç", b.preco_unit,
@@ -92,6 +111,10 @@ def montar_bom(proj, arr, cat) -> List[ItemBOM]:
         arr.n_ventiladores, "pç", 0.45 * m["preco_ventilador"], "Montadora", "GR")
     add("CABOS_MISC", nome("cabos_misc"), "Termostato NA para comando dos ventiladores", "Ajuste 0–60 °C, 10 A 250 V, trilho DIN",
         1, "pç", m["preco_termostato"], "Montadora", "TH")
+    add("CABOS_MISC", nome("cabos_misc"), "Relé de proteção por termistor PTC do indutor (-B1 → -K1, contato NF ao inversor/CLP)",
+        "Para PTC DIN 44081/44082 em série (3 sensores), alimentação 220 Vca, 1 contato reversível, trilho DIN – ou ligar o PTC na "
+        "entrada de termistor do inversor (ABB ACS580: 35.11/35.21) e dispensar este relé", 1, "pç", m.get("preco_rele_ptc", 220.0),
+        "Montadora", "K1")
     for c in arr.cabos:
         add("CABOS_MISC", nome("cabos_misc"), c["desc"], f"Cobre classe 5; {c['uso']}", c["metros"], "m",
             cat["preco_cabo_por_mm2_m"] * c["secao"] + 1.0, "Montadora")

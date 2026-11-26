@@ -102,10 +102,20 @@ def sistema_isolacao(classe):
              norma="IEC 61067", por_que="amarração externa da bobina"),
         dict(item="Cabos/terminais de saída (se houver cabo)", mat="Cabo silicone 180 °C, 1 kV, ou barra direta", ti=180,
              norma="IEC 60245 / NBR NM 247", por_que="não pode ser PVC 70 °C/105 °C perto da bobina"),
-        dict(item="Sensor térmico", mat=("PTC DIN 44081/44082 TNF 160 °C, 1 por bobina, em série" if H else
-                                         "PTC DIN 44081/44082 TNF 140 °C, 1 por bobina, em série"),
+        dict(item="Sensor térmico", mat=protecao_termica_txt(H),
              ti=None, norma="DIN 44081 / DIN 44082", por_que="desliga/alarma antes de o ponto quente passar da classe"),
     ]
+
+
+def ptc_tnf_c(classe_h=True):
+    """v1.32.0 (REQ-SEN-026, auditoria A&W A4): UM ÚNICO dispositivo de proteção térmica do indutor do filtro senoidal, igual na
+    ET, no esquema (-B1), na lista de material e no desenho: PTC DIN 44081 TNF 160 °C (classe H; 140 °C se classe F)."""
+    return 160 if classe_h else 140
+
+
+def protecao_termica_txt(classe_h=True):
+    return (f"PTC DIN 44081/44082 TNF {ptc_tnf_c(classe_h)} °C, 1 por bobina, 3 em série, 2 fios na caixa de bornes TH1/TH2 "
+            "(ligado ao relé de PTC / entrada de termistor do inversor)")
 
 
 # Distâncias de isolação adotadas (projeto) – base IEC 60664-1 / IEC 61800-5-1, tensão de isolação 1000 V (barramento PWM até

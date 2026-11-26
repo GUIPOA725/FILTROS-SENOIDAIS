@@ -191,7 +191,7 @@ def projetar_arranjo(proj, cat, ordem: str = "indutor_embaixo") -> Arranjo:
     if am:
         perdas["Resistores de amortecimento"] = am.p_total_w
     perdas["Capacitores"] = round(0.5 * banco.kvar_60 + banco.n_total * 0.5, 1)   # MKP ~0,5 W/kvar + HF + resistores descarga
-    perdas["Cabos/conexões"] = round(0.0002 * proj.pedido["tensao_v"] * proj.pedido["corrente_a"] * 0.5, 1)
+    perdas["Cabos/conexões"] = 0.0            # v1.32.0: calculado abaixo por I²·R real dos cabos internos (era 0,0002·V·I·0,5)
     ptot = sum(perdas.values())
     dt = cat["projeto_padrao"]["delta_t_painel_k"]
     vazao = 3.1 * ptot / dt
@@ -222,6 +222,19 @@ def projetar_arranjo(proj, cat, ordem: str = "indutor_embaixo") -> Arranjo:
         dict(desc="Cabo flexível 750 V 1,5 mm² – ventiladores/termostato", secao=1.5, n_par=1, metros=round(4 + 2 * alt_m, 1),
              uso="auxiliar"),
     ]
+    # v1.32.0 (REQ-SEN-026, auditoria A&W): perdas dos cabos internos por I²·R real (NBR IEC 61439-1 Anexo H: Pv = I²·R20·[1+0,004·(Tc−20)],
+    # Tc 70 °C) com a corrente REAL de cada trecho (não a de dimensionamento ×1,25/×1,3) + 20 % para conexões/terminais.
+    from . import fiacao_iec61439 as _FI
+    def _p_cabo(i_cond, secao, metros):
+        r20 = _FI.H1.get(secao, (0.0,))[0] / 1000.0
+        return (i_cond ** 2) * r20 * (1 + 0.004 * (70 - 20)) * metros
+    _i_hf = cat.get("cabo_fator_hf", 1.0)
+    p_cab = (_p_cabo(i_lin * _i_hf / n_par, s_pot, cabos[0]["metros"]) + _p_cabo(i_lin * _i_hf / n_par, s_pot, cabos[1]["metros"])
+             + _p_cabo(i_ramo, s_cap, cabos[2]["metros"]) + _p_cabo(banco.i_unit_rms, s_jump, cabos[3]["metros"]))
+    perdas["Cabos/conexões"] = round(1.2 * p_cab, 1)
+    ptot = sum(perdas.values())
+    vazao = 3.1 * ptot / dt
+    nvent = max(1, math.ceil(vazao / cat["miscelanea"]["ventilador_m3h"]))
     if lig_delta is False:
         obs.append("Banco em estrela: neutro isolado (não aterrar o centro-estrela).")
     obs.append(f"Dissipação total estimada {ptot:.0f} W → vazão mínima {vazao:.0f} m³/h para ΔT = {dt} K "

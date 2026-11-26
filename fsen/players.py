@@ -103,22 +103,43 @@ def comparar(I, V_ll, f_hz, L_uH, Cy_uF, perdas_W=None, massa_kg=None, fs_kHz=No
 
 
 def de_projeto(proj, arr=None):
-    """Monta a comparação a partir do projeto do filtro senoidal."""
+    """Monta a comparação a partir do projeto do filtro senoidal.
+
+    v1.32.0 (REQ-SEN-026, auditoria A&W A6) – comparação LIKE-FOR-LIKE:
+      • massa: os players publicam o filtro ABERTO (IP00/IP20, sem armário) → comparar o CONJUNTO LC sem a caixa
+        (indutor + capacitores); a massa com a caixa vai só como informação;
+      • perdas: indutor + capacitores (+ resistores), sem cabos e ventilação do painel – como no datasheet dos players;
+      • queda: os players declaram a perda de INSERÇÃO (queda real na saída) → comparar com a nossa inserção real, não com o
+        uk (queda reativa X·I), que fica na coluna uk calculada igual para todos."""
     ped = proj.pedido
     V = float(ped.get("tensao_v") or 440)
     f = float(ped.get("freq_rede_hz") or 60)
     b = proj.banco
-    queda = None
-    for v in getattr(proj, "verificacoes", []) or []:
-        if "Queda de tensão" in str(v.item):
-            try:
-                queda = float(str(v.valor).split("%")[0].replace(",", "."))
-            except ValueError:
-                pass
-    return comparar(float(proj.l1.i_nom_a), V, f, float(proj.l1.l_uh), float(b.c_y_uf),
-                    perdas_W=float(getattr(arr, "perda_total_w", 0) or 0) or None,
-                    massa_kg=float(getattr(arr, "massa_total_kg", 0) or 0) or None,
-                    fs_kHz=float(proj.fs_hz) / 1000, queda_pct=queda)
+    try:
+        from .documentos import insercao_pct
+        queda = round(insercao_pct(proj), 1)
+    except Exception:
+        queda = None
+    massa_tot = float(getattr(arr, "massa_total_kg", 0) or 0)
+    massa_lc = None
+    if massa_tot and arr is not None:
+        try:
+            m_cx = round(7.85 * 1.5 * 2 * (arr.caixa_l * arr.caixa_a + arr.caixa_l * arr.caixa_p + arr.caixa_a * arr.caixa_p) / 1e6, 0)
+            massa_lc = max(massa_tot - m_cx - 15.0, 0.0) or None
+        except Exception:
+            massa_lc = None
+    pw = dict(getattr(arr, "perdas_w", {}) or {})
+    p_lc = sum(v for k, v in pw.items() if not str(k).lower().startswith(("cabos", "vent"))) or None
+    comp = comparar(float(proj.l1.i_nom_a), V, f, float(proj.l1.l_uh), float(b.c_y_uf),
+                    perdas_W=p_lc or (float(getattr(arr, "perda_total_w", 0) or 0) or None),
+                    massa_kg=massa_lc or (massa_tot or None), fs_kHz=float(proj.fs_hz) / 1000, queda_pct=queda)
+    comp["nosso"]["modelo"] = "conjunto LC sem caixa (comparável)" if massa_lc else "projeto (massa com a caixa)"
+    if massa_lc and massa_tot:
+        comp["nosso"]["nota"] = (f"massa com a caixa {massa_tot:.0f} kg; perdas do painel completo {float(arr.perda_total_w):.0f} W; "
+                                 f"queda = perda de inserção real (uk reativo {proj.l1.queda_v_pct:.1f} %)")
+    comp["base"] = ("Like-for-like: conjunto LC aberto (indutor + capacitores) × filtro aberto dos players; queda = inserção real. "
+                    "Reator × reator não é comparável: os players não publicam o reator isolado.")
+    return comp
 
 
 def _f(v, fmt="{:.0f}"):
@@ -130,7 +151,7 @@ def linhas_md(comp):
     n = comp["nosso"]
     L = ["## Comparação com os players mundiais (REQ-SEN-024)", "",
          f"Normalizado para {comp['V_ll']:g} V / {comp['f_hz']:g} Hz: C em estrela (Δ × 3), fr = 1/(2π√(L·Cy)), uk = 2π·f·L·I/(V/√3). "
-         "Só datasheet oficial (link e data na planilha 01_Engenharia/6_Players_Mercado).", "",
+         "Só datasheet oficial (link e data na planilha 01_Engenharia/6_Players_Mercado).", comp.get("base", ""), "",
          "| Fabricante | Modelo | I (A) | L (µH) | C estrela (µF) | fr (Hz) | uk (%) | Perdas (W/A) | Massa (kg/A) | fs mín (kHz) | Queda (%) |",
          "|---|---|---|---|---|---|---|---|---|---|---|"]
     for x in [n] + comp["linhas"]:
@@ -155,7 +176,7 @@ def salvar_xlsx(comp, arq, cod=""):
     ws.append([f"Filtro senoidal {cod} × players mundiais – {comp['I']:g} A, {comp['V_ll']:g} V, {comp['f_hz']:g} Hz (REQ-SEN-024)"])
     ws["A1"].font = Font(bold=True, size=12)
     ws.append(["C normalizado em estrela (Δ × 3); fr = 1/(2π√(L·Cy)); uk = 2π·f·L·I/(V/√3) na tensão/frequência do projeto. "
-               "Linhas '(conferir)' não entram na faixa."])
+               "Linhas '(conferir)' não entram na faixa. " + comp.get("base", "")])
     ws.append([])
     cab = ["Fabricante", "Modelo", "I (A)", "L (µH)", "C publicado (µF)", "Conexão", "C estrela (µF)", "fr (Hz)", "uk (%)",
            "Perdas (W)", "Perdas (W/A)", "Massa (kg)", "Massa (kg/A)", "fs mín (kHz)", "Queda (%)", "Classe", "Fonte (link)", "Consulta"]

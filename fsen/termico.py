@@ -58,6 +58,10 @@ def _perdas_componentes(proj, arr, cat):
     r_km = 0.0175 * 1.25 / s_pot * 1000 / arr.cabos[0].get("n_par", 1) if arr.cabos else 0.2
     l_m = sum(cb["metros"] for cb in arr.cabos[:2]) if arr.cabos else 6
     p_cabos = (i ** 2) * r_km / 1000 * l_m / 1.0 + 6 * 2.0      # + 6 conexões ~2 W
+    # v1.32.0 (REQ-SEN-026, auditoria A&W A3): mesma perda da mecânica – I²R de TODOS os cabos internos (força, ramo capacitivo,
+    # jumpers) a 70 °C pelo Anexo H + 20 % conexões; o cálculo antigo (só X1→L1→X2) fica como piso
+    p_cabos = max(p_cabos, float((getattr(arr, "perdas_w", None) or {}).get("Cabos/conexões", 0)
+                                     or (getattr(arr, "perdas_w", None) or {}).get("Cabos e conexões de potência", 0) or 0))
     fontes.append(dict(nome="Cabos e conexões de potência", tag="CB", p=p_cabos, z0=0, z1=arr.caixa_a, area=0, tipo="cabo"))
     return fontes
 

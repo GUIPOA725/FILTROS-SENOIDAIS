@@ -3,6 +3,21 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.32.0 – 26/11/2026 – correções da auditoria independente A&W (REQ-SEN-026)
+**Origem:** auditoria técnica independente do pacote v1.31.2 do FSEN-LC-268A-440V; engenheiro: "pode sim, se vc concorda com ele e acha necessário ... pode fazer". Correção GERAL (todos os filtros senoidais).
+**Feito:**
+- Fonte única dos valores garantidos (`documentos.garantias`) usada pela folha PDF, folha Word, proposta e RTM: pico = pior caso (pontos + condições extremas) + 5 %; THD da SAÍDA (PWM) separado do THD TOTAL no motor (nominal e com metade do amortecimento); queda reativa uk separada da perda de inserção real.
+- Normas: capacitor = IEC 61071 (não 60831); NEMA MG1 só motor; queda 4–10 % = guia Danfoss/MTE (não 61800-2); IEC 61000-2-4 só referência de rede (classe 1 = 5 %, classe 2 = 8 %); IEC 61800-3 incluída; "Certificação CE/UL não incluída"; IP/IK "projeto para, comprovar no FAT".
+- Proteção térmica única do indutor: PTC DIN 44081 TNF 160 °C (classe H), bornes TH1/TH2, igual na ET, esquema (-B1), BOM (+ relé de PTC -K1) e desenho.
+- BOM: linearidade 90 %/70 % (sobrecarga) no indutor; protótipo + ensaios de tipo (estimativa rateada); resistor de descarga externo obrigatório; justificativa da proteção do banco (sem fusível por ramo).
+- Perdas de cabos internos por I²R real (Anexo H, 70 °C, +20 % conexões) – antes 0,0002·V·I·0,5.
+- Players like-for-like: conjunto LC sem caixa × filtro aberto; perdas do conjunto LC; queda = inserção real.
+- Novos itens de ATENÇÃO: portadora fixa (PWM assíncrono) × síncrona; derating do inversor na fs fixada (tabela "a confirmar" no manual); filtro abaixo da corrente do inversor (limitar 30.17 + aceite do cliente).
+- Proposta: fs fixa + derating, premissa do cabo igual ao esquema, 268 A × inversor, mancal (rolamento isolado/escova), garantias condicionadas, ruído e normas.
+- RTM: classe H correta ("igual ou superior à F solicitada"), "atende = nenhum crítico reprovado; N em atenção", tabela de valores garantidos, cabo conforme premissa.
+- Desequilíbrio 3D com quadros > 3 % → ATENÇÃO com ajuste de calço na primeira peça; tabela de otimização com a configuração FINAL, flag robusto e critério de desempate; ET com ruído.
+**Mantido com ressalva:** fator 4 de amortecimento (calibrado no THD medido, não é o ganho do pico) – nome esclarecido.
+
 ## v1.31.2 – 26/11/2026 – atualização automática (REQ-GER-018)
 **Problema:** o engenheiro abriu pela pasta extraída FSEN_plataforma_v1.31.0; o .bat dela espelhou essa pasta na cópia local e a v1.31.1 do Drive não entrou.
 **Correção:** a janela (Python) se atualiza sozinha a partir da pasta oficial antes de subir o servidor; .bat com caminho oficial absoluto. Os dois arquivos também foram gravados na pasta v1.31.0 extraída e na cópia local para valer já.
@@ -365,6 +380,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 ## Revisão – v1.31.2 – 2026-11-26 10:57
 - Requisitos: 152 | APROVADO 94 | ATENÇÃO 38 | REPROVADO 20
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_0949
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.32.0 – 2026-11-26 14:38
+- Requisitos: 153 | APROVADO 94 | ATENÇÃO 39 | REPROVADO 20
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023

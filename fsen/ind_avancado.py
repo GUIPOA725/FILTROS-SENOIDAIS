@@ -804,6 +804,18 @@ def relatorio(d, av, arq, figs):
         R.p(f"Modelo 3D (NGSolve, {e['n_el']} tetraedros, núcleo anisotrópico, quadros e tirantes de aço): L = "
             + ", ".join(f"{v*1e6:.1f}" for v in e["L3d_estrutura"]) + " µH por fase. Perdas por peça: "
             + "; ".join(f"{k} {v:.1f} W" for k, v in e["P_normal_pecas"].items()) + ".")
+        try:        # v1.32.0 (REQ-SEN-026, auditoria A&W A2): desequilíbrio COM quadros e tirantes – critério 3 %
+            _l3 = [float(v) for v in e["L3d_estrutura"]]
+            _dq = 100 * (max(_l3) - min(_l3)) / (sum(_l3) / len(_l3))
+            if _dq > 3.0:
+                _fase = "UVW"[_l3.index(max(_l3))] if max(_l3) - sum(_l3) / 3 > sum(_l3) / 3 - min(_l3) else "UVW"[_l3.index(min(_l3))]
+                R.p(f"ATENÇÃO – desequilíbrio entre fases COM quadros e tirantes: {_dq:.1f} % (> 3 %). O ajuste de entreferro foi feito no modelo "
+                    f"sem a estrutura; a coluna {_fase} é a que mais se afasta. Ação: medir L por fase na primeira peça (ensaio de rotina da ET) "
+                    "e ajustar os calços do entreferro dessa coluna até ≤ 3 %; registrar o ajuste no relatório de ensaio.")
+            else:
+                R.p(f"Desequilíbrio entre fases com quadros e tirantes: {_dq:.1f} % (≤ 3 %) – OK; confirmar na medição de L por fase da primeira peça.")
+        except Exception:
+            pass
         R.p("Estrutura: " + "; ".join(f"{k} {v:.1f} W" for k, v in e["P_estrutura_pecas"].items())
             + f". A alma dos quadros termina 20 mm antes da junta coluna–culatra (aço magnético rente ao entreferro desviaria fluxo e aqueceria).")
     R.h1("Temperaturas – mapa térmico por diferenças finitas")

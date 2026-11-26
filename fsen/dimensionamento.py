@@ -310,7 +310,8 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
     fmax = ped.f_saida_max_hz or ped.freq_rede_hz
     thd = max(r["thd_v_saida_pct"] for r in res)
     v.append(Verificacao("THD tensão de saída (até 4·fs)", f"{thd:.2f} %", f"≤ {cp['thd_v_max_pct']:.1f} %", thd <= cp["thd_v_max_pct"],
-                         "IEC 61000-2-4 cl.2 / prática fabricantes (onda 'senoidal')"))
+                         "Critério de projeto Electric (THD do PWM, até 4·fs) – prática dos fabricantes de filtro senoidal (Schaffner/MTE/Danfoss: 3–5 %). "
+                         "Não é limite de norma: a IEC 61000-2-4 trata de redes (classe 1 = 5 %, classe 2 = 8 %)"))
     v.append(Verificacao("Ressonância ≥ 10·f saída máx", f"{fr:.0f} Hz", f"≥ {cp['fr_min_mult_fout'] * fmax:.0f} Hz",
                          fr >= cp["fr_min_mult_fout"] * fmax, "Prática Schaffner/ABB/Danfoss"))
     v.append(Verificacao("Ressonância ≤ fs/2", f"{fr:.0f} Hz", f"≤ {cp['fr_max_frac_fs'] * fs:.0f} Hz",
@@ -357,10 +358,11 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
         _fr_c = 1 / (2 * math.pi * math.sqrt(p.L1 * p.C_y)) * math.sqrt(1 + p.L1 / p.Lm)
     except Exception:
         _fr_c = 0.0
-    v.append(Verificacao(f"THD total no motor com METADE do amortecimento (Q {_q2:g} em vez de {_QC:g}) – ressonância com o motor ligado "
+    v.append(Verificacao(f"THD total no motor com METADE do amortecimento (fator de amortecimento equivalente {_q2:g} em vez de {_QC:g}, calibrado no THD medido) – ressonância com o motor ligado "
                          f"≈ {_fr_c:.0f} Hz, faixa {fmin:g}–{fmax:g} Hz", f"{thd_tot_q2:.2f} % (pior em {thd_q2[1]:.1f} Hz, h{thd_q2[2]}, ganho {thd_q2[3]:.1f})",
                          f"≤ {cp['thd_v_max_pct'] + 1:.1f} % (alerta)", thd_tot_q2 <= cp["thd_v_max_pct"] + 1,
-                         "O amortecimento Q 4 foi calibrado em filtros medidos SEM motor; com o motor não há medição. Se este caso passar do "
+                         "O fator 4 NÃO é o ganho de pico da ressonância: é o amortecimento equivalente que faz o modelo reproduzir o THD medido (Dranetz, "
+                         "SENAI 40 µF: 7,2 % previsto × 7,2 % medido), em filtros SEM motor; com o motor não há medição. Se este caso passar do "
                          "limite, a aprovação do THD depende do amortecimento real: medir em campo no comissionamento ou prever amortecimento RC",
                          critico=False))
     v.append(Verificacao(f"THD na saída do filtro SEM motor @ {fmax:g} Hz (teste/comissionamento a vazio)", f"{thd_tot_sm:.2f} %",
@@ -407,7 +409,8 @@ def verificar(ped: Pedido, cat, p: ParamCircuito, res, cap, arranjo, fs, fr) -> 
                                  "Na placa (60 Hz/In) o motor opera com tensão reduzida (enfraquecimento de campo leve)", critico=False))
     queda = 100 * In * 2 * math.pi * fmax * (p.L1 + p.L2) / (ped.tensao_v / math.sqrt(3))
     v.append(Verificacao("Queda de tensão no(s) indutor(es) @ f máx, In", f"{queda:.1f} %", f"≤ {cp['uk_max_pct']:.0f} %",
-                         queda <= cp["uk_max_pct"], "IEC 61800-2 / prática (4–10 %)"))
+                         queda <= cp["uk_max_pct"], "Guia de fabricantes (Danfoss Output Filters Design Guide / MTE: 4–10 %) – queda REATIVA X·I; "
+                         "a perda de inserção real (|V entrada| − |V saída|, com o FP do motor) é menor e vai na folha de dados"))
     i1max = max(r["i1_rms"] for r in res)
     lim_inv = (ped.inversor_corrente_a or In) * derating_fs(cat, ped, fs)
     v.append(Verificacao("Corrente do inversor (com filtro)", f"{i1max:.1f} A", f"≤ {lim_inv:.0f} A", i1max <= lim_inv * 1.0001,
@@ -764,6 +767,61 @@ def _escolher(ped, cat, cp, candidatos, fs, vdc, lcl, Zb, w, notas_inv, rapido):
     return _construir_projeto(ped, cat, cp, melhor, fs, vdc, lcl, Zb, w, notas_inv, avaliados, avisos, fallback)
 
 
+def verificacoes_auditoria(ped: Pedido, cat, p, res, fs, vdc=None) -> List[Verificacao]:
+    """v1.32.0 (REQ-SEN-026, auditoria independente A&W 26/11/2026) – itens de ATENÇÃO só do projeto final:
+    (1) portadora FIXA (PWM assíncrono, como o inversor real) × portadora síncrona (mf inteiro) usada na simulação;
+    (2) derating do inversor pela frequência de chaveamento fixada (tabela do catálogo ainda 'a confirmar' no manual);
+    (3) limite de corrente do inversor quando o filtro é dimensionado pela carga e não pela corrente do inversor."""
+    from .simulacao import PontoOperacao, simular
+    out = []
+    try:
+        r0 = max(res, key=lambda r: r["thd_v_saida_pct"])
+        f1 = float(r0["f1"])
+        mf_real = fs / f1
+        mf = max(9, int(round((mf_real - 3) / 6)) * 6 + 3)
+        cand = sorted({mf - 6, mf, mf + 6}, key=lambda m: abs(fs / m - f1))
+        mfx = next(m for m in cand if m >= 9)
+        f1x = fs / mfx                        # fundamental ajustada para a portadora cair EXATAMENTE em fs (fixa)
+        vf = ped.tensao_v / ped.freq_rede_hz
+        op = PontoOperacao(v_ll=min(vf * f1x, ped.tensao_v), f1=f1x, i_carga=float(r0.get("i_carga") or ped.corrente_a),
+                           fp=ped.motor_fp or 0.85, vdc=float(vdc or ped.tensao_v * 1.35), fs=fs)
+        rx = simular(p, op, pts_por_portadora=120).metricas
+        thd_s, thd_x = float(r0["thd_v_saida_pct"]), float(rx["thd_v_saida_pct"])
+        dif = thd_x - thd_s
+        out.append(Verificacao(
+            f"Portadora FIXA {fs / 1000:g} kHz (PWM assíncrono, inversor real) × síncrona da simulação (fs efetiva {r0.get('fs_efetiva', fs):.0f} Hz)",
+            f"THD {thd_x:.2f} % com a portadora exatamente em {fs:.0f} Hz (f1 {f1x:.2f} Hz) × {thd_s:.2f} % ({dif:+.2f} p.p.)",
+            "diferença ≤ 1 p.p. (alerta)", abs(dif) <= 1.0,
+            "A simulação usa portadora síncrona (mf inteiro) para o espectro ser periódico; este caso põe a portadora exatamente na fs "
+            "fixa do inversor (fundamental deslocada < 3 %) e confirma que o THD não depende dessa simplificação", critico=False))
+    except Exception as e:  # nunca impede o projeto
+        out.append(Verificacao("Portadora fixa × síncrona", f"não calculado ({e})", "informativo", True, "", critico=False))
+    try:
+        inv = cat["inversores"].get(_inv_chave(ped.inversor, cat), cat["inversores"]["GENERICO"])
+        k = derating_fs(cat, ped, fs)
+        fs_min = min(inv.get("fs_opcoes_khz") or [fs / 1000])
+        confirmado = bool(inv.get("derating_fs_confirmado"))
+        i_inv = float(ped.inversor_corrente_a or 0)
+        txt = (f"fator {k:.2f} a {fs / 1000:g} kHz" + (f" → {k * i_inv:.0f} A disponíveis de {i_inv:.0f} A" if i_inv else "")
+               + ("" if confirmado else " – tabela do catálogo NÃO confirmada no manual de hardware"))
+        out.append(Verificacao(f"Derating do inversor {ped.inversor or ''} com a fs fixada em {fs / 1000:g} kHz (mínima do inversor {fs_min:g} kHz)",
+                               txt, "confirmado no manual (página/tabela)", confirmado or fs / 1000 <= fs_min + 1e-6,
+                               "Fixar a fs acima da mínima de fábrica pode reduzir a corrente do inversor (ABB ACS580: derating quando o "
+                               "parâmetro 97.02 – fs mínima – é elevado). Confirmar no manual de hardware do modelo/frame e registrar "
+                               "página/tabela antes de firmar a proposta", critico=False))
+    except Exception:
+        pass
+    i_inv = float(ped.inversor_corrente_a or 0)
+    i_cli = float(getattr(ped, "corrente_cliente_a", 0) or 0)
+    if i_inv and ped.corrente_a < max(i_inv, i_cli) - 0.5:
+        out.append(Verificacao("Corrente do filtro abaixo da corrente do inversor/pedido",
+                               f"filtro {ped.corrente_a:g} A × inversor {i_inv:g} A" + (f" / pedido {i_cli:g} A" if i_cli else ""),
+                               "limite de corrente do inversor ≤ corrente do filtro (aceite do cliente)", False,
+                               "Dimensionado pela carga real. Para proteger o filtro, limitar a corrente do inversor (ABB ACS580: 30.17 "
+                               "Maximum current) ao valor do filtro e obter o aceite do cliente na proposta", critico=False))
+    return out
+
+
 def _construir_projeto(ped, cat, cp, c, fs, vdc, lcl, Zb, w, notas_inv, avaliados=None, avisos=None, fallback=False,
                        pts_por_portadora=160, detalhado=True):
     avisos = list(avisos or [])
@@ -772,6 +830,8 @@ def _construir_projeto(ped, cat, cp, c, fs, vdc, lcl, Zb, w, notas_inv, avaliado
                                   cd=c.get("cd", 0.0), rdp=c.get("rdp", 0.0),
                                   pts_por_portadora=pts_por_portadora, detalhado=detalhado)
     ver = verificar(ped, cat, p, res, c["cap"], c["arr"], fs, c["fr"])
+    if detalhado:
+        ver = ver + verificacoes_auditoria(ped, cat, p, res, fs, vdc)
     aprovado = all(x.ok for x in ver if x.critico)
     if fallback and aprovado:
         avisos = ["Aprovado somente na simulação fina (alta resolução) – conferir margens."]

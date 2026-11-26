@@ -1,7 +1,7 @@
 """Esquema elétrico do FILTRO SENOIDAL no mesmo modelo QElectroTech do banco/filtro sintonizado (v1.16.1).
 
 Folhas: capa, índice, força (X1 do inversor → -L1 [→ -L2] → X2 para o motor, derivação para o banco de capacitores,
-barra PE), comando (X3 220 V → -F1 → -B0 termostato do painel → ventiladores -M1..; alarme do termostato do reator em X3:3/4).
+barra PE), comando (X3 220 V → -F1 → -B0 termostato do painel → ventiladores -M1..; alarme do PTC do reator (via relé -K1) em X3:3/4).
 Gera .qet + PDF + DXF e a lista DE/PARA + etiquetas (fios, componentes, cabos externos) pelo mesmo módulo dos bancos.
 """
 from __future__ import annotations
@@ -191,10 +191,13 @@ def construir(proj, arr, cod, versao):
     # alarme: termostato do reator NF em X3:3/4
     x33 = fc.el("borne_continuite", 700, 80, "-X3:3", inf("Borne alarme"))
     x34 = fc.el("borne_continuite", 760, 80, "-X3:4", inf("Borne alarme"))
-    b1 = fc.el("thermostat_nc", 700, 300, "-B1", inf("Termostato do reator -L1 (NF, abre na sobretemperatura)", dados="140 °C"))
+    from ..ind_projeto import ptc_tnf_c          # v1.32.0 (REQ-SEN-026): um único dispositivo – PTC 160 °C, borne TH1/TH2 (igual ET/BOM)
+    b1 = fc.el("thermostat_nc", 700, 300, "-B1", inf(f"PTC do reator -L1 (DIN 44081, 3 em série, TNF {ptc_tnf_c(True)} °C) – bornes TH1/TH2 "
+                                                     "→ relé de PTC -K1 (ou entrada de termistor do inversor), contato NF de alarme",
+                                                     dados=f"PTC {ptc_tnf_c(True)} °C"))
     fc.fio(x33.term("s"), b1.term("n"), marca="CZ", secao=s_aux, num="AL1")
     fc.fio(b1.term("s"), x34.term("s"), marca="CZ", secao=s_aux, num="AL2", ym=420)
-    fc.texto(700, 40, "Alarme de temperatura do indutor (contato NF) – para o CLP/inversor do cliente", 7, "#555555")
+    fc.texto(700, 40, "Alarme de temperatura do indutor: PTC 160 °C (TH1/TH2) → relé -K1, contato NF para o CLP/inversor do cliente", 7, "#555555")
     for k, f in enumerate(Q.folios):
         ind.texto(80, 80 + 22 * k, f"{f.n:>3}   {f.titulo}", 11)
         ind.texto(620, 80 + 22 * k, "=" + f.funcao + " +PAINEL", 9, "#555555")

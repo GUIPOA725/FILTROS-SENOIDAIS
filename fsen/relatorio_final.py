@@ -320,7 +320,7 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
                   f"{_g(ped.get('motor_rpm'))} rpm"),
         ("Carga", ped.get("carga_tipo") or "-"),
         ("Faixa de operação", f"{ped['f_saida_min_hz']:g} a {ped['f_saida_max_hz']:g} Hz"),
-        ("Cabo filtro → motor", f"{_g(ped.get('cabo_m'))} m, {'blindado' if ped.get('cabo_blindado', True) else 'não blindado'}"),
+        ("Cabo filtro → motor", f"{_g(ped.get('cabo_m'))} m, {'blindado' if ped.get('cabo_blindado') else 'não blindado'}"),
         ("Requisitos do cliente", f"Vpico ≤ {ped.get('vpk_max_v') or 1000:g} V; dv/dt ≤ {ped.get('dvdt_max_v_us') or 500:g} V/µs; "
                                   f"tr > {ped.get('rise_time_min_us') or '-'} µs; IP{ar.get('caixa_ip', 54)}; isolação {ped.get('classe_isolamento_kv')} kV; "
                                   f"classe {ped.get('classe_temp')}"),
@@ -477,8 +477,10 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
                  [6.6, 4.0, 3.9, 2.5], tam=8, legenda=f"Limites – {nome.lower()}", status_col=3)
     # indutor: saturação
     R.txt(f"Indutor: corrente de pico em operação {L.i_pico_a:.0f} A contra saturação ≥ {L.i_sat_a:.0f} A (margem "
-          f"{100 * (L.i_sat_a / L.i_pico_a - 1):.0f} %). A ET do indutor pede isolação classe {ped.get('classe_temp') or 'F'} e "
-          f"elevação {ped.get('elevacao_temp') or '100 K'} pelo método da resistência, conforme IEC 60076-6.")
+          f"{100 * (L.i_sat_a / L.i_pico_a - 1):.0f} %). A ET do indutor pede sistema de isolação classe "
+          f"{ {130: 'B', 155: 'F', 180: 'H', 200: 'N'}.get(int(cat.get('termico', {}).get('classe_indutor_c', 180)), 'H')} "
+          f"({int(cat.get('termico', {}).get('classe_indutor_c', 180))} °C) e elevação média ≤ {int(cat.get('termico', {}).get('elevacao_indutor_k', 125))} K "
+          f"pelo método da resistência (IEC 60076-6) – igual ou superior à classe {ped.get('classe_temp') or 'F'} solicitada pelo cliente.")
 
     # 9 ---------------------------------------------------------------- térmico
     R.h1("ESTUDO TÉRMICO E REFRIGERAÇÃO")
@@ -517,7 +519,17 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
     R.txt(f"O filtro senoidal {proj.topologia} de {ped['corrente_a']:g} A / {ped['tensao_v']:g} V, com indutor de {L.l_uh:.0f} µH e "
           f"{b.n_total} capacitores de {b.uf_unit:g} µF em {b.ligacao}, {'ATENDE' if proj.aprovado else 'NÃO ATENDE'} a todos os "
           "critérios críticos de projeto, aos limites de norma do motor e aos limites de datasheet de todos os componentes, "
-          "incluindo refrigeração e elevação de temperatura.")
+          "incluindo refrigeração e elevação de temperatura."
+          + (f" 'Atende' significa nenhum item crítico reprovado; {len([x for x in proj.verificacoes if not x.ok and not x.critico])} "
+             "item(ns) ficam em ATENÇÃO (listados abaixo) e precisam de ação ou confirmação antes de firmar garantias."
+             if any(not x.ok and not x.critico for x in proj.verificacoes) else ""))
+    from .documentos import garantias as _gar
+    _gg = _gar(proj, cat)
+    R.h2("VALORES GARANTIDOS AO CLIENTE (os mesmos da folha de dados e da proposta)")
+    R.tabela(["Grandeza", "Valor garantido"], [("Tensão de pico no motor", _gg["txt_vpk"]), ("dv/dt no motor", _gg["txt_dvdt"]),
+                                               ("THD de tensão na saída do filtro", _gg["txt_thd_saida"]),
+                                               ("THD total de tensão no motor", _gg["txt_thd_total"]), ("Queda de tensão", _gg["txt_queda"]),
+                                               ("Ruído", _gg["txt_ruido"])], [5.5, 11.5], tam=8, legenda="Valores garantidos")
     R.h2("SÍNTESE DOS RESULTADOS")
     sint = [("Tensão de pico no motor", vpk.valor if vpk else "-", vpk.limite if vpk else "-", _st(vpk.ok) if vpk else "-"),
             ("Distorção total da tensão no motor", tot.valor if tot else "-", tot.limite if tot else "-", _st(tot.ok) if tot else "-")]
@@ -539,7 +551,8 @@ def gerar(proj, arr, pasta_proj, cat, atp=None, vistas_dir=None, saida=None, cod
     rec = [f"Parametrizar o inversor com frequência de chaveamento fixa de {proj.fs_hz / 1000:g} kHz (sem modo automático de redução), "
            "habilitar o modo/parâmetro de filtro senoidal do fabricante e informar L e C do filtro quando o controle pedir.",
            "Não operar o inversor com o filtro em vazio (motor desconectado) por tempo prolongado; no comissionamento, energizar já com o motor.",
-           "Cabo blindado simétrico entre filtro e motor, com aterramento 360° nas duas pontas e condutor PE de baixa impedância.",
+           (f"Cabo filtro → motor conforme a premissa do estudo ({'blindado simétrico, aterramento 360° nas duas pontas' if ped.get('cabo_blindado') else 'NÃO blindado, como no esquema elétrico'}"
+            f", {_g(ped.get('cabo_m'))} m) e condutor PE de baixa impedância; outro tipo de cabo muda o modo comum e a tensão no mancal – refazer o estudo."),
            "Manter os filtros de ar dos ventiladores limpos (inspeção trimestral) e garantir a entrada de ar livre na parte inferior.",
            "Ensaios de rotina por unidade: indutância e resistência por fase, tensão aplicada, capacitância por ramo e funcionamento dos ventiladores."]
     if vf("Tensão estimada no mancal") and not vf("Tensão estimada no mancal").ok:

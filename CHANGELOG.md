@@ -1,5 +1,13 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.32.0 – 26/11/2026 – auditoria independente: documentos coerentes e normas corretas
+- Valores garantidos iguais em folha de dados, proposta e relatório (pico do pior caso; THD da saída × THD total no motor; queda × inserção).
+- Normas corrigidas (IEC 61071 no capacitor, IEC 61800-3, CE/UL declarada como não incluída).
+- PTC 160 °C único no indutor (ET, esquema, lista de material); relé de PTC na lista.
+- Lista de material com protótipo, resistor de descarga obrigatório e proteção do banco justificada.
+- Perdas de cabos internos calculadas por I²R; comparação com players no mesmo critério (sem caixa, inserção real).
+- Novos alertas: portadora fixa, derating do inversor, filtro abaixo da corrente do inversor, desequilíbrio 3D.
+
 ## v1.31.2 – 26/11/2026 – atualização automática ao abrir
 - REQ-GER-018: janela_fsen.py compara a versão da cópia local com a pasta oficial do Drive (PROGRAMAS/FSEN_v1.7.1) e, se houver versão mais nova, copia tudo antes de subir o servidor – funciona de qualquer atalho, pasta de versão antiga extraída ou .bat. ABRIR_FSEN.bat usa o caminho oficial absoluto quando a pasta irmã FSEN_v1.7.1 não existe. Registro no janela.log ("atualização automática: vX → vY").
 
