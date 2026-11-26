@@ -99,7 +99,8 @@ CHECKLIST = [
 CENARIOS = {
     "inv_fs": [("fs real 2 kHz (padrão de fábrica de vários inversores)", dict(fs_khz=2.0))],
     "cabo_comp": [("cabo de 100 m", dict(ped=dict(cabo_m=100))), ("cabo de 200 m", dict(ped=dict(cabo_m=200)))],
-    "cabo_tipo": [("cabo não blindado (unipolar em eletrocalha)", dict(ped=dict(cabo_blindado=False)))],
+    # v1.34.1 (REQ-SEN-029): sem informação o estudo adota cabo genérico SEM blindagem; a sensibilidade testa o blindado
+    "cabo_tipo": [("cabo blindado simétrico (VFD)", dict(ped=dict(cabo_blindado=True)))],
     "amb": [("ambiente 45 °C", dict(amb=45)), ("ambiente 50 °C", dict(amb=50))],
     "alt": [("altitude 2000 m (−20 % de refrigeração)", dict(vent=0.8))],
     "motor_fp": [("FP do motor 0,80", dict(ped=dict(motor_fp=0.80)))],

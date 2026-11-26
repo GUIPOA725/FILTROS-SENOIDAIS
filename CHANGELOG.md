@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.34.1 – 26/11/2026 – cabo genérico sem blindagem e motor WEG pelo catálogo
+- Quando o pedido não diz o tipo de cabo, o estudo adota cabo genérico SEM blindagem (antes era blindado); a análise de sensibilidade testa o blindado.
+- Motor WEG: a plataforma acha a carcaça pela potência e polos no catálogo técnico W22 e confere a corrente e o FP que o cliente mandou.
+
 ## v1.34.0 – 26/11/2026 – motor e cabo pelos manuais do fabricante
 - Motor: limites de pico, dV/dt e rise time do fabricante (WEG) comparados com o que o filtro garante; proteção de mancal pela carcaça.
 - Cabo: R, L e C calculados a partir do catálogo do fabricante (Prysmian) e comparados com os valores da simulação; com fabricante e modelo informados, a simulação usa o cabo real.

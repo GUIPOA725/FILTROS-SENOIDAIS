@@ -1,5 +1,5 @@
 {
-  "versao": "1.34.0",
+  "versao": "1.34.1",
   "data": "2026-11-26",
-  "resumo": "Motor e cabo pelos manuais/catálogos do fabricante (WEG: isolamento e mancais; Prysmian: R, L e C calculados do catálogo), com fonte/página/link, pasta 7_Manuais_Tecnicos e Check"
+  "resumo": "Cabo não informado → genérico sem blindagem (padrão do engenheiro); motor WEG pelo catálogo técnico: carcaça, corrente e FP conferidos com a placa do cliente"
 }

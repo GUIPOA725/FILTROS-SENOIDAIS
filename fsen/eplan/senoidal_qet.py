@@ -28,7 +28,7 @@ def _cabo_motor(proj, s_pot):
     pd = proj.pedido if isinstance(proj.pedido, dict) else {}
     sec = si.get("cabo_secao_mm2") or s_pot or "?"
     par = int(si.get("cabo_paralelos") or 1)
-    bl = bool(pd.get("cabo_blindado", True))
+    bl = bool(pd.get("cabo_blindado", False))
     form = (f"{par}×" if par > 1 else "") + f"3×{sec:g} mm² + PE" if isinstance(sec, (int, float)) else f"3×{sec} mm² + PE"
     return form, ("blindado" if bl else "NÃO blindado"), bl
 

@@ -31,7 +31,7 @@ com o engenheiro; componente novo só vale para todos depois da aprovação dele
 Todo resultado tem coluna **Check**: ✔ APROVADO, ⚠ ATENÇÃO (perto do limite ou a confirmar), ✖ REPROVADO, INFO. A planilha
 Conferencia_Esquema_x_Painel_x_Lista confere esquema elétrico × painel 2D/3D × lista de material: tem que dar zero reprovado.
 
-_Gerado em 26/11/2026 16:53 – plataforma v1.34.0 – 157 requisitos registrados._
+_Gerado em 26/11/2026 18:05 – plataforma v1.34.1 – 159 requisitos registrados._
 
 ## Regras e decisões do engenheiro (registro de requisitos – palavras dele)
 Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
@@ -216,6 +216,8 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 - REQ-SEN-025 [PENDENTE] Outra coisa sobre os capacitores, eu vejo que quando a corrente sobe eles usam estrela. Existe alguma documentação regas de engenharia cálculos livros de eletrônica de potência falando quando usar em delta e quando em estrela? Os players que vc listou a partir de qual corrente eles usam em estrela tem alguma relação? Todos seguem o mesmo padrão — nota: Dados dos datasheets: Schaffner FN5040 Y até 75 A e Δ a partir de 115 A (o contrário do que parecia); Block SFB Δ em toda a linha; TDK e Danfoss publicam C equivalente em estrela (não a ligação real); MTE não publica. Pe
 - REQ-SEN-026 ! [ATENDE] veja a AUDITORIA TÉCNICA INDEPENDENTE Filtro senoidal LC FSEN-LC-268A-440V ... vc concorda? / 14:05: pode sim, se vc concorda com ele e acha necessário e vai melhorar o estudo e projeto, pode fazer — nota: Q mantido (amortecimento calibrado no THD medido) com nome esclarecido; reator × reator com players não comparável (não publicam). Derating ACS580 continua ATENÇÃO até confirmar no manual de hardware (derating_fs_confirm
 - REQ-SEN-027 ! [PENDENTE] veja a auditoria externa oque vc acha? (Adendo de verificação da v1.32.3 – 6 resolvidos, 11 parciais, 2 não tratados; 3 bloqueios: fs 4 kHz/derating ACS580, 268 A × 293 A, THD de baixa ordem 7,17–7,27 %) — nota: Resíduos de plataforma: memorial tab.9 IEC 60831 no térmico do capacitor; tabela de critérios Q equivalente 4; RTM tab.4 Isat ≥ 500 A; e-mail ao cliente sem THD total e sem condição 268 A; cálculo da falta no banco (AFC)
+- REQ-SEN-028 [ATENDIDO] O motor é Weg e os valores são esses que eles mandaram — nota: A&W: 211 A bate com W22 IE4 Super Premium 132 kW (315S/M); FP do cliente 0,88 × catálogo 0,85 (ATENÇÃO); carcaça 315 → WEG pede mancal isolado/escova (coerente com 11,9 V no mancal).
+- REQ-SEN-029 ! [ATENDIDO] O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem cabo é mais difícil saber, mas sempre que conseguir vou insere nos dados — nota: Antes o padrão era blindado.
 - REQ-SEN-001 ! [ATENDIDO] Substituir a planilha 'Filtro Senoidal LC_Ver_1.0': leitura do pedido, otimização, simulação PWM, documentos e fornecedores.
 - REQ-SEN-002 ! [ATENDIDO] Padrão Electric: SÓ LC sem resistor; RC/LCL apenas por escolha na tela de comparação.
 - REQ-SEN-003 ! [ATENDIDO] fr mínima = 13 × f saída máx (calibrada nos filtros que funcionam em campo: 13,3–15×).
@@ -260,10 +262,10 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 - **Adendo de verificação da auditoria externa – A&W FSEN-LC-268A-440V, pacote v1.32.3 (26/11/2026 15:46)**: 6 resolvidos (pico/THD fonte única, PTC, mercado like-for-like, otimização com a final, RTM classe H), 11 parciais, 2 não tratados (garantia, NCM). | Bloqueios: derating do ACS580 a 4 kHz, aceite dos 268 A, THD de baixa ordem com metade do amortecimento. | Resíduos: IEC 60831 no memorial tab.9, 'Q equivalente 4' na tabela de critérios, 'Isat ≥ 500 A' no RTM, e-mail sem THD total e sem condição 268 A; rótulo '(por fase)' nos 3,7 m de cabo é o total das 3 fases.
 
 ## Últimas versões (resumo do CHANGELOG)
+- **v1.34.1 – 26/11/2026 – cabo genérico sem blindagem e motor WEG pelo catálogo**: Quando o pedido não diz o tipo de cabo, o estudo adota cabo genérico SEM blindagem (antes era blindado); a análise de sensibilidade testa o blindado. Motor WEG: a plataforma acha a carcaça pela potência e polos no catálogo técnico W22 e confere a corrente e o FP que o cliente mandou.
 - **v1.34.0 – 26/11/2026 – motor e cabo pelos manuais do fabricante**: Motor: limites de pico, dV/dt e rise time do fabricante (WEG) comparados com o que o filtro garante; proteção de mancal pela carcaça. Cabo: R, L e C calculados a partir do catálogo do fabricante (Prysmian) e comparados com os valores da simulação; com fabricante e modelo informados,  Pedido ganhou fabricante/modelo/carcaça do motor e fabricante/modelo do cabo (a IA lê do e-mail; se faltar, entra em dados faltantes). Pasta 01_Engenharia/7_Manuais_Tecnicos com inversor, motor e cabo – fonte, página e link de cada dado.
 - **v1.33.0 – 26/11/2026 – inversor pelo manual do fabricante**: Frequência de chaveamento, derating, corrente nominal e frame do inversor agora vêm do manual completo do fabricante, com documento, revisão, página e A plataforma confere se o modelo e a corrente informados pelo cliente batem com o manual; se o inversor não estiver cadastrado, aparece ATENÇÃO pedind Novo relatório 01_Engenharia/7_Inversor_Manual (Word-livre .md + planilha) com a fonte de cada dado e, quando o inversor não atende, o menor modelo da
 - **v1.32.3 – 26/11/2026 – abertura rápida**: Se a cópia local já está na mesma versão do Drive, abre direto, sem copiar nada do Drive.
-- **v1.32.2 – 26/11/2026 – correção urgente: a 1.32.1 não abria**: O arquivo de abertura tinha um acento e fim de linha errado para o Windows; corrigido e agora conferido automaticamente antes de publicar.
 
 ## Histórico literal
 As conversas completas do engenheiro com a IA estão em gestao/conversas/ (no programa e no Drive em ATUALIZACOES-MELHORIAS\GESTAO\conversas). Consulte lá quando precisar da frase exata.

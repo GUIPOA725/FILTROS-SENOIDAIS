@@ -56,9 +56,18 @@ def motor(ped):
     lim = next((x for x in m.get("isolamento", []) if un < x["un_ate"]), (m.get("isolamento") or [{}])[-1])
     carc = re.search(r"\d{2,4}", str(_g(ped, "motor_carcaca", "") or ""))
     carc = int(carc.group(0)) if carc else None
+    # v1.34.1: modelo de catálogo pela potência e polos (acha a carcaça e confere corrente/FP da placa do cliente)
+    kw = float(_g(ped, "motor_kw", 0) or 0) or float(_g(ped, "motor_cv", 0) or 0) * 0.7355
+    pol = int(_g(ped, "motor_polos", 4) or 4)
+    mod = next((x for x in (m.get("modelos") or []) if kw and abs(x["kw"] - kw) <= 0.03 * x["kw"] and int(x["polos"]) == pol), None)
+    carc_cat = False
+    if carc is None and mod and not ref:
+        carc = int(re.search(r"\d{2,4}", mod["carcaca"]).group(0))
+        carc_cat = True
     return dict(nome=nome, referencia=ref, fabricante=m.get("fabricante"), un=un, vpk_max=lim.get("vpk"), dvdt_max=lim.get("dvdt"),
                 rise_min_us=m.get("rise_time_min_us"), mancal=m.get("mancal"), carcaca=carc,
                 proteger_mancal=(carc is not None and carc >= m.get("carcaca_proteger_desde", 315)),
+                modelo_catalogo=mod, carcaca_do_catalogo=carc_cat, catalogo_eletrico=m.get("catalogo_eletrico"),
                 fontes=m.get("fontes", []), status=m.get("status"), consultado_em=m.get("consultado_em"))
 
 
@@ -72,7 +81,7 @@ def _ys(r_ohm_km, f=60.0, ks=1.0):
 def cabo(ped, secao):
     b = _base()
     txt = f"{_g(ped, 'cabo_fabricante', '') or ''} {_g(ped, 'cabo_modelo', '') or ''} {_g(ped, 'cabo_tipo', '') or ''}".upper()
-    blind = bool(_g(ped, "cabo_blindado", True))
+    blind = bool(_g(ped, "cabo_blindado", False))
     nome = next((n for n, c in (b.get("cabos") or {}).items()
                  if (_g(ped, "cabo_fabricante", "") or _g(ped, "cabo_modelo", "")) and re.search(c.get("regex", "$^"), txt)), None)
     ref = nome is None
@@ -128,6 +137,20 @@ def gerar(ped, proj, cat, pasta, cod, garantias=None, log=print):
             ok = dvdt <= mo["dvdt_max"]
             L.append(f"- dV/dt GARANTIDO {dvdt:.0f} V/µs × {mo['dvdt_max']} V/µs → {'ATENDE' if ok else 'NÃO ATENDE'}")
             linhas.append(("Motor – dV/dt garantido × limite do fabricante", f"{dvdt:.0f} V/µs", f"≤ {mo['dvdt_max']} V/µs", "OK" if ok else "REPROVADO"))
+        mc = mo.get("modelo_catalogo")
+        if mc:
+            ce = mo.get("catalogo_eletrico") or {}
+            i_cli, fp_cli = float(_g(ped, "motor_corrente_a", 0) or 0), float(_g(ped, "motor_fp", 0) or 0)
+            L.append(f"- Catálogo {ce.get('codigo', '')} ({ce.get('paginas', '')}): {mc['linha']} {mc['kw']:g} kW {mc['polos']}P → carcaça "
+                     f"{mc['carcaca']}, In {mc['in_440']:g} A @ 440 V, FP {mc['fp']}, rendimento {mc['rend']} % – link {ce.get('link', '')}")
+            if i_cli:
+                ok_i = abs(i_cli - mc["in_440"]) <= 0.03 * mc["in_440"]
+                linhas.append(("Motor – corrente do cliente × catálogo", f"{i_cli:g} A", f"{mc['in_440']:g} A ({mc['linha']})", "OK" if ok_i else "ATENÇÃO"))
+            if fp_cli:
+                ok_f = abs(fp_cli - mc["fp"]) <= 0.02
+                linhas.append(("Motor – FP do cliente × catálogo (100 % de carga)", f"{fp_cli:g}", f"{mc['fp']}", "OK" if ok_f else "ATENÇÃO"))
+            if mo.get("carcaca_do_catalogo"):
+                L.append(f"- Carcaça não veio no pedido: adotada {mc['carcaca']} pelo catálogo (confirmar na placa).")
         L.append(f"- Mancais: {mo['mancal']}" + (" → esta carcaça PEDE proteção de mancal." if mo["proteger_mancal"] else
                                                 (" → carcaça não informada: confirmar." if mo["carcaca"] is None else "")))
         linhas.append(("Motor – proteção de mancal pela carcaça", str(mo["carcaca"] or "não informada"), mo["mancal"][:60],
@@ -140,7 +163,7 @@ def gerar(ped, proj, cat, pasta, cod, garantias=None, log=print):
         f = cb["fonte"]
         L += ["", "## Cabo inversor/filtro → motor",
               f"- Pedido: {_g(ped, 'cabo_fabricante', '') or 'fabricante NÃO informado'} {_g(ped, 'cabo_modelo', '') or ''} – "
-              f"{'blindado' if _g(ped, 'cabo_blindado', True) else 'não blindado'}, {cb['secao_pedida']:g} mm², {_g(ped, 'cabo_m', 0) or '-'} m",
+              f"{'blindado' if _g(ped, 'cabo_blindado', False) else 'não blindado'}, {cb['secao_pedida']:g} mm², {_g(ped, 'cabo_m', 0) or '-'} m",
               f"- Base usada: **{cb['nome']} {cb['secao']:g} mm²**" + (" (REFERÊNCIA – confirmar fabricante e modelo com o cliente)" if cb["referencia"] else ""),
               f"- Catálogo: condutor {cb['dc']} mm{' (estimado 1,13·√S – não consta no catálogo)' if cb.get('dc_estimado') else ''}, Rcc 20 °C {cb['rcc20']} Ω/km, diâmetro externo {cb['de']} mm",
               f"- Calculado: R ca 90 °C = {cb['r90']:.4f} Ω/km (IEC 60287-1-1); L trifólio encostado = {cb['L_mH_km']:.3f} mH/km"
@@ -151,8 +174,10 @@ def gerar(ped, proj, cat, pasta, cod, garantias=None, log=print):
             ok = abs(cmp_["dR"]) <= 15 and abs(cmp_["dL"]) <= 25
             linhas.append(("Cabo – R e L da simulação × catálogo do fabricante", f"R {cmp_['dR']:+.0f} %, L {cmp_['dL']:+.0f} %",
                            "R ±15 %, L ±25 %", "OK" if ok else "ATENÇÃO"))
-        linhas.append(("Cabo – fabricante/modelo", f"{_g(ped, 'cabo_fabricante', '') or '-'} {_g(ped, 'cabo_modelo', '') or ''}", cb["nome"],
-                       "ATENÇÃO" if cb["referencia"] else "OK"))
+        _gen = cb["referencia"] and not cb.get("blindado")
+        linhas.append(("Cabo – fabricante/modelo", f"{_g(ped, 'cabo_fabricante', '') or '-'} {_g(ped, 'cabo_modelo', '') or ''}",
+                       (f"genérico sem blindagem – padrão do engenheiro (REQ-SEN-029); referência {cb['nome']}" if _gen else cb["nome"]),
+                       "ATENÇÃO" if (cb["referencia"] and not _gen) else "OK"))
         L += ["", "### Fonte do cabo", f"- **{f.get('titulo')}** – {f.get('codigo')} – {f.get('revisao')} – {f.get('paginas')}",
               f"  - Link: {f.get('link')}", f"  - Retirado: {f.get('retirado')}"]
     L += ["", "## Resumo (Check)", "| Item | Valor | Limite / base | Check |", "|---|---|---|---|"] + [f"| {a} | {b} | {c} | {d} |" for a, b, c, d in linhas]

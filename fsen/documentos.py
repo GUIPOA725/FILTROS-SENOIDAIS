@@ -413,7 +413,7 @@ def memorial(proj, arr, orc, graf, desenhos_png, cat, pasta):
     d.add_heading("5.1 Modelo do sistema simulado", 2)
     si = getattr(proj, "sistema", {}) or {}
     _kv(d, [("Cabo filtro → motor", f"{si.get('cabo_paralelos', 1)} × {si.get('cabo_secao_mm2', '-')} mm² por fase, {si.get('cabo_m', '-')} m, "
-                                     f"{'blindado' if ped.get('cabo_blindado', True) else 'não blindado'} – modelo π distribuído (R, L, C fase-terra e fase-fase)"),
+                                     f"{'blindado' if ped.get('cabo_blindado', False) else 'não blindado'} – modelo π distribuído (R, L, C fase-terra e fase-fase)"),
             ("Motor", f"{si.get('motor_kw', '-')} kW – f.c.e.m. + dispersão 0,15 pu, resistência com efeito pelicular √h; "
                       f"C enrolamento–carcaça ≈ {si.get('Cwf_nF', '-')} nF (modo comum)"),
             ("Modo comum", "Fonte de sequência zero do PWM → indutância de sequência zero do indutor → capacitância do cabo e do motor "

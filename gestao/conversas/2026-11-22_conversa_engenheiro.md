@@ -375,3 +375,6 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 16:46 26/11 (engenheiro): "Vc já gerou a versão nova da plataforma com essas melhorias onde eles precisa buscar o manual do inverter, e se conseguir TB o manual do motor ... e o manual do cabo ..." → REQ-INV-011.
 - 26/11 (Claude): v1.34.0 – motor (WEG) e cabo (Prysmian) pelos manuais; pasta 7_Manuais_Tecnicos.
 - 26/11 (Claude): v1.34.0 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
+- 17:59 26/11 (engenheiro): "O motor é Weg e os valores são esses que eles mandaram" → REQ-SEN-028 (A&W: motor WEG).
+- 17:59 26/11 (engenheiro): "O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem ... sempre que conseguir vou insere nos dados" → REQ-SEN-029.
+- 26/11 (Claude): v1.34.1 – cabo genérico sem blindagem como padrão; motor WEG W22 IE4 132 kW 315S/M pelo catálogo.

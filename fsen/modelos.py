@@ -37,7 +37,7 @@ class Pedido:
     cabo_m: float = 0.0
     cabo_secao_mm2: float = 0.0     # 0 = dimensiona pela corrente
     cabo_paralelos: int = 0         # 0 = automático
-    cabo_blindado: bool = True
+    cabo_blindado: bool = False     # v1.34.1 (REQ-SEN-029): não informado → genérico SEM blindagem
     estrela_ao_cc: bool = False     # filtro "all-pole": centro-estrela ligado ao barramento CC do inversor
     vpk_max_v: Optional[float] = None
     dvdt_max_v_us: Optional[float] = None

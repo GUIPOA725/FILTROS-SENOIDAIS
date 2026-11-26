@@ -3,6 +3,11 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.34.1 – 26/11/2026 – cabo genérico sem blindagem e motor WEG (REQ-SEN-028/029)
+**Engenheiro:** "O motor é Weg e os valores são esses que eles mandaram" / "O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem".
+**Feito:** padrão do cabo = sem blindagem (modelo, leitor IA, dados faltantes, esquema, documentos, relatório de manuais); WEG W22 por catálogo (50024297 p.48) com carcaça, In, FP e conferência com a placa do cliente.
+**A&W (opção 363A-4, 4 kHz):** APROVADO; motor W22 IE4 132 kW 315S/M 211 A (bate com o cliente), FP 0,88 × 0,85 do catálogo (ATENÇÃO); carcaça 315 → mancal isolado/escova (WEG p.23 e catálogo p.24), coerente com os 11,9 V estimados no mancal.
+
 ## v1.34.0 – 26/11/2026 – motor e cabo pelos manuais (REQ-INV-011)
 **Pedido:** "se conseguir TB o manual do motor ... e o manual do cabo".
 **Feito:** cadastro `dados/manuais_motor_cabo.yaml` (WEG guia técnico inversores 50029351: isolamento por Un e mancais por carcaça; Prysmian AFUMEX FLEX VFD e VOLTALENE: dimensões e Rcc), `fsen/manuais_motor_cabo.py` com memória de cálculo de R/L/C, campos novos no pedido, simulação com o cabo do fabricante quando informado, Check no RESUMO, pasta 7_Manuais_Tecnicos (inversor + motor + cabo), teste `t_motor_cabo_manual`.
@@ -424,6 +429,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 
 ## Revisão – v1.34.0 – 2026-11-26 16:53
 - Requisitos: 157 | APROVADO 97 | ATENÇÃO 39 | REPROVADO 21
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEN-027, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.34.1 – 2026-11-26 18:05
+- Requisitos: 159 | APROVADO 99 | ATENÇÃO 39 | REPROVADO 21
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum

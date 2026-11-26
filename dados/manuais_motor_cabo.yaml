@@ -25,6 +25,15 @@ motores:
     rise_time_min_us: 0.1
     mancal: "Carcaça < 315: sem proteção de série (opcional). Carcaça 315/355: sem proteção de série – pedir mancal traseiro isolado ou escova de aterramento. HGF/M: traseiro isolado de série."
     carcaca_proteger_desde: 315
+    # Dados elétricos de catálogo (para achar a carcaça e conferir a placa que o cliente mandou)
+    catalogo_eletrico:
+      titulo: "W22 Motor Trifásico – Catálogo Técnico Mercado Latino-americano"
+      codigo: "50024297"
+      link: "https://frrq.cvg.utn.edu.ar/pluginfile.php/6863/mod_resource/content/1/WEG-w22-motor-trifasico-tecnico-mercado-latinoamericano-50024297-catalogo-espanol.pdf"
+      paginas: "p.48 (IE4 Super Premium, 60 Hz, IV polos, 440 V); p.24 (12.3: a partir da carcaça 315S/M, medidas contra corrente nos mancais)"
+      nota: "Cópia pública do catálogo WEG (site da UTN). Conferir na versão vigente do catálogo WEG."
+    modelos:      # kW, polos, linha → carcaça, In 440 V, FP 100 %, rendimento 100 %
+      - {kw: 132, cv: 175, polos: 4, linha: "W22 IE4 Super Premium", carcaca: "315S/M", in_440: 211, fp: 0.85, rend: 96.5, rpm: 1790}
 
 referencia_motor: "WEG"      # usada quando o pedido não traz o fabricante do motor (ATENÇÃO)
 
@@ -72,3 +81,5 @@ cabos:
 
 referencia_cabo_blindado: "Prysmian AFUMEX FLEX VFD"
 referencia_cabo_nao_blindado: "Prysmian VOLTALENE Cu"
+# REQ-SEN-029 (engenheiro 26/11): "O cabo não sei, muitas vezes vc deve usar um genérico sem blindagem" – sem informação no
+# pedido o estudo adota cabo SEM blindagem (referência acima); quando o engenheiro souber, ele insere fabricante/modelo.

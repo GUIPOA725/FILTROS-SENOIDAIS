@@ -512,9 +512,12 @@ def _completar(p: Pedido) -> Pedido:
         lac.append(f"Faixa de operação não informada – verificado {p.f_saida_min_hz:g}–{p.f_saida_max_hz or p.freq_rede_hz:g} Hz.")
     if not p.cabo_m:
         lac.append("Comprimento de cabo não informado – considerado ≤ 100 m.")
+    if "cabo_blindado" not in (getattr(p, "informados", None) or []) and not getattr(p, "cabo_tipo", ""):
+        p.cabo_blindado = False      # v1.34.1 (REQ-SEN-029): padrão do engenheiro – cabo genérico sem blindagem
+        lac.append("Tipo de cabo não informado – adotado cabo genérico SEM blindagem (referência Prysmian Voltalene 0,6/1 kV).")
     # v1.26.4 (auditoria AW-07): a premissa escrita pela IA não pode contradizer o campo usado no cálculo (ex.: 'adotar não
     # blindado' com cabo_blindado = True) – vale o campo; a frase é reescrita
-    _bl = bool(getattr(p, "cabo_blindado", True))
+    _bl = bool(getattr(p, "cabo_blindado", False))
     lac2 = []
     for t in lac:
         tl = str(t).lower()
