@@ -354,3 +354,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 26/11 (Claude): v1.30.0 publicada; planilha de players copiada para a pasta A&W v1.29.0.
 - 09:35 26/11 (engenheiro): "...gerar um word tb juntamente com o email... ET bacana bonito facil de ler e bem organizado... para a montadora... isso já ta pronto? ...senoidal forneço indutor e capacitor, dessintonizado só indutor, sintonizado indutor e capacitor" → REQ-DOC-020.
 - 26/11 (Claude): v1.31.0 (REQ-DOC-020) testada nos 3 tipos.
+- 26/11 (Claude): v1.31.0 publicada; ETs/e-mails novos copiados para a pasta A&W v1.29.0 (03_Fornecedores e 04_Montadora/1_Cotacao_Montagem).
