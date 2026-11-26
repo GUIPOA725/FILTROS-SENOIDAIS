@@ -3,6 +3,11 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.31.0 – 26/11/2026 – cotações em Word + e-mail curto (REQ-DOC-020)
+**Feito:** fsen/et_cotacao.py (quadro resumo, o que a proposta deve trazer, anexos, contato, e-mail curto); ETs do indutor e capacitor do senoidal fechadas no fim do pipeline com os anexos reais; ET do reator do banco reformatada; ET nova dos capacitores do sintonizado; montadora em 04_Montadora (senoidal e banco).
+**Testes:** A&W (senoidal) – e-mails de 30 linhas, ETs com quadro e seções finais, pacote da montadora com 3 ETs; Panatlântica (dessintonizado) – verificador "pode publicar"; sintonizado 2 × 100 kVAr h5 – ET dos capacitores gerada (sem verificação 3D do reator no teste: a nuvem sem memória matou o NGSolve 3D).
+**Pendente:** contato da montadora no catálogo ("a definir"); ETs de caixa/plaqueta ainda simples.
+
 ## v1.30.0 – 26/11/2026 – filtro senoidal × players mundiais
 **Pedido:** REQ-SEN-024 ("buscar nos 4 players mundiais... pasta players... planilha comparativa e no consolidado").
 **Feito:** dados/players_filtro_senoidal.yaml (Schaffner, TDK, Block, Danfoss – C 115–260 A "conferir" –, MTE), fsen/players.py, planilha em 01_Engenharia/6_Players_Mercado, bloco no RESUMO e no consolidado.

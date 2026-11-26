@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.31.0 – 26/11/2026 – cotações: ET completa em Word + e-mail curto
+- REQ-DOC-020: e-mail de cotação CURTO (pedido, resumo de 3 linhas, anexos, call); TODO o técnico na ET em Word: quadro "O QUE ESTAMOS COTANDO", requisitos e motivo, dados a declarar, ensaios, protótipo, critérios de aceitação, "O que a proposta deve trazer" (com a planilha de resposta), tabela de anexos com o conteúdo de cada arquivo e contato.
+- Escopo Electric por tipo: senoidal = indutor + capacitores; dessintonizado = reatores; sintonizado = reatores + capacitores (ET NOVA dos capacitores do sintonizado: tensão acima da rede, harmônicas, tolerância de C para a sintonia, IEC 60831/61642).
+- Montadora não é fornecedor: pacote em 04_Montadora/1_Cotacao_Montagem – RFQ completo (fornecimento Electric × montadora, requisitos de montagem com força fora da canaleta, ensaios de rotina, o que a proposta deve trazer, anexos) + ETs de caixa, plaqueta e cabos (compra da montadora) + e-mail curto. No banco, o pacote do painel saiu de 03_Fornecedores/2_Painel_Montadora.
+- ET do reator do banco no novo padrão visual (antes formato carta), mesmo conteúdo técnico.
+
 ## v1.30.0 – 26/11/2026 – filtro senoidal × players mundiais
 - REQ-SEN-024: base dados/players_filtro_senoidal.yaml (Schaffner FN5040, TDK EPCOS B84143V R227, Block SFB, Danfoss MCC 101, MTE SWG – datasheet oficial, link e data de consulta). Em cada projeto: modelos vizinhos de cada fabricante normalizados para a tensão/frequência do projeto (C em estrela, fr, uk, W/A, kg/A, fs mín, queda, classe), faixa de referência e Check (uk ±1 ponto, fr ±20 %, perdas/A ≤ máx +10 %; fora = ATENÇÃO com justificativa).
 - Saída: 01_Engenharia/6_Players_Mercado/Players_Mercado_Filtro_<cod>.xlsx (abas Comparativo, Fontes, Critérios), bloco no RESUMO e no relatório consolidado.
