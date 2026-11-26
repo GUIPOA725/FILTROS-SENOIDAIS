@@ -361,3 +361,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 26/11 (Claude): v1.31.2 publicada (Drive, cópia local e pasta FSEN_plataforma_v1.31.0 extraída recebem janela/bat novos).
 - 14:00 26/11 (engenheiro): "veja a AUDITORIA TÉCNICA INDEPENDENTE Filtro senoidal LC FSEN-LC-268A-440V ... vc concorda?" (PDF Rev00) → REF-AUDITORIA-AW-268A-V1312, REQ-SEN-026.
 - 14:05 26/11 (engenheiro): "pode sim, se vc concorda com ele e acha necessário e vai melhorar o estudo e projeto, pode fazer" → v1.32.0 (REQ-SEN-026 geral, todos os projetos).
+- 26/11 (Claude): v1.32.0 publicada (Drive PROGRAMAS + FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA) – correções da auditoria A&W; teste A&W aprovado e verificador do banco 'pode publicar'.
