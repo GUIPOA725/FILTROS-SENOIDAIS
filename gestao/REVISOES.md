@@ -3,6 +3,11 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.31.1 – 26/11/2026 – correção Python 3.11 (REQ-GER-017)
+**Erro (print do engenheiro):** SyntaxError f-string em fsen/pipeline.py:105 ao abrir a v1.31.0 – o notebook roda Python 3.11 (servidor.log); a f-string com aspas aninhadas entrou na v1.28.0, então v1.28.0–1.31.0 não abriam no notebook. A nuvem usa 3.13 e não acusou.
+**Correção:** f-string reescrita; teste automático compila todos os .py com python3.11 (todos ok).
+**Lição:** testar sempre na versão de Python do notebook – agora é check do verificador.
+
 ## v1.31.0 – 26/11/2026 – cotações em Word + e-mail curto (REQ-DOC-020)
 **Feito:** fsen/et_cotacao.py (quadro resumo, o que a proposta deve trazer, anexos, contato, e-mail curto); ETs do indutor e capacitor do senoidal fechadas no fim do pipeline com os anexos reais; ET do reator do banco reformatada; ET nova dos capacitores do sintonizado; montadora em 04_Montadora (senoidal e banco).
 **Testes:** A&W (senoidal) – e-mails de 30 linhas, ETs com quadro e seções finais, pacote da montadora com 3 ETs; Panatlântica (dessintonizado) – verificador "pode publicar"; sintonizado 2 × 100 kVAr h5 – ET dos capacitores gerada (sem verificação 3D do reator no teste: a nuvem sem memória matou o NGSolve 3D).
@@ -341,6 +346,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 - Requisitos: 150 | APROVADO 91 | ATENÇÃO 38 | REPROVADO 21
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_0949
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.31.1 – 2026-11-26 10:50
+- Requisitos: 151 | APROVADO 93 | ATENÇÃO 38 | REPROVADO 20
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_0949
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO); REQ-DOC-020 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
 - Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
 - Decisão: pode publicar

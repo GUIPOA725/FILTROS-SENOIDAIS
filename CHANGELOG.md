@@ -1,5 +1,9 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.31.1 – 26/11/2026 – correção: plataforma não abria no notebook (Python 3.11)
+- REQ-GER-017: fsen/pipeline.py tinha uma f-string com aspas iguais aninhadas (válida só no Python 3.12+), introduzida na v1.28.0 – no Python 3.11 do notebook a plataforma não abria (SyntaxError linha 105). Corrigido.
+- gestao/verificar_requisitos.py: novo teste "compila_python_311" (crítico) – todo .py tem que compilar no Python 3.11 antes de publicar.
+
 ## v1.31.0 – 26/11/2026 – cotações: ET completa em Word + e-mail curto
 - REQ-DOC-020: e-mail de cotação CURTO (pedido, resumo de 3 linhas, anexos, call); TODO o técnico na ET em Word: quadro "O QUE ESTAMOS COTANDO", requisitos e motivo, dados a declarar, ensaios, protótipo, critérios de aceitação, "O que a proposta deve trazer" (com a planilha de resposta), tabela de anexos com o conteúdo de cada arquivo e contato.
 - Escopo Electric por tipo: senoidal = indutor + capacitores; dessintonizado = reatores; sintonizado = reatores + capacitores (ET NOVA dos capacitores do sintonizado: tensão acima da rede, harmônicas, tolerância de C para a sintonia, IEC 60831/61642).

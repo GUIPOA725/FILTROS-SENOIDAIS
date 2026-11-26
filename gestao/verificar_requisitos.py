@@ -276,6 +276,29 @@ def t_biblioteca_paineis(projs):
     return (not falta), ("aprovar + partir do último aprovado + botão na tela" if not falta else "falta: " + ", ".join(falta))
 
 
+def t_compila_python_311(projs):
+    """v1.31.1 (REQ-GER-017): o notebook roda Python < 3.12 – todo .py tem que compilar no 3.11 (f-string com aspas aninhadas
+    iguais só existe a partir do 3.12 e derrubou a v1.28.0–1.31.0 no computador do engenheiro)."""
+    import shutil
+    import subprocess
+    py = shutil.which("python3.11")
+    if not py:
+        return None, "python3.11 não disponível nesta máquina"
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ruins = []
+    for d, _, fs in os.walk(raiz):
+        if any(x in d for x in (".git", "__pycache__", "venv")):
+            continue
+        for f in fs:
+            if f.endswith(".py"):
+                c = os.path.join(d, f)
+                r = subprocess.run([py, "-c", "import sys,ast;ast.parse(open(sys.argv[1],encoding='utf-8').read())", c],
+                                   capture_output=True, text=True)
+                if r.returncode:
+                    ruins.append(os.path.relpath(c, raiz))
+    return (not ruins), ("todos os .py compilam no Python 3.11" if not ruins else "NÃO compilam no 3.11: " + ", ".join(ruins))
+
+
 TESTES = {k[2:]: v for k, v in globals().items() if k.startswith("t_")}
 
 

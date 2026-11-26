@@ -102,8 +102,11 @@ def _verificacao_indutor(ind, proj, pasta_eng, cod, verificar, log, arqs, cat=No
                         ind["L3d_ng_previsto"] = aj["L3_ng_previsto"]
                         cmp["ajuste_gap_3d"] = aj
                         cmp["L_alvo"] = float(ind["requisitos"]["L"])
-                        txt = (f"Entreferro ajustado pela verificação 3D independente: por peça {', '.join(f'{g / ind['ng'] * 1e3:.2f}' for g in aj['gaps'])} mm "
-                               f"(antes {', '.join(f'{g / ind['ng'] * 1e3:.2f}' for g in aj['gaps_antes'])} mm); L 3D "
+                        _ngp = ind["ng"]                # (Python 3.11: sem aspas iguais aninhadas em f-string)
+                        _gp = ", ".join(f"{g / _ngp * 1e3:.2f}" for g in aj["gaps"])
+                        _gp0 = ", ".join(f"{g / _ngp * 1e3:.2f}" for g in aj["gaps_antes"])
+                        txt = (f"Entreferro ajustado pela verificação 3D independente: por peça {_gp} mm "
+                               f"(antes {_gp0} mm); L 3D "
                                f"{', '.join(f'{x * 1e6:.1f}' for x in aj['L3_ng_antes'])} → {', '.join(f'{x * 1e6:.1f}' for x in aj['L3_ng_previsto'])} µH, "
                                f"desequilíbrio {aj['deseq_antes_pct']:.1f} % → {aj['deseq_previsto_pct']:.1f} %. Confirmar na 1ª peça (ajuste por calço, tabela 3.3 do protocolo).")
                         log("   Indutor: " + txt)

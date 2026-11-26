@@ -1,5 +1,5 @@
 {
-  "versao": "1.31.0",
+  "versao": "1.31.1",
   "data": "2026-11-26",
-  "resumo": "Cotações: ET completa em Word (quadro do que se cota, requisitos, o que a proposta deve trazer, anexos) + e-mail curto; escopo Electric por tipo de filtro; montadora fora de fornecedores com RFQ completo; ET dos capacitores do sintonizado"
+  "resumo": "Correção: a plataforma não abria no Python 3.11 do notebook (f-string da v1.28.0); verificador passa a compilar todo o código no Python 3.11 antes de publicar"
 }

@@ -1,6 +1,6 @@
 {
-"versao": "1.31.0",
-"gerado_em": "2026-11-26 10:42",
+"versao": "1.31.1",
+"gerado_em": "2026-11-26 10:50",
 "arquivos": {
 "ABRIR_FSEN.bat": "ed1e8fb5f981333873ebef0afe3dadf2ccb57d97058350540c2e59360b016184",
 "INICIAR.bat": "eb1a9d1cd22c7b5d56cbb8d14827045bfaee6532ec9834ee6c1cf5cc036edc86",
@@ -75,7 +75,7 @@
 "fsen/painel3d.py": "fad34710ff7a99e37bc5d0e529cf5dde880af76ffde5eea2744e6b62569a8d78",
 "fsen/painel_desenho.py": "795452a674a3263c04d194fce9dbe8d7a466616910cf457ad8155278f1250ac1",
 "fsen/painel_gabinete.py": "06d861762b58e92111be5ae3fc30472760ab73d23a2584ae467e98b5452a07fd",
-"fsen/pipeline.py": "57f2f25e13b3e827bbdce18393e86ddb306a8ecdc110636b3bdb598ffb64da96",
+"fsen/pipeline.py": "1581268cb7d176ad7b7f9d923c2f1004c44b989967f5eaaf9db02c10a3d40d2e",
 "fsen/pipeline_banco.py": "78a64b3ea84a0460d154421110a27915fb969147c3b27031bdda573cf3f9769a",
 "fsen/players.py": "6c2a08ef8e4e82fa960b204105aa20af4f252d1f01377fb64d78c3e420bff8a8",
 "fsen/ponto_otimo.py": "741497c05c215926749eedef17bf263b91ef26259d6d3b66065c01b0495fe7af",
@@ -91,7 +91,7 @@
 "fsen/versao.py": "5b12c38aceddf659a9663a8e7bac4bcbd84a1a27a6a112028444f2f6cdea8e82",
 "fsen/vista_simulacao.py": "dec0f35ed28e713379781c95480528886c76271c95660130e5c7127c05c168d4",
 "gestao/gerar_memoria.py": "f13e8c71c3104f3ca73040278effdf2d27029c33957dfa2f86df7424bcbc8466",
-"gestao/verificar_requisitos.py": "3315430fe1596f064a73eeafa33eb8c76ea654981ed7daf647cbb15568e908c3",
+"gestao/verificar_requisitos.py": "e885b74e48409689b1866a665b8f7dfc59aa9b58973bc0d35b802a9ef5c9021a",
 "janela_fsen.py": "c996799ec37404812139b4cdbb7f05683c1d545a6df5af16af0acc3afb2375a7",
 "seletor.py": "2e9b42b88696bec0c46a531ab362b5643e489f007982311a614583f510cfda22",
 "telas_ajuste.py": "bcb2d7a0ca89cee513b84cf3cdb54dfc2ac89f5da754d2ee5f1be8c2706df3f2",
