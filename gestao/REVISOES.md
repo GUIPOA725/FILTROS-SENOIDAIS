@@ -3,6 +3,12 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.28.1 – 25/11/2026 – banco: borne da contatora e arco nos terminais de entrada
+**Pedido:** "Vc não consegue corrigir esses problemas?" (os 2 REPROVADOS da Panatlântica na v1.28.0).
+**Feito (regra geral):** REQ-BCO-006: a contatora sobe sozinha até uma cujo borne de catálogo aceite o cabo NBR 5410. Bornes ABB conferidos nas folhas de dados de 25/11. REQ-SEG-015: o lado de linha do -Q0 passa a ser tratado como energia do alimentador do cliente: tampa e IPXXB na lista, medida no estudo, ATENÇÃO até 40 cal/cm², tempo real da proteção lido do pedido ou pedido como lacuna.
+**Teste:** Panatlântica ABB (t1281_ABB): passou de NÃO LIBERAR (2 reprovados) para SEM REPROVAÇÕES, 25 em ATENÇÃO. Estágios de 50 kvar com AF116-30-00-13 e 70 mm²; terminais de entrada 19,8 cal/cm² em ATENÇÃO (500 ms adotado). Verificador: 0 regressões → pode publicar.
+**Pendente para o engenheiro:** pedir à Panatlântica o tempo da proteção a montante; decidir se prefere 2 × 35 mm² por fase na AF52 em vez da AF116 (custo/espaço).
+
 ## Análise inicial – 2026-11-22 (criação da gestão de requisitos)
 - Causa raiz apontada pelo engenheiro: instruções, exemplos e referências (AGCO, CVI, Pirelli, Panatlântica, Google Fotos, campo)
   ficavam só na conversa; com conversas longas o detalhe se perdia e não era aplicado (ex.: desenho do painel abaixo do padrão
@@ -288,3 +294,11 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
   nova (média + 15 K) → refeito → 124 °C; NGSolve 3D 142,9/140,1/145,4 µH → entreferro ajustado (central 7,31 mm/peça) → previsto
   149,0/150,3/151,6 µH, desequilíbrio 3,7 → 1,7 %; THD com metade do amortecimento 9,35 % (ATENÇÃO, ressonância carregada ≈ 1,13 kHz).
 - E-mails de cotação com a lista do que a proposta deve trazer e as planilhas de resposta (indutor e capacitor) conferidos no teste.
+
+## Revisão – v1.28.1 – 2026-11-25 21:09
+- Requisitos: 143 | APROVADO 87 | ATENÇÃO 37 | REPROVADO 19
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261125_2056
+- Mudanças: nenhuma
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar

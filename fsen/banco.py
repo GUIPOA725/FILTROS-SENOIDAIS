@@ -543,7 +543,7 @@ def conferencias_protecao(ped, e, pr=None):
     S = float(pr["cabo_calc"]["secao"])
     if bm:
         out.append((f"Borne da contatora {str(pr['contator'])[:40]} × cabo de potência",
-                    f"cabo {S:g} mm²", f"borne ≤ {bm:g} mm² (típico – A CONFERIR)", S / bm * 100, "ok" if S <= bm else "reprovado",
+                    f"cabo {S:g} mm²", f"borne ≤ {bm:g} mm² (" + ("folha de dados do fabricante" if any(k_ in str(pr["contator"]).upper() for k_ in BORNE_CATALOGO_MM2) else "típico – A CONFERIR") + ")", S / bm * 100, "ok" if S <= bm else "reprovado",
                     (pr.get("contator_motivo") or "") if S <= bm else "o cabo NÃO entra no borne: usar contatora de carcaça maior, barra de ligação/terminal redutor "
                                        "homologado ou 2 cabos menores por fase – definir antes da compra"))
     return out
