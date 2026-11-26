@@ -592,6 +592,17 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
         arqs["inversor_manual"] = proj.inversor_manual["arquivo"]
     except Exception as e:
         log(f"   (relatório do manual do inversor não feito: {type(e).__name__}: {e})")
+    try:                                            # v1.34.0 (REQ-INV-011): motor e cabo pelos manuais/catálogos do fabricante
+        from . import manuais_motor_cabo as _MC
+        from .documentos import garantias as _gar
+        proj.motor_cabo_manual = _MC.gerar(ped, proj, cat, sub["01_Engenharia"], cod, garantias=_gar(proj, cat), log=log)
+        arqs["motor_cabo_manual"] = proj.motor_cabo_manual["arquivo"]
+        from .dimensionamento import Verificacao as _V
+        for _a, _b, _c, _d in proj.motor_cabo_manual["linhas"]:
+            proj.verificacoes.append(_V(_a, _b, _c, _d == "OK", "manual/catálogo do fabricante – 01_Engenharia/7_Manuais_Tecnicos (REQ-INV-011)",
+                                        critico=(_d == "REPROVADO")))
+    except Exception as e:
+        log(f"   (relatório de motor/cabo pelos manuais não feito: {type(e).__name__}: {e})")
     resumo = resumo_texto(proj, arr, orc, similares, pasta)
     with open(os.path.join(pasta, "RESUMO.md"), "w", encoding="utf-8") as f:
         f.write(resumo)

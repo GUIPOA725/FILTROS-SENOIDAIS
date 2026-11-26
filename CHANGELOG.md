@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.34.0 – 26/11/2026 – motor e cabo pelos manuais do fabricante
+- Motor: limites de pico, dV/dt e rise time do fabricante (WEG) comparados com o que o filtro garante; proteção de mancal pela carcaça.
+- Cabo: R, L e C calculados a partir do catálogo do fabricante (Prysmian) e comparados com os valores da simulação; com fabricante e modelo informados, a simulação usa o cabo real.
+- Pedido ganhou fabricante/modelo/carcaça do motor e fabricante/modelo do cabo (a IA lê do e-mail; se faltar, entra em dados faltantes).
+- Pasta 01_Engenharia/7_Manuais_Tecnicos com inversor, motor e cabo – fonte, página e link de cada dado.
+
 ## v1.33.0 – 26/11/2026 – inversor pelo manual do fabricante
 - Frequência de chaveamento, derating, corrente nominal e frame do inversor agora vêm do manual completo do fabricante, com documento, revisão, página e link.
 - A plataforma confere se o modelo e a corrente informados pelo cliente batem com o manual; se o inversor não estiver cadastrado, aparece ATENÇÃO pedindo o cadastro.

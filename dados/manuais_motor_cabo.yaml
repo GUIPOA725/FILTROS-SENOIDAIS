@@ -1,0 +1,74 @@
+# Dados de MOTOR e CABO retirados do manual/catálogo do fabricante – v1.34.0 (REQ-INV-011)
+#
+# Engenheiro (26/11/2026 16:46): "e se conseguir TB o manual do motor, isso ajuda muito, e o manual do cabo, imagina ficaria
+# muito completo com essas informações técnicas". Mesma regra do inversor (REQ-INV-010): cada dado com documento, revisão,
+# página e link. Se o fabricante/modelo não veio no pedido, a plataforma usa a REFERÊNCIA abaixo e marca ATENÇÃO
+# ("confirmar fabricante e modelo com o cliente").
+
+motores:
+  "WEG":
+    fabricante: WEG
+    regex: 'WEG|W22|W21|W50|HGF'
+    status: confirmado
+    consultado_em: "2026-11-26"
+    fontes:
+      - titulo: "Guia Técnico – Motores de indução alimentados por inversores de frequência PWM"
+        codigo: "50029351"
+        revisao: "web (download center WEG)"
+        link: "https://static.weg.net/medias/downloadcenter/h35/h10/WEG-motores-de-inducao-alimentados-por-inversores-de-frequencia-pwm-50029351-brochure-portuguese-web.pdf"
+        paginas: "p.18 (6.6 critérios de isolamento), p.19 (6.8 filtros/cabos), p.23 (6.10 proteção dos mancais)"
+        retirado: "Isolamento WEG: Un < 460 V → pico ≤ 1600 V e dV/dt ≤ 5200 V/µs; 460 ≤ Un < 575 V → ≤ 2000 V e ≤ 6500 V/µs; 575–1000 V → ≤ 2400 V e ≤ 7800 V/µs; rise time ≥ 0,1 µs; intervalo mínimo entre pulsos 6 µs. 'Se alguma condição não for satisfeita, deve ser instalado filtro'. Mancais: carcaça < 315 sem proteção (opcional); 315 e 355 sem proteção de série – opções: 1 mancal isolado, 2 mancais isolados ou escova de aterramento; HGF/M: traseiro isolado de série."
+    isolamento:          # Un máx (V, exclusivo) → (pico máx V, dv/dt máx V/µs)
+      - {un_ate: 460, vpk: 1600, dvdt: 5200}
+      - {un_ate: 575, vpk: 2000, dvdt: 6500}
+      - {un_ate: 1000, vpk: 2400, dvdt: 7800}
+    rise_time_min_us: 0.1
+    mancal: "Carcaça < 315: sem proteção de série (opcional). Carcaça 315/355: sem proteção de série – pedir mancal traseiro isolado ou escova de aterramento. HGF/M: traseiro isolado de série."
+    carcaca_proteger_desde: 315
+
+referencia_motor: "WEG"      # usada quando o pedido não traz o fabricante do motor (ATENÇÃO)
+
+cabos:
+  "Prysmian AFUMEX FLEX VFD":
+    fabricante: Prysmian
+    regex: 'AFUMEX.*VFD|VFD.*PRYSMIAN|PRYSMIAN.*VFD'
+    blindado: true
+    status: confirmado
+    consultado_em: "2026-11-26"
+    fonte:
+      titulo: "Cabo AFUMEX FLEX VFD 0,6/1 kV (NBR 13248)"
+      codigo: "AFUMEX FLEX VFD 1KV_NBR13248_BRK0"
+      revisao: "R1 – JUL/20"
+      link: "https://br.prysmian.com/sites/br.prysmian.com/files/media/documents/AFUMEX%20FLEX%20VFD%201KV_NBR13248_BRK0.pdf"
+      paginas: "p.1–2 (dados técnicos)"
+      retirado: "Unipolar 1/C+T, cobre classe 5, isolação HEPR, blindagem fios+fita de cobre, LSZH; 90 °C. Diâmetro do condutor, Rcc 20 °C, espessura e diâmetro sobre a isolação, diâmetro externo."
+    epsilon_r: 3.0           # HEPR (típico) – para a capacitância condutor-blindagem
+    # secao: [d_condutor mm, Rcc20 ohm/km, esp_isolacao mm, d_sobre_isolacao mm, d_externo mm]
+    secoes:
+      95: [12.5, 0.206, 1.1, 15.1, 22.6]
+      120: [14.2, 0.161, 1.2, 17.0, 24.5]
+      150: [16.3, 0.129, 1.4, 19.7, 27.7]
+      185: [18.3, 0.106, 1.6, 22.1, 30.3]
+  "Prysmian VOLTALENE Cu":
+    fabricante: Prysmian
+    regex: 'VOLTALENE'
+    blindado: false
+    status: confirmado
+    consultado_em: "2026-11-26"
+    fonte:
+      titulo: "Cabo VOLTALENE Cu 0,6/1 kV"
+      codigo: "LV_007_01_PT_Voltalene_Cu_1kV"
+      revisao: "R1 – JUL/20"
+      link: "https://br.prysmian.com/sites/br.prysmian.com/files/media/documents/LV_007_01_PT_Voltalene_Cu_1kV_0.pdf"
+      paginas: "p.1–2 (dados técnicos)"
+      retirado: "Cobre classe 2 compactado, XLPE 90 °C. Rcc 20 °C e diâmetro externo por seção."
+    dc_estimado: true   # o catálogo não traz o diâmetro do condutor: compactado ≈ 1,13·√S
+    secoes:          # d_condutor estimado (compactado ≈ 1,13·√S), Rcc20, -, -, d_externo
+      95: [11.0, 0.193, 0, 0, 15.4]
+      120: [12.4, 0.153, 0, 0, 17.9]
+      150: [13.8, 0.124, 0, 0, 18.9]
+      185: [15.4, 0.0991, 0, 0, 20.6]
+      240: [17.5, 0.0754, 0, 0, 22.9]
+
+referencia_cabo_blindado: "Prysmian AFUMEX FLEX VFD"
+referencia_cabo_nao_blindado: "Prysmian VOLTALENE Cu"

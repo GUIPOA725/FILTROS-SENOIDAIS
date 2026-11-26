@@ -1,5 +1,5 @@
 {
-  "versao": "1.33.0",
+  "versao": "1.34.0",
   "data": "2026-11-26",
-  "resumo": "Inversor pelo manual completo do fabricante: derating pela fs, IN e frame com documento/revisão/página/link (dados/inversores_manuais.yaml), conferência com o modelo do cliente e relatório 7_Inversor_Manual"
+  "resumo": "Motor e cabo pelos manuais/catálogos do fabricante (WEG: isolamento e mancais; Prysmian: R, L e C calculados do catálogo), com fonte/página/link, pasta 7_Manuais_Tecnicos e Check"
 }

@@ -272,6 +272,13 @@ def parametros_sistema(ped: Pedido, cat) -> Dict[str, Any]:
         R, L, Cpg, Cpp = 0.16, 0.25, 370, 185
     if not ped.cabo_blindado:
         Cpg, Cpp = Cpg * 0.45, Cpp * 0.6
+    try:        # v1.34.0 (REQ-INV-011): cabo com fabricante/modelo informados → R e L calculados do catálogo do fabricante
+        from . import manuais_motor_cabo as _MC
+        _cb = _MC.cabo(ped, sec)
+        if _cb and not _cb["referencia"]:
+            R, L = _cb["r90"], _cb["L_mH_km"]
+    except Exception:
+        pass
     comp = ped.cabo_m or cat.get("cabo_comprimento_padrao_m", 30)
     mc = cat.get("modo_comum", {})
     return dict(Lm=mm.get("l_disp_pu", 0.15) * Zbm / w, Rm=mm.get("r_pu", 0.012) * Zbm,
@@ -812,7 +819,7 @@ def verificacoes_auditoria(ped: Pedido, cat, p, res, fs, vdc=None) -> List[Verif
         out.append(Verificacao("Inversor × manual completo do fabricante (modelo, frame, IN)", txt_m,
                                "modelo do cliente encontrado no manual cadastrado (documento, revisão, página, link)", ok_m,
                                "REQ-INV-010: o inversor gera a forma de onda – fs, derating e corrente vêm do manual de hardware "
-                               "completo (dados/inversores_manuais.yaml); relatório em 01_Engenharia/7_Inversor_Manual", critico=False))
+                               "completo (dados/inversores_manuais.yaml); relatório em 01_Engenharia/7_Manuais_Tecnicos", critico=False))
         inv = cat["inversores"].get(_inv_chave(ped.inversor, cat), cat["inversores"]["GENERICO"])
         k = derating_fs(cat, ped, fs)
         fs_min = min(inv.get("fs_opcoes_khz") or [fs / 1000])

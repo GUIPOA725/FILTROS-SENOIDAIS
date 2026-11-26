@@ -19,7 +19,7 @@ REGRAS = [
     ("01_Engenharia", "4_Verificacao_do_sistema", [r"^VERIFICACAO_SISTEMA_", r"^AUDITORIA_"]),
     ("01_Engenharia", "5_Compras_Interno", [r"^INTERNO_"]),
     ("01_Engenharia", "6_Players_Mercado", [r"^Players_Mercado_"]),
-    ("01_Engenharia", "7_Inversor_Manual", [r"^Inversor_Manual_"]),
+    ("01_Engenharia", "7_Manuais_Tecnicos", [r"^Inversor_Manual_", r"^Motor_Cabo_Manual_"]),
     ("02_Cliente", "1_Proposta_e_Email", [r"Proposta_Comercial", r"Email_Resposta_Cliente"]),
     ("02_Cliente", "2_Folha_de_Dados", [r"Folha_de_Dados"]),
     ("02_Cliente", "3_Relatorio_Tecnico", [r"Relatorio_Tecnico"]),
@@ -41,7 +41,7 @@ LEIA_ME = """ORGANIZAÇÃO DESTE PROJETO (Plataforma FSEN)
    4_Verificacao_do_sistema . Verificação do sistema (PDF) – dossiê para um auditor externo; não é auditoria
    5_Compras_Interno ........ fornecedores sugeridos para cotar (NÃO enviar a fornecedor)
    6_Players_Mercado ....... comparação com os players mundiais (Schaffner, TDK, Block, Danfoss, MTE) – fontes e critérios
-   7_Inversor_Manual ....... dados do inversor retirados do manual completo do fabricante (documento, revisão, página, link)
+   7_Manuais_Tecnicos ...... inversor, motor e cabo pelos manuais/catálogos do fabricante (documento, revisão, página, link)
    ATP ...................... decks, resultados e comparação Python × ATP-EMTP
    (arquivos .json na raiz: dados que a plataforma lê para reabrir o projeto – não mover)
 

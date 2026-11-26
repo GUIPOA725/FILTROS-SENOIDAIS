@@ -8,7 +8,7 @@ Fonte: dados/inversores_manuais.yaml (um bloco por família, com documento, revi
   • identificar(modelo) → família, frame, IN pelo código do modelo, fatores de derating pela fs mínima;
   • fator_fs(info, fs_khz) → derating na fs fixada (interpolação linear entre pontos do manual);
   • conferencia(ped) → casa o modelo/corrente informados pelo cliente com o manual;
-  • gerar(ped, fs, pasta, cod) → 01_Engenharia/7_Inversor_Manual/Inversor_Manual_<cod>.md + .xlsx (rastreabilidade).
+  • gerar(ped, fs, pasta, cod) → 01_Engenharia/7_Manuais_Tecnicos/Inversor_Manual_<cod>.md + .xlsx (rastreabilidade).
 Sem cadastro: devolve None e a verificação fica em ATENÇÃO pedindo o cadastro do manual.
 """
 from __future__ import annotations

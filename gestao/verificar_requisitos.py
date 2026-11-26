@@ -291,6 +291,20 @@ def t_inversor_manual(projs):
     return ok, f"ACS580-01-293A-4: frame {info['frame']}, fator 4 kHz {k}, fontes com link/página/revisão: {fontes_ok}"
 
 
+def t_motor_cabo_manual(projs):
+    """v1.34.0 (REQ-INV-011): motor e cabo pelos manuais – WEG 440 V: pico ≤ 1600 V / dV/dt ≤ 5200 V/µs (guia 50029351 p.18);
+    cabo Prysmian com fonte (link/página) e R 90 °C calculada do Rcc do catálogo."""
+    import sys as _s
+    _s.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from fsen import manuais_motor_cabo as MC
+    m = MC.motor({"tensao_v": 440, "motor_fabricante": "WEG"})
+    c = MC.cabo({"cabo_fabricante": "Prysmian", "cabo_modelo": "AFUMEX FLEX VFD", "cabo_blindado": True}, 120)
+    ok = bool(m and m["vpk_max"] == 1600 and m["dvdt_max"] == 5200 and m["fontes"][0].get("link")
+              and c and not c["referencia"] and c["fonte"].get("link") and 0.19 < c["r90"] < 0.22)
+    return ok, (f"WEG 440 V: {m and m['vpk_max']} V / {m and m['dvdt_max']} V/µs; Prysmian VFD 120 mm²: R90 {c and round(c['r90'], 4)} Ω/km, "
+                f"L {c and round(c['L_mH_km'], 3)} mH/km")
+
+
 def t_bat_windows(projs):
     """v1.32.1 (REQ-GER-019): os .bat rodam no cmd do Windows – precisam ser ASCII puro e com fim de linha CRLF.
     Um acento num REM com fim de linha LF fez o cmd ler o ABRIR_FSEN.bat picado ('tle', 'cp', 'ho' não reconhecido)."""

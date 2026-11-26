@@ -372,3 +372,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 16:26 26/11 (engenheiro): "eu não tenho como abrir o manual, vc até pode pegar ele na internet ... coloca isso como padrão no codigo ... isso tem que estar no codigo da nova versão" → REQ-INV-010.
 - 26/11 (Claude): v1.33.0 – manual do inversor no código; achado A&W: 293A-4 dá 237 A a 4 kHz (manual ABB), não alimenta 254 A; 363A-4 aprova.
 - 26/11 (Claude): v1.33.0 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
+- 16:46 26/11 (engenheiro): "Vc já gerou a versão nova da plataforma com essas melhorias onde eles precisa buscar o manual do inverter, e se conseguir TB o manual do motor ... e o manual do cabo ..." → REQ-INV-011.
+- 26/11 (Claude): v1.34.0 – motor (WEG) e cabo (Prysmian) pelos manuais; pasta 7_Manuais_Tecnicos.

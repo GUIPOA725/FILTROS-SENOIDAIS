@@ -3,6 +3,12 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.34.0 – 26/11/2026 – motor e cabo pelos manuais (REQ-INV-011)
+**Pedido:** "se conseguir TB o manual do motor ... e o manual do cabo".
+**Feito:** cadastro `dados/manuais_motor_cabo.yaml` (WEG guia técnico inversores 50029351: isolamento por Un e mancais por carcaça; Prysmian AFUMEX FLEX VFD e VOLTALENE: dimensões e Rcc), `fsen/manuais_motor_cabo.py` com memória de cálculo de R/L/C, campos novos no pedido, simulação com o cabo do fabricante quando informado, Check no RESUMO, pasta 7_Manuais_Tecnicos (inversor + motor + cabo), teste `t_motor_cabo_manual`.
+**Teste A&W (363A-4, 4 kHz):** APROVADO; motor pico 660 V × 1600 V WEG; cabo da simulação × catálogo R 0 %, L +5 %; fabricante de motor e cabo não informados → ATENÇÃO.
+**Limites:** só WEG e Prysmian cadastrados; outros fabricantes caem na referência com ATENÇÃO até serem cadastrados.
+
 ## v1.33.0 – 26/11/2026 – inversor pelo manual completo do fabricante (REQ-INV-010)
 **Pedido:** "vc precisa abrir o manual sempre do inversor do fabricante o completo ... isso tem que estar no código".
 **Feito:** cadastro `dados/inversores_manuais.yaml` (ABB ACS580-01 R0–R9, fontes oficiais ABB com link/página), `fsen/inversor_manual.py`, derating_fs pelo manual, verificação de conferência, relatório 7_Inversor_Manual, frase da proposta com a fonte, teste automático `t_inversor_manual`, regra no CLAUDE.md.
@@ -410,6 +416,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 
 ## Revisão – v1.33.0 – 2026-11-26 16:43
 - Requisitos: 156 | APROVADO 96 | ATENÇÃO 39 | REPROVADO 21
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEN-027, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.34.0 – 2026-11-26 16:53
+- Requisitos: 157 | APROVADO 97 | ATENÇÃO 39 | REPROVADO 21
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum

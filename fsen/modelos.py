@@ -58,6 +58,12 @@ class Pedido:
     motor_para_inversor: str = ""              # sim/não (NEMA MG1 Pt.31 / IEC TS 60034-25)
     mancal_isolado: str = ""
     cabo_tipo: str = ""                        # blindado simétrico VFD, unipolar em eletrocalha, etc.
+    # v1.34.0 (REQ-INV-011): fabricante/modelo para buscar o manual/catálogo (dados/manuais_motor_cabo.yaml)
+    motor_fabricante: str = ""
+    motor_modelo: str = ""
+    motor_carcaca: str = ""                    # ex.: 315S/M (proteção de mancal pela carcaça)
+    cabo_fabricante: str = ""
+    cabo_modelo: str = ""
     alim_aux_v: str = ""                       # alimentação dos ventiladores
     dim_max_mm: str = ""                       # espaço disponível L×A×P
     entrada_cabos: str = ""                    # por baixo / por cima

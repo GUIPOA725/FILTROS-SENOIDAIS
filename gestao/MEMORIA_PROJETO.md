@@ -31,7 +31,7 @@ com o engenheiro; componente novo só vale para todos depois da aprovação dele
 Todo resultado tem coluna **Check**: ✔ APROVADO, ⚠ ATENÇÃO (perto do limite ou a confirmar), ✖ REPROVADO, INFO. A planilha
 Conferencia_Esquema_x_Painel_x_Lista confere esquema elétrico × painel 2D/3D × lista de material: tem que dar zero reprovado.
 
-_Gerado em 26/11/2026 16:43 – plataforma v1.33.0 – 156 requisitos registrados._
+_Gerado em 26/11/2026 16:53 – plataforma v1.34.0 – 157 requisitos registrados._
 
 ## Regras e decisões do engenheiro (registro de requisitos – palavras dele)
 Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
@@ -99,6 +99,7 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 
 ### INVERSOR
 - REQ-INV-010 ! [ATENDIDO] eu não tenho como abrir o manual, vc até pode pegar ele na internet e casar se é o mesmo que o cliente passou do inversor, e salvar ele no projeto ou só informar que tal dado foi retirado do manual tal no link tal pasta tal. acessa e busca essa informação. coloca isso como padrão no codigo, ja que o inversor é a parte mais importante pois ele gera a forma de onda, vc precisa abrir o manual sempre do inversro do fabricante o completo e pegar as informações para essa tomada de decisão, isso tem que estar no codigo da nova versão — nota: ACS580-01-293A-4 (R8): 0,81 a 4 kHz (HW manual 3AXD50000018826 rev C p.134; ACH580-01 HW rev A p.126) → 237 A; catálogo 2026: filtro senoidal ABB limita a 249 A. A&W: a 4 kHz o inversor não alimenta 254 A (carga 243 A co
+- REQ-INV-011 ! [ATENDIDO] Vc já gerou a versão nova da plataforma com essas melhorias onde eles precisa buscar o manual do inverter, e se conseguir TB o manual do motor, isso ajuda muito, e o manual do cabo, imagina ficaria muito completo com essas informações técnicas — nota: A&W: motor e cabo sem fabricante no pedido → referência WEG/Prysmian com ATENÇÃO; pico 660 V × 1600 V WEG OK; R/L da simulação batem com o catálogo (R 0 %, L +5 %). PDFs não baixáveis na nuvem: link e página registrados.
 
 ### LIMPEZA
 - REQ-LIM-001 [PENDENTE] Cuidado com espaço (notebook e Drive apertados): apagar versões antigas do programa (aprovado); salvar no Git o que importa. — nota: Versões antigas em PROGRAMAS ainda não apagadas (Drive pessoal não apaga em drive compartilhado).
@@ -259,10 +260,10 @@ Legenda: ! = crítico; situação: ATENDIDO / PARCIAL / PENDENTE.
 - **Adendo de verificação da auditoria externa – A&W FSEN-LC-268A-440V, pacote v1.32.3 (26/11/2026 15:46)**: 6 resolvidos (pico/THD fonte única, PTC, mercado like-for-like, otimização com a final, RTM classe H), 11 parciais, 2 não tratados (garantia, NCM). | Bloqueios: derating do ACS580 a 4 kHz, aceite dos 268 A, THD de baixa ordem com metade do amortecimento. | Resíduos: IEC 60831 no memorial tab.9, 'Q equivalente 4' na tabela de critérios, 'Isat ≥ 500 A' no RTM, e-mail sem THD total e sem condição 268 A; rótulo '(por fase)' nos 3,7 m de cabo é o total das 3 fases.
 
 ## Últimas versões (resumo do CHANGELOG)
+- **v1.34.0 – 26/11/2026 – motor e cabo pelos manuais do fabricante**: Motor: limites de pico, dV/dt e rise time do fabricante (WEG) comparados com o que o filtro garante; proteção de mancal pela carcaça. Cabo: R, L e C calculados a partir do catálogo do fabricante (Prysmian) e comparados com os valores da simulação; com fabricante e modelo informados,  Pedido ganhou fabricante/modelo/carcaça do motor e fabricante/modelo do cabo (a IA lê do e-mail; se faltar, entra em dados faltantes). Pasta 01_Engenharia/7_Manuais_Tecnicos com inversor, motor e cabo – fonte, página e link de cada dado.
 - **v1.33.0 – 26/11/2026 – inversor pelo manual do fabricante**: Frequência de chaveamento, derating, corrente nominal e frame do inversor agora vêm do manual completo do fabricante, com documento, revisão, página e A plataforma confere se o modelo e a corrente informados pelo cliente batem com o manual; se o inversor não estiver cadastrado, aparece ATENÇÃO pedind Novo relatório 01_Engenharia/7_Inversor_Manual (Word-livre .md + planilha) com a fonte de cada dado e, quando o inversor não atende, o menor modelo da
 - **v1.32.3 – 26/11/2026 – abertura rápida**: Se a cópia local já está na mesma versão do Drive, abre direto, sem copiar nada do Drive.
 - **v1.32.2 – 26/11/2026 – correção urgente: a 1.32.1 não abria**: O arquivo de abertura tinha um acento e fim de linha errado para o Windows; corrigido e agora conferido automaticamente antes de publicar.
-- **v1.32.1 – 26/11/2026 – correção: abertura parada em [1/4]**: A cópia local não fica mais esperando arquivo que o Google Drive ainda está sincronizando (2 tentativas de 2 s e abre com a cópia local).
 
 ## Histórico literal
 As conversas completas do engenheiro com a IA estão em gestao/conversas/ (no programa e no Drive em ATUALIZACOES-MELHORIAS\GESTAO\conversas). Consulte lá quando precisar da frase exata.
