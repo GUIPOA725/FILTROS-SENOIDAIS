@@ -350,3 +350,5 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 23:50 25/11 (engenheiro): "É uma busca mais profunda na internet com critérios não algo só visual precisa de informações técnicas boas" → REQ-SEN-024 (critérios: L, Cy, fr, uk, W/A, massa, fs mín, classe; só datasheet oficial).
 - 23:56 25/11 (engenheiro): "Eu gostei da sua comparação usar salvar em planilha comparativa TB e no consolidado" → REQ-SEN-024 em implementação (v1.30.0).
 - 23:59: "Outra coisa sobre os capacitores... quando usar em delta e quando em estrela?... Todos seguem o mesmo padrão" → REQ-SEN-025.
+- 00:03 26/11 (engenheiro): "Em 440v o capacitor ligado em delta de 480v da epcos aguenta? É tão próximo? Mas estrela me quebra que para o mesmo capacitor deveria ter 3 x mais" → respondido (84 % RMS/pico; regra 1,1×Un = 525 V oferecida).
+- 26/11 (Claude): v1.30.0 publicada; planilha de players copiada para a pasta A&W v1.29.0.
