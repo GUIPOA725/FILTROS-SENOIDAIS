@@ -365,3 +365,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 15:03 26/11 (engenheiro): print da janela parada em "[1/4] Atualizando a copia local do programa..." – "e esse erro" / "não abre" → REQ-GER-019, v1.32.1 (robocopy /R:2 /W:2).
 - 26/11 (Claude): v1.32.1 publicada (ABRIR_FSEN.bat no Drive e na cópia local).
 - 15:07 26/11 (engenheiro): print com 'tle'/'cp'/'ho' não é reconhecido – "não abre" → v1.32.2 (.bat ASCII + CRLF).
+- 26/11 (Claude): v1.32.2 publicada (ABRIR_FSEN.bat e INICIAR.bat ASCII + CRLF no Drive e na cópia local; conferido o arquivo do Drive).
