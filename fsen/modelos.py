@@ -63,6 +63,9 @@ class Pedido:
     motor_modelo: str = ""
     motor_carcaca: str = ""                    # ex.: 315S/M (proteção de mancal pela carcaça)
     cabo_fabricante: str = ""
+    # v1.36.0 (REQ-SEN-031): "aberto" = IP00 em base de montagem para o painel do cliente (PADRÃO quando o cliente não especifica);
+    # "caixa" = armário próprio (quando o cliente pede IP/armário). Vazio → decidido em forma_fornecimento()
+    forma_fornecimento: str = ""
     cabo_modelo: str = ""
     alim_aux_v: str = ""                       # alimentação dos ventiladores
     dim_max_mm: str = ""                       # espaço disponível L×A×P

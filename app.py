@@ -177,6 +177,11 @@ def form_pedido(p: Pedido) -> Pedido:
     p.cabo_secao_mm2 = c1.number_input("Seção do cabo ao motor (mm², 0 = automática)", 0.0, 1000.0, float(p.cabo_secao_mm2 or 0))
     p.cabo_paralelos = int(c2.number_input("Cabos em paralelo por fase (0 = automático)", 0, 12, int(p.cabo_paralelos or 0)))
     p.cabo_blindado = c3.checkbox("Cabo blindado (VFD)", p.cabo_blindado)
+    _ff = ["padrão: aberto em base (IP00)", "aberto em base (IP00)", "em caixa própria"]
+    _iv = {"": 0, "aberto": 1, "caixa": 2}.get(getattr(p, "forma_fornecimento", "") or "", 0)
+    p.forma_fornecimento = {0: "", 1: "aberto", 2: "caixa"}[_ff.index(st.selectbox(
+        "Forma de fornecimento (REQ-SEN-031)", _ff, index=_iv,
+        help="Padrão do mercado: filtro aberto sobre base de montagem para o painel do cliente; caixa só se o cliente pedir."))]
     p.estrela_ao_cc = c4.checkbox("Centro-estrela ao barramento CC (all-pole)", p.estrela_ao_cc,
                                   help="Atenua o modo comum e as correntes de mancal; exige acesso ao CC do inversor.")
     p.aplicacao = st.text_input("Aplicação", p.aplicacao)

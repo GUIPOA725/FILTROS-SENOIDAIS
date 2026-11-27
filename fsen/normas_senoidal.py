@@ -40,8 +40,10 @@ def verificacao(proj, arr):
     L.append(_linha("61439-1 §10.4", f"Distância de escoamento (Ui {500 if ue <= 500 else 800} V, poluição 3)", "≥ 30 mm (projeto)",
                     f"≥ {escoamento} mm", CK.check(True, CK.utilizacao(30, escoamento, "min")), "Tabela 2 + layout"))
     for cl, it, req in (
-            ("61439-1 §10.3", "Grau de proteção do invólucro", f"IP{arr.caixa_ip} – IEC 60529"),
-            ("61439-1 §10.2.6", "Resistência a impacto", "IK10 – IEC 62262"),
+            *((("61439-1 §10.3", "Grau de proteção – filtro ABERTO (IP00)", "proteção contra contato (≥ IPXXB) pelo painel do cliente – guia de instalação"),)
+              if getattr(proj, "forma", "caixa") == "aberto" else
+              (("61439-1 §10.3", "Grau de proteção do invólucro", f"IP{arr.caixa_ip} – IEC 60529"),
+               ("61439-1 §10.2.6", "Resistência a impacto", "IK10 – IEC 62262"))),
             ("60076-6", "Ensaio dielétrico do indutor (aplicada 2,5 kV / 1 min) e medição de L e perdas", "laudo do fabricante do indutor"),
             ("61439-1 §10.5", "Continuidade do PE e equipotencialização", "≤ 0,1 Ω"),
             ("61439-1 §11", "Verificação de rotina do painel (fiação, torque, funcionamento, placa)", "laudo + fotos")):
@@ -69,9 +71,15 @@ def folha_dados(proj, arr):
         ("Capacitores", f"{b.n_total} × {b.uf_unit:g} µF {b.v_unit:g} V ({b.fabricante}) em {b.ligacao} – IEC 61071"),
         ("Indutor", f"Electric – {proj.l1.l_uh:.0f} µH, {proj.l1.i_nom_a:.0f} A, L ≥ 90 % até {proj.l1.i_sat_a:.0f} A pico, "
                     f"sistema de isolação classe H (180 °C), projeto por elementos finitos com relatório, {protecao_termica_txt(True)}"),
-        ("Perdas / massa", f"≈ {arr.perda_total_w:.0f} W / ≈ {arr.massa_total_kg:.0f} kg (com a caixa)"),
-        ("Invólucro", f"{arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm (L × A × P), IP{arr.caixa_ip}, IK10 (projeto; comprovar no FAT), RAL 7035"),
-        ("Refrigeração", f"forçada, {arr.n_ventiladores} ventilador(es) 220 Vca com termostato"),
+        ("Perdas", f"≈ {arr.perda_total_w:.0f} W"),
+    ]
+    if getattr(proj, "forma", "caixa") == "aberto":       # v1.36.0 (REQ-SEN-031)
+        from .documentos import _folha_aberto
+        L += _folha_aberto(proj, arr)
+    else:
+        L += [("Invólucro", f"{arr.caixa_l} × {arr.caixa_a} × {arr.caixa_p} mm (L × A × P), IP{arr.caixa_ip}, IK10 (projeto; comprovar no FAT), RAL 7035"),
+              ("Refrigeração", f"forçada, {arr.n_ventiladores} ventilador(es) 220 Vca com termostato")]
+    L += [
         ("Isolação", "1,1 kV; ensaio 2,5 kV / 1 min"),
         ("Ruído", g["txt_ruido"]),
         ("Normas", g["txt_normas"]),

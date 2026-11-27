@@ -1,5 +1,10 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.36.0 – 26/11/2026 – filtro aberto em base é o padrão
+- Quando o cliente não pede grau de proteção nem armário, o filtro senoidal sai ABERTO (IP00) em base de montagem, para o painel dele – é o preço principal da proposta, e a caixa aparece como opcional.
+- Se o cliente pedir IP (ex.: IP54), instalação ao tempo ou armário próprio, sai em caixa; o aberto fica como opção.
+- Novo campo "Forma de fornecimento" na tela para escolher manualmente.
+
 ## v1.35.0 – 26/11/2026 – filtro senoidal aberto em base de montagem
 - Como fazem TDK, Block, Danfoss e MTE nessa faixa de corrente, a plataforma gera também o filtro ABERTO (IP00) sobre uma base metálica, para o cliente instalar no painel dele.
 - Projeto da base para o montador: desenho A3 (PDF e DXF) com toda a furação, notas de fabricação e torques, e ET da base.

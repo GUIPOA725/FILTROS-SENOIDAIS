@@ -321,6 +321,15 @@ def t_equipamento_cliente_fixo(projs):
     return (4000 in ops and 8000 not in ops), f"opções de fs para o ACS580-01-293A-4 (motor 211 A): {[o / 1000 for o in ops]} kHz"
 
 
+def t_forma_padrao_aberta(projs):
+    """v1.36.0 (REQ-SEN-031): sem IP/armário pedido → filtro ABERTO em base; IP pedido → caixa."""
+    import sys as _s
+    _s.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from fsen import base_montagem as BM
+    a, c = BM.forma({"ip": "IP54", "informados": []}), BM.forma({"ip": "IP54", "informados": ["ip"]})
+    return (a == "aberto" and c == "caixa"), f"sem IP informado → {a}; IP54 pedido → {c}"
+
+
 def t_bat_windows(projs):
     """v1.32.1 (REQ-GER-019): os .bat rodam no cmd do Windows – precisam ser ASCII puro e com fim de linha CRLF.
     Um acento num REM com fim de linha LF fez o cmd ler o ABRIR_FSEN.bat picado ('tle', 'cp', 'ho' não reconhecido)."""

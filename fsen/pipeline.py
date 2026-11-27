@@ -379,6 +379,19 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
     log("3/7 Lista de material e preço...")
     itens = montar_bom(proj, arr, cat)
     orc = formar_preco(proj, itens, cat)
+    try:                                            # v1.36.0 (REQ-SEN-031): padrão ABERTO em base – preço/BOM principais da forma (A)
+        from . import base_montagem as _BM0
+        proj.forma = _BM0.forma(ped)
+        proj.orc_caixa = orc
+        if proj.forma == "aberto":
+            orc = _BM0.preco_opcao_aberta(proj, orc, cat, _BM0.layout(proj, arr, None))
+            log(f"   Forma de fornecimento: ABERTO (IP00) em base de montagem – padrão (REQ-SEN-031); caixa como opção "
+                f"(R$ {proj.orc_caixa.preco_unit:,.0f})")
+        else:
+            log("   Forma de fornecimento: em CAIXA própria (pedido do cliente); aberto em base como opção")
+    except Exception as e:
+        proj.forma = "caixa"
+        log(f"   (forma de fornecimento: mantida a caixa – {type(e).__name__}: {e})")
     log("4/7 Gráficos de simulação e da otimização...")
     graf = gerar_todos(proj, sub["graficos"])
     from .graficos import grafico_termico

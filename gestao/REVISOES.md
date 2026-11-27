@@ -3,6 +3,11 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.36.0 – 26/11/2026 – padrão aberto em base (REQ-SEN-031)
+**Engenheiro:** "Sugestão A" (padrão = aberto em base quando o cliente não especifica).
+**Feito:** forma de fornecimento no pedido e regra automática; preço/BOM principais da forma (A); proposta, folhas de dados, verificação de normas e RFQ ajustados; seletor na tela; teste automático.
+**A&W (teste rápido, sem FEM):** aberto em base R$ 36.200 × caixa opcional R$ 48.350.
+
 ## v1.35.0 – 26/11/2026 – filtro aberto em base de montagem (REQ-SEN-030)
 **Engenheiro:** "os filtros senoidais quando vendidos acredito que são abertos ... consegue fazer o projeto dela para o montador fazer".
 **Pesquisa:** TDK B84143V IP00 de 132 a 320 A com caixa IP21 como acessório; Block SFB IP00 aberto, só em pé, 40 °C; Danfoss IP00/IP20, piso acima de 75 A, 45 °C, convecção natural; MTE open panel para dentro do invólucro do cliente (4"/6" de folga) ou NEMA 1/3R. Schaffner: manual não acessível.
@@ -465,6 +470,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 
 ## Revisão – v1.35.0 – 2026-11-26 21:38
 - Requisitos: 161 | APROVADO 101 | ATENÇÃO 39 | REPROVADO 21
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEN-027, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.36.0 – 2026-11-26 22:22
+- Requisitos: 162 | APROVADO 102 | ATENÇÃO 39 | REPROVADO 21
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum

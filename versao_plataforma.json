@@ -1,5 +1,5 @@
 {
-  "versao": "1.35.0",
+  "versao": "1.36.0",
   "data": "2026-11-26",
-  "resumo": "Filtro senoidal aberto (IP00) em base de montagem como no mercado (TDK, Block, Danfoss, MTE): projeto da base para o montador (PDF/DXF + ET), guia de instalação no painel do cliente e preço das duas formas na proposta"
+  "resumo": "Padrão: filtro senoidal ABERTO (IP00) em base de montagem para o painel do cliente; caixa só quando o cliente pede (opcional na proposta)"
 }

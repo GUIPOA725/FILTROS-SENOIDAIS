@@ -52,6 +52,21 @@ FONTES = [
 ]
 
 
+def forma(ped):
+    """v1.36.0 (REQ-SEN-031, engenheiro: "Sugestão A"): padrão = ABERTO em base; caixa só se o cliente pedir.
+    Pedido explícito (forma_fornecimento) vale; senão, IP informado ≥ IP20 ou instalação em gabinete próprio → caixa."""
+    g = (lambda k, d=None: ped.get(k, d) if isinstance(ped, dict) else getattr(ped, k, d))
+    f = str(g("forma_fornecimento", "") or "").lower()
+    if f in ("aberto", "caixa"):
+        return f
+    inf = g("informados", None) or []
+    ip = str(g("ip", "") or "").upper().replace(" ", "")
+    inst = str(g("instalacao", "") or "").lower()
+    if ("ip" in inf and ip not in ("", "IP00", "IP10")) or any(k in inst for k in ("ao tempo", "gabinete", "armário", "armario", "caixa")):
+        return "caixa"
+    return "aberto"
+
+
 def _dict(c):
     """Componente do arranjo como dict (no pipeline é Caixa2D; no JSON salvo é dict)."""
     if isinstance(c, dict):

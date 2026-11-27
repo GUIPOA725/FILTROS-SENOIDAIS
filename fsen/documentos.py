@@ -558,9 +558,17 @@ def proposta(proj, arr, orc, cat, pasta):
     d.add_paragraph("Prezados, agradecemos a consulta. Apresentamos nossa proposta para fornecimento do item abaixo, "
                     "projetado e simulado especificamente para a aplicação informada.")
     d.add_heading("1. Escopo de fornecimento", 1)
-    desc = (f"Filtro trifásico senoidal {proj.topologia} para saída de inversor de frequência – {ped['corrente_a']:g} A, {ped['tensao_v']:g} V, "
-            f"{ped['freq_rede_hz']:g} Hz, montado em caixa metálica IP{arr.caixa_ip} ({arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm), "
-            f"ventilação forçada, bornes de entrada/saída e barramento de terra.")
+    _aberto = getattr(proj, "forma", "caixa") == "aberto"
+    if _aberto:                                     # v1.36.0 (REQ-SEN-031): padrão aberto em base
+        from . import base_montagem as _BMp
+        _bp = _BMp.layout(proj, arr, None)
+        desc = (f"Filtro trifásico senoidal {proj.topologia} para saída de inversor de frequência – {ped['corrente_a']:g} A, {ped['tensao_v']:g} V, "
+                f"{ped['freq_rede_hz']:g} Hz, ABERTO (IP00) em base de montagem {_bp['L']:.0f}×{_bp['P']:.0f} mm para instalação no painel do "
+                "cliente: indutor, capacitores, bornes de entrada/saída, bornes do PTC e barra de terra montados e interligados.")
+    else:
+        desc = (f"Filtro trifásico senoidal {proj.topologia} para saída de inversor de frequência – {ped['corrente_a']:g} A, {ped['tensao_v']:g} V, "
+                f"{ped['freq_rede_hz']:g} Hz, montado em caixa metálica IP{arr.caixa_ip} ({arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm), "
+                f"ventilação forçada, bornes de entrada/saída e barramento de terra.")
     _tabela(d, ["Item", "Qtd", "Un", "Descrição", "Preço unit.", "Preço total"],
             [("01", orc.quantidade, "pç", desc, _rs(orc.preco_unit), _rs(orc.preco_total))], [1.2, 1.2, 1.0, 8.6, 2.5, 2.5])
     d.add_heading("2. Características técnicas garantidas", 1)
@@ -618,13 +626,15 @@ def proposta(proj, arr, orc, cat, pasta):
     try:                                            # v1.35.0 (REQ-SEN-030): as duas formas de fornecimento
         from . import base_montagem as _BM
         _b = _BM.layout(proj, arr, None)
-        _oa = _BM.preco_opcao_aberta(proj, orc, cat, _b)
+        _ocx = getattr(proj, "orc_caixa", None) or orc
+        _oa = orc if getattr(proj, "forma", "caixa") == "aberto" else _BM.preco_opcao_aberta(proj, orc, cat, _b)
+        orc_b = _ocx
         _r = lambda v: f"{v:,.0f}".replace(",", ".")
         _obs.append(f"Formas de fornecimento: (A) ABERTO (IP00) em base de montagem {_b['L']:.0f} × {_b['P']:.0f} mm, ≈ {_b['massa_conj']:.0f} kg, "
                     f"para instalação dentro do painel do cliente – padrão dos fabricantes internacionais (TDK, Block, Danfoss, MTE) – "
                     f"R$ {_r(_oa.preco_unit)}/unid.; (B) em caixa metálica própria {arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm IP{arr.caixa_ip} "
-                    f"com ventilação – R$ {_r(orc.preco_unit)}/unid. Na forma (A) o painel do cliente deve dissipar ≈ {arr.perda_total_w:.0f} W "
-                    "e dar a proteção contra contato (guia de instalação anexo).")
+                    f"com ventilação – R$ {_r(orc_b.preco_unit)}/unid. (OPCIONAL). Na forma (A) o painel do cliente deve dissipar "
+                    f"≈ {arr.perda_total_w:.0f} W e dar a proteção contra contato (guia de instalação anexo).")
     except Exception:
         pass
     _obs.append("Garantias de pico e THD válidas para a frequência de chaveamento, o cabo e o motor acima; o THD total no motor "
@@ -670,6 +680,17 @@ def insercao_pct(proj):
     phi = -_m.acos(max(min(float(ped.get("motor_fp") or 0.85), 1.0), 0.0))
     vi = complex(vo, 0) + 1j * x * i * complex(_m.cos(phi), _m.sin(phi))
     return 100 * (abs(vi) - vo) / abs(vi)
+
+
+def _folha_aberto(proj, arr):
+    """v1.36.0 (REQ-SEN-031): linhas da folha de dados para a forma padrão ABERTA em base de montagem."""
+    from . import base_montagem as _BMf
+    b = _BMf.layout(proj, arr, None)
+    return [("Forma de fornecimento", "ABERTO (IP00) em base de montagem – para instalação dentro do painel do cliente (opcional: caixa "
+                                      f"{arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm IP{arr.caixa_ip})"),
+            ("Base (L×P) / altura", f"{b['L']:.0f}×{b['P']:.0f} mm / ≈ {b['altura_conj']:.0f} mm; 6 furos Ø13 (M12)"),
+            ("Massa", f"≈ {b['massa_conj']:.0f} kg"),
+            ("Refrigeração", f"Convecção natural; o painel do cliente dissipa ≈ {arr.perda_total_w:.0f} W (ar ≤ 50 °C no local do filtro)")]
 
 
 def _txt_inv_manual(proj, ped):
@@ -743,9 +764,10 @@ def folha_dados(proj, arr, cat, pasta, desenhos_png):
             ("Tensão de pico no motor", _g["txt_vpk"]), ("dv/dt", _g["txt_dvdt"]),
             ("Queda de tensão", _g["txt_queda"]), ("Ruído", _g["txt_ruido"]),
             ("Perdas", f"≈ {arr.perda_total_w:.0f} W"), ("Isolação", "1,1 kV; ensaio 2,5 kV / 1 min"),
-            ("Classe térmica", "Sistema de isolação classe H (180 °C), elevação média ≤ 125 K – igual ou superior à classe solicitada"), ("Grau de proteção", f"IP{arr.caixa_ip}"),
+            ("Classe térmica", "Sistema de isolação classe H (180 °C), elevação média ≤ 125 K – igual ou superior à classe solicitada")] +
+            (_folha_aberto(proj, arr) if getattr(proj, "forma", "caixa") == "aberto" else [("Grau de proteção", f"IP{arr.caixa_ip}"),
             ("Dimensões (L×A×P)", f"{arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm"), ("Massa", f"≈ {arr.massa_total_kg:.0f} kg"),
-            ("Refrigeração", f"Forçada, {arr.n_ventiladores} ventilador(es), alimentação auxiliar 220 Vca"),
+            ("Refrigeração", f"Forçada, {arr.n_ventiladores} ventilador(es), alimentação auxiliar 220 Vca")]) + [
             ("Normas", _g["txt_normas"])] + ([("Mancal do motor", _g["txt_mancal"])] if _g["txt_mancal"] else []))
     if desenhos_png:
         _img(d, desenhos_png[1], 17)
@@ -1007,7 +1029,10 @@ def rfq_montagem(proj, arr, orc, cat, pasta):
     cod = proj_codigo(proj)
     d = _novo("Solicitação de Orçamento de Montagem", f"Filtro senoidal {proj.topologia} {ped['corrente_a']:g} A – {q} unidade(s) – {cod}", proj, cat)
     d.add_heading("1. Objeto", 1)
-    d.add_paragraph(f"Montagem completa de {q} filtro(s) senoidal(is) em caixa metálica, incluindo compra dos materiais indicados como "
+    d.add_paragraph(f"Montagem completa de {q} filtro(s) senoidal(is) "
+                    + ("ABERTO(S) em base de montagem (forma padrão – desenho e ET em 4_Base_Montagem; a versão em caixa é opcional e "
+                       "deve ser cotada em separado), " if getattr(proj, "forma", "caixa") == "aberto" else "em caixa metálica, ")
+                    + "incluindo compra dos materiais indicados como "
                     "'Montadora', cabeação, identificação, ensaios de rotina, embalagem e relatório. "
                     "A Electric Service fornecerá os indutores e capacitores (material de terceiros sob guarda da montadora).")
     d.add_heading("2. Materiais e responsabilidade", 1)

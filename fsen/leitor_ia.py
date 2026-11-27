@@ -29,6 +29,7 @@ CAMPOS = {
     "dim_max_mm": "string", "entrada_cabos": "string", "carga_tipo": "string", "instalacao": "string",
     "motor_fabricante": "string", "motor_modelo": "string", "motor_carcaca": "string",
     "cabo_fabricante": "string", "cabo_modelo": "string",
+    "forma_fornecimento": "string",
 }
 
 INSTRUCAO = """Você é engenheiro de aplicação de filtros senoidais (LC/LCL) para saída de inversores de frequência.
