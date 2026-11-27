@@ -1,5 +1,5 @@
 {
-  "versao": "1.36.0",
+  "versao": "1.36.1",
   "data": "2026-11-26",
-  "resumo": "Padrão: filtro senoidal ABERTO (IP00) em base de montagem para o painel do cliente; caixa só quando o cliente pede (opcional na proposta)"
+  "resumo": "Correção: no computador novo a cópia local podia ficar incompleta e a plataforma não abria (No module named fsen.modelos) – agora confere e recopia, ou abre direto do Drive"
 }

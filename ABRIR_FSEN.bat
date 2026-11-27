@@ -24,12 +24,29 @@ REM v1.32.1 (REQ-GER-019): /R:2 /W:2 - sem isso o robocopy tenta 1 milhao de vez
 REM ainda esta sincronizando e a janela fica parada em [1/4]. Se algum arquivo falhar, segue com a copia local que ja existe.
 REM v1.32.3: se a copia local ja tem a MESMA versao do Drive, nao copia nada (abre na hora, sem depender do Drive).
 REM So copia quando a versao muda; log em %LOCALAPPDATA%\FSEN\robocopy.log para diagnostico.
+REM v1.36.1 (REQ-GER-021): a copia local so ganha o versao_plataforma.json DEPOIS de copiar tudo sem erro, e a copia e
+REM conferida (arquivos principais). Antes, uma copia interrompida (Drive ainda baixando) ficava marcada como atualizada
+REM e a plataforma abria quebrada ("No module named fsen.modelos").
+set "OK_LOCAL=1"
+for %%F in (app.py janela_fsen.py fsen\__init__.py fsen\modelos.py fsen\pipeline.py fsen\dimensionamento.py requirements.txt) do (
+  if not exist "%LOCAL%\%%F" set "OK_LOCAL=0"
+)
+if "%OK_LOCAL%"=="0" del "%LOCAL%\versao_plataforma.json" >nul 2>&1
 fc /b "%ORIGEM%versao_plataforma.json" "%LOCAL%\versao_plataforma.json" >nul 2>&1
 if errorlevel 1 (
-  robocopy "%ORIGEM%." "%LOCAL%" /MIR /R:1 /W:1 /XD __pycache__ saidas .git /XF historico.db /NP /LOG:"%LOCALAPPDATA%\FSEN\robocopy.log" >nul
-  if errorlevel 8 echo   Aviso: alguns arquivos do Drive ainda estao sincronizando - abrindo com a copia local.
+  robocopy "%ORIGEM%." "%LOCAL%" /MIR /R:3 /W:3 /XD __pycache__ saidas .git /XF historico.db versao_plataforma.json /NP /LOG:"%LOCALAPPDATA%\FSEN\robocopy.log" >nul
+  if errorlevel 8 (
+    echo   Aviso: o Google Drive ainda esta baixando arquivos - abrindo direto da pasta do Drive desta vez.
+    set "LOCAL=%ORIGEM:~0,-1%"
+  ) else (
+    copy /y "%ORIGEM%versao_plataforma.json" "%LOCAL%\versao_plataforma.json" >nul
+  )
 ) else (
   echo       copia local ja esta na versao do Drive.
+)
+if not exist "%LOCAL%\fsen\modelos.py" (
+  echo   Aviso: copia local incompleta - abrindo direto da pasta do Drive.
+  set "LOCAL=%ORIGEM:~0,-1%"
 )
 cd /d "%LOCAL%"
 

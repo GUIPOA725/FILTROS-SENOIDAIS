@@ -139,22 +139,29 @@ def atualizar_automatico():
         if not c or not os.path.isfile(os.path.join(c, "versao_plataforma.json")) or os.path.abspath(c) == os.path.abspath(RAIZ):
             continue
         vn, vl = _versao_de(c), _versao_de(RAIZ)
-        if _vtupla(vn) <= _vtupla(vl):
+        # v1.36.1 (REQ-GER-021): cópia local incompleta (Drive ainda baixando na 1ª vez) → copia de novo mesmo com a mesma versão
+        _chave = ("app.py", os.path.join("fsen", "__init__.py"), os.path.join("fsen", "modelos.py"), os.path.join("fsen", "pipeline.py"))
+        incompleta = any(not os.path.isfile(os.path.join(RAIZ, k)) for k in _chave)
+        if _vtupla(vn) <= _vtupla(vl) and not incompleta:
             return False
+        falhas = 0
         n = 0
         for d, ds, fs in os.walk(c):
             ds[:] = [x for x in ds if x not in _PULAR_DIR]
             rel = os.path.relpath(d, c)
             os.makedirs(os.path.join(RAIZ, rel), exist_ok=True)
             for f in fs:
-                if f in _PULAR_ARQ:
+                if f in _PULAR_ARQ or f == "versao_plataforma.json":
                     continue
                 try:
                     shutil.copy2(os.path.join(d, f), os.path.join(RAIZ, rel, f))
                     n += 1
                 except OSError as e:
+                    falhas += 1
                     log(f"atualização: não copiou {f}: {e}")
-        log(f"atualização automática: v{vl} → v{vn} ({n} arquivos de {c})")
+        if not falhas:          # a versão só é gravada depois de copiar TUDO (senão tenta de novo na próxima abertura)
+            shutil.copy2(os.path.join(c, "versao_plataforma.json"), os.path.join(RAIZ, "versao_plataforma.json"))
+        log(f"atualização automática: v{vl} → v{vn} ({n} arquivos de {c}; falhas {falhas})")
         return True
     return False
 

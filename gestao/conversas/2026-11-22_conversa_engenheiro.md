@@ -390,3 +390,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 22:18 26/11 (engenheiro): "Sujestão A" → REQ-SEN-031 (padrão = filtro aberto em base quando o cliente não especifica).
 - 26/11 (Claude): v1.36.0 – padrão aberto em base (REQ-SEN-031).
 - 26/11 (Claude): v1.36.0 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
+- 22:50 26/11 (engenheiro): print "ModuleNotFoundError: No module named fsen.modelos" – "ERRO AO ABRIR NO NOTE DE CASA" → REQ-GER-021, v1.36.1.

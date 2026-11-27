@@ -1,8 +1,8 @@
 {
-"versao": "1.36.0",
-"gerado_em": "2026-11-26 22:22",
+"versao": "1.36.1",
+"gerado_em": "2026-11-26 22:51",
 "arquivos": {
-"ABRIR_FSEN.bat": "74622ba7a7bd7b7dc3a3215c1c8eb5aa006a5603fad9c09c48a939ee250b64f4",
+"ABRIR_FSEN.bat": "e8264b9442b226f45f2481b7ee7c56fdbde5f570d1fb5fd2774eb04006ea3456",
 "INICIAR.bat": "438f9c7302d33d6111fc93fe5c3675ca0d0d46c34c4a9dcf9609a1743978cbbf",
 "INSTALAR.bat": "8237ae3ebbfa26b6d4f476c05b42336f79a0a7c09f0d2a3e39132ed85dce86a6",
 "MONITOR_EMAIL.bat": "4c177b2fa998f822cc78498958700d68bf705fa111f06aa47a2605ebf0f72b67",
@@ -95,7 +95,7 @@
 "fsen/vista_simulacao.py": "dec0f35ed28e713379781c95480528886c76271c95660130e5c7127c05c168d4",
 "gestao/gerar_memoria.py": "f13e8c71c3104f3ca73040278effdf2d27029c33957dfa2f86df7424bcbc8466",
 "gestao/verificar_requisitos.py": "c3835ccd29cbfcc03146eea76944f10274fbc309fa132f14b2e6f3e981acec85",
-"janela_fsen.py": "f84868f43b399385d2f5cff3ace3640cd186d8f59f5d885e04e5856534f30b60",
+"janela_fsen.py": "74ef1daca796e0065aab6c3a7cc9487ecf4e1deb549c82d0f5f24dac6c47afc4",
 "seletor.py": "2e9b42b88696bec0c46a531ab362b5643e489f007982311a614583f510cfda22",
 "telas_ajuste.py": "bcb2d7a0ca89cee513b84cf3cdb54dfc2ac89f5da754d2ee5f1be8c2706df3f2",
 "telas_banco.py": "1c07d4bb3eb0fd1b412865426adf265f9bfadf4ffc0cfba9f1f1e7398c301eee",

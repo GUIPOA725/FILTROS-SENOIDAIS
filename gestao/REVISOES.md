@@ -3,6 +3,9 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.36.1 – 26/11/2026 – cópia local incompleta (REQ-GER-021)
+**Erro (print, note de casa):** ModuleNotFoundError fsen.modelos. **Causa:** desde a v1.32.3 o versao_plataforma.json ia junto na cópia; cópia interrompida ficava marcada como atualizada e nunca mais era refeita. **Correção:** versão gravada por último e só sem falhas; conferência dos arquivos principais; fallback para abrir da pasta do Drive. **Lição:** marcador de versão sempre por último.
+
 ## v1.36.0 – 26/11/2026 – padrão aberto em base (REQ-SEN-031)
 **Engenheiro:** "Sugestão A" (padrão = aberto em base quando o cliente não especifica).
 **Feito:** forma de fornecimento no pedido e regra automática; preço/BOM principais da forma (A); proposta, folhas de dados, verificação de normas e RFQ ajustados; seletor na tela; teste automático.

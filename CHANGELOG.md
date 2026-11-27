@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.36.1 – 26/11/2026 – correção ao abrir em computador novo
+- Se a cópia local do programa ficou incompleta (Google Drive ainda baixando), a plataforma agora percebe, copia de novo ou abre direto da pasta do Drive – não aparece mais "No module named fsen.modelos".
+
 ## v1.36.0 – 26/11/2026 – filtro aberto em base é o padrão
 - Quando o cliente não pede grau de proteção nem armário, o filtro senoidal sai ABERTO (IP00) em base de montagem, para o painel dele – é o preço principal da proposta, e a caixa aparece como opcional.
 - Se o cliente pedir IP (ex.: IP54), instalação ao tempo ou armário próprio, sai em caixa; o aberto fica como opção.
