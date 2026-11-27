@@ -33,7 +33,23 @@ for %%F in (app.py janela_fsen.py fsen\__init__.py fsen\modelos.py fsen\pipeline
 )
 if "%OK_LOCAL%"=="0" del "%LOCAL%\versao_plataforma.json" >nul 2>&1
 fc /b "%ORIGEM%versao_plataforma.json" "%LOCAL%\versao_plataforma.json" >nul 2>&1
-if errorlevel 1 (
+if errorlevel 1 goto :copiar
+goto :copiado
+:copiar
+REM v1.36.2 (REQ-GER-021): primeiro tenta o ZIP da versao (1 arquivo de ~4 MB baixa rapido do Google Drive; centenas de
+REM arquivos pequenos num computador novo demoram muitos minutos e a janela parecia travada em [1/4]).
+set "VER="
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "(Get-Content -LiteralPath '%ORIGEM%versao_plataforma.json' -Raw | ConvertFrom-Json).versao"`) do set "VER=%%V"
+set "ZIP=%ORIGEM%..\FSEN_plataforma_v%VER%.zip"
+if defined VER if exist "%ZIP%" (
+  echo       baixando o pacote da versao %VER% ^(zip^)...
+  powershell -NoProfile -Command "$t=Join-Path $env:TEMP 'fsen_zip'; Remove-Item $t -Recurse -Force -EA SilentlyContinue; Expand-Archive -LiteralPath '%ZIP%' -DestinationPath $t -Force; $s=(Get-ChildItem $t -Directory | Select-Object -First 1).FullName; New-Item -ItemType Directory -Force -Path '%LOCAL%' | Out-Null; Copy-Item -Path (Join-Path $s '*') -Destination '%LOCAL%' -Recurse -Force"
+)
+if exist "%LOCAL%\fsen\modelos.py" if exist "%LOCAL%\versao_plataforma.json" (
+  fc /b "%ORIGEM%versao_plataforma.json" "%LOCAL%\versao_plataforma.json" >nul 2>&1
+  if not errorlevel 1 goto :copiado
+)
+echo       copiando arquivo por arquivo do Drive ^(pode levar alguns minutos na primeira vez^)...
   robocopy "%ORIGEM%." "%LOCAL%" /MIR /R:3 /W:3 /XD __pycache__ saidas .git /XF historico.db versao_plataforma.json /NP /LOG:"%LOCALAPPDATA%\FSEN\robocopy.log" >nul
   if errorlevel 8 (
     echo   Aviso: o Google Drive ainda esta baixando arquivos - abrindo direto da pasta do Drive desta vez.
@@ -41,9 +57,7 @@ if errorlevel 1 (
   ) else (
     copy /y "%ORIGEM%versao_plataforma.json" "%LOCAL%\versao_plataforma.json" >nul
   )
-) else (
-  echo       copia local ja esta na versao do Drive.
-)
+:copiado
 if not exist "%LOCAL%\fsen\modelos.py" (
   echo   Aviso: copia local incompleta - abrindo direto da pasta do Drive.
   set "LOCAL=%ORIGEM:~0,-1%"

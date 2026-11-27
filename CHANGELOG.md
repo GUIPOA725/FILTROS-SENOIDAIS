@@ -1,5 +1,8 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.36.2 – 26/11/2026 – primeira abertura rápida em computador novo
+- A cópia local é feita a partir do pacote .zip da versão (um arquivo só, baixa rápido do Google Drive); a cópia arquivo por arquivo fica só como reserva.
+
 ## v1.36.1 – 26/11/2026 – correção ao abrir em computador novo
 - Se a cópia local do programa ficou incompleta (Google Drive ainda baixando), a plataforma agora percebe, copia de novo ou abre direto da pasta do Drive – não aparece mais "No module named fsen.modelos".
 

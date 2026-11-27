@@ -1,5 +1,5 @@
 {
-  "versao": "1.36.1",
+  "versao": "1.36.2",
   "data": "2026-11-26",
-  "resumo": "Correção: no computador novo a cópia local podia ficar incompleta e a plataforma não abria (No module named fsen.modelos) – agora confere e recopia, ou abre direto do Drive"
+  "resumo": "Abertura em computador novo: copia o pacote zip da versão (rápido) em vez de centenas de arquivos do Drive"
 }
