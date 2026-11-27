@@ -393,3 +393,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 22:50 26/11 (engenheiro): print "ModuleNotFoundError: No module named fsen.modelos" – "ERRO AO ABRIR NO NOTE DE CASA" → REQ-GER-021, v1.36.1.
 - 26/11 (Claude): v1.36.1 publicada (ABRIR_FSEN.bat + janela_fsen.py no Drive e na cópia local do note do trabalho).
 - 22:57 26/11 (engenheiro): print parado em [1/4] – "NÃO SAI DESSA TELA" → v1.36.2 (cópia pelo zip).
+- 26/11 (Claude): v1.36.2 publicada (zip + ABRIR_FSEN.bat).
