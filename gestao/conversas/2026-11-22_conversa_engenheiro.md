@@ -394,3 +394,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 26/11 (Claude): v1.36.1 publicada (ABRIR_FSEN.bat + janela_fsen.py no Drive e na cópia local do note do trabalho).
 - 22:57 26/11 (engenheiro): print parado em [1/4] – "NÃO SAI DESSA TELA" → v1.36.2 (cópia pelo zip).
 - 26/11 (Claude): v1.36.2 publicada (zip + ABRIR_FSEN.bat).
+- 22:59 26/11 (engenheiro): "AGORA ABRIU" (print: bloqueio "não pode editar o código" por INSTALAR.bat e MONITOR_EMAIL.bat) – causa minha (CRLF v1.32.2 não publicado); publicados os dois .bat no Drive e na cópia local do note do trabalho.
