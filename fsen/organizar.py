@@ -57,7 +57,7 @@ LEIA_ME = """ORGANIZAÇÃO DESTE PROJETO (Plataforma FSEN)
    (escopo Electric no filtro senoidal: indutor + capacitores; caixa, plaqueta, cabos e miscelânea são da MONTADORA)
    (os pareceres de conferência de proposta são gravados na subpasta do componente)
 
-04_Montadora ............. NÃO é fornecedor: pacote de cotação da montagem (RFQ + e-mail + ETs dos itens que ela compra:
+04_Montadora ............. (4_Base_Montagem = forma (A) aberta em base, desenho + ET) NÃO é fornecedor: pacote de cotação da montagem (RFQ + e-mail + ETs dos itens que ela compra:
                            caixa, plaqueta/adesivos, cabos e miscelânea), caderno de montagem, desenhos do painel
 05_Desenhos .............. 1_Painel (vistas, 3D, diagrama, cabos)  |  2_Indutor (projeto de referência)
 graficos ................. figuras da simulação

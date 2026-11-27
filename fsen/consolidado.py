@@ -284,6 +284,8 @@ def _img(caminho, larg_max=170 * mm, alt_max=110 * mm):
 ORDEM_CONTEUDO = [
     (r"Players_Mercado.*\.xlsx$", "Comparação com os players mundiais (Schaffner, TDK, Block, Danfoss, MTE) – REQ-SEN-024"),
     (r"Inversor_Manual.*\.(xlsx|md)$", "Inversor – dados do manual completo do fabricante (fonte, página, link) – REQ-INV-010"),
+    (r"Base_Montagem.*\.pdf$", "Forma (A) – filtro aberto em base de montagem: desenho para o montador – REQ-SEN-030"),
+    (r"Guia_Instalacao_Filtro_Aberto.*\.docx$", "Guia de instalação do filtro aberto no painel do cliente – REQ-SEN-030"),
     (r"Motor_Cabo_Manual.*\.(xlsx|md)$", "Motor e cabo – manuais/catálogos do fabricante (isolamento, mancal, R/L/C) – REQ-INV-011"),
     (r"Transitorios_.*\.xlsx$", "Transitórios – critérios por caso e comparação Plataforma × ATP"),
     (r"Proposta.*\.docx$", "Proposta técnica e comercial"),

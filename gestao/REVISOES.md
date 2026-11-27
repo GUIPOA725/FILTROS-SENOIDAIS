@@ -3,6 +3,13 @@
 Registro de cada versão contra o REGISTRO DE REQUISITOS do engenheiro (gestao/REQUISITOS.yaml).
 As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos.py <projetos>`; a análise é escrita à mão abaixo de cada uma.
 
+## v1.35.0 – 26/11/2026 – filtro aberto em base de montagem (REQ-SEN-030)
+**Engenheiro:** "os filtros senoidais quando vendidos acredito que são abertos ... consegue fazer o projeto dela para o montador fazer".
+**Pesquisa:** TDK B84143V IP00 de 132 a 320 A com caixa IP21 como acessório; Block SFB IP00 aberto, só em pé, 40 °C; Danfoss IP00/IP20, piso acima de 75 A, 45 °C, convecção natural; MTE open panel para dentro do invólucro do cliente (4"/6" de folga) ou NEMA 1/3R. Schaffner: manual não acessível.
+**Achado:** no A&W a própria leitura do pedido já dizia "IP não informado – adotar IP00 (montagem em painel)", mas o projeto saiu em caixa IP54 – incoerência. Agora saem as duas formas.
+**Feito:** `fsen/base_montagem.py` (base plana 6,35 mm com furação pelo modelo real do indutor, desenho PDF/DXF, ET, guia de instalação, preço), hooks no pipeline/proposta/RFQ/consolidado.
+**A&W:** base 900 × 700 mm, conjunto ≈ 185 kg; (A) aberto R$ 35.700 × (B) caixa R$ 44.200 por unidade. **Pendente:** qual forma é o padrão quando o cliente não diz.
+
 ## v1.34.2 – 26/11/2026 – equipamento do cliente é fixo (REQ-GER-020)
 **Engenheiro:** "o cliente não vai trocar ... nem inversor nem motor nem cabo, isso não muda" / "Não estamos avaliando isso".
 **Erro meu (v1.33.0):** usei o derating do manual para reprovar o filtro e sugeri inversor maior. **Correção:** a verificação crítica volta a usar a IN do inversor especificado; derating só informativo; relatório sem sugestão de troca; proposta não condiciona a capacidade do inversor. O manual continua servindo para a decisão de projeto que é da Electric: a fs escolhida é uma em que o inversor do cliente entrega a corrente nominal do motor (sem fator de serviço).
@@ -450,6 +457,14 @@ As linhas "Revisão – vX" são geradas por `python gestao/verificar_requisitos
 
 ## Revisão – v1.34.2 – 2026-11-26 19:39
 - Requisitos: 160 | APROVADO 100 | ATENÇÃO 39 | REPROVADO 21
+- Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
+- Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
+- Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum
+- Críticos pendentes conhecidos (prioridade): REQ-GER-003, REQ-PNL-002, REQ-REF-001, REQ-SEN-027, REQ-PNL-015, REQ-PNL-016, REQ-SEG-011, REQ-PNL-021, REQ-PNL-023
+- Decisão: pode publicar
+
+## Revisão – v1.35.0 – 2026-11-26 21:38
+- Requisitos: 161 | APROVADO 101 | ATENÇÃO 39 | REPROVADO 21
 - Projetos conferidos: BCD-FD8,16-400kvar-415V_ABB_20261126_1423
 - Mudanças: REQ-PNL-032 MELHOROU (REPROVADO→APROVADO)
 - Críticos que diziam ATENDIDO e falharam (bloqueiam): nenhum | regredidos: nenhum

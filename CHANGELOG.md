@@ -1,5 +1,11 @@
 # Registro de atualizações – Plataforma FSEN
 
+## v1.35.0 – 26/11/2026 – filtro senoidal aberto em base de montagem
+- Como fazem TDK, Block, Danfoss e MTE nessa faixa de corrente, a plataforma gera também o filtro ABERTO (IP00) sobre uma base metálica, para o cliente instalar no painel dele.
+- Projeto da base para o montador: desenho A3 (PDF e DXF) com toda a furação, notas de fabricação e torques, e ET da base.
+- Guia de instalação para o cliente: onde instalar, posição, folgas, perdas a dissipar, ar de ventilação, temperatura e aterramento, com as fontes dos fabricantes.
+- A proposta mostra as duas formas com preço: (A) aberto em base e (B) em caixa própria; o pedido de cotação da montadora pede as duas.
+
 ## v1.34.2 – 26/11/2026 – equipamento do cliente é fixo
 - A plataforma não sugere mais trocar inversor, motor ou cabo do cliente, e não reprova o filtro pela capacidade do inversor; o derating do manual fica só como informação.
 - A frequência de chaveamento é escolhida entre as que o manual do inversor do cliente ainda entrega a corrente nominal do motor (ex.: ACS580-01-293A-4 fica em 4 kHz; 8 kHz não).

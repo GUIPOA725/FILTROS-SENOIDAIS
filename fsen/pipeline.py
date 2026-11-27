@@ -507,6 +507,15 @@ def processar(ped: Pedido, pasta_base: str = None, cat=None, registrar=True, zip
                 f"elevação ≈ {ind['termico']['elev_bobina_K']:.0f} K, massa ≈ {ind['massa_kg']['total']:.0f} kg")
         except Exception as e:
             log(f"   (projeto do indutor por elementos finitos não concluído: {type(e).__name__}: {e})")
+    try:                                            # v1.35.0 (REQ-SEN-030): forma (A) – filtro aberto em base de montagem (padrão do mercado)
+        from . import base_montagem as _BM
+        _bm = _BM.gerar(proj, arr, orc, cat, locals().get("ind"), sub, cod, D._novo, D._tabela, D._bullets, log=log)
+        proj.base_montagem = _bm
+        arqs.update({"base_pdf": _bm["pdf"], "base_et": _bm["et"], "guia_instalacao": _bm["guia"]})
+        if _bm.get("dxf"):
+            arqs["base_dxf"] = _bm["dxf"]
+    except Exception as e:
+        log(f"   (base de montagem do filtro aberto não gerada: {type(e).__name__}: {e})")
     if proj.topologia == "LC" and not proj.l2:
         try:                                        # v1.11: protocolo do protótipo, questionário ao fabricante, fornecedores (interno)
             from . import doc_indutor_fornecedor as DIF

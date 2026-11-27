@@ -1,5 +1,5 @@
 {
-  "versao": "1.34.2",
+  "versao": "1.35.0",
   "data": "2026-11-26",
-  "resumo": "Equipamento do cliente é fixo: a plataforma não propõe trocar inversor/motor/cabo nem reprova o filtro pela capacidade do inversor (derating só informativo)"
+  "resumo": "Filtro senoidal aberto (IP00) em base de montagem como no mercado (TDK, Block, Danfoss, MTE): projeto da base para o montador (PDF/DXF + ET), guia de instalação no painel do cliente e preço das duas formas na proposta"
 }

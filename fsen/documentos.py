@@ -615,6 +615,18 @@ def proposta(proj, arr, orc, cat, pasta):
                     f"corrente do inversor a {ped['corrente_a']:g} A (ABB ACS580: parâmetro 30.17 Maximum current) – aceite do cliente.")
     if _g["txt_mancal"]:
         _obs.append("Mancal do motor: " + _g["txt_mancal"] + ".")
+    try:                                            # v1.35.0 (REQ-SEN-030): as duas formas de fornecimento
+        from . import base_montagem as _BM
+        _b = _BM.layout(proj, arr, None)
+        _oa = _BM.preco_opcao_aberta(proj, orc, cat, _b)
+        _r = lambda v: f"{v:,.0f}".replace(",", ".")
+        _obs.append(f"Formas de fornecimento: (A) ABERTO (IP00) em base de montagem {_b['L']:.0f} × {_b['P']:.0f} mm, ≈ {_b['massa_conj']:.0f} kg, "
+                    f"para instalação dentro do painel do cliente – padrão dos fabricantes internacionais (TDK, Block, Danfoss, MTE) – "
+                    f"R$ {_r(_oa.preco_unit)}/unid.; (B) em caixa metálica própria {arr.caixa_l}×{arr.caixa_a}×{arr.caixa_p} mm IP{arr.caixa_ip} "
+                    f"com ventilação – R$ {_r(orc.preco_unit)}/unid. Na forma (A) o painel do cliente deve dissipar ≈ {arr.perda_total_w:.0f} W "
+                    "e dar a proteção contra contato (guia de instalação anexo).")
+    except Exception:
+        pass
     _obs.append("Garantias de pico e THD válidas para a frequência de chaveamento, o cabo e o motor acima; o THD total no motor "
                 "depende do amortecimento real da instalação e é confirmado na medição de comissionamento.")
     _bullets(d, _obs)
@@ -1037,6 +1049,14 @@ def rfq_montagem(proj, arr, orc, cat, pasta):
     _anx = [os.path.join(pasta, f) for f in (f"{cod}_desenhos.pdf", f"Caderno_Montagem_{cod}.docx")] + \
            [os.path.join(pasta, f) for f in (f"ET_Caixa_Metalica_{cod}.docx",
             f"ET_Plaqueta_Adesivos_{cod}.docx", f"LM_Cabos_Miscelanea_{cod}.docx")]
+    _pb = os.path.join(pasta, "4_Base_Montagem")             # v1.35.0 (REQ-SEN-030): forma (A) aberta em base – cotar as duas
+    _anx += [os.path.join(_pb, f) for f in (f"ET_Base_Montagem_{cod}.docx", f"Base_Montagem_{cod}.pdf", f"Base_Montagem_{cod}.dxf")
+             if os.path.exists(os.path.join(_pb, f))]
+    if any("Base_Montagem" in a for a in _anx):
+        d.add_heading("8.1 Forma (A) – filtro aberto em base de montagem", 2)
+        d.add_paragraph("Cotar também, em separado, a montagem do filtro ABERTO (IP00) sobre a base de montagem do desenho anexo: "
+                        "fabricação da base, fixação do indutor, capacitores, bornes e barra PE e a cabeação interna – sem caixa, "
+                        "ventiladores, grelhas e termostato. O cliente instala o conjunto no painel dele.")
     ETC.secao_anexos(d, 9, _anx)
     ETC.secao_contato(d, 10, cat)
     p = os.path.join(pasta, f"RFQ_Montagem_{cod}.docx")
