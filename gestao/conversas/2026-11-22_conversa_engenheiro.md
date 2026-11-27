@@ -385,3 +385,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 19:47 26/11 (engenheiro): "Pode ser, consegue gerar via plataforma do meu note via script sem abrir ele?" – sem shell no notebook nesta sessão; gerado na nuvem com v1.34.2 (mesmo código) a partir do pedido.json da pasta _1513 + motor WEG; 113 arquivos em PROJETOS\A & W...\2026-11-26_FSEN-LC-268A-440V_v1.34.2 (consolidado recomprimido 34→15 MB).
 - 21:08 26/11 (engenheiro): "vc poderia ver com os nossos principais players ... filtros senoidais quando vendidos acredito que são abertos ... consegue projetar essa base metalica ... para o montador fazer" → REQ-SEN-030.
 - 26/11 (Claude): v1.35.0 – base de montagem do filtro aberto (desenho, ET, guia), proposta com formas (A) e (B).
+- 26/11 (Claude): v1.35.0 publicada; base/guia/proposta/RFQ do A&W gravados na pasta _v1.34.2 do Drive.
