@@ -389,3 +389,4 @@ Mensagens de antes das 15h estão no resumo da conversa (as literais anteriores 
 - 21:45 26/11 (engenheiro): "Pode gerar novamente via plataforma local para não gastar tokens" – sem shell no notebook nesta sessão (só listar/copiar arquivos); orientado a gerar pela plataforma (já atualiza para v1.35.0 ao abrir).
 - 22:18 26/11 (engenheiro): "Sujestão A" → REQ-SEN-031 (padrão = filtro aberto em base quando o cliente não especifica).
 - 26/11 (Claude): v1.36.0 – padrão aberto em base (REQ-SEN-031).
+- 26/11 (Claude): v1.36.0 publicada (Drive, FSEN_v1.7.1, cópia local, GESTAO, MEMORIA_IA).
